@@ -273,11 +273,11 @@
       const gap = L.NOW >= 19 && !had("dinner") ? "dinner" : L.NOW >= 14 && !had("lunch") ? "lunch" : L.NOW >= 10.5 && !had("breakfast") ? "breakfast" : null;
       if (gap) return { line: `${L.mealLabel(gap)} isn't logged yet. Add it now, or when you're done eating.`, act: ["open-meal", `Log ${gap}`, gap] };
       if (!u) return { line: `Keep logging as you go. In ${plural(L.LEARN_DAYS - L.learnDay(M), "more day")}, Florin can start showing your usual.`, act: ["open-meal", "Log a meal"] };
-      const fc = L.foodCounts(M, 30);
+      const fc = L.foodCounts(M, L.PATTERN_DAYS);
       const cand = Object.entries(fc).filter(([f, n]) => n < 5 && n >= 3 && L.FOOD_NAMES[f]).sort((a, b) => b[1] - a[1])[0];
       if (!cand) return { line: "Everything so far today is logged. Anything else, plus is one tap away.", act: ["plus", "Add something"] };
       const [name, pl] = L.FOOD_NAMES[cand[0]];
-      return { line: `${name} ${pl ? "have" : "has"} come up in ${cand[1]} of your meals in the last 30 days. At 5, Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`, act: ["open-meal", "Log a meal"] };
+      return { line: `${name} ${pl ? "have" : "has"} come up in ${cand[1]} of your meals in the last ${L.PATTERN_DAYS} days. At 5, Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`, act: ["open-meal", "Log a meal"] };
     })();
 
     /* symptoms on screen bring the clinician line with them */
@@ -394,7 +394,7 @@
         <label class="ap-fld">${ic("clock")}<span class="sr">Time</span><input id="${id}-time" type="time" data-in="time" value="${RU.toInput(st.t)}"></label>
       </div></div>`;
   };
-  const choice = (act, items, isOn, o = {}) => `<div class="ap-chs${o.wrap ? " ap-chs--wrap" : ""}${o.grid ? " ap-chs--grid" : ""}" role="${o.single ? "radiogroup" : "group"}"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${items.map(([v, l], i) => `<button type="button" class="ap-ch${o.flag ? " ap-ch--flag" : ""}${isOn(v, i) ? " is-on" : ""}" data-act="${act}" data-v="${esc(v)}" ${o.single ? `role="radio" aria-checked="${isOn(v, i)}"` : `aria-pressed="${isOn(v, i)}"`}>${isOn(v, i) && !o.noCheck ? ic("check") : ""}${esc(l)}</button>`).join("")}</div>`;
+  const choice = (act, items, isOn, o = {}) => `<div class="ap-chs${o.wrap ? " ap-chs--wrap" : ""}${o.grid ? " ap-chs--grid" : ""}${o.week ? " ap-chs--week" : ""}" role="${o.single ? "radiogroup" : "group"}"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${items.map(([v, l], i) => `<button type="button" class="ap-ch${o.flag ? " ap-ch--flag" : ""}${isOn(v, i) ? " is-on" : ""}" data-act="${act}" data-v="${esc(v)}" ${o.single ? `role="radio" aria-checked="${isOn(v, i)}"` : `aria-pressed="${isOn(v, i)}"`}>${isOn(v, i) && !o.noCheck ? ic("check") : ""}${esc(l)}</button>`).join("")}</div>`;
   const noteField = (id, st, ph) => `<div class="ap-f"><label class="ap-f-l" for="${id}-note">Note</label><textarea id="${id}-note" class="ap-ta" data-in="note" rows="3" placeholder="${esc(ph)}">${esc(st.note || "")}</textarea></div>`;
 
   /* ---------- Log a BM: one tap on a form, then optional detail ---------- */
@@ -454,7 +454,7 @@
       <div class="ap-psh-h"><h2>Saved, with a note</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
       <div class="ap-ask-alarm" role="note"><span class="ap-k">When to see a clinician</span><b>${esc(sign)}</b><p>${st.sign ? "You wrote this in your log. It's worth a clinician's look soon. Florin won't try to read it." : f.includes("blood") ? "Even a small amount is worth a clinician's look soon. Florin won't try to read it." : f.includes("black") ? "A black or tar-like stool is worth a clinician's look soon. Florin won't try to read it." : "If it's new for you, keeps showing up, or comes with pain or blood, check in with a clinician. Florin won't try to read it."}</p>${f.includes("blood") || f.includes("black") || st.sign === "Blood" || st.sign === "A black or tar-like stool" ? `<p class="ap-fl-urgent">If there's a lot of blood, or you feel faint or dizzy, get urgent care now.</p>` : ""}</div>
       <p class="ap-fl-body">Primary care is the right first stop: your GP or a nurse practitioner. Your logs can go with you as a report, so you don't have to remember dates.</p>
-      <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="toast" data-msg="Ask Florin opens on the clinician path, with this log and a report ready to bring. That comes in the second pass." data-close="1">Make a report for your clinician</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Done</button>${st.restore ? `<button type="button" class="ap-fsh-del" data-act="flag-undo">${ic("undo")}Undo this log</button>` : ""}</div>
+      <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="toast" data-msg="Ask Florin opens on the clinician path, with this log and a report ready to bring. That comes in the next pass." data-close="1">Make a report for your clinician</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Done</button>${st.restore ? `<button type="button" class="ap-fsh-del" data-act="flag-undo">${ic("undo")}Undo this log</button>` : ""}</div>
     </div>`;
   };
 
@@ -510,13 +510,13 @@
   };
   RU.mealCount = (M, st) => {
     const fs = L.matchFoods(st.text || "");
-    if (!fs.length) return `<p class="ap-ml-why">Florin counts each food it recognizes. Once one comes up 5 times in 30 days, Insights can look for a possible pattern in what tends to follow it.</p>`;
-    const fc = L.foodCounts(M, 30);
+    if (!fs.length) return `<p class="ap-ml-why">Florin counts each food it recognizes. Once one comes up 5 times in ${L.PATTERN_DAYS} days, Insights can look for a possible pattern in what tends to follow it.</p>`;
+    const fc = L.foodCounts(M, L.PATTERN_DAYS);
     const was = st.edit ? (L.find(M, st.edit) || {}).foods || [] : [];
     const n = (f) => (fc[f] || 0) + (was.includes(f) ? 0 : 1);
     const hit = fs.find((f) => n(f) === 5 && !was.includes(f));
-    const said = hit ? (() => { const [nm, pl] = L.FOOD_NAMES[hit]; return `${nm} ${pl ? "have" : "has"} now come up 5 times in 30 days. Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`; })() : "At 5 times in 30 days, Insights can look for a possible pattern.";
-    return `<div class="ap-ml-counted"><span class="ap-ml-cl">Counted</span>${fs.map((f) => chip(`${L.FOOD_NAMES[f][0]} · ${n(f)} in 30 days`, "plain")).join("")}</div><p class="ap-ml-why">${esc(said)}</p>`;
+    const said = hit ? (() => { const [nm, pl] = L.FOOD_NAMES[hit]; return `${nm} ${pl ? "have" : "has"} now come up 5 times in ${L.PATTERN_DAYS} days. Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`; })() : `At 5 times in ${L.PATTERN_DAYS} days, Insights can look for a possible pattern.`;
+    return `<div class="ap-ml-counted"><span class="ap-ml-cl">Counted</span>${fs.map((f) => chip(`${L.FOOD_NAMES[f][0]} · ${n(f)} in ${L.PATTERN_DAYS} days`, "plain")).join("")}</div><p class="ap-ml-why">${esc(said)}</p>`;
   };
   RU.meal = (M, V, st) => {
     const id = `ml${V.uid}`;
@@ -567,9 +567,11 @@
     const band = b ? `<rect class="c-band" x="${left - 8}" y="${(Y(b[qi].hi) - 8).toFixed(1)}" width="${W - left - right + 16}" height="${(Y(b[qi].lo) - Y(b[qi].hi) + 16).toFixed(1)}" rx="4"/>` : "";
     const grid = [0, 1, 2, 3].map((v) => `<line class="ap-ckt-grid" x1="${left - 8}" x2="${W - right + 4}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ap-ckt-y" x="0" y="${Y(v) + 3.5}">${esc(q.ticks[v])}</text>`).join("");
     const xs = `<text class="ap-ckt-x" x="${X(0)}" y="${H - 4}" text-anchor="start">${esc(shortDate(0))}</text><text class="ap-ckt-x" x="${X(12)}" y="${H - 4}" text-anchor="end">This week</text>`;
-    const dots = weeks.map((c) => (c.answers && c.answers[qi] != null ? `<circle class="ap-ckt-dot${c.w === 12 ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="${c.w === 12 ? 4.5 : 3}"/>` : "")).join("");
-    const now = cur != null ? `<circle class="ap-ckt-ring" cx="${X(12)}" cy="${Y(cur)}" r="8"/>` : "";
-    const lbl = `${q.label}, each week since ${shortDate(0)}.${cur != null ? ` This week: ${q.opts[cur].toLowerCase()}.` : ""}${b ? (b[qi].lo === b[qi].hi ? ` Your first three weeks were ${q.opts[b[qi].lo].toLowerCase()}.` : ` Your first three weeks ran from ${q.opts[b[qi].lo].toLowerCase()} to ${q.opts[b[qi].hi].toLowerCase()}.`) : ""}`;
+    /* the newest answered week is ringed: this week once it's in, the last one before that */
+    const answered = weeks.filter((c) => c.answers && c.answers[qi] != null), last = answered[answered.length - 1];
+    const dots = answered.map((c) => `<circle class="ap-ckt-dot${c === last ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="${c === last ? 4.5 : 3}"/>`).join("");
+    const now = last ? `<circle class="ap-ckt-ring" cx="${X(last.w)}" cy="${Y(last.answers[qi])}" r="8"/>` : "";
+    const lbl = `${q.label}, each week since ${shortDate(0)}.${cur != null ? ` This week: ${q.opts[cur].toLowerCase()}.` : last ? ` Latest, the week of ${shortDate(last.w * 7)}: ${q.opts[last.answers[qi]].toLowerCase()}.` : ""}${b ? (b[qi].lo === b[qi].hi ? ` Your first three weeks were ${q.opts[b[qi].lo].toLowerCase()}.` : ` Your first three weeks ran from ${q.opts[b[qi].lo].toLowerCase()} to ${q.opts[b[qi].hi].toLowerCase()}.`) : ""}`;
     const table = `<table class="sr"><caption>${esc(q.label)} by week</caption><tbody>${weeks.map((c) => `<tr><th scope="row">${esc(c.w === 12 ? "This week" : `Week of ${shortDate(c.w * 7)}`)}</th><td>${esc(c.answers && c.answers[qi] != null ? q.opts[c.answers[qi]] : "Skipped")}</td></tr>`).join("")}</tbody></table>`;
     return `<svg class="ap-ckt" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lbl)}">${band}${grid}${xs}${dots}${now}</svg>${table}`;
   };
@@ -612,7 +614,7 @@
             /* the week's own logs next to the answers: the weekly view, with no separate report */
             const Wk = RU.week(M, V.form);
             if (!M.usual) return "";
-            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li><b>${Wk.inForms} of ${plural(Wk.bms.length, "BM")}</b> within your usual</li><li>First BM inside your usual window on <b>${Wk.inWin} of ${plural(Wk.mornings.length, "morning")}</b></li><li>Symptoms on <b>${Wk.symDays.length} of ${plural(Wk.loggedDays, "day")}</b> logged</li></ul></div>`;
+            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li><b>${Wk.inForms} of ${plural(Wk.bms.length - Wk.unsure, "BM")}</b> within your usual${Wk.unsure ? `, and ${Wk.unsure} that could be either` : ""}</li><li>First BM inside your usual window on <b>${Wk.inWin} of ${plural(Wk.mornings.length, "morning")}</b></li><li>Symptoms on <b>${Wk.symDays.length} of ${plural(Wk.loggedDays, "day")}</b> logged</li></ul></div>`;
           })()}
           ${b ? `<div class="ap-legend"><span><i class="sw sw--band"></i>Your first three weeks</span><span><i class="sw ap-ckt-sw--past"></i>Each week</span><span><i class="sw ap-ckt-sw--now"></i>This week</span></div>` : ""}
           <ul class="ap-ckr-list">${rows}</ul>
@@ -628,7 +630,7 @@
   RU.ckDay = (M, st) => `<div class="ap-psh" role="dialog" aria-modal="true" aria-label="When your check-in is due">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
       <div class="ap-psh-h"><h2>When should it be due?</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
-      <div class="ap-f"><span class="ap-f-l">Day</span>${choice("ckd-dow", Ut.DOW.map((d, i) => [i, d]), (v, i) => st.dow === i, { label: "Day", noCheck: true, single: true })}</div>
+      <div class="ap-f"><span class="ap-f-l">Day</span>${choice("ckd-dow", Ut.DOW.map((d, i) => [i, d]), (v, i) => st.dow === i, { label: "Day", noCheck: true, single: true, week: true })}</div>
       <div class="ap-f"><span class="ap-f-l">Time</span>${choice("ckd-when", [["morning", "Morning"], ["evening", "Evening"]], (v) => st.when === v, { label: "Time", single: true })}</div>
       <p class="ap-fine">One reminder when it's due. Skipping is fine; it never blocks logging or Insights.</p>
       <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="ckd-save">Save</button></div>
@@ -651,7 +653,7 @@
     }).join("");
     return `<div class="ap-scr ap-hist">
       <header class="ap-hist-top" data-a><h1 class="ap-h1">History</h1><p class="ap-hi-sub">${plural(total, "entry", "entries")} since ${esc(shortDate(M.start))}</p></header>
-      <button type="button" class="ap-hist-rep" data-a data-act="toast" data-msg="A report of your logs to bring to a clinician: dates, BMs, symptoms, meals and check-ins. That comes in the second pass.">${ic("report")}<span><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button>
+      <button type="button" class="ap-hist-rep" data-a data-act="toast" data-msg="A report of your logs to bring to a clinician: dates, BMs, symptoms, meals and check-ins. That comes in the next pass.">${ic("report")}<span><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button>
       <div class="ap-hist-f" role="group" aria-label="Show" data-a>${[["all", "All"], ["bm", "BMs"], ["sym", "Symptoms"], ["meal", "Meals"], ["note", "Notes"]].map(([k, l]) => `<button type="button" class="ap-hi-filter" data-act="hfilter" data-v="${k}" aria-pressed="${F === k}">${l}</button>`).join("")}</div>
       ${groups}
       ${(st.n || 14) < M.days.length ? `<button type="button" class="ap-btn ap-btn--line ap-hi-more" data-act="hmore" data-a>Show earlier days</button>` : ""}

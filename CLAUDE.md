@@ -60,7 +60,7 @@ A symptom logged without a strength keeps `s: 0` and reads as "strength not said
 ## Check before you publish
 
 ```
-NODE_PATH=$(npm root -g) node work/qa.js            # console errors, sideways scroll, claims check, tap targets
+NODE_PATH=$(npm root -g) node work/qa.js            # console errors, sideways scroll, claims check, 44x44 tap targets
 NODE_PATH=$(npm root -g) node work/behave.js        # interactions and data: drafts, focus, one-tap log, check-in rule
 node work/audit-spacing.js                          # must say the prototype is on the scale
 NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every screen in every state

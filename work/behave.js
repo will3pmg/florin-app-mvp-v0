@@ -234,6 +234,82 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   });
   ok(pats, "each demo person has a food pattern in A, B and C; a new person has none");
 
+  /* 22. closing the check-in opened from Insights hands focus back to the button that opened it */
+  await open("insights");
+  await p.focus(`${ph} .ap-ins [data-act="ck-start"]`); await p.keyboard.press("Enter"); await wait(600);
+  await p.keyboard.press("Escape"); await wait(700);
+  ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.matches('[data-act="ck-start"]'); }), "Escape from a check-in opened on Insights puts focus back on Check in");
+
+  /* 23. back from a detail reached by Next: the focused card is on screen, clear of the tab bar */
+  await open("insights");
+  await p.focus(`${ph} .ap-ic-h[data-k="timing"]`); await p.keyboard.press("Enter"); await wait(450);
+  for (let i = 0; i < 5; i++) { await p.click(`${ph} .ap-idt-next`); await wait(400); }
+  await p.click(`${ph} .ap-back`); await wait(500);
+  ok(await p.evaluate(() => {
+    const a = document.activeElement, ph = document.querySelector(".rx-stage .ap-rx"), lay = ph.querySelector(".ap-layer"), tb = ph.querySelector(".ap-tb");
+    if (!a || !a.matches('.ap-ic-h[data-k="pat"]')) return false;
+    const r = a.getBoundingClientRect(), lr = lay.getBoundingClientRect(), tr = tb.getBoundingClientRect();
+    return r.top >= lr.top && r.bottom <= tr.top;
+  }), "back after Next lands on the Possible patterns card, scrolled into view");
+
+  /* 24. keyboard focus never stops under the tab bar */
+  const hidden = await p.evaluate(() => {
+    const ph = document.querySelector(".rx-stage .ap-rx"), lay = ph.querySelector(".ap-layer"), tb = ph.querySelector(".ap-tb");
+    lay.scrollTop = 0;
+    return [...lay.querySelectorAll(".ap-ask-b, .ap-ic-h")].filter((el) => { el.focus(); const r = el.getBoundingClientRect(); return r.bottom > tb.getBoundingClientRect().top + 1; }).length;
+  });
+  ok(hidden === 0, `focusing each Insights card and Ask button scrolls it clear of the tab bar (${hidden} hidden)`);
+
+  /* 25. the check-in trend rings the latest answered week while this week's is still due */
+  await open("i-ck");
+  ok(await p.$$eval(`${ph} .ap-ckt-dot.is-now`, (e) => e.length) === 4 && await p.$$eval(`${ph} .ap-ckt-ring`, (e) => e.length) === 4, "the check-in detail rings the latest week on each of its four trends");
+
+  /* 26. data and copy the review caught: one food window, honest counts and words */
+  const copy = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, out = {};
+    /* a day with only a symptom logged: no BM said, so neither within nor a zero */
+    let M = L.build("sarah", "est");
+    L.day(M, 87).logged = true; L.add(M, { kind: "sym", d: 87, t: 12, items: [{ name: "Cramping", s: 2 }], last: 1, note: "" });
+    out.nocount = L.facts(M, L.day(M, 87), "C").state === "nocount" && /no BMs logged/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 })) && /but nothing about BMs/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 }));
+    /* the top symptom logged without a strength: no strength word for it */
+    M = L.build("sarah", "est");
+    for (let d = 84; d <= 89; d++) { const x = L.day(M, d); if (!x.logged) continue; x.entries = x.entries.filter((e) => e.kind !== "sym"); L.add(M, { kind: "sym", d, t: 12, items: [{ name: "Bloating", s: 0 }], last: null, note: "" }); }
+    L.add(M, { kind: "sym", d: 85, t: 13, items: [{ name: "Gas", s: 1 }], last: 1, note: "" });
+    out.unrated = !/usually mild/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 }));
+    /* every BM a word that covers two steps: no "mostly Type 1" */
+    M = L.build("sarah", "new");
+    M.days.forEach((x) => x.entries.forEach((e) => { if (e.kind === "bm") { e.form = null; e.word = 3; } }));
+    const ins = RU.insights(M, { form: "A", uid: 1 }, { range: 7, k: null, y: 0 });
+    out.top = !/mostly Type 1|mostly Pellets/.test(ins) && /mostly Loose/.test(ins);
+    /* before a usual, a No BM day is a plain ring, not Gold */
+    M = L.build("sarah", "new");
+    L.add(M, { kind: "nobm", d: 87, t: 21 });
+    out.plain = /dv-zero is-plain/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 }));
+    /* 90 days: the weekly cells start with the span, not on Jul 13 */
+    M = L.build("sarah", "est");
+    const sym = RU.idetail(M, { form: "C", uid: 1 }, { range: 90, k: "sym", y: 0 });
+    out.wk = !/Week of Jul 13/.test(sym);
+    /* the clinician line is the app's alarm list, primary care first */
+    out.care = /waking at night to go: start with primary care soon/.test(sym);
+    return out;
+  });
+  ok(copy.nocount, "a day with only a symptom logged is a gap on How often and counted on neither side");
+  ok(copy.unrated, "the symptoms card gives no strength word when the top symptom was logged without one");
+  ok(copy.top, "the most common form counts every BM, words logged in B included");
+  ok(copy.plain, "before a usual exists, No BM is a plain ring, not a Gold shift");
+  ok(copy.wk && copy.care, "90-day weekly cells start with the span, and the Symptoms clinician line matches the app's alarm list");
+  await open("today");
+  ok(await p.evaluate(() => !/in the last 30 days|in 30 days/.test(document.querySelector(".rx-stage .ap-rx .ap-layer").textContent)), "Today counts foods over the same 90 days Insights checks");
+
+  /* 27. nothing on screen or in the notes reads undefined or NaN, for any person or screen */
+  const ids = await p.$$eval('#rxMsheet [data-rx="screen"]', (b) => b.map((x) => x.dataset.v));
+  const bad = [];
+  for (const who of ["sarah", "marcus", "alex"]) {
+    await p.evaluate((v) => { const b = document.querySelector(`#rxMsheet [data-rx="persona"][data-v="${v}"]`); b && b.click(); }, who); await wait(300);
+    for (const id of ids) { await open(id); const t = await p.evaluate(() => document.body.innerText); if (/\bundefined\b|\bNaN\b/.test(t)) bad.push(`${who}/${id}`); }
+  }
+  ok(!bad.length, `no screen or note reads undefined or NaN (${bad.slice(0, 4).join(", ") || "none"})`);
+
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();
   console.log(fails.length ? `\n${fails.length} failed` : "\nAll behaviour checks pass.");

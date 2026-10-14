@@ -74,7 +74,10 @@
       requestAnimationFrame(() => {
         if (top()) return;
         const el = (sel && layer.querySelector(sel)) || layer.querySelector(".ap-nav-t, .ap-h1");
-        if (el) el.focus({ preventScroll: true });
+        if (!el) return;
+        el.focus({ preventScroll: true });
+        const r = el.getBoundingClientRect(), lr = layer.getBoundingClientRect();
+        if (r.top < lr.top || r.bottom > lr.bottom - 96) el.scrollIntoView({ block: "center", behavior: "auto" });
       });
     }
 
@@ -113,7 +116,7 @@
       requestAnimationFrame(() => {
         if (top()) return;
         const a = document.activeElement;
-        if (!id && a && a !== document.body && root.contains(a)) return;
+        if (!id && a && a !== document.body && root.contains(a) && !a.closest(".ap-o.is-out, [inert]")) return;
         const q = [id && `[data-act="edit"][data-id="${CSS.escape(id)}"]`, k && k.id && `[data-act="edit"][data-id="${CSS.escape(k.id)}"]`, k && k.act && !k.id && `[data-act="${CSS.escape(k.act)}"]${k.tab ? `[data-tab="${CSS.escape(k.tab)}"]` : ""}`].filter(Boolean);
         const el = q.map((s) => root.querySelector(s)).find(Boolean) || root.querySelector(".ap-tb-plus");
         if (el) el.focus({ preventScroll: true });
@@ -668,9 +671,15 @@
     const ab = abWeek(M);
     if (!ab) return "With a new person there's no usual yet, so all three read the same until day 14.";
     if (!ab.diff.length) return `This week all three read the same: ${ab.W.A.inForms} of ${ab.n} BMs within ${M.P.name}'s usual.`;
-    const b = ab.diff[0], dn = RU.dayName(b.d), day = dn === "Today" ? "today's" : dn === "Yesterday" ? "yesterday's" : dn.split(",")[0] + "'s";
-    const w = L.WORDS[L.wordKey(b)];
-    return `This week A and C put ${ab.W[m].inForms} of ${ab.n} BMs within ${M.P.name}'s usual (${L.usualFormsText(M, m)}), and B puts ${ab.W.B.inForms} of ${ab.n} (${L.usualFormsText(M, "B")}). The difference is ${day} ${T(b.t)} BM: ${b.form != null ? `step ${b.form}, which B calls ${w.word}, a word that also covers step ${w.types.find((k) => k !== b.form)}` : `logged in B as ${w.word}`}.`;
+    const ac = ab.W.A.inForms === ab.W.C.inForms ? `A and C put ${ab.W[m].inForms} of ${ab.n}` : `A puts ${ab.W.A.inForms} of ${ab.n} and C ${ab.W.C.inForms}`;
+    /* one BM, said the way B reads it: the word, the other step it covers if any, and whether B's usual takes it */
+    const say = (b) => {
+      const dn = RU.dayName(b.d), day = dn === "Today" ? "today's" : dn === "Yesterday" ? "yesterday's" : dn.split(",")[0] + "'s";
+      const w = L.WORDS[L.wordKey(b)], other = b.form != null ? w.types.find((k) => k !== b.form) : null, inB = L.inForms(M, b, "B");
+      return `${day} ${T(b.t)} BM, ${b.form != null ? `step ${b.form}, which B calls ${w.word}${other != null ? `, a word that also covers step ${other}` : ""}` : `logged in B as ${w.word}`}, ${inB ? "inside" : "outside"} B's usual`;
+    };
+    const k = ab.diff.length, lead = ab.W.A.inForms === ab.W.B.inForms ? `The totals match, but ${k === 1 ? "one BM reads" : `${k} BMs read`} differently: ` : k === 1 ? "The difference is " : "The differences are ";
+    return `This week ${ac} BMs within ${M.P.name}'s usual (${L.usualFormsText(M, m)}), and B puts ${ab.W.B.inForms} of ${ab.n} (${L.usualFormsText(M, "B")}). ${lead}${ab.diff.slice(0, 3).map(say).join("; ")}${k > 3 ? `, and ${k - 3} more` : ""}.`;
   };
 
   /* Will, Oct 14: show the extras, then decide which ones earn their place */
@@ -702,8 +711,8 @@
     const k = (m) => { const F = L.span(M, 30, m); return { w: F.filter((x) => x.state === "usual").length, n: F.filter((x) => x.state === "usual" || x.state === "shifted").length }; };
     const r = { A: k("A"), B: k("B"), C: k("C") };
     const ac = r.A.w === r.C.w && r.A.n === r.C.n ? `A and C put ${r.A.w} of ${r.A.n}` : `A puts ${r.A.w} of ${r.A.n}, C ${r.C.w} of ${r.C.n},`;
-    if (r.A.w === r.B.w && r.B.w === r.C.w) return `Over 30 days all three agree: ${r.A.w} of ${r.A.n} days within ${M.P.name}'s usual.`;
-    return `The option moves the summary: over 30 days, ${ac} days within ${M.P.name}'s usual, and B ${r.B.w} of ${r.B.n}. A day with one BM outside the usual forms counts as shifted, and B's five words absorb some of those.`;
+    if (r.A.w === r.B.w && r.B.w === r.C.w) return `Over 30 days all three count ${r.A.w} of ${r.A.n} days within ${M.P.name}'s usual.`;
+    return `The option moves the summary: over 30 days, ${ac} days within ${M.P.name}'s usual, and B ${r.B.w} of ${r.B.n}. A day with one BM outside the usual forms counts as shifted, and B's usual (${L.usualFormsText(M, "B")}) doesn't cover the same steps as A's (${L.usualFormsText(M, "A")}), so a day can sit inside one and outside the other.`;
   };
   const abMonthN = (M) => L.span(M, 30, "A").reduce((s, x) => s + x.bms.length, 0);
   const abMonthK = (M, m) => L.span(M, 30, m).reduce((s, x) => s + x.bms.filter((b) => L.inForms(M, b, m) === true).length, 0);
@@ -713,9 +722,10 @@
     /* the most common form, read each way: B's words can flip it */
     const top = (m) => { const c = {}; L.span(M, 30, m).forEach((x) => x.bms.forEach((b) => { const w = L.formName(b, m); c[w] = (c[w] || 0) + 1; })); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [""])[0]; };
     const tA = top("A"), tB = top("B"), tC = top("C");
-    const ac = k.A === k.C ? `A and C put ${k.A}` : `A puts ${k.A}, C ${k.C},`;
-    const flip = tB && tC && tB !== tC ? ` The most common form reads differently too: ${tC} in C (${tA} in A), ${tB} in B, because B counts two steps as one word.` : "";
-    return `Over 30 days, ${ac} of ${n} BMs within ${M.P.name}'s usual (${L.usualFormsText(M, "C")}), and B puts ${k.B} (${L.usualFormsText(M, "B")}).${flip}`;
+    const same = k.A === k.B && k.B === k.C, ac = k.A === k.C ? `A and C put ${k.A}` : `A puts ${k.A}, C ${k.C},`;
+    const flip = tB && tC && tB !== tC ? ` The most common form reads differently${same ? "" : " too"}: ${tC} in C (${tA} in A), ${tB} in B, because B counts two steps as one word.` : "";
+    const counts = same ? `Over 30 days all three put ${k.A} of ${n} BMs within ${M.P.name}'s usual.` : `Over 30 days, ${ac} of ${n} BMs within ${M.P.name}'s usual (${L.usualFormsText(M, "C")}), and B puts ${k.B} (${L.usualFormsText(M, "B")}).`;
+    return `${same && !flip ? "A, B and C read this month the same." : "A, B and C read this month differently."} ${counts}${flip}`;
   };
 
   /* ---------- the Oct 14 workshop: what changed, and the calls ---------- */
@@ -831,7 +841,7 @@
         ["Bloody and Mucus as symptom pills, with nothing after", "Primary care first, a report to bring, and Undo for a mis-tap. Teal, never red"],
         ["Fever or vomiting typed into a note went unnoticed", "The same note opens when a log names an alarm feature, on a BM or a symptom"]
       ],
-      open: ["Make a report opens Ask Florin on the clinician path with this log loaded. That lands in the second pass."],
+      open: ["Make a report opens Ask Florin on the clinician path with this log loaded. That lands with the chat, in the next pass."],
       res: ["DESIGN.md: the alarm banner names the sign, sends the person to primary care first and never uses red.", "Throne: flag blood or mucus every time."]
     }),
     nobm: () => ({ t: "No BM today", lede: "Logged on purpose, so an empty day isn't read as missing data. Logging a BM later replaces it.", ba: [["No way to say nothing happened", "From 5 PM on the day (plus, or Today), or any time for an earlier day"]], open: [], res: ["Throne's guidance says to log no-BM days explicitly. GutLog has a journal for them."] }),
@@ -893,8 +903,8 @@
         ["Patterns from synced sleep and workouts", "Patterns from logged meals, only after a food comes up 5 times"]
       ],
       open: [
-        "A day counts as within your usual when the first BM landed in the window, the count was usual and every form was within the usual. A word logged in B that could sit either side counts on neither. Symptoms are counted on their own card. Right definition?",
-        `Symptoms have no band: their usual is how often they came up in the person's first weeks${M.usual && M.usual.sym.every ? ` (about 1 day in ${M.usual.sym.every} for ${M.P.name})` : ""}. Enough, or no usual for symptoms at all?`,
+        "A day counts as within your usual when the first BM landed in the window, the count was usual and every form was within the usual. A word logged in B that could sit either side counts on neither, and so does a day with only symptoms or meals logged. Symptoms are counted on their own card. Right definition?",
+        `Symptoms have no band: their usual is how often they came up in the same weeks as the other usuals, ${RU.spanText(28, 83)}${M.usual && M.usual.sym.every ? ` (about 1 day in ${M.usual.sym.every} for ${M.P.name})` : ""}. Enough, or no usual for symptoms at all?`,
         "Patterns use the last 90 days whatever the range. 30 days of manual logs named a food by chance in testing (Alex, pasta, 5 of 5), so the bar is a binomial test at 1 in 100 against other days.",
         patSay(M, f),
         rideAlong(M, f),
@@ -909,18 +919,18 @@
       open: ["Next steps through the cards like Oura's swipe. Is a Next button enough, or should detail pages swipe?", M.usual ? "Late-dinner days are flagged in Teal (context), not Plum: on the board, Plum is reserved for your usual." : "No window until day 14."],
       res: ["Oura's detail: the current value large, the average beside it, a Day, Week, Month toggle.", "Function's detail page got called a wall of text, so What shaped this is folded by default."]
     }),
-    "i-often": () => ({
+    "i-often": (M) => ({
       t: "How often, the detail",
       lede: "Bars from zero over the usual band. Gold for a day outside it, a Gold ring for a day logged as No BM, a faint column for a day with nothing logged.",
       ba: [["An empty day read as zero", "A gap stays a gap. Only No BM counts as zero"]],
-      open: ["Today counts as far as it has gone (one BM by 7:40 PM). Fine, or leave today out of averages until it ends?"],
+      open: [(() => { const n = L.bms(L.day(M, L.TODAY)).length; return n ? `Today counts as far as it has gone (${n === 1 ? "one BM" : `${n} BMs`} by ${T(L.NOW)}). Fine, or leave today out of averages until it ends?` : "Nothing is logged today yet, so today stays out of the averages until it has a log. Once it does, it counts as far as it has gone. Fine, or leave today out until it ends?"; })()],
       res: ["Throne's guidance: log the days with no BM, so they're not read as missing."]
     }),
     "i-form": (M, f) => ({
       t: `Form, the detail · ${L.MODES[f]}`,
       lede: "The mix as a histogram with the usual as a bracket under the axis, then each BM by day with the usual forms as the band. A and C chart steps; B charts words.",
       ba: [["A consistency slider average", "The mix, and every BM, against the person's own usual forms"], ["First take: a B log forced onto one type", "A word logged in B sits between its two steps, hollow when it could be either"]],
-      open: [`A, B and C read the same month differently. ${abMonth(M)}`, "Should Form show the first BM of the day only, or every BM (built: every BM)?"],
+      open: [abMonth(M), "Should Form show the first BM of the day only, or every BM (built: every BM)?"],
       res: ["GI apps chart stool type over 7, 30 and 90 days.", "Throne: record the type number, not a description. C stores it and shows a word."]
     }),
     "i-sym": () => ({

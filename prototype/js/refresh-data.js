@@ -396,7 +396,8 @@
      Every number Insights states comes from here. A day that wasn't logged stays a gap, never a zero; a day logged
      as No BM is a zero; today counts as far as it has gone. A day "within your usual" had its first BM in the usual
      window, a usual number of BMs and every form within the usual forms. A BM logged in B whose word covers steps on
-     both sides of the usual can't be placed: that day is "unsure", counted on neither side. Symptoms are counted on
+     both sides of the usual can't be placed: that day is "unsure", counted on neither side. A day logged with only
+     symptoms or meals says nothing about BMs: "nocount", a gap on How often, never a zero. Symptoms are counted on
      their own. */
   L.RANGES = [7, 30, 90];
   L.facts = (M, x, mode) => {
@@ -415,7 +416,7 @@
     const inCount = u && count != null ? count >= u.nLo && count <= u.nHi : null;
     const fi = u && bms.length ? bms.map((b) => L.inForms(M, b, mode)) : null;
     const formsIn = !fi ? null : fi.includes(false) ? false : fi.includes(null) ? null : true;
-    const state = !logged || count == null ? "none" : !u ? "logged" : count > 0 && inWin && inCount ? (formsIn ? "usual" : formsIn === false ? "shifted" : "unsure") : "shifted";
+    const state = !logged ? "none" : count == null ? "nocount" : !u ? "logged" : count > 0 && inWin && inCount ? (formsIn ? "usual" : formsIn === false ? "shifted" : "unsure") : "shifted";
     return { d: x.d, date: x.date, dow: x.dow, today: x.d === TODAY, pending, logged, bms, nobm, count, first, sym, nsym: Object.keys(sym).length, meals: es.filter((e) => e.kind === "meal"), inWin, inCount, formsIn, state };
   };
   L.span = (M, n, mode) => { const d0 = Math.max(M.start, TODAY - n + 1); return M.days.filter((x) => x.d >= d0).map((x) => L.facts(M, x, mode)); };

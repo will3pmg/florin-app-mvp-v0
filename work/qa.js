@@ -42,16 +42,21 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
           const scale = ph.getBoundingClientRect().width / ph.offsetWidth;
           out.small = [];
           if (Math.abs(scale - 1) < 0.01) {
-            ph.querySelectorAll(".ap-o:not(.is-out):last-child button, .ap-o:not(.is-out):last-child [role=button], .ap-o:not(.is-out):last-child input, .ap-o:not(.is-out):last-child select" + (ph.querySelector(".ap-o:not(.is-out)") ? "" : ", .ap-layer button, .ap-tb button")).forEach((b) => {
+            ph.querySelectorAll(".ap-o:not(.is-out):last-child button, .ap-o:not(.is-out):last-child [role=button], .ap-o:not(.is-out):last-child input, .ap-o:not(.is-out):last-child select, .ap-o:not(.is-out):last-child summary" + (ph.querySelector(".ap-o:not(.is-out)") ? "" : ", .ap-layer button, .ap-layer summary, .ap-tb button")).forEach((b) => {
               const r = b.getBoundingClientRect();
               if (!r.width || !r.height || b.closest("[hidden]")) return;
               if (b.matches(".ap-o-scrim")) return;
-              /* a ::after hit area (position absolute, negative insets) counts toward the target */
-              const a = getComputedStyle(b, "::after");
-              let w = r.width, h = r.height;
-              if (a.content !== "none" && a.position === "absolute") { const px = (v) => Math.max(0, -(parseFloat(v) || 0)); w += px(a.left) + px(a.right); h += px(a.top) + px(a.bottom); }
-              w = Math.round(w); h = Math.round(h);
-              if (h < 44 && w < 44 || Math.min(h, w) < 32) out.small.push(`${(b.className || b.tagName).toString().split(" ")[0]} "${(b.textContent || b.getAttribute("aria-label") || "").trim().slice(0, 24)}" ${Math.round(w)}x${Math.round(h)}`);
+              /* a ::before or ::after hit area (position absolute, negative insets) counts toward the target */
+              let w = r.width, h = r.height, ew = 0, eh = 0;
+              for (const pe of ["::before", "::after"]) {
+                const a = getComputedStyle(b, pe);
+                if (a.content === "none" || a.position !== "absolute") continue;
+                const px = (v) => Math.max(0, -(parseFloat(v) || 0));
+                ew = Math.max(ew, px(a.left) + px(a.right)); eh = Math.max(eh, px(a.top) + px(a.bottom));
+              }
+              w = Math.round(w + ew); h = Math.round(h + eh);
+              /* 44 by 44 or more, every target */
+              if (Math.min(h, w) < 44) out.small.push(`${(b.className || b.tagName).toString().split(" ")[0]} "${(b.textContent || b.getAttribute("aria-label") || "").trim().slice(0, 24)}" ${Math.round(w)}x${Math.round(h)}`);
             });
           }
           return out;

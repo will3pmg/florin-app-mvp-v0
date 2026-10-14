@@ -37,7 +37,7 @@
   const sWord = (s) => (s ? L.STRENGTH[s - 1].toLowerCase() : "strength not said");
   const has = (f, name) => f.sym[name] != null;
   /* the bars' legend, from the bars themselves: only what's drawn gets named */
-  const barLegend = (vals, u, shiftText) => `${lg("sw--bar", "BMs")}${u ? lg("sw--band", "Your usual") : ""}${vals.some((v) => v.shift && v.v > 0) ? lg("sw--shift sw--bar", shiftText) : ""}${vals.some((v) => v.v === 0) ? lg("sw--zero", "No BM") : ""}${vals.some((v) => v.gap) ? lg("sw--nock", "Not logged") : ""}`;
+  const barLegend = (vals, u, shiftText) => `${lg("sw--bar", "BMs")}${u ? lg("sw--band", "Your usual") : ""}${vals.some((v) => v.shift && v.v > 0) ? lg("sw--shift sw--bar", shiftText) : ""}${vals.some((v) => v.v === 0) ? lg(vals.some((v) => v.v === 0 && v.shift) ? "sw--zero" : "sw--zero sw--plain", "No BM") : ""}${vals.some((v) => v.gap) ? lg("sw--nock", "No BMs logged") : ""}`;
 
   /* icons the refresh adds to the studio's set */
   const IC = {
@@ -151,7 +151,7 @@
           boxes.push([x0 - 2, x0 + lw + 2, over - 16, over - 2]);
         }
       } else {
-        marks += `<circle class="dv-zero" cx="${n1(cx)}" cy="${n1(base - 4.2)}" r="${Math.min(3.2, slot / 2 - 0.4)}">${b.tip ? tip(b.tip) : ""}</circle>`;
+        marks += `<circle class="dv-zero${b.shift ? "" : " is-plain"}" cx="${n1(cx)}" cy="${n1(base - 4.2)}" r="${Math.min(3.2, slot / 2 - 0.4)}">${b.tip ? tip(b.tip) : ""}</circle>`;
         boxes.push([cx - 5, cx + 5, base - 9, base]);
       }
     });
@@ -385,7 +385,7 @@
       inC: u ? known.filter((f) => f.inCount).length : null,
       zero: known.filter((f) => f.count === 0).length,
       busy: u ? known.filter((f) => f.count > u.nHi).length : 0,
-      gaps: F.filter((f) => !f.logged && !f.pending).length,
+      gaps: F.filter((f) => f.count == null && !f.pending).length,
       split: [0, 1, 2, 3].map((k) => known.filter((f) => (k === 3 ? f.count >= 3 : f.count === k)).length)
     };
   };
@@ -397,7 +397,10 @@
     const bins = B ? L.WORDS.map((w) => ({ short: w.word, label: w.word, count: bms.filter((o) => L.wordKey(o.b) === w.k).length, inUsual: u ? w.k >= u.wLo && w.k <= u.wHi : null }))
       : L.TYPES.slice(1).map((t) => ({ short: mode === "C" ? t.short : String(t.k), label: mode === "C" ? t.short : `Type ${t.k}`, count: bms.filter((o) => one(o) && L.stepsOf(o.b)[0] === t.k).length, inUsual: u ? t.k >= u.fLo && t.k <= u.fHi : null }));
     const split = B ? [] : bms.filter((o) => !one(o));
-    const top = bins.slice().sort((a, b) => b.count - a.count)[0];
+    const tally = {};
+    bms.forEach((o) => { const w = L.formName(o.b, mode); tally[w] = (tally[w] || 0) + 1; });
+    const tw0 = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
+    const top = tw0 ? { label: tw0[0], count: tw0[1] } : null;
     const st = u ? bms.map((o) => L.inForms(M, o.b, mode)) : [];
     const out = u ? bms.filter((o, i) => st[i] === false) : [];
     const unsure = st.filter((s) => s === null).length;
@@ -410,9 +413,9 @@
     const names = {};
     withSym.forEach((f) => Object.keys(f.sym).forEach((k) => (names[k] = (names[k] || 0) + 1)));
     const rows = Object.entries(names).sort((a, b) => b[1] - a[1] || L.SYMPTOMS.indexOf(a[0]) - L.SYMPTOMS.indexOf(b[0])).map(([name, n]) => ({ name, n }));
-    const ss = withSym.flatMap((f) => Object.values(f.sym)).filter((s) => s > 0);
-    /* the strength people logged most, as one word */
-    const how = !ss.length ? "" : L.STRENGTH[Math.round(Ut.median(ss)) - 1].toLowerCase();
+    /* the top symptom's usual strength, as one word: left out when any of its logs had no strength */
+    const ss = rows.length ? withSym.map((f) => f.sym[rows[0].name]).filter((s) => s != null) : [];
+    const how = !ss.length || ss.some((s) => !s) ? "" : L.STRENGTH[Math.round(Ut.median(ss)) - 1].toLowerCase();
     return { logged, withSym, rows, how };
   };
   const symUsualText = (u) => (!u || !u.sym ? null : u.sym.every == null ? "Rarely" : u.sym.every <= 1 ? "Most days" : `About 1 day in ${u.sym.every}`);
@@ -433,7 +436,7 @@
     return `${s.charAt(0).toUpperCase() + s.slice(1)} than at first`;
   };
   /* the 13 Monday to Sunday weeks since day 0 */
-  const weeksOf = (M, mode) => Array.from({ length: 13 }, (_, i) => M.days.filter((x) => x.d >= i * 7 && x.d < i * 7 + 7).map((x) => L.facts(M, x, mode))).filter((wk) => wk.length);
+  const weeksOf = (M, mode) => { const d0 = d0Of(M, 90); return Array.from({ length: 13 }, (_, i) => M.days.filter((x) => x.d >= Math.max(d0, i * 7) && x.d < i * 7 + 7).map((x) => L.facts(M, x, mode))).filter((wk) => wk.length); };
 
   /* the patterns, and how each one reads */
   const foodName = (f) => L.FOOD_NAMES[f] || [f.charAt(0).toUpperCase() + f.slice(1), false];
@@ -482,12 +485,13 @@
         </section>`;
     } else {
       const within = F.filter((f) => f.state === "usual").length, sh = F.filter((f) => f.state === "shifted"), none = live.filter((f) => f.state === "none").length;
-      const un = F.filter((f) => f.state === "unsure").length;
+      const un = F.filter((f) => f.state === "unsure").length, noc = F.filter((f) => f.state === "nocount" && !f.today).length;
       const known = within + sh.length;
       const why = [[sh.filter((f) => f.inWin === false).length, "a first BM outside your window"], [sh.filter((f) => f.formsIn === false).length, "a form outside your usual"], [sh.filter((f) => f.inCount === false).length, "an unusual count"]].filter(([k]) => k);
       const afterLate = sh.filter((f) => L.lateDinner(M, f.d - 1)).length;
       const unTxt = un ? ` ${plural(un, "day")} had a BM logged as a word that could sit either side of your usual forms, so ${un === 1 ? "it isn't" : "they aren't"} counted either way.` : "";
-      const note = (sh.length ? `Shifted days: ${join(why.map(([k, t]) => `${k} with ${t}`))}.${afterLate ? ` ${afterLate} of the ${sh.length} came after a dinner past 8 PM.` : ""}` : un ? "No day you logged shifted." : "Every day you logged sat within your usual.") + unTxt;
+      const nocTxt = noc ? ` ${plural(noc, "day")} had symptoms or meals logged but nothing about BMs, so ${noc === 1 ? "it isn't" : "they aren't"} counted either way.` : "";
+      const note = (sh.length ? `Shifted days: ${join(why.map(([k, t]) => `${k} with ${t}`))}.${afterLate ? ` ${afterLate} of the ${sh.length} came after a dinner past 8 PM.` : ""}` : un ? "No day you logged shifted." : "Every day you logged sat within your usual.") + unTxt + nocTxt;
       summary = `<section class="ap-card ap-sum" data-a>
           <span class="ap-k">${esc(RANGE_NAME[n])} · ${esc(spanOf(M, n))}</span>
           <div class="ap-sum-top"><b class="ap-big">${within}<small>of ${known}</small></b><p>days within your usual: first BM in your window, a usual count, usual forms.</p></div>
@@ -518,7 +522,7 @@
       oftenVals = vals;
       oftenChart = bars({ values: vals, yMax: 3, yTicks: [1, 2, 3], band: u ? [u.nLo, u.nHi] : null, labelLast: true, h: 80, xTicks: [{ i: 0, label: short(wks[0][0].d), anchor: "start" }, { i: vals.length - 1, label: "This week", anchor: "end" }], aria: "Average BMs a day, by week" });
     } else {
-      const vals = F.map((f) => (f.pending ? { v: null } : !f.logged || f.count == null ? { gap: true, tip: `${short(f.d)}: nothing logged` } : { v: f.count, shift: !!u && !f.inCount, tip: `${short(f.d)} · ${f.count === 0 ? "No BM" : plural(f.count, "BM")}${f.today ? " so far" : ""}` }));
+      const vals = F.map((f) => (f.pending ? { v: null } : f.count == null ? { gap: true, tip: `${short(f.d)}: ${f.logged ? "no BMs logged" : "nothing logged"}` } : { v: f.count, shift: !!u && !f.inCount, tip: `${short(f.d)} · ${f.count === 0 ? "No BM" : plural(f.count, "BM")}${f.today ? " so far" : ""}` }));
       oftenVals = vals;
       oftenChart = bars({ values: vals, yMax: Math.max(3, ...F.map((f) => f.count || 0)), yTicks: [1, 2, 3], band: u ? [u.nLo, u.nHi] : null, labels: n <= 7, h: 80, xTicks: ticks(F), aria: `BMs a day, ${RANGE_NAME[n].toLowerCase()}` });
     }
@@ -535,7 +539,7 @@
     const form = card(V, {
       k: "form", glyph: RU.glyph(4, "ap-ic-gl"), kicker: "Form",
       head: u ? `Usually ${L.usualFormsText(M, mode)}` : "Learning your usual forms",
-      sum: fm.bms.length ? (u ? `<b>${fm.inF} of ${plural(fm.bms.length, "BM")}</b> within your usual forms${fm.out.length || fm.unsure ? `: ${join([fm.firmer ? `${fm.firmer} firmer` : "", fm.looser ? `${fm.looser} looser` : "", fm.unsure ? `${fm.unsure} could be either` : ""].filter(Boolean))}` : ""}.` : `<b>${plural(fm.bms.length, "BM")}</b>, mostly ${esc(fm.top.label)}.`) : "No BMs logged in this stretch.",
+      sum: fm.bms.length ? (u ? `<b>${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")}</b> within your usual forms${fm.out.length ? `: ${join([fm.firmer ? `${fm.firmer} firmer` : "", fm.looser ? `${fm.looser} looser` : ""].filter(Boolean))}` : ""}${fm.unsure ? `, and ${fm.unsure} that could be either` : ""}.` : `<b>${plural(fm.bms.length, "BM")}</b>, mostly ${esc(fm.top.label)}.`) : "No BMs logged in this stretch.",
       chart: fm.bms.length ? hist({ bins: fm.bins, h: 64, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${RANGE_NAME[n].toLowerCase()}` }) : "",
       legend: u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "",
       body: formSplit(fm) ? `<p class="ap-ic-note">${esc(formSplit(fm))}</p>` : ""
@@ -555,7 +559,7 @@
     /* the weekly check-in */
     const K = ckOf(M);
     const ckDue = M.checkin.status === "due";
-    const ckFoot = ckDue ? `<button type="button" class="ap-btn ap-btn--c" data-act="ck-start">${M.ckDraft && M.ckDraft.step > 0 ? "Continue" : "Check in"}</button>` : "";
+    const ckFoot = ckDue ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="ck-start">${M.ckDraft && M.ckDraft.step > 0 ? "Continue" : "Check in"}</button>` : "";
     const ckBody = K.b ? `<ul class="ap-ic-ck">${L.CHECKIN.map((q, i) => `<li><div class="ap-ckr-top"><span class="ap-k">${esc(q.label)}</span>${chip(K.cmp[i].text, K.cmp[i].k === "same" ? "usual" : "shift")}</div>${ckMini(M, i, K.cur ? K.cur.answers[i] : null)}</li>`).join("")}</ul>`
       : `<p class="ap-ic-note">${K.done.length ? `${plural(K.done.length, "check-in")} so far. After three, each week is compared with them.` : "Your first three check-ins become the starting point for every week after."}</p>`;
     const checkin = card(V, {
@@ -665,7 +669,7 @@
         cvals = vals;
         chart = bars({ w: 326, h: 120, values: vals, yMax: 3, yTicks: [1, 2, 3], band: u ? [u.nLo, u.nHi] : null, bandLabel: u ? `Your usual ${u.nLo} to ${u.nHi}` : null, labelLast: true, xTicks: [{ i: 0, label: short(wks[0][0].d), anchor: "start" }, { i: vals.length - 1, label: "This week", anchor: "end" }], aria: "Average BMs a day, by week" });
       } else {
-        const vals = F.map((f) => (f.pending ? { v: null } : !f.logged || f.count == null ? { gap: true, tip: `${short(f.d)}: nothing logged` } : { v: f.count, shift: !!u && !f.inCount, tip: `${short(f.d)} · ${f.count === 0 ? "No BM" : plural(f.count, "BM")}${f.today ? " so far" : ""}` }));
+        const vals = F.map((f) => (f.pending ? { v: null } : f.count == null ? { gap: true, tip: `${short(f.d)}: ${f.logged ? "no BMs logged" : "nothing logged"}` } : { v: f.count, shift: !!u && !f.inCount, tip: `${short(f.d)} · ${f.count === 0 ? "No BM" : plural(f.count, "BM")}${f.today ? " so far" : ""}` }));
         cvals = vals;
         chart = bars({ w: 326, h: 120, values: vals, yMax: Math.max(3, ...F.map((f) => f.count || 0)), yTicks: [1, 2, 3], band: u ? [u.nLo, u.nHi] : null, bandLabel: u ? `Your usual ${u.nLo} to ${u.nHi}` : null, labels: n <= 7, xTicks: ticks(F), aria: `BMs a day, ${rn}` });
       }
@@ -675,7 +679,7 @@
         u ? `${of.inC} of ${plural(of.known.length, "day")} had ${u.nLo} to ${u.nHi} BMs, your usual.` : "",
         of.busy ? `${plural(of.busy, "day")} had more than ${u.nHi}.` : u ? `No days had more than ${u.nHi}.` : "",
         of.zero ? `${plural(of.zero, "day")} logged as No BM.` : "",
-        of.gaps ? `${plural(of.gaps, "day")} with nothing logged stay gaps. A gap never counts as a day with no BM.` : "",
+        of.gaps ? `${plural(of.gaps, "day")} with no BMs logged ${of.gaps === 1 ? "stays a gap" : "stay gaps"}. A gap never counts as a day with no BM.` : "",
         today && !today.pending ? "Today counts as far as it has gone." : ""
       ];
       return page(M, V, st, "How often", `
@@ -685,7 +689,7 @@
         ${fig("How your days split", plural(splitN, "day"), split)}
         ${shaped(lines)}
         ${askBtn("often")}
-        ${tableOf(["Day", "BMs"], F.slice().reverse().filter((f) => !f.pending).map((f) => [short(f.d), f.count != null ? (f.count === 0 ? "No BM" : String(f.count) + (f.today ? " so far" : "")) : "Not logged"]))}
+        ${tableOf(["Day", "BMs"], F.slice().reverse().filter((f) => !f.pending).map((f) => [short(f.d), f.count != null ? (f.count === 0 ? "No BM" : String(f.count) + (f.today ? " so far" : "")) : f.logged ? "No BMs logged" : "Not logged"]))}
         ${nextBtn("often")}`);
     }
 
@@ -703,12 +707,12 @@
         fm.unsure ? `${plural(fm.unsure, "BM")} logged as a word that covers steps on both sides of your usual could be either, so ${fm.unsure === 1 ? "it isn't" : "they aren't"} counted as within or outside.` : "",
         formSplit(fm),
         ...loose.map((p) => `The morning after ${lower1(foodName(p.food)[0])}, your first BM was ${looseText(mode)} ${p.hit} of ${p.n} times in the last ${L.PATTERN_DAYS} days. It's on Possible patterns.`),
-        B ? "Five words, hardest to loosest: Hard covers the two hardest steps and Loose the two just before Watery." : Cw ? "Seven words, from Pellets, the hardest, to Watery, the loosest." : "Types run from 1, hardest, to 7, loosest. It's the scale clinicians use."
+        B ? "Five words, hardest to loosest: Hard covers the two hardest steps and Loose the two just before Watery." : Cw ? "Seven words, from Pellets, the hardest, to Watery, the loosest." : "Types run from 1, hardest, to 7, loosest."
       ];
       return page(M, V, st, "Form", `
-        ${hero("Most common form", fm.bms.length ? esc(fm.top.label) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${L.usualFormsText(M, mode)}`, "plain")}${fm.bms.length ? chip(`${fm.inF} of ${plural(fm.bms.length, "BM")} within`, "usual") : ""}`, now)}
+        ${hero("Most common form", fm.bms.length ? esc(fm.top.label) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${L.usualFormsText(M, mode)}`, "plain")}${fm.bms.length ? chip(`${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, "usual") : ""}`, now)}
         ${tabs}
-        ${fig(u ? `${fm.inF} of ${fm.bms.length} BMs within your usual forms` : "Forms so far", plural(fm.bms.length, "BM"), fm.bms.length ? hist({ w: 326, bins: fm.bins, h: 100, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${rn}` }) : "", u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "")}
+        ${fig(u ? `${fm.inF} of ${fm.bms.length - fm.unsure} BMs within your usual forms` : "Forms so far", plural(fm.bms.length, "BM"), fm.bms.length ? hist({ w: 326, bins: fm.bins, h: 100, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${rn}` }) : "", u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "")}
         ${fig("Each BM, day by day", B ? "Hard at the bottom" : Cw ? "Pellets at the bottom" : "Type 1 at the bottom", formDots({ days: F.filter((f) => !f.pending), mode, usual: u, h: 110, aria: `Each BM's form, ${rn}` }), `${lg("", "Within your usual")}${u ? lg("sw--shift", "Outside it") + lg("sw--band", "Your usual") : ""}${fm.unsure ? lg("sw--maybe", "Could be either") : ""}${lg("sw--ring", "Newest")}`)}
         ${shaped(lines)}
         ${askBtn("form")}
@@ -739,7 +743,7 @@
         ${tabs}
         ${fig(sy.withSym.length ? `Symptoms on ${sy.withSym.length} of ${sy.logged.length} days` : "No symptoms logged", n >= 90 ? "By week" : RANGE_NAME[n], sy.rows.length ? symChart(M, mode, F, n, sy.rows, 326) : "", sy.rows.length ? symLegend(n, F.some((f) => !f.logged && !f.pending)) : "")}
         ${trows.length && P2.prev.length ? `<div class="ap-trows" data-a>${trows.map((r) => `<div class="ap-trow"><b>${esc(r.name)}</b><span>${esc(plural(r.c, "day"))}<em>${esc(`${r.p} before`)}</em></span>${chip(r.w.text, r.w.tone)}</div>`).join("")}</div>` : ""}
-        <section class="ap-sect ap-sect--care" data-a><h3>When to talk to a clinician</h3><p>Some changes need a person, not an app. Blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain, or pain that wakes you up: contact your healthcare provider.</p></section>
+        <section class="ap-sect ap-sect--care" data-a><h3>When to talk to a clinician</h3><p>Some changes need a person, not an app. Blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain or waking at night to go: start with primary care soon.</p></section>
         ${shaped(lines)}
         ${askBtn("sym")}
         ${tableOf(["Day", "Symptoms"], F.slice().reverse().filter((f) => f.nsym).map((f) => [short(f.d), Object.entries(f.sym).map(([nm, s]) => `${nm}, ${sWord(s)}`).join("; ")]))}
@@ -751,12 +755,12 @@
       const due = M.checkin.status === "due";
       const rows = K.b ? L.CHECKIN.map((q, i) => `<li class="ap-ckr-row"><div class="ap-ckr-top"><span class="ap-k">${esc(q.label)}</span>${chip(K.cmp[i].text, K.cmp[i].k === "same" ? "usual" : "shift")}</div><b>${esc(q.opts[K.latest.answers[i]])}</b>${RU.ckTrend(M, i, K.cur ? K.cur.answers[i] : null)}</li>`).join("") : "";
       const lines = K.b ? [
-        `Your starting point is your first three check-ins, ${RU.spanText(K.done[0].ws, K.done[2].ws + 6)}. Each week sits next to them. No score and no bands.`,
+        `Your starting point is your first three check-ins, ${RU.spanText(K.done[0].ws, K.done[2].ws + 6)}. Each week sits next to them. No score and no severity labels.`,
         K.skipped.length ? `You skipped the week of ${join(K.skipped.map((c) => short(c.ws)))}. A skipped week stays a gap.` : "",
         "About the same means inside the range of your first three weeks. Moved means outside it, in either direction."
       ] : [];
       return page(M, V, st, "Weekly check-in", `
-        <div class="ap-dhero" data-a><span class="ap-k">${esc(K.latest ? (K.cur ? `This week · ${RU.spanText(84, 90)}` : `Week of ${short(K.latest.ws)}`) : "Weekly check-in")}</span><h2 class="ap-idt-h">${esc(K.b ? ckHead(K) : due ? "Your first check-in is due tonight" : "Your first check-in is saved")}</h2>${due ? `<div class="ap-idt-cta"><button type="button" class="ap-btn" data-act="ck-start">${M.ckDraft && M.ckDraft.step > 0 ? "Continue this week's" : "Check in for this week"}</button></div>` : ""}</div>
+        <div class="ap-dhero" data-a><span class="ap-k">${esc(K.latest ? (K.cur ? `This week · ${RU.spanText(84, 90)}` : `Week of ${short(K.latest.ws)}`) : "Weekly check-in")}</span><h2 class="ap-idt-h">${esc(K.b ? ckHead(K) : due ? "Your first check-in is due tonight" : "Your first check-in is saved")}</h2>${due ? `<div class="ap-idt-cta"><button type="button" class="ap-btn ap-btn--2" data-act="ck-start">${M.ckDraft && M.ckDraft.step > 0 ? "Continue this week's" : "Check in for this week"}</button></div>` : ""}</div>
         ${K.b ? `<ul class="ap-ckr-list" data-a>${rows}</ul><div class="ap-legend" data-a>${lg("sw--band", "Your first three weeks")}${lg("ap-ckt-sw--past", "Each week")}${lg("ap-ckt-sw--now", K.cur ? "This week" : "Latest week")}</div>` : `<p class="ap-sect-p" data-a>Your first three check-ins become the starting point. After that, each week is compared with them, and the trend shows here.</p>`}
         ${shaped(lines)}
         ${askBtn("ck")}
@@ -800,7 +804,7 @@
         const after = F90.map((f, i) => (p.occ.some((o) => o.d === f.d) ? i : -1)).filter((i) => i >= 0);
         const ctx = [{ label: `${foodName(p.food)[0]} the day before`, idx: after }];
         chart = p.kind === "loose"
-          ? fig("First BM each morning", RANGE_NAME[L.PATTERN_DAYS], formDots({ days: F90, mode, usual: u, firstOnly: true, h: 100, ctx, aria: `First BM form each morning, with ${lower1(foodName(p.food)[0])} the day before marked` }), `${lg("", "Within your usual")}${lg("sw--shift", "Outside it")}${lg("sw--ctxbar", `${foodName(p.food)[0]} the day before`)}`)
+          ? fig("First BM each morning", RANGE_NAME[L.PATTERN_DAYS], formDots({ days: F90, mode, usual: u, firstOnly: true, h: 100, ctx, aria: `First BM form each morning, with ${lower1(foodName(p.food)[0])} the day before marked` }), `${lg("", "Within your usual")}${lg("sw--shift", "Outside it")}${F90.some((f) => f.bms.length && L.inForms(M, f.bms[0], mode) === null) ? lg("sw--maybe", "Could be either") : ""}${lg("sw--ring", "Newest")}${lg("sw--ctxbar", `${foodName(p.food)[0]} the day before`)}`)
           : fig("Bloating, day by day", RANGE_NAME[L.PATTERN_DAYS], symRows({ w: 326, days: F90, rows: [{ name: "Bloating", n: F90.filter((f) => has(f, "Bloating")).length }], ctx, aria: `Bloating by day, with ${lower1(foodName(p.food)[0])} the day before marked` }), `${lg("sw--sym1", "Mild")}${lg("sw--sym3", "Stronger")}${lg("sw--ctxbar", `${foodName(p.food)[0]} the day before`)}`);
       }
       const unit = `<div class="ap-units">
@@ -834,7 +838,7 @@
     const F = L.span(M, n, mode), rn = u ? RANGE_NAME[n].toLowerCase() : "so far";
     if (k === "timing") { const tm = timingOf(M, F); return { title: `Timing · ${rn}`, facts: u ? [`Your usual window: ${winText(u)}`, `${tm.inW} of ${plural(tm.mornings.length, "morning")} in it`, tm.later.length ? `${tm.laterAfterLate} of ${plural(tm.later.length, "later morning")} came after a dinner past 8 PM` : "No later mornings"] : [`First BM on ${plural(tm.mornings.length, "morning")}`], qs: ["Why do some mornings run later?", "What sets my usual window?", "What could I try this week?"] }; }
     if (k === "often") { const of = oftenOf(M, F); return { title: `How often · ${rn}`, facts: u ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `${of.inC} of ${plural(of.known.length, "day")} within`] : [`${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`], qs: ["What made my busier days different?", "Why does a gap not count as zero?", "How is my usual worked out?"] }; }
-    if (k === "form") { const fm = formOf(M, F, mode); return { title: `Form · ${rn}`, facts: u ? [`Your usual: ${L.usualFormsText(M, mode)}`, `${fm.inF} of ${plural(fm.bms.length, "BM")} within`, `Most common: ${fm.top.label}`] : [`${plural(fm.bms.length, "BM")} so far`], qs: ["What do the forms mean?", "Why were some BMs looser?", "When should I mention a change to a clinician?"] }; }
+    if (k === "form") { const fm = formOf(M, F, mode); return { title: `Form · ${rn}`, facts: u ? [`Your usual: ${L.usualFormsText(M, mode)}`, `${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, fm.top ? `Most common: ${fm.top.label}` : "No BMs yet"] : [`${plural(fm.bms.length, "BM")} so far`], qs: ["What do the forms mean?", "Why were some BMs looser?", "When should I mention a change to a clinician?"] }; }
     if (k === "sym") { const sy = symOf(M, F); return { title: `Symptoms · ${rn}`, facts: [u ? `Your usual: ${lower1(symUsualText(u))}` : "Learning your usual", `Symptoms on ${sy.withSym.length} of ${plural(sy.logged.length, "day")}`, sy.rows.length ? `Mostly ${sy.rows[0].name.toLowerCase()}${sy.how ? `, usually ${sy.how}` : ""}` : "None logged"], qs: ["What tends to come before my bloating?", "When should I talk to a clinician?", "How do I log symptoms well?"] }; }
     if (k === "ck") { const K = ckOf(M); return { title: "Weekly check-in", facts: K.b ? [ckHead(K), `Compared with ${RU.spanText(K.done[0].ws, K.done[2].ws + 6)}`, `${plural(K.done.length + (K.cur ? 1 : 0), "check-in")} so far`] : ["Your first check-ins set your starting point"], qs: ["What changed since I started?", "How is my starting point set?", "What should I note this week?"] }; }
     if (k === "pat") { const PR = L.patterns(M, mode); return { title: `Possible patterns · last ${L.PATTERN_DAYS} days`, facts: PR.found.length ? PR.found.slice(0, 3).map((p) => `${patTitle(p)}: ${p.hit} of ${p.n} times`) : ["Nothing stands out yet"], qs: ["How sure are these patterns?", "How do I test one?", "Why does a food need 5 logs?"] }; }

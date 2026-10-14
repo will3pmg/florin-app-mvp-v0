@@ -522,7 +522,8 @@
 .ap-askq { min-height: 44px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); font-size: 14px; line-height: 1.35; text-align: left; }
 .ap-askbar { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 4px 4px 16px; border-radius: 999px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); }
 .ap-askbar-in { flex: 1; min-width: 0; font-size: 14px; color: var(--ap-ink3); }
-.ap-askbar-b { width: 40px; height: 40px; border-radius: 50%; background: var(--ray); color: var(--forest); display: grid; place-items: center; flex: none; }
+/* Forest, Cream in dark: Ray stays on logging */
+.ap-askbar-b { width: 40px; height: 40px; border-radius: 50%; background: var(--ap-ink); color: var(--ap-bg); display: grid; place-items: center; flex: none; }
 .ap-askbar-b .ic { width: 18px; height: 18px; stroke-width: 2; }
 
 /* chart marks from the data vis board (board-dataviz.css), scoped to the app */
@@ -549,6 +550,8 @@
 .ap-rx .dv-bar.is-shift { fill: var(--ap-shift); }
 .ap-rx .dv-bar.is-out { fill: var(--ap-ink3); opacity: .42; }
 .ap-rx .dv-zero { fill: var(--ap-card); stroke: var(--ap-shift); stroke-width: 1.8; }
+/* before there's a usual, No BM is just a reading: no Gold */
+.ap-rx .dv-zero.is-plain { stroke: var(--ap-ink2); }
 .ap-rx .dv-chart .dv-val { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
 .ap-rx .dv-med { stroke: var(--ap-ink); stroke-width: 2.2; stroke-linecap: round; }
 .ap-rx .dv-chart .dv-medlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-ink); }
@@ -572,6 +575,7 @@
 .ap-rx .ap-legend .sw--ring { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-chart); }
 .ap-rx .ap-legend .sw--ctxbar { width: 10px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
 .ap-rx .ap-legend .sw--zero { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-shift); }
+.ap-rx .ap-legend .sw--zero.sw--plain { box-shadow: inset 0 0 0 2px var(--ap-ink2); }
 .ap-rx .ap-legend .sw--out { background: var(--ap-ink3); opacity: .42; }
 .ap-rx .ap-legend .sw--maybe { background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .ap-rx .ap-legend .sw--sym1 { width: 5px; height: 5px; opacity: .5; }
@@ -633,6 +637,9 @@
 /* how long it lasted: four equal chips, two by two */
 .ap-chs--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ap-chs--grid > .ap-ch { justify-content: center; }
+/* seven days in one row: a grid with a narrow gap, so each day is 44px wide at phone width */
+.ap-chs--week { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 4px; }
+.ap-chs--week > .ap-ch { padding-inline: 0; }
 /* a symptom logged without a strength: present, strength not given */
 .ap-wk-sq--0 { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
 /* small controls keep their size on screen and get a finger-sized hit area (44px or more) */
@@ -642,7 +649,16 @@
 .ap-rx .ap-hi-filter::after { content: ""; position: absolute; inset: -8px 0; }
 .ap-rx .ap-avatar::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 /* Insights: the range tabs, and Ask's clear and send */
-.ap-rx .ap-seg--range button, .ap-rx .ap-askc-x, .ap-rx .ap-askbar-b { position: relative; }
+.ap-rx .ap-seg--range button, .ap-rx .ap-askc-x, .ap-rx .ap-askbar-b, .ap-rx .ap-ask-b, .ap-rx .ap-back, .ap-rx .ap-table summary, .ap-rx .ap-btn--c { position: relative; }
+.ap-rx .ap-ic-h { min-height: 44px; }
+/* the rest of the app's small controls, at 44 by 44 */
+.ap-rx .ap-ch, .ap-rx .ap-hi-filter { min-width: 44px; justify-content: center; }
+.ap-rx .ap-sy-more, .ap-rx .ap-hi-more { position: relative; }
+.ap-rx .ap-sy-more::after, .ap-rx .ap-hi-more::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-rx .ap-ask-b::after, .ap-rx .ap-table summary::before { content: ""; position: absolute; inset: -8px 0; }
+.ap-rx .ap-back::after, .ap-rx .ap-btn--c::after { content: ""; position: absolute; inset: -4px 0; }
+/* the screen scrolls under the sticky detail header and the floating tab bar: focus stops clear of both */
+.ap-rx .ap-layer { scroll-padding-top: 120px; scroll-padding-bottom: 120px; }
 .ap-rx .ap-seg--range button { min-width: 48px; }
 .ap-rx .ap-seg--range button::after { content: ""; position: absolute; inset: -8px 0; }
 .ap-rx .ap-askc-x::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
@@ -684,6 +700,12 @@
 .ap-rx .ap-fine { color: var(--ap-ink2); }
 /* anything a person reads is Ink 2; Ink 3 is for axis ticks, placeholders and the disabled Save */
 .ap-rx :where(.ap-f-l, .ap-tl-t, .ap-legend, .ap-k:not(.ap-k--ray), .ap-date, .ap-fsh-t p, .ap-hi-sub, .ap-tb-b) { color: var(--ap-ink2); }
+/* Insights and Ask: the same rule for their small text, with enough weight to beat the studio's own Ink 3 rules.
+   Ink 3 stays for axis ticks and the Ask bar's placeholder */
+.ap-rx :is(.ap-ic-note, .ap-askc-note, .ap-ipat-m em, .ap-sum-counts li, .ap-idt-now-h em, .ap-idt-next em, .ap-figcap span, .ap-figcap-note, .ap-table th, .c-meter em, .ap-big small, .ap-sure em),
+.ap-rx .ap-seg--range button:not([aria-pressed="true"]) { color: var(--ap-ink2); }
+/* the pattern tiers: the one that applies has its ring; the others stay readable, not faded */
+.ap-rx .ap-sure span { opacity: 1; }
 /* on Forest (the plus card, the hero, the toast) the focus ring is Ray, so it shows */
 .ap-rx :is(.ap-pbm, .ap-hl, .ap-tst) :focus-visible { outline-color: var(--ray); }
 .ap-rx[data-theme="dark"] .ap-tst :focus-visible { outline-color: var(--forest); }
