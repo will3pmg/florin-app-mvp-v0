@@ -294,7 +294,17 @@
   /* ---------- the model one phone works on ----------
      mode "est": twelve weeks of logs, check-ins answered every Sunday but one, tonight's due.
      mode "new": started five days ago, still learning their usual, nothing logged yet today, first check-in due. */
-  L.build = (personaId, mode) => {
+  /* what a demo person logs for meals. Will (Oct 14): meal logging happens when things feel off, not every day.
+     "all" is every day, as seeded; "rough" keeps a day's meals only when that day has a symptom logged (what someone
+     writes down when things feel off); "none" logs no meals at all */
+  L.MEAL_LOGS = [["all", "Every day"], ["rough", "Rough days only"], ["none", "None"]];
+  const keepMeals = (days, how) => {
+    if (how === "all") return;
+    const sym = (d) => { const x = days.find((y) => y.d === d); return !!x && x.entries.some((e) => e.kind === "sym"); };
+    days.forEach((x) => { if (how === "none" || !sym(x.d)) x.entries = x.entries.filter((e) => e.kind !== "meal"); });
+  };
+
+  L.build = (personaId, mode, opts = {}) => {
     const A = AD.get(personaId);
     const P = A.persona, U = A.U;
     const start = mode === "new" ? TODAY - 4 : 0;
@@ -302,7 +312,8 @@
     for (let d = start; d < TODAY; d++) if (!isGap(P, d)) meals[d] = mealsOf(A, d);
     const days = [];
     for (let d = start; d <= TODAY; d++) days.push(dayOf(A, d, mode, meals));
-    const M = { A, P, persona: P, mode, start, days, seq: 0 };
+    keepMeals(days, opts.meals || "all");
+    const M = { A, P, persona: P, mode, start, days, seq: 0, meals: opts.meals || "all" };
 
     if (mode === "new") {
       M.usual = null;
@@ -445,6 +456,8 @@
   L.isLoose = (e) => Math.min(...L.stepsOf(e)) >= L.LOOSE_AT;
   L.PATTERN_DAYS = 90;
   L.PATTERN_BAR = { n: 5, rate: 0.6, p: 0.01 };
+  L.MEAL_COVER = 0.6; /* share of logged days with a meal before meal patterns are read */
+  L.FOOD_CHECK_DAYS = 14;
   const choose = (n, k) => { let c = 1; for (let i = 1; i <= k; i++) c = (c * (n - k + i)) / i; return c; };
   /* the chance of k or more of n by luck alone, if each held as often as on other days */
   const tail = (k, n, p) => { let s = 0; for (let i = k; i <= n; i++) s += choose(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i); return s; };
@@ -482,9 +495,77 @@
       tests.push(test(`${food}:loose`, "loose", food, has, ate, (f) => L.isLoose(f.bms[0]), (f) => f.bms[0]));
       tests.push(test(`${food}:bloat`, "bloat", food, has, ateDays, (f) => f.sym.Bloating != null, (f) => (f.sym.Bloating != null ? f.sym.Bloating : null)));
     });
-    const found = tests.filter((t) => t.show).sort((a, b) => b.tier.k - a.tier.k || b.rate - a.rate || b.n - a.n);
-    const quiet = checked.filter((food) => !found.some((t) => t.food === food));
-    return { found, tests, checked, quiet, waiting, counts, lateCount, d0 };
+    /* meals logged on only some days (most often the rough ones) leave no ordinary days to compare with, and name
+       foods by selection alone (in testing, Sarah with meals kept around rough days: toast, 13 of 19). Under 60% of
+       logged days with a meal, every meal pattern, late dinners included, is held back and Insights offers a food check */
+    const logged = days.length, withMeal = days.filter((f) => f.meals.length).length;
+    const coverage = logged ? withMeal / logged : 0;
+    const sparse = coverage < L.MEAL_COVER;
+    const shown = sparse ? [] : tests.filter((t) => t.show);
+    const found = shown.sort((a, b) => b.tier.k - a.tier.k || b.rate - a.rate || b.n - a.n);
+    const quiet = sparse ? [] : checked.filter((food) => !found.some((t) => t.food === food));
+    return { found, tests, checked: sparse ? [] : checked, quiet, waiting: sparse ? [] : waiting, counts, lateCount, d0, coverage, sparse, withMeal, logged };
+  };
+
+  /* ---------- FloraScore, from manual logs ----------
+     The studio's FloraScore rebuilt for logs. Four parts, each 0 to 100 against the person's own usual: Timing (the first
+     BM against the usual window), How often (BMs against the usual count), Form (BMs within the usual forms) and Comfort
+     (symptoms that day). Weighted as the studio weights its four (30, 25, 25, 20), blended over the last 3 days that have
+     logs, then mapped the way the studio maps it. A day with nothing said about BMs is left out, never scored as a zero;
+     fewer than 2 such days in the last 3 means no score that day. There is no score until there's a usual (day 14).
+     A symptom logged without a strength weighs like the lightest one in Comfort, and is never called mild. Every number
+     is read against the person's own usual range, never as a grade. */
+  L.SCORE_W = { timing: 0.3, often: 0.25, form: 0.25, comfort: 0.2 };
+  L.SCORE_PARTS = [
+    ["timing", "Timing", "How close your first BM came to your usual window"],
+    ["often", "How often", "BMs a day compared with your usual"],
+    ["form", "Form", "How many BMs sat within your usual forms"],
+    ["comfort", "Comfort", "Symptoms you logged, and how strong"]
+  ];
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  const mapScore = (raw) => 63 + ((raw - 80) * 21) / 16;
+  L.dayParts = (M, x, mode) => {
+    const u = M.usual;
+    if (!u || !x) return null;
+    const f = L.facts(M, x, mode);
+    if (!f.logged || f.count == null) return null;
+    const mid = (u.tLo + u.tHi) / 2;
+    const timing = f.first == null ? 55 : f.inWin ? 100 - Math.abs(f.first - mid) * 7 : cl(88 - (f.first < u.tLo ? u.tLo - f.first : f.first - u.tHi) * 32, 40, 88);
+    const often = f.count === 0 ? 55 : f.count >= u.nLo && f.count <= u.nHi ? 97 : f.count === u.nHi + 1 ? 76 : 62;
+    let form = 60;
+    if (f.bms.length) { const s = f.bms.map((b) => L.inForms(M, b, mode)); form = 62 + 36 * (s.reduce((a, v) => a + (v === true ? 1 : v === null ? 0.5 : 0), 0) / s.length); }
+    const ss = Object.values(f.sym), mx = ss.length ? Math.max(...ss.map((s) => s || 1)) : 0;
+    const comfort = [97, 82, 67, 55][mx];
+    return { timing, often, form, comfort };
+  };
+  L.score = (M, d, mode) => {
+    if (!M.usual) return null;
+    const P = [];
+    for (let k = d; k > d - 3 && k >= M.start; k--) { const p = L.dayParts(M, L.day(M, k), mode); if (p) P.push(p); }
+    if (P.length < 2) return { d, value: null, n: P.length };
+    const parts = {};
+    Object.keys(L.SCORE_W).forEach((k) => (parts[k] = Ut.mean(P.map((p) => p[k]))));
+    const raw = Object.keys(L.SCORE_W).reduce((s, k) => s + L.SCORE_W[k] * parts[k], 0);
+    return { d, value: cl(Math.round(mapScore(raw)), 0, 100), parts, raw, n: P.length };
+  };
+  /* the usual range: the middle 70% of the person's daily scores in the weeks the other usuals come from */
+  L.scoreUsual = (M, mode) => {
+    if (!M.usual) return null;
+    const v = [];
+    for (let d = Math.max(28, M.start); d <= 83; d++) { const s = L.score(M, d, mode); if (s && s.value != null) v.push(s.value); }
+    return v.length >= 7 ? [Math.round(Ut.pct(v, 0.15)), Math.round(Ut.pct(v, 0.85))] : null;
+  };
+  L.scoreSeries = (M, n, mode) => { const out = []; for (let d = Math.max(M.start, TODAY - n + 1); d <= TODAY; d++) out.push(L.score(M, d, mode) || { d, value: null }); return out; };
+  /* what moved it: this week's average of each part against last week's, in score points */
+  L.scoreMoved = (M, mode) => {
+    if (!M.usual) return null;
+    const avg = (a, b) => { const s = []; for (let d = a; d <= b; d++) { const x = L.score(M, d, mode); if (x && x.value != null) s.push(x); } return s; };
+    const wk = avg(84, TODAY), lw = avg(77, 83);
+    if (!wk.length || !lw.length) return null;
+    const mean = (s, k) => Ut.mean(s.map((x) => (k ? x.parts[k] : x.value)));
+    const f = 21 / 16;
+    const parts = Object.keys(L.SCORE_W).map((k) => ({ key: k, weight: L.SCORE_W[k], now: Math.round(mean(wk, k)), before: Math.round(mean(lw, k)), delta: f * L.SCORE_W[k] * (mean(wk, k) - mean(lw, k)) }));
+    return { wk: mean(wk), lw: mean(lw), delta: Math.round(mean(wk) - mean(lw)), parts };
   };
 
   /* ---------- changing the model ---------- */

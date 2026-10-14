@@ -65,9 +65,22 @@
         layer.classList.add("ap-anim");
         clearTimeout(layer._t);
         layer._t = setTimeout(() => layer.classList.remove("ap-anim"), 1400);
+        countUp(layer);
       }
       layer.scrollTop = soft ? y : 0;
       tb.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-current", String(b.dataset.tab === S.tab)));
+    }
+    /* big numerals (data-count) count up as a screen draws in; with reduced motion they're simply there */
+    function countUp(el) {
+      if (reduced()) return;
+      el.querySelectorAll("[data-count]").forEach((n) => {
+        const to = +n.dataset.count;
+        if (!isFinite(to)) return;
+        const t0 = performance.now(), dur = 1100;
+        const step = (t) => { const k = Math.min(1, (t - t0) / dur); n.textContent = String(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
+        n.textContent = "0";
+        requestAnimationFrame(step);
+      });
     }
     /* when the screen under the tab bar is replaced, focus lands on what the person moved to, or its heading */
     function focusSel(sel) {
@@ -623,6 +636,7 @@
         case "ckday": go("today"); push("ckday", Object.assign({}, S.M.ckDay), now); break;
         case "history": go("history"); break;
         case "insights": ins(null); break;
+        case "i-score": ins("score"); break;
         case "i-timing": ins("timing"); break;
         case "i-often": ins("often"); break;
         case "i-form": ins("form"); break;
@@ -746,7 +760,7 @@
       ["A skipped check-in: stay skipped, or move to the next day?", "Stays skipped. One reminder only. One left alone (not skipped) stays on Today through Tuesday evening, then the week closes as a gap.", "Skip built; the Tuesday rule needs your OK"],
       ["The six symptoms?", "Bloating, Belly pain, Cramping, Gas, Nausea and Low energy, plus the person's own. Burning moves to the BM, where today's app used it.", "Built; needs your OK"],
       ["Black or tar-like on the flag?", "Yes, with its own line. Built with one more line for a lot of blood or feeling faint: get urgent care now. It goes beyond primary care first, so it needs the regulatory pass before it ships.", "Built; regulatory pass"],
-      ["A FloraScore from manual logs?", "No. It would move whenever someone forgets to log, and read as a grade. The Forest card on Today keeps the slot for Florin One.", "Built"],
+      ["A FloraScore from manual logs?", "Yes, as Will asked on Oct 14: it ties Florin to the score people know from Oura. Built from four things people log (timing, how often, form, symptoms), blended over the last 3 logged days, so a day not logged is left out rather than scored as zero, and always read against the person's own usual range. When Florin One ships, gas readings join as a fifth part.", "Built; needs your OK on the four parts"],
       ["Check-in baseline: the first three answered check-ins?", "Yes. Later, offer a way to start fresh from the next three.", "Built"],
       ["BM or visit?", "BM. It's what today's app says. Keep visit for what Florin One detects. The studio's claims rule should suggest BM, not visits.", "Built here; the studio rule to change"],
       ["Which BM extras stay?", "All of them show under the form now, as Will asked on Oct 14, so each costs height, not a tap. Keep the flag for safety and Sudden urge to go for IBS-D. Burning and Didn't feel finished are the first to cut if the form feels long.", "Inline now; needs your call on which stay"],
@@ -764,14 +778,14 @@
   const NOTES = {
     today: (M) => ({
       t: "Today",
-      lede: "Today opens on one sentence that sets the day next to the person's usual, then the check-in when it's due, the day's entries, and the week as three plain counts.",
+      lede: "Today opens on FloraScore: the studio's Forest card with the Ray ring, the usual range drawn on the ring, 30 days under it, and the day's one sentence. Then the check-in when it's due, the day's entries, and the week as three plain counts.",
       ba: [
-        ["A FloraScore over a lake photo, with a progress bar", "One sentence, read against the person's usual window. No score until the sensor ships"],
+        ["A FloraScore over a lake photo, with a progress bar", "FloraScore from the logs, on the ring with the person's usual range, and one sentence read against their usual window"],
         ["A week strip with a ring for each day you logged", "Three counts in plain words (BMs, first BM, symptoms), each over a seven-day strip. A gap is marked on its day, never as a zero"],
         ["A generic daily tip about 8 glasses of water", "No tips. One next step from what today is missing, like a dinner not logged yet"],
         ["First pass: a 6 AM to midnight chart above the list", "Cut. It repeated the list, and the list is the one timeline"]
       ],
-      open: ["FloraScore stays off Today until the sensor ships. Agree?", "The check-in card sits second on the evening it's due, then folds to one line once done. Right place?", "Does History stay a tab, or move under Today?"],
+      open: [M.usual ? `FloraScore is back (Will, Oct 14), built from four things people log: timing, how often, form and symptoms. ${M.P.name} is at ${(L.score(M, L.TODAY, "C") || {}).value} today against a usual range of ${(L.scoreUsual(M, "C") || []).join(" to ")}. A day not logged is left out, never scored as zero. Are those the right four?` : `New people see the ring fill by day until day ${L.LEARN_DAYS}, then their first FloraScore. Right wait?`, "The check-in card sits second on the evening it's due, then folds to one line once done. Right place?", "Does History stay a tab, or move under Today?"],
       res: ["Oura's Today: one daily highlight, then a timeline you can add to.", "Function leads with summary counts in plain terms. Each row here leads with its count.", "Oura waits up to 2 weeks before judging anything. Switch Logs to New, day 5 to see the learning state."]
     }),
     plus: () => ({
@@ -912,6 +926,17 @@
       ].filter(Boolean),
       res: ["Function opens on summary counts, in range and out of range, with a pending state. The summary card does the same, in the person's terms.", "Oura's Vitals: one card per metric with the personal baseline, a down-arrow for what shaped it, a side-arrow into the detail.", "Oura waits up to 2 weeks before judging anything. Switch Logs to New, day 5 to see the learning state.", "Oura shows a Discovery only after a tag is used about 5 to 40 times, as one plain sentence."]
     }),
+    "i-score": (M, f) => ({
+      t: "FloraScore, the detail",
+      lede: "The studio's FloraScore detail on manual logs: today on the ring with the usual range, where today sits in the last 90 days, the trend, what moved it this week, the four parts, and how it works, with the line that it isn't a medical score.",
+      ba: [
+        ["A score from gas readings only, or no score at all", "Four parts from what people log: timing 30%, how often 25%, form 25%, comfort 20%, the studio's weights"],
+        ["A day without logs scored as zero", "Left out. Fewer than 2 logged days in the last 3 means no score that day, said in words"],
+        ["Optimal, Good, Fair, Pay attention", "Within, a little above, or below your usual range. No grades, no red"]
+      ],
+      open: [M.usual ? `The option changes the score through Form: ${["A", "B", "C"].map((m) => `${m} ${(L.score(M, L.TODAY, m) || {}).value}`).join(", ")} today for ${M.P.name}. Fine, or score Form on steps only?` : "", "Comfort counts a symptom logged without a strength like the lightest one. Right?", "When Florin One ships, gas readings join as a fifth part. Keep the four weights as they are, or rebalance then?"].filter(Boolean),
+      res: ["FloraScore was a must-have for 44% of people spending $200+ a year on gut health, and for 40% of women (studio research).", "Oura: a score up front, contributors you can open, and up to 2 weeks of learning before it judges anything."]
+    }),
     "i-timing": (M) => ({
       t: "Timing, the detail",
       lede: "The detail template: the typical value and today against the usual, range tabs, the main chart, a second chart, What shaped this folded away, Ask about this, the table, and Next to move on.",
@@ -981,10 +1006,10 @@
   const SCREENS = [
     ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["compare-bm", "Log a BM, A, B and C side by side"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log a meal"]]],
     ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
-    ["Insights", [["insights", "Insights"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
+    ["Insights", [["insights", "Insights"], ["i-score", "FloraScore"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
     ["Tabs", [["today", "Today"], ["history", "History, basic"], ["ask", "Ask Florin"]]]
   ];
-  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", "ask-about": "ask-about", nobm: "today", "i-timing": "i-timing", "i-often": "i-often", "i-form": "i-form", "i-sym": "i-sym", "i-ck": "i-ck", "i-pat": "i-pat", "i-pattern": "i-pattern" }[k] || "today");
+  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", "ask-about": "ask-about", nobm: "today", "i-score": "i-score", "i-timing": "i-timing", "i-often": "i-often", "i-form": "i-form", "i-sym": "i-sym", "i-ck": "i-ck", "i-pat": "i-pat", "i-pattern": "i-pattern" }[k] || "today");
 
   /* ====================================================================== */
   /* THE PAGE                                                                */
@@ -1121,7 +1146,7 @@
     /* disclaimers are left out of the scan, as in the studio: they name what Florin doesn't do on purpose */
     const src = ph.el.querySelector(".ap-o:not(.is-out):last-child .ap-o-p") || ph.el.querySelector(".ap-layer");
     const clone = src.cloneNode(true);
-    clone.querySelectorAll(".ap-fine, svg").forEach((n) => n.remove());
+    clone.querySelectorAll(".ap-fine, [data-disclaimer], svg").forEach((n) => n.remove());
     const text = clone.textContent.replace(/\s+/g, " ");
     const hits = checkClaims(text);
     const html = `<article class="rx-note">

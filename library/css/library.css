@@ -1,0 +1,43 @@
+/* Florin data looks: the page around the cards (.lb-). The cards themselves sit inside .ap and use the app's tokens.
+   Spacing and radii on the DESIGN.md scales. */
+.lb { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 32px; }
+.lb-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.lb-head { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.lb-head h1 { margin: 0; font-weight: 300; font-size: clamp(36px, 6vw, 56px); line-height: 1.04; letter-spacing: -.03em; text-wrap: balance; }
+.lb-lede { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 66ch; }
+
+.lb-ctls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; padding: 16px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); }
+.lb-ctl { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lb-ctl-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.lb-seg, .lb-tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.lb-seg button, .lb-tabs button, .lb-replay { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: none; font: 500 13px/1 var(--sans); color: var(--ink-2); cursor: pointer; }
+.lb-seg button[aria-pressed="true"], .lb-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.lb-replay { margin-left: auto; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); }
+.lb :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+.lb-tabs { align-self: flex-start; }
+.lb-looks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.lb-look { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); min-width: 0; }
+.lb-look h2 { margin: 0; font-weight: 400; font-size: 24px; letter-spacing: -.01em; }
+.lb-look p { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+
+.lb-row { display: flex; flex-direction: column; gap: 16px; padding-top: 24px; border-top: 1px solid var(--line); }
+.lb-row-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.lb-row-h h2 { margin: 0; font-weight: 400; font-size: 22px; letter-spacing: -.01em; }
+.lb-row-h p { margin: 0; font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-2); }
+.lb-cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.lb-cell { min-width: 0; display: flex; justify-content: center; }
+.lb-cell > .ap { width: 100%; max-width: 390px; padding: 16px; border-radius: 32px; overflow: hidden; }
+.lb-phonecard { width: 100%; max-width: 358px; margin: 0 auto; }
+.lb-missing { margin: 0; padding: 16px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--ap-line); font-size: 13px; color: var(--ap-ink2); }
+.lb-foot { display: flex; flex-direction: column; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.lb-foot p { margin: 0; max-width: 72ch; }
+
+/* under three columns' width, one look at a time, picked with the tabs */
+@media (min-width: 1200px) { .lb-tabs { display: none; } }
+@media (max-width: 1199px) {
+  .lb-looks, .lb-cells { grid-template-columns: minmax(0, 1fr); }
+  .lb [data-off] { display: none; }
+  .lb-replay { margin-left: 0; }
+}
+@media (max-width: 420px) { .lb-cell > .ap { padding: 8px; border-radius: 24px; } }

@@ -176,6 +176,30 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(await p.evaluate(() => { const x = document.querySelector(".rx-stage .ap-rx .ap-xt"); return !!x && !document.querySelector(".rx-stage .ap-rx .ap-det") && x.querySelectorAll('[data-act="how"]').length === 4 && x.querySelectorAll('[data-act="dur"]').length === 3 && x.querySelectorAll('[data-act="flag"]').length === 3; }), "Log a BM shows every extra under the form, with no Add details fold");
   await p.keyboard.press("Escape"); await wait();
 
+  /* 15b. FloraScore: on Today from the logs, left out for a day not logged, and learning until day 14 */
+  const fs = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, out = {};
+    let M = L.build("sarah", "est");
+    const s = L.score(M, L.TODAY, "C"), su = L.scoreUsual(M, "C");
+    out.hero = new RegExp(`data-count="${s.value}"`).test(RU.scoreHero(M, { form: "C", uid: 1 })) && su[0] < su[1];
+    /* a day with nothing logged changes nothing in the blend: it's skipped, not scored as zero */
+    const before = L.score(M, 88, "C").value;
+    L.day(M, 87).logged = false;
+    out.gap = L.score(M, 88, "C").value != null && Math.abs(L.score(M, 88, "C").value - before) < 15 && L.dayParts(M, L.day(M, 87), "C") === null;
+    /* two days missing out of three: no score, said in words */
+    M = L.build("sarah", "est"); L.day(M, 89).logged = false; L.day(M, 88).logged = false;
+    out.none = L.score(M, 89, "C").value === null;
+    M = L.build("sarah", "new");
+    out.learn = L.score(M, L.TODAY, "C") === null && /starts on day 14/.test(RU.scoreHero(M, { form: "C", uid: 1 }));
+    return out;
+  });
+  ok(fs.hero, "Today's hero shows the FloraScore the logs give, with a usual range");
+  ok(fs.gap && fs.none, "a day not logged is left out of FloraScore, and two of three missing means no score");
+  ok(fs.learn, "a new person sees FloraScore start on day 14, not a number");
+  await open("today");
+  await p.click(`${ph} button.ap-hero`); await wait(500);
+  ok(await p.evaluate(() => /FloraScore/.test((document.querySelector(".rx-stage .ap-rx .ap-nav-t") || {}).textContent || "") && document.activeElement && document.activeElement.classList.contains("ap-nav-t")), "the hero opens the FloraScore detail, focus on its title");
+
   /* 16. Insights reads in all three options: six cards, and the form mix in each option's own terms */
   const setForm = (v) => p.evaluate((v) => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === v); b && b.click(); }, v);
   for (const [m, n, lbl] of [["A", 7, "1"], ["B", 5, "Hard"], ["C", 7, "Pellets"]]) {
@@ -184,7 +208,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const cards = await p.$$eval(`${ph} .ap-ins .ap-ic`, (e) => e.length);
     await open("i-form");
     const axis = await p.$$eval(`${ph} .ap-idt .ap-fig:first-of-type .dv-ax`, (e) => e.map((t) => t.textContent));
-    ok(cards === 6 && axis.length === n && axis[0] === lbl, `Insights in ${m}: six cards, the mix as ${n} bins starting ${lbl} (${axis.slice(0, 3).join(", ")})`);
+    ok(cards === 7 && axis.length === n && axis[0] === lbl, `Insights in ${m}: seven cards, the mix as ${n} bins starting ${lbl} (${axis.slice(0, 3).join(", ")})`);
   }
 
   /* 17. a word logged in B that straddles the usual reads as could be either, never as a shift */

@@ -290,10 +290,7 @@
         <button type="button" class="ap-avatar" data-act="toast" data-msg="Profile and settings come later." aria-label="Profile">${esc(M.P.initial)}</button>
       </header>
 
-      <section class="ap-hl" data-a aria-label="Today so far">
-        <span class="ap-k ap-k--ray">Today so far</span>
-        <p class="ap-hl-line">${esc(RU.highlight(M))}</p>
-      </section>
+      ${RU.scoreHero ? RU.scoreHero(M, V) : `<section class="ap-hl" data-a aria-label="Today so far"><span class="ap-k ap-k--ray">Today so far</span><p class="ap-hl-line">${esc(RU.highlight(M))}</p></section>`}
 
       ${ckCard}
 
