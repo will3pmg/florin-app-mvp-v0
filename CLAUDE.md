@@ -86,6 +86,7 @@ NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every
 ## Publishing
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
-page and every css/js file as a published file at the same relative path. The data looks are a separate artifact
-(library/index.html, with the shared prototype css/js published under css/ and js/). Read the artifact before republishing: other
+page and every css/js file as a published file at the same relative path. The data looks are a separate artifact,
+https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (library/index.html, with the shared prototype css/js published under
+css/ and js/). Read the artifact before republishing: other
 sessions publish to it too (the second pass did, on Oct 14), so merge onto what's live rather than overwrite it.
