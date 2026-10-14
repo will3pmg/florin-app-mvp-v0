@@ -49,6 +49,16 @@
 
   const seg = (key, label, opts) => `<div class="lb-ctl"><span class="lb-ctl-l" id="lb-${key}">${esc(label)}</span><div class="lb-seg" role="group" aria-labelledby="lb-${key}">${opts.map(([v, l]) => `<button type="button" data-k="${key}" data-v="${esc(v)}" aria-pressed="${S[key] === v}">${esc(l)}</button>`).join("")}</div></div>`;
 
+  /* the new user's first days come from the prototype model, which starts every person in the same seeded week. Say so
+     when that's the case, worked out from the logs rather than assumed, so the Person switch doesn't look broken */
+  const daysSig = (D) => JSON.stringify(D.days[30].map((f) => [f.d, f.logged, f.first, f.count, f.forms.map((x) => x.name), f.sym.map((y) => `${y.name}${y.strength}`)]));
+  const sameNote = (D) => {
+    if (S.data !== "new" || !D.learning) return "";
+    const mine = daysSig(D);
+    const same = FLD.PERSONAS.every(([p]) => p === S.persona || daysSig(FLD.build(p, { mode: S.mode, data: S.data, meals: S.meals })) === mine);
+    return same ? `<p class="lb-note">${esc(`On day ${D.learning.day}, every person has the same demo BM and symptom logs, so the cards don't change with the person yet.`)}</p>` : "";
+  };
+
   function render() {
     const looks = (window.FLOOKS || []).slice();
     if (!S.look || !looks.some((l) => l.id === S.look)) S.look = looks[0] ? looks[0].id : null;
@@ -63,7 +73,7 @@
       <header class="lb-head">
         <p class="lb-eyebrow">Florin app refresh · Data looks · Oct 14</p>
         <h1>Three looks for the data</h1>
-        <p class="lb-lede">The same person, the same numbers, drawn three ways. Each look takes its cue from Oura: one score up front, parts you can see, charts that move. Every card is built from the refresh's manual logs and keeps Florin's rules: your own usual, never normal; Plum for your usual on light, Ray on dark, Gold for a shift. Pick the one to take through the app.</p>
+        <p class="lb-lede">The same person, the same numbers, drawn three ways. Each look takes its cue from Oura: one score up front, parts you can see, charts that move. Every card is built from the refresh's manual logs and keeps Florin's rules: everything is read against your own usual, with Plum for your usual on light, Ray on dark, and Gold for a shift. Pick the one to take through the app.</p>
       </header>
       <div class="lb-ctls" role="group" aria-label="What the cards show">
         ${seg("persona", "Person", FLD.PERSONAS)}
@@ -72,6 +82,8 @@
         ${seg("meals", "Meal logs", FLD.MEAL_LOGS)}
         ${seg("theme", "Theme", [["light", "Light"], ["dark", "Dark"]])}
         <button type="button" class="lb-replay" data-act="replay">Replay the motion</button>
+        <p class="lb-motion-off">Motion is off because your system asks for reduced motion.</p>
+        ${sameNote(D)}
       </div>
       <nav class="lb-tabs" aria-label="Looks">${looks.map((l) => `<button type="button" data-k="look" data-v="${esc(l.id)}" aria-pressed="${S.look === l.id}">${esc(l.name)}</button>`).join("")}</nav>
       <div class="lb-looks">${looks.map((l) => `<section class="lb-look"${S.look !== l.id ? " data-off" : ""} data-look="${esc(l.id)}"><span class="lb-eyebrow">Look ${looks.indexOf(l) + 1}</span><h2>${esc(l.name)}</h2><p>${esc(l.idea || "")}</p></section>`).join("")}</div>
@@ -81,11 +93,17 @@
     looks.forEach((l) => { if (l.after) try { l.after(mount, ctxOf(l)); } catch (e) { console.error(l.id, "after", e); } });
   }
 
+  /* every press redraws the page, controls included, so focus goes back to the same control once it's drawn again */
+  const refocus = (sel) => { const nb = mount.querySelector(`.lb-ctls ${sel}, .lb-tabs ${sel}`); if (nb) nb.focus({ preventScroll: true }); };
   mount.addEventListener("click", (e) => {
     const b = e.target.closest("button");
-    if (!b) return;
-    if (b.dataset.act === "replay") { render(); return; }
-    if (b.dataset.k) { S[b.dataset.k] = b.dataset.v; if (b.dataset.k === "theme") root.setAttribute("data-theme", S.theme); save(); render(); }
+    if (!b || !mount.contains(b)) return;
+    if (b.dataset.act === "replay") { render(); refocus('[data-act="replay"]'); return; }
+    if (b.dataset.k) {
+      const sel = `[data-k="${CSS.escape(b.dataset.k)}"][data-v="${CSS.escape(b.dataset.v)}"]`;
+      S[b.dataset.k] = b.dataset.v; if (b.dataset.k === "theme") root.setAttribute("data-theme", S.theme); save(); render();
+      refocus(sel);
+    }
   });
   if (S.theme !== viewerTheme()) root.setAttribute("data-theme", S.theme);
   window.FLLIB = { render, state: S, COMPONENTS };

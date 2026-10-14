@@ -31,11 +31,12 @@
 /* ---------- the page of the journal ---------- */
 .lk-journal .jr { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 24px; background: var(--jr-paper); box-shadow: inset 0 0 0 1px var(--ap-line); color: var(--ap-ink); font-family: var(--sans); }
 .lk-journal .jr-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--jr-rule); font-family: var(--mono); font-size: 11px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; }
-.lk-journal .jr-kick { color: var(--ap-ink); font-weight: 700; }
+/* the kicker is the card's heading (an h3 under the row's h2), set to look like the rest of the running head */
+.lk-journal .jr-kick { margin: 0; font: inherit; font-weight: 700; color: var(--ap-ink); }
 .lk-journal .jr-meta { display: inline-flex; align-items: center; gap: 8px; color: var(--ap-ink2); text-align: right; white-space: nowrap; }
 .lk-journal .jr-text { display: flex; flex-direction: column; gap: 8px; }
 .lk-journal .jr-lede { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 27px; letter-spacing: -.005em; color: var(--ap-ink); text-wrap: pretty; }
-.lk-journal .jr-deck { margin: 0; font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+.lk-journal .jr-deck { margin: 0; font-size: 14px; line-height: 20px; color: var(--ap-ink2); text-wrap: pretty; }
 
 /* words in the answer carry the role of the marks they name */
 .lk-journal .jr-mk { background-repeat: no-repeat; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
@@ -48,11 +49,13 @@
 .lk-journal .jr-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-top: 8px; border-top: 1px solid var(--ap-line); font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
 .lk-journal .jr-fn { font-weight: 700; color: var(--ap-ink); white-space: nowrap; }
 .lk-journal .jr-ct { flex: 1 1 160px; min-width: 0; }
-.lk-journal .jr-key { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.lk-journal .jr-sw { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-chart); }
+/* a key's words sit on the caption's baseline whatever the swatch's height; the swatch centres on them */
+.lk-journal .jr-key { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.lk-journal .jr-sw { display: inline-block; flex: none; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-chart); }
 .lk-journal .jr-sw--usual { background: var(--jr-u-fill); box-shadow: inset 0 0 0 1px var(--jr-u-edge); }
 .lk-journal .jr-sw--shift { background: var(--ap-shift); }
-.lk-journal .jr-sw--either { background: linear-gradient(90deg, var(--jr-u-edge) 50%, var(--ap-shift) 50%); }
+/* could be either: half the usual, half open, never Gold, since it is never a shift */
+.lk-journal .jr-sw--either { background: linear-gradient(90deg, var(--jr-u-edge) 50%, transparent 50%); box-shadow: inset 0 0 0 1px var(--ap-ink2); }
 .lk-journal .jr-sw--open { background: none; box-shadow: inset 0 0 0 1px var(--ap-ink2); }
 .lk-journal .jr-sw--nocount { background: radial-gradient(circle, var(--ap-ink2) 0 1.5px, transparent 1.6px); box-shadow: inset 0 0 0 1px var(--ap-ink2); }
 .lk-journal .jr-sw--nil { width: 8px; height: 1px; border-radius: 0; background: var(--ap-ink2); }
@@ -106,6 +109,7 @@
 .lk-journal .jr-read { fill: var(--ap-chart); }
 .lk-journal .jr-usual { fill: var(--jr-u-fill); stroke: var(--jr-u-edge); stroke-width: 1; }
 .lk-journal .jr-shift { fill: var(--ap-shift); }
+.lk-journal .jr-either-r { fill: var(--jr-paper); stroke: var(--ap-ink2); stroke-width: 1; }
 .lk-journal .jr-stem { fill: none; stroke: var(--ap-shift); stroke-width: 1; }
 .lk-journal .jr-ctx { fill: var(--jr-ctx); }
 .lk-journal .jr-open { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
@@ -117,7 +121,8 @@
 .lk-journal .jr-vdot { stroke: var(--jr-paper); stroke-width: 2.5; }
 .lk-journal .jr-col { fill: var(--jr-col); }
 .lk-journal .jr-nil { stroke: var(--ap-ink3); stroke-width: 1; }
-.lk-journal .jr-sym { fill: var(--ap-ink2); }
+/* a symptom that day is the reading, in the same colour as the Symptoms figure's bars */
+.lk-journal .jr-sym { fill: var(--ap-chart); }
 .lk-journal .jr-symbar { fill: var(--ap-chart); }
 .lk-journal .jr-trace { fill: none; stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; stroke: color-mix(in srgb, var(--ap-chart) 45%, transparent); }
 .lk-journal .jr-db { fill: none; stroke: var(--ap-ink2); stroke-width: 2; stroke-linecap: round; }

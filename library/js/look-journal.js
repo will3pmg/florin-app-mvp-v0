@@ -45,7 +45,7 @@
   /* the card: running head, the answer in Lora, one figure, a one-line caption, then whatever closes the card */
   function shell(k, o) {
     return curly(`<article class="jr jr--${k}">
-      <header class="jr-head"><span class="jr-kick">${o.kicker}</span>${o.meta ? `<span class="jr-meta">${o.meta}</span>` : ""}</header>
+      <header class="jr-head"><h3 class="jr-kick">${o.kicker}</h3>${o.meta ? `<span class="jr-meta">${o.meta}</span>` : ""}</header>
       <div class="jr-text"><p class="jr-lede">${o.lede}</p>${o.deck ? `<p class="jr-deck">${o.deck}</p>` : ""}</div>
       ${o.fig ? `<figure class="jr-fig">${o.fig}<figcaption class="jr-cap"><span class="jr-fn">Fig. ${FIG[k]}</span>${o.cap}</figcaption></figure>` : ""}
       ${o.foot || ""}
@@ -181,10 +181,11 @@
       if (i === wide) {
         const gap = Math.abs(xn - xb), dir = p.now >= p.before;
         if (gap >= 6) {
-          b += tx(dir ? xb + 3 : xb - 3, y - 12, "LAST WEEK", "", dir ? "end" : "start");
+          /* the paper halo lifts the labels off the gridlines, wherever the data puts them */
+          b += tx(dir ? xb + 3 : xb - 3, y - 12, "LAST WEEK", "jr-halo", dir ? "end" : "start");
           const tw = mw("THIS WEEK"), tAnchor = dir ? "start" : "end";
-          b += tx(fitX(dir ? xn - 3 : xn + 3, tw, tAnchor, 0, x1 + 24), y - 12, "THIS WEEK", "tk", tAnchor);
-        } else b += tx(xn, y - 12, "BOTH WEEKS", "", "middle");
+          b += tx(fitX(dir ? xn - 3 : xn + 3, tw, tAnchor, 0, x1 + 24), y - 12, "THIS WEEK", "tk jr-halo", tAnchor);
+        } else b += tx(xn, y - 12, "BOTH WEEKS", "jr-halo", "middle");
       }
     });
     const aria = `${P.map((p) => `${p.label} ${p.before} last week, ${p.now} this week, ${signed(p.delta).replace("−", "minus ")} points`).join("; ")}.`;
@@ -250,7 +251,7 @@
     b += dot(X(li), Y(lv), 5.2, "jr-today jr-pop", n);
     b += tx(hl.x, tlY, tl, "tk", "middle") + ln(X(li), tlY + 4, X(li), Y(lv) - 7, "jr-lead");
     const extra = [ab ? `above it on ${ab}` : "", be ? `below it on ${be}` : ""].filter(Boolean);
-    const aria = `FloraScore over ${n} days: within your usual range of ${u[0]} to ${u[1]} on ${inN} of ${vs.length} days${extra.length ? `, ${andList(extra)}` : ""}. ${ser[li].today ? "Today" : ser[li].label} ${lv}.`;
+    const aria = `FloraScore over ${n} days: within your usual range of ${u[0]} to ${u[1]} on ${inN} of ${vs.length} days${extra.length ? `, ${andList(extra)}` : ""}. ${ser[li].today ? "Today" : ser[li].label} ${lv}.${minV < u[0] ? ` Lowest ${minV} on ${ser[mi].label}.` : ""}`;
     return shell("trend", {
       kicker: "FloraScore over time", meta: lastN(ser), lede,
       fig: svg(ctx, bot + 26, aria, b),
@@ -271,11 +272,12 @@
     if (out.length) r.push(`${andList(out)}, outside your usual forms`);
     return r;
   }
-  /* a day's disc: a Plum tint for within your usual, solid Gold for shifted, split for could be either, a hairline ring
-     for not logged, and a ring with a centre dot for a day logged without a BM count. dy moves that dot off a numeral */
+  /* a day's disc: a Plum tint for within your usual, solid Gold for shifted, half the usual tint and half open for
+     could be either (never Gold: it isn't a shift), a hairline ring for not logged, and a ring with a centre dot for a
+     day logged without a BM count. dy moves that dot off a numeral */
   function disc(x, y, r, role, i, st, dy = 0) {
     if (role === "either") {
-      return `<g class="jr-pop" style="--i:${i};--st:${st}"><path class="jr-usual" d="M${f1(x)},${f1(y - r)}A${r},${r} 0 0 0 ${f1(x)},${f1(y + r)}Z"/><path class="jr-shift" d="M${f1(x)},${f1(y - r)}A${r},${r} 0 0 1 ${f1(x)},${f1(y + r)}Z"/></g>`;
+      return `<g class="jr-pop" style="--i:${i};--st:${st}"><path class="jr-either-r" d="M${f1(x)},${f1(y - r)}A${r},${r} 0 0 1 ${f1(x)},${f1(y + r)}Z"/><path class="jr-usual" d="M${f1(x)},${f1(y - r)}A${r},${r} 0 0 0 ${f1(x)},${f1(y + r)}Z"/></g>`;
     }
     if (role === "nocount") return `<g class="jr-pop" style="--i:${i};--st:${st}">${dot(x, y, r - 0.75, "jr-open-ink")}${dot(x, y + dy, 1.5, "jr-nc")}</g>`;
     const cls = { usual: "jr-usual", shift: "jr-shift", read: "jr-read", open: "jr-open" }[role];
@@ -358,10 +360,13 @@
     const nRows = row + 1, cy = (rw) => top + rw * rh + r + 2, H = cy(nRows - 1) + r + 8;
     let b = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"].map((d, i) => tx(i * cw + cw / 2, 10, d, "", "middle")).join("");
     b += tx(W, 10, learning ? "LOGGED" : "IN USUAL", "", "end");
+    /* each week's count, kept for the figure's label too, since text inside it isn't read out */
+    const perWeek = [];
     for (let rw = 0; rw < nRows; rw++) {
       if (rw) b += ln(0, cy(rw) - rh / 2, W, cy(rw) - rh / 2, "jr-grid");
       const rc = cells.filter((c) => c.row === rw), rl = rc.filter((c) => c.f.logged);
       const t = learning ? `${rl.length} of ${rc.length}` : `${rc.filter((c) => c.f.state === "usual").length} of ${rl.length}`;
+      perWeek.push(t);
       b += `<text class="tm" x="${W}" y="${f1(cy(rw) + 4)}" text-anchor="end">${t}</text>`;
     }
     cells.forEach(({ f, col, row: rw }, i) => {
@@ -372,7 +377,8 @@
       if (f.today) b += dot(x, y, r + 3.5, "jr-today jr-pop", i + 2, "20ms");
     });
     const roles = rolesIn(days);
-    const aria = learning ? `${lg.length} of ${n} days logged.` : `${nu} of ${lg.length} logged days within your usual, ${ns} shifted${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} not logged.`;
+    const byWeek = perWeek.length > 1 ? ` ${learning ? "Logged" : "Within your usual"} by week, Monday to Sunday: ${perWeek.join(", ")}.` : "";
+    const aria = (learning ? `${lg.length} of ${n} days logged.` : `${nu} of ${lg.length} logged days within your usual, ${ns} shifted${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} not logged.`) + byWeek;
     return shell("month", {
       kicker: learning ? "Your first days" : "The last month", meta: span(days), lede,
       fig: svg(ctx, H, aria, b),
@@ -459,7 +465,7 @@
     const levels = Math.max(3, maxC, ou ? ou[1] + 1 : 0);
     const left = 20, pr = W - (gut ? gut + 4 : 0), slot = (pr - left) / n, cx = (i) => left + slot * i + slot / 2, pitch = 15, r = Math.min(3.8, slot / 2 - 1.2);
     const ti = days.findIndex((f) => f.today), tf = ti >= 0 ? days[ti] : null;
-    const tS = !tf ? "" : tf.count == null ? "TODAY, NOT LOGGED" : tf.count === 0 ? "TODAY, NO BM" : `TODAY, ${plural(tf.count, "BM")}`.toUpperCase();
+    const tS = !tf ? "" : tf.pending ? "TODAY, NOT LOGGED YET" : tf.count == null ? "TODAY, NOT LOGGED" : tf.count === 0 ? "TODAY, NO BM" : `TODAY, ${plural(tf.count, "BM")}`.toUpperCase();
     const uS = ou ? up(`Your usual, ${D.often.usualText}`) : "";
     const hl = tf ? headLabel(cx(ti), tS, ou ? left - 4 + mw(uS) : null) : { row2: false };
     const top = hl.row2 ? 44 : 30, base = top + levels * pitch + 4, yL = (lv) => base - lv * pitch;
@@ -698,6 +704,7 @@
     return svg(ctx, yA + 4, R.map(([l, on]) => `${l} on ${days.filter(on).length} of ${n} days`).join("; ") + ".", b);
   }
   const MEALS = ["Meals logged", (f) => f.meals > 0, "jr-ctx"], SHIFTED = ["Shifted days", (f) => f.state === "shifted", "jr-shift"];
+  const SYMPTOM = ["With a symptom", (f) => f.logged && f.sym.length > 0, "jr-symbar"];
   const mic = `<svg class="jr-mic" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg>`;
   function pattern(D, ctx) {
     const Pt = D.patterns, e = ctx.esc, foot = (x) => (x || "") + note(e(Pt.note));
@@ -710,19 +717,21 @@
         return shell("pattern", {
           kicker: "A possible pattern", meta: "No meals logged",
           lede: `No meals are logged in the last ${n} days, so there is nothing to compare yet.`,
-          deck: "Meals are optional. On a rough day, say what you ate and Florin can start to look.",
+          /* ordinary days too: meals logged only on rough days pick out ordinary foods by selection, so the model holds
+             every meal pattern back until meals cover most days you log */
+          deck: "Meals are optional. Say what you ate on ordinary days as well as rough ones, and Florin can start to look.",
           fig: rug(D, ctx, [SHIFTED]), cap: capT(`Shifted days, last ${n} days`),
           foot: foot(`<button type="button" class="jr-btn">${mic}Log a meal by voice</button>`)
         });
       }
-      const lg = days.filter((f) => f.logged), k0 = lg.filter((f) => f.meals > 0).length, kS = lg.filter((f) => f.meals > 0 && f.state === "shifted").length;
       if (Pt.sparse) {
+        /* the model's own reason, in its own window (the last 90 days), so the figures match the other looks: meals
+           cover too few of the days you log, or fall mostly on days with a symptom. The strip shows the last 30 days */
+        const [s1, ...rest] = String(Pt.sparseLine).split(/(?<=\.)\s+/);
         return shell("pattern", {
           kicker: "A possible pattern", meta: "Not enough meals",
-          lede: kS
-            ? `Meals are logged on ${k0} of the ${lg.length} days you logged, ${kS === k0 ? "all" : kS} of them shifted days, so there are few ordinary days to compare with.`
-            : `Meals are logged on ${k0} of the ${lg.length} days you logged, too few for Florin to compare yet.`,
-          fig: rug(D, ctx, [MEALS, SHIFTED]), cap: capT(`Meals and shifted days, last ${n} days`),
+          lede: e(s1), deck: rest.length ? e(rest.join(" ")) : "",
+          fig: rug(D, ctx, [MEALS, SYMPTOM]), cap: capT(`Meals and days with a symptom, last ${n} days`),
           foot: foot(`<button type="button" class="jr-btn">Start a food check</button>`)
         });
       }
@@ -760,7 +769,7 @@
     y += 6;
     b += dot(r, y, r, hitCls) + tx(r + 10, y + 3.5, up(what)) + dot(r + 24 + mw(what), y, r - 0.75, "jr-open-ink") + tx(r + 34 + mw(what), y + 3.5, up(not));
     const more = Pt.found.length - 1;
-    const aria = `${G[0][0]}: ${what.toLowerCase()} ${G[0][2]} of ${G[0][3]} times. ${G[1][0]}: ${G[1][2]} of ${G[1][3]}.`;
+    const aria = `${G[0][0]}: ${lower1(what)} ${G[0][2]} of ${G[0][3]} times. ${G[1][0]}: ${G[1][2]} of ${G[1][3]}.`;
     /* the answer is the pattern's first sentence; the figure carries the comparison */
     const line1 = String(p.line).split(/(?<=\.)\s+/)[0];
     return shell("pattern", {

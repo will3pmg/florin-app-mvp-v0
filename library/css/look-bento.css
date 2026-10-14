@@ -10,6 +10,7 @@
   --bt-on-s: var(--forest);
   --bt-trk: var(--ap-card2);
   --bt-l: color-mix(in srgb, var(--ap-chart) 22%, transparent);  /* logged, before the usual is known */
+  --bt-e: color-mix(in srgb, var(--ap-ink3) 18%, transparent);   /* could be either: neither usual nor a shift */
   /* a day within your usual (week pills, month squares, stat keys): a quiet Plum tint with its edge on light, a Ray
      outline on dark, so a month of usual days stays calm and the solid Gold shifts are what the eye finds */
   --bt-uf: var(--ap-usual-bg); --bt-on-uf: var(--ap-usual-ink); --bt-uf-edge: var(--ap-band-edge);
@@ -70,7 +71,7 @@
 .lk-bento .bt-chip--info { background: var(--ap-info-bg); color: var(--ap-info-ink); }
 .lk-bento .bt-chip--hero { background: color-mix(in srgb, var(--cream) 14%, transparent); color: var(--bt-h-ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 16%, transparent); }
 /* a narrow tile lets a chip wrap to two lines instead of running out of its tile */
-.lk-bento .bt-t--n .bt-chip { white-space: normal; padding: 4px 8px; line-height: 1.25; border-radius: 12px; }
+.lk-bento .bt-t--n .bt-chip { white-space: normal; padding: 4px 8px; line-height: 1.25; border-radius: 12px; text-wrap: balance; }
 .lk-bento .bt-lg { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 11px; line-height: 1.4; color: var(--ap-ink2); }
 .lk-bento .bt-lg li { display: inline-flex; align-items: center; gap: 4px; }
 .lk-bento .bt-lg--out { padding: 0 8px; }
@@ -80,9 +81,9 @@
 .lk-bento .bt-sw--uf { background: var(--bt-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); }
 .lk-bento .bt-sw--s, .lk-bento .bt-sw--sdot { background: var(--bt-s); }
 .lk-bento .bt-sw--sdot, .lk-bento .bt-sw--dot, .lk-bento .bt-sw--zero, .lk-bento .bt-sw--today, .lk-bento .bt-sw--now, .lk-bento .bt-sw--meal { border-radius: 50%; }
-.lk-bento .bt-sw--e { background: var(--ap-usual-bg); box-shadow: inset 0 0 0 2px var(--bt-s); }
+.lk-bento .bt-sw--e { background: var(--bt-e); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .lk-bento .bt-sw--eg { background: var(--ap-ink3); }
-.lk-bento .bt-sw--ecap { width: 6px; height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--ap-ink3) 18%, transparent); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
+.lk-bento .bt-sw--ecap { width: 6px; height: 12px; border-radius: 999px; background: var(--bt-e); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .lk-bento .bt-sw--c { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
 .lk-bento .bt-sw--l { background: var(--bt-l); }
 .lk-bento .bt-sw--x, .lk-bento .bt-sw--miss { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
@@ -133,8 +134,9 @@
 .lk-bento .bt-end { fill: var(--ap-chart); stroke: var(--ap-card); stroke-width: 2.5; }
 .lk-bento .bt-halo { fill: none; stroke: var(--ap-ink); stroke-width: 1.5; }
 .lk-bento .bt-was { fill: var(--ap-card); stroke: var(--ap-ink2); stroke-width: 2; }
-.lk-bento .bt-tick { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink3); }
-.lk-bento .bt-lbl { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
+/* 10.5 in viewBox units: the charts are drawn for a 358px card, so on a 342 to 350px phone card they land at 10px */
+.lk-bento .bt-tick { font-family: var(--mono); font-size: 10.5px; fill: var(--ap-ink3); }
+.lk-bento .bt-lbl { font-family: var(--mono); font-size: 10.5px; fill: var(--ap-ink2); }
 .lk-bento .bt-lbl--u { fill: var(--ap-usual-ink); }
 .lk-bento .bt-lbl--now { fill: var(--ap-ink); font-weight: 700; }
 .lk-bento .bt-ax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
@@ -151,7 +153,7 @@
 /* form */
 .lk-bento .bt-fbar { fill: var(--ap-chart); }
 .lk-bento .bt-fbar.is-s { fill: var(--bt-s); }
-.lk-bento .bt-fbar-e { fill: color-mix(in srgb, var(--ap-ink3) 18%, transparent); stroke: var(--ap-ink3); stroke-width: 1.5; }
+.lk-bento .bt-fbar-e { fill: var(--bt-e); stroke: var(--ap-ink3); stroke-width: 1.5; }
 .lk-bento .bt-none { fill: var(--ap-ink3); }
 .lk-bento .bt-val { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--ap-ink); }
 .lk-bento .bt-xl { font-family: var(--sans); font-size: 11px; fill: var(--ap-ink2); }
@@ -189,7 +191,7 @@
 .lk-bento .bt-sc--u { fill: var(--bt-u); }
 .lk-bento .bt-sc--s { fill: var(--bt-s); }
 .lk-bento .bt-sc--l, .lk-bento .bt-sc--r { fill: var(--ap-chart); }
-.lk-bento .bt-sc--e { fill: var(--ap-usual-bg); stroke: var(--bt-s); stroke-width: 1.5; }
+.lk-bento .bt-sc--e { fill: var(--bt-e); stroke: var(--ap-ink3); stroke-width: 1.5; }
 .lk-bento .bt-sc--n, .lk-bento .bt-sc--c { fill: var(--ap-card2); }
 .lk-bento[data-theme="dark"] .bt-sc--n { fill: var(--bt-none); }
 .lk-bento .bt-sc.is-today { stroke: var(--ap-ink); stroke-width: 1.5; }
@@ -221,7 +223,7 @@
 .lk-bento .bt-pdots em { font-family: var(--mono); font-size: 10px; font-style: normal; font-weight: 700; line-height: 1; }
 .lk-bento .bt-day--u .bt-pill { background: var(--bt-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); color: var(--bt-on-uf); }
 .lk-bento .bt-day--s .bt-pill { background: var(--bt-s); box-shadow: none; color: var(--bt-on-s); }
-.lk-bento .bt-day--e .bt-pill { background: var(--ap-usual-bg); box-shadow: inset 0 0 0 2px var(--bt-s); color: var(--ap-ink); }
+.lk-bento .bt-day--e .bt-pill { background: var(--bt-e); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); color: var(--ap-ink); }
 .lk-bento .bt-day--c .bt-pill { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); color: var(--ap-ink2); }
 .lk-bento .bt-day--l .bt-pill { background: var(--bt-l); box-shadow: none; color: var(--ap-ink); }
 .lk-bento .bt-day--pad .bt-pill { background: transparent; box-shadow: none; }
@@ -237,7 +239,7 @@
 .lk-bento .bt-sq--pad { box-shadow: none; }
 .lk-bento .bt-sq--u { background: var(--bt-uf); color: var(--bt-on-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); }
 .lk-bento .bt-sq--s { background: var(--bt-s); color: var(--bt-on-s); box-shadow: none; }
-.lk-bento .bt-sq--e { background: var(--ap-usual-bg); color: var(--ap-ink); box-shadow: inset 0 0 0 2px var(--bt-s); }
+.lk-bento .bt-sq--e { background: var(--bt-e); color: var(--ap-ink); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .lk-bento .bt-sq--c { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
 .lk-bento .bt-sq--l { background: var(--bt-l); color: var(--ap-ink); box-shadow: none; }
 .lk-bento .bt-sq--x { font-weight: 400; }
@@ -291,8 +293,8 @@
 .lk-bento .bt-t--sure { justify-content: space-between; }
 .lk-bento .bt-sure { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
 .lk-bento .bt-sure i { flex: 1; height: var(--h); border-radius: 4px; background: var(--bt-trk); box-shadow: inset 0 0 0 1px var(--ap-line); }
-.lk-bento .bt-sure i.is-on { background: var(--ap-info-ink); box-shadow: none; }
-.lk-bento .bt-sure-w { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.25; color: var(--ap-info-ink); }
+.lk-bento .bt-sure i.is-on { background: var(--ap-chart); box-shadow: none; }
+.lk-bento .bt-sure-w { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.25; color: var(--ap-ink); }
 .lk-bento .bt-care { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); }
 .lk-bento .bt-care .bt-k { color: var(--ap-info-ink); }
 .lk-bento .bt-care p:last-child { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ap-info-ink); }
@@ -338,8 +340,8 @@
 .lk-bento .bt-dial-s { font-family: var(--mono); font-size: 10.5px; color: var(--bt-h-ink2); }
 .lk-bento .bt-hero-r { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
 .lk-bento .bt-hero-a { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.25; color: var(--bt-h-ink); text-wrap: balance; }
-.lk-bento .bt-hero-s { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--bt-h-ink2); }
-.lk-bento .bt-hero .bt-chip--hero { white-space: normal; padding: 4px 8px; line-height: 1.25; border-radius: 12px; }
+.lk-bento .bt-hero-s { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--bt-h-ink2); text-wrap: balance; }
+.lk-bento .bt-hero .bt-chip--hero { white-space: normal; padding: 4px 8px; line-height: 1.25; border-radius: 12px; text-wrap: balance; }
 .lk-bento .bt-lg--hero { color: var(--bt-h-ink2); padding: 0 4px; }
 .lk-bento .bt-sw--hring { border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2.5px var(--ray); }
 .lk-bento .bt-sw--hband { width: 16px; height: 3px; border-radius: 999px; background: var(--ray); }

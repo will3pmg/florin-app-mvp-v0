@@ -45,7 +45,9 @@
 }
 
 /* ---------- type ---------- */
-.lk-rings .rg-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
+/* a long title stays on one line; the chip or date drops below it when the two don't fit side by side */
+.lk-rings .rg-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
+.lk-rings .rg-h > h3.rg-k { white-space: nowrap; }
 .lk-rings .rg-k { font-family: var(--mono); font-size: 11px; font-weight: 400; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; color: var(--rg-ink2); }
 .lk-rings .rg-k--date { letter-spacing: .04em; text-align: right; }
 .lk-rings .rg-lead { display: flex; flex-direction: column; gap: 8px; }
@@ -79,6 +81,7 @@
 .lk-rings .rg-sw--now-shift { background: var(--rg-shift); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rg-shift) 30%, transparent); }
 .lk-rings .rg-sw--todayring { background: transparent; box-shadow: inset 0 0 0 1.5px var(--rg-ink); }
 .lk-rings .rg-sw--zero { background: transparent; box-shadow: inset 0 0 0 1.5px var(--rg-shift); }
+.lk-rings .rg-sw--zeroread { background: transparent; box-shadow: inset 0 0 0 1.5px var(--rg-read); }
 .lk-rings .rg-sw--ring { background: transparent; box-shadow: inset 0 0 0 3px var(--rg-read); }
 .lk-rings .rg-sw--tick { width: 2px; height: 12px; border-radius: 2px; background: var(--rg-ink); }
 .lk-rings .rg-sw--div { position: relative; width: 16px; height: 4px; border-radius: 2px; background: var(--rg-read); }
@@ -138,8 +141,9 @@
 .lk-rings .rg-uend line { stroke: var(--rg-uband-ink); stroke-width: 1.5; stroke-linecap: round; }
 .lk-rings .rg-end { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 3.5; }
 .lk-rings .rg-end.is-shift { fill: var(--rg-shift); }
-.lk-rings .rg-rel { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: -8px; font-family: var(--serif); font-size: 20px; line-height: 1.3; text-align: center; text-wrap: balance; }
-.lk-rings .rg-rel i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--rg-read); }
+/* one block of centred text, the dot kept in the text flow beside the first word, so it stays with the words on a wrap */
+.lk-rings .rg-rel { display: block; margin-top: -8px; font-family: var(--serif); font-size: 20px; line-height: 1.3; text-align: center; text-wrap: balance; }
+.lk-rings .rg-rel i { display: inline-block; vertical-align: middle; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--rg-read); }
 .lk-rings .rg-rel.is-shift i { background: var(--rg-shift); }
 .lk-rings .rg-score .rg-rel:not(:has(i)) { display: block; font-size: 17px; }
 .lk-rings .rg-how { font-size: 12px; line-height: 1.5; color: var(--rg-ink2); }
@@ -265,7 +269,8 @@
 .lk-rings .rg-sd { fill: var(--rg-read); }
 .lk-rings .rg-sd.is-s1 { opacity: .6; }
 .lk-rings .rg-sd.is-s2 { opacity: .82; }
-.lk-rings .rg-sd.is-none { fill: var(--ap-ink3); opacity: .55; }
+/* a logged day with no symptom: small, but at full Ink 3 so it holds 3:1 like its swatch */
+.lk-rings .rg-sd.is-none { fill: var(--ap-ink3); }
 .lk-rings .rg-sd.is-unsaid { fill: none; stroke: var(--rg-read); stroke-width: 1.3; }
 .lk-rings .rg-sd-today { stroke: var(--ap-ink3); stroke-width: 1; opacity: .5; }
 .lk-rings .rg-symaxis { display: flex; justify-content: space-between; margin-top: -8px; padding-left: 48px; font-family: var(--mono); font-size: 10.5px; color: var(--rg-ink3); }
