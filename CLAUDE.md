@@ -22,7 +22,9 @@ prototype/css/refresh.css  the refresh: new app components (.ap-) and the page a
 prototype/js/lib.js, data-app.js, claims-rules.js   copied from the studio (helpers, seeded days, the 22 claims rules)
 prototype/js/refresh-data.js  the manual-logs model built on the seeded days (window.FLORIN_LOGS). Pure JS, no DOM
 prototype/js/refresh-ui.js    every app screen as a render function (window.FLORIN_RUI)
-prototype/js/refresh-app.js   the prototype page: phones, actions, the screen list, notes per screen, A/B compare
+prototype/js/refresh-insights.js  the Insights tab, its detail pages and the Ask tab hand-off (extends FLORIN_RUI)
+prototype/js/app-charts.js    the studio's small SVG chart kit (window.FLC), used by Insights
+prototype/js/refresh-app.js   the prototype page: phones, actions, the screen list, notes per screen, A/B/C compare
 reference/shipping-app/       screenshots of the app that ships today (Log a visit, History)
 work/                          QA and screenshot scripts
 ```
@@ -32,7 +34,14 @@ Every number a screen states is computed from the model, never typed. If copy st
 Consistency has three options, A (types 1 to 7, licence needed), B (today's five words) and C (seven of our own
 words, proposed). A and C store a step from 1 to 7; a B log stores its word (`{ form: null, word }`), which covers
 one or two steps. Read a BM's consistency only through `L.formName`, `L.formLine`, `L.glyphOf` and `L.inForms`, which
-take the entry. Foods are counted only through `L.matchFoods`, for seeded meals and typed ones alike.
+take the entry; `L.inForms` is three-valued in A and C (null when a B word's steps sit on both sides of the usual,
+which reads as "could be either", never a shift). Foods are counted only through `L.matchFoods`, for seeded meals and
+typed ones alike.
+
+Insights reads days through `L.facts` (a gap stays a gap, No BM is a zero, a day is usual, shifted, unsure or none)
+and patterns through `L.patterns` (90 days, a food needs 5 logs, a one-sided binomial test at 1 in 100). Each demo
+person has one dish their seeded logs follow (`PATTERN_DISH`), seeded on its own meal pass so Insights has to find it.
+A symptom logged without a strength keeps `s: 0` and reads as "strength not said", never mild.
 
 ## Rules you must not break
 
@@ -60,4 +69,5 @@ NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every
 ## Publishing
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
-page and every css/js file as a published file at the same relative path. Read the artifact before republishing.
+page and every css/js file as a published file at the same relative path. Read the artifact before republishing: other
+sessions publish to it too (the second pass did, on Oct 14), so merge onto what's live rather than overwrite it.

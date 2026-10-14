@@ -147,7 +147,7 @@ Nine reviews of the Oct 13 build (one per first-pass screen, brand and claims, a
 | Check-in in plus every week, or only when due? | Every week, last in the menu, dot only when due. | Built |
 | A skipped check-in? | Stays skipped. One reminder. One that's ignored (not skipped) stays on Today through Tuesday evening, then the week closes as a gap. | Skip built; Tuesday rule needs Will's OK |
 | The six symptoms? | Bloating, Belly pain, Cramping, Gas, Nausea, Low energy, plus the person's own (remembered). Burning moves to the BM; urgency is a BM detail. | Built; needs Will's OK |
-| Urgency inside Add details, or out? | Out, as one chip under the tiles: for IBS-D it's the detail most worth counting. A change from the brief. | Built; needs Will's OK |
+| Which BM extras stay? | All of them show under the form now, as Will asked on Oct 14 (no Add details tap), so each costs height, not a tap. Keep the flag for safety and Sudden urge to go for IBS-D; Burning and Didn't feel finished go first if the form feels long. | Inline; needs Will's call on which stay |
 | Black or tar-like on the flag? | Yes, with its own line. Plus "If there's a lot of blood, or you feel faint or dizzy, get urgent care now", which needs the regulatory pass. | Built; regulatory pass |
 | Alarm words typed into a note? | Open the same primary care note, as Ask Florin's alarm banner does. Never read further. | Built |
 | FloraScore from manual logs? | No. The Forest card on Today keeps the slot for Florin One. | Built |
@@ -159,13 +159,29 @@ Nine reviews of the Oct 13 build (one per first-pass screen, brand and claims, a
 **What changed, by screen**
 
 - **Plus menu:** close button and drag-down; tiles 44px with How to pick on the card; one-tap tile log; Log for an earlier day (a week back) and Add to this day on History gaps; Log no BM today from 5 PM.
-- **Log a BM:** option C; our own words and marks for the seven steps (the first pass paraphrased the scale's descriptors); B keeps its word and never a step nobody picked, and each B word sits on the step C gives the same word (Hard covers 1 and 2, Loose 5 and 6); Sudden urge to go under the tiles; blood, mucus and black named in the fold; the flag note offers a report, an urgent care line and Undo.
+- **Log a BM:** option C; our own words and marks for the seven steps (the first pass paraphrased the scale's descriptors); B keeps its word and never a step nobody picked, and each B word sits on the step C gives the same word (Hard covers 1 and 2, Loose 5 and 6); every extra shown under the form, all optional (Will, Oct 14); blood, mucus and black named on the flag; the flag note offers a report, an urgent care line and Undo.
 - **Log symptoms:** one strength for the entry, how long it lasted, when it started; Low energy back, Burning to the BM, own symptoms remembered; an unrated symptom never reads as mild; a typed name counts on Save.
 - **Log a meal:** one food matcher (seed and typing, plurals, drinks); counted foods shown as you type; Same as yesterday and recent foods that add; time follows the meal; Other reads as Snack or drink; fields at 16px.
 - **Weekly check-in:** one comparison rule for chip and band; taller trend with labelled steps, the first weeks in words and a table twin; recall window in words; Next, Change an answer, Later after a skip; the week's logs above the answers; clinician line and disclaimer.
 - **Today:** one sentence against the usual; the day chart cut; the week as three counts over strips with hollow Gold rings for shifts; a next step from what today is missing; the clinician line when symptoms show.
 - **Throughout:** focus held in sheets and returned after saving; half-filled logs kept; 44px targets; Ink 2 for anything to read; colours carry one meaning each in dark; no sideways scroll.
 
-**Checks:** `work/qa.js` (four widths, every screen through the 22 claims rules, targets), `work/behave.js` (32 interaction and data checks), `work/audit-spacing.js` (0 off-scale).
+**Checks:** `work/qa.js` (four widths, A, B and C, every screen through the 22 claims rules, targets), `work/behave.js` (interaction and data checks, Insights included), `work/audit-spacing.js` (0 off-scale).
 
-**Next:** the second pass (Insights and the detail page, then Ask Florin with Ask about this), and the studio fold-back once the calls above are settled.
+## Second pass, merged (Oct 14)
+
+The second pass (Insights, its detail pages and the Ask Florin hand-off) was built the same day in another session and published to the same link, on the first pass as it stood on Oct 13. It's merged onto the workshopped first pass, so both are in the prototype now.
+
+- **Insights:** a summary of days within the person's usual, then one card per question (timing, how often, form, symptoms, the weekly check-in, possible patterns), each with the usual in words, a count, a chart from the data vis board, and Ask about this. 7, 30 and 90 days. The learning state shows counts only until day 14.
+- **Detail pages:** the typical value and today against the usual, a main and a second chart, What shaped this (folded), Ask about this, a table, and Next.
+- **Possible patterns:** from logged meals and dinner times, over 90 days. A food needs 5 logs; a pattern has to hold 5 or more times, 6 in 10 or more, and clear a one-sided binomial test at 1 in 100 against other days. Each demo person has one dish their seeded logs follow (pizza, curry, burrito bowl), and Insights finds it without being told.
+- **Ask Florin:** its own tab with three questions to start; Ask about this loads the card's numbers. Answers are the next pass.
+- **What the merge changed in it:** Insights reads A, B and C (C's words on the axes; a word logged in B sits between its steps and reads as "could be either" when they straddle the usual, counted on neither side); a symptom without a strength reads as "strength not said", not mild; the check-in detail explains the band rule without colour names; focus lands on each Insights screen's title and back on the card you left; 44px targets on the range tabs and Ask's buttons; the picked range tab is Cream in dark.
+
+**New questions from the merge**
+
+- Marcus also gets "rice, then a looser first BM": rice mostly came with his curry. Hold back a food that clears the bar only alongside another found food, or show it with a note?
+- The option moves the 30-day summary: B's five words absorb some forms A and C count as outside the usual. One more reason to settle A, B or C before Insights ships.
+- The second pass's own questions sit in the notes beside each Insights screen (the "within your usual" definition, a usual for symptoms, Next or swipe, today in averages, dots or cells for symptoms, when to name a pattern).
+
+**Next:** Ask Florin's answers, and the studio fold-back once the calls above are settled.

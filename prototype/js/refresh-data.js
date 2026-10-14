@@ -2,7 +2,8 @@
    Built on the studio's seeded days (js/data-app.js), so the refresh tells the same story as the studio:
    BM times are the seeded visits, symptoms come from the seeded check-ins, late dinners stay late.
    Week before last was the rougher one; last week, the one that ends tonight, was steadier.
-   Pure JS, no DOM. Every number a screen states is computed from this, never typed. window.FLORIN_LOGS */
+   Meals are seeded on their own pass, and each demo person has one dish their logs tend to follow (Insights has
+   to find it). Pure JS, no DOM. Every number a screen states is computed from this, never typed. window.FLORIN_LOGS */
 (function () {
   const AD = window.FLORIN_APP;
   if (!AD) return;
@@ -29,7 +30,6 @@
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   };
-  const pick = (r, arr) => arr[Math.floor(r() * arr.length) % arr.length];
   const wpick = (r, pairs) => {
     let u = r() * pairs.reduce((s, p) => s + p[1], 0);
     for (const [v, w] of pairs) if ((u -= w) < 0) return v;
@@ -166,8 +166,35 @@
   let seq = 0;
   const nid = (k) => `${k}${++seq}`;
 
+  /* ---------- meals, on their own seeded pass ----------
+     Meals come first, so the next day can follow them. Each demo person has one dish that, in their seeded logs,
+     tends to be followed by a looser first BM and some bloating the next day. Insights isn't told which one: its
+     pattern check has to find it, the way it would in real logs. The crafted week is left as written. */
+  const PATTERN_DISH = { sarah: "Pizza", marcus: "Chicken curry", alex: "Burrito bowl" };
+  const isGap = (P, d) => d !== TODAY && !!(CRAFT_GAP[d] || (d < 84 && mulberry(P.seed * 131 + d * 7919 + 17)() < 0.07));
+  const hasDish = (P, m) => m.text.indexOf(PATTERN_DISH[P.id]) === 0;
+  function mealsOf(A, d) {
+    const P = A.persona, x = A.days[d], dish = PATTERN_DISH[P.id], date = L.dateOf(d);
+    const r = mulberry(P.seed * 977 + d * 131 + 5);
+    const out = [];
+    const meal = (k, t, force) => {
+      let text = force ? SEED_MEALS[k].find((o) => o.indexOf(force) === 0) : wpick(r, SEED_MEALS[k].map((o) => [o, o.indexOf(dish) === 0 ? 3 : 1]));
+      if (k === "breakfast" && r() < 0.55) text += ", coffee";
+      if (k === "dinner" && date.getDay() === 5 && r() < 0.6) text += ", a glass of wine";
+      out.push({ kind: "meal", t, meal: k, text, foods: L.matchFoods(text), note: "" });
+    };
+    /* Tuesday of the crafted week: the late dinner (Alex: lunch) is the dish, so Wednesday's later, looser morning has a story */
+    const crafted = d === 85 ? dish : null;
+    const at = crafted ? (SEED_MEALS.lunch.some((o) => o.indexOf(crafted) === 0) ? "lunch" : "dinner") : null;
+    if (r() < 0.72) meal("breakfast", Math.max(between(r, 7.55, 8.7), x.first != null ? Math.min(9.6, x.first + 0.25) : 0));
+    if (r() < 0.62 || at === "lunch") meal("lunch", between(r, 12.1, 13.6), at === "lunch" ? crafted : null);
+    if (x.lateDinner || r() < 0.8 || at === "dinner") meal("dinner", x.lateDinner ? between(r, 20.15, 21.4) : between(r, 18.3, 19.85), at === "dinner" ? crafted : null);
+    if (r() < 0.2) meal("other", between(r, 15.2, 16.4));
+    return out;
+  }
+
   /* one day of manual logs, from one seeded day */
-  function dayOf(A, d, mode) {
+  function dayOf(A, d, mode, meals) {
     const P = A.persona, U = A.U, x = A.days[d], prev = A.days[d - 1];
     const r = mulberry(P.seed * 131 + d * 7919 + 17);
     const date = L.dateOf(d);
@@ -183,6 +210,9 @@
     const urg = felt.urgency, bloat = felt.bloating;
     const menses = P.cycle && x.cycleDay <= 3;
     const afterLate = !!(prev && prev.lateDinner);
+    /* the morning after the person's dish (outside the crafted week): a looser first BM most times, bloating some */
+    const afterDish = d < 84 && (meals[d - 1] || []).some((m) => hasDish(P, m));
+    const rp = mulberry(P.seed * 53 + d * 211 + 9);
 
     /* BMs: the seeded visits, each with a form */
     x.visits.forEach((v, i) => {
@@ -194,6 +224,7 @@
       else if (i === 0 && x.first > U.tHi + 0.25) form = wpick(r, [[2, 1], [3, 2], [4, 1]]);
       else if (bloat >= 2) form = wpick(r, [[5, 2], [6, 1]]);
       else form = wpick(r, [[3, 2], [4, 5], [5, 2.4], [6, 0.4]]);
+      if (afterDish && i === 0 && rp() < 0.8) form = Math.max(form, rp() < 0.65 ? 6 : 5);
       const bm = { id: nid("bm"), d, kind: "bm", t: v.t, form, how: {}, dur: null, flags: {}, note: "" };
       if (i === 0 && urg > 0) bm.how.rush = true;
       if (form <= 2 && r() < 0.5) bm.how.strain = true;
@@ -221,18 +252,10 @@
         day.entries.push({ id: nid("sym"), d, kind: "sym", t: between(r, 13.4, 17.2), items, last: r() < 0.7 ? 1 : 2, note: "" });
       }
     }
+    if (afterDish && !bloat && rp() < 0.75) day.entries.push({ id: nid("sym"), d, kind: "sym", t: between(rp, 9.4, 11.2), items: [{ name: "Bloating", s: 1 }], last: rp() < 0.6 ? 0 : 1, note: "" });
 
-    /* meals: dinner after 8 PM on the seeded late-dinner days */
-    const meal = (k, t) => {
-      let text = pick(r, SEED_MEALS[k]);
-      if (k === "breakfast" && r() < 0.55) text += ", coffee";
-      if (k === "dinner" && date.getDay() === 5 && r() < 0.6) text += ", a glass of wine";
-      day.entries.push({ id: nid("meal"), d, kind: "meal", t, meal: k, text, foods: L.matchFoods(text), note: "" });
-    };
-    if (r() < 0.72) meal("breakfast", Math.max(between(r, 7.55, 8.7), x.first != null ? Math.min(9.6, x.first + 0.25) : 0));
-    if (r() < 0.62) meal("lunch", between(r, 12.1, 13.6));
-    if (x.lateDinner || r() < 0.8) meal("dinner", x.lateDinner ? between(r, 20.15, 21.4) : between(r, 18.3, 19.85));
-    if (r() < 0.2) meal("other", between(r, 15.2, 16.4));
+    /* meals, from the pass above: dinner after 8 PM on the seeded late-dinner days */
+    (meals[d] || []).forEach((m) => day.entries.push(Object.assign({ id: nid("meal"), d }, m, { foods: m.foods.slice() })));
 
     day.entries.sort((a, b) => a.t - b.t);
     return day;
@@ -275,8 +298,10 @@
     const A = AD.get(personaId);
     const P = A.persona, U = A.U;
     const start = mode === "new" ? TODAY - 4 : 0;
+    const meals = {};
+    for (let d = start; d < TODAY; d++) if (!isGap(P, d)) meals[d] = mealsOf(A, d);
     const days = [];
-    for (let d = start; d <= TODAY; d++) days.push(dayOf(A, d, mode));
+    for (let d = start; d <= TODAY; d++) days.push(dayOf(A, d, mode, meals));
     const M = { A, P, persona: P, mode, start, days, seq: 0 };
 
     if (mode === "new") {
@@ -294,7 +319,7 @@
          the quarter hour, the studio's rule), so a day the person didn't log never shapes it */
       const firsts = days.filter((x) => x.d >= 28 && x.d <= 83 && x.logged).map((x) => x.entries.find((e) => e.kind === "bm")).filter(Boolean).map((e) => e.t);
       const tLo = Math.floor(Ut.pct(firsts, 0.1) / 0.25) * 0.25, tHi = Math.ceil(Ut.pct(firsts, 0.75) / 0.25) * 0.25;
-      M.usual = { tLo, tHi, nLo: U.nLo, nHi: U.nHi, fLo: a.lo + 1, fHi: a.hi + 1, wLo: b.lo, wHi: b.hi };
+      M.usual = { tLo, tHi, nLo: U.nLo, nHi: U.nHi, fLo: a.lo + 1, fHi: a.hi + 1, wLo: b.lo, wHi: b.hi, sym: symUsual(days) };
       /* twelve answered Sundays (one skipped), tonight's still to come */
       M.checkins = [];
       for (let w = 0; w < 12; w++) {
@@ -365,6 +390,100 @@
   L.compare = (b, i, v) => {
     if (!b) return null;
     return v < b[i].lo ? { k: "less", text: L.CHECKIN[i].less } : v > b[i].hi ? { k: "more", text: L.CHECKIN[i].more } : { k: "same", text: "About the same" };
+  };
+
+  /* ---------- reading the logs for Insights ----------
+     Every number Insights states comes from here. A day that wasn't logged stays a gap, never a zero; a day logged
+     as No BM is a zero; today counts as far as it has gone. A day "within your usual" had its first BM in the usual
+     window, a usual number of BMs and every form within the usual forms. A BM logged in B whose word covers steps on
+     both sides of the usual can't be placed: that day is "unsure", counted on neither side. Symptoms are counted on
+     their own. */
+  L.RANGES = [7, 30, 90];
+  L.facts = (M, x, mode) => {
+    const pending = x.d === TODAY && !x.entries.length;
+    const logged = !!x.logged && !pending;
+    const es = logged ? x.entries : [];
+    const bms = es.filter((e) => e.kind === "bm");
+    const nobm = es.some((e) => e.kind === "nobm");
+    const count = bms.length ? bms.length : nobm ? 0 : null; /* null: logged, but nothing said about BMs */
+    const first = bms.length ? bms[0].t : null;
+    const sym = {};
+    /* the strongest of the day; 0 when it was logged without a strength, which is never read as mild */
+    es.filter((e) => e.kind === "sym").forEach((e) => e.items.forEach((i) => (sym[i.name] = Math.max(sym[i.name] || 0, i.s || 0))));
+    const u = M.usual;
+    const inWin = u && first != null ? first >= u.tLo && first <= u.tHi : null;
+    const inCount = u && count != null ? count >= u.nLo && count <= u.nHi : null;
+    const fi = u && bms.length ? bms.map((b) => L.inForms(M, b, mode)) : null;
+    const formsIn = !fi ? null : fi.includes(false) ? false : fi.includes(null) ? null : true;
+    const state = !logged || count == null ? "none" : !u ? "logged" : count > 0 && inWin && inCount ? (formsIn ? "usual" : formsIn === false ? "shifted" : "unsure") : "shifted";
+    return { d: x.d, date: x.date, dow: x.dow, today: x.d === TODAY, pending, logged, bms, nobm, count, first, sym, nsym: Object.keys(sym).length, meals: es.filter((e) => e.kind === "meal"), inWin, inCount, formsIn, state };
+  };
+  L.span = (M, n, mode) => { const d0 = Math.max(M.start, TODAY - n + 1); return M.days.filter((x) => x.d >= d0).map((x) => L.facts(M, x, mode)); };
+  /* the stretch just before, for "more or less often". 90 days compares your last 30 with your first 30 */
+  L.prevSpan = (M, n, mode) => {
+    const of = (a, b) => M.days.filter((x) => x.d >= Math.max(M.start, a) && x.d <= b).map((x) => L.facts(M, x, mode));
+    if (n >= 90) return { cur: L.span(M, 30, mode), prev: of(M.start, M.start + 29), cur30: true, label: "your first 30 days" };
+    return { cur: L.span(M, n, mode), prev: of(TODAY - 2 * n + 1, TODAY - n), label: n === 7 ? "the week before" : `the ${n} days before` };
+  };
+  /* a dinner logged at 8 PM or later */
+  L.lateDinner = (M, d) => { const x = L.day(M, d); return !!x && x.logged && x.entries.some((e) => e.kind === "meal" && e.meal === "dinner" && e.t >= 20); };
+  /* how often symptoms came up in the weeks the usual comes from (days 28 to 83) */
+  const symUsual = (days) => {
+    const base = days.filter((x) => x.d >= 28 && x.d <= 83 && x.logged);
+    const n = base.filter((x) => x.entries.some((e) => e.kind === "sym")).length;
+    const share = n / Math.max(1, base.length);
+    return { share, n, of: base.length, every: share ? Math.max(1, Math.round(1 / share)) : null };
+  };
+
+  /* ---------- possible patterns, over the last 90 days ----------
+     A food is checked once it has come up 5 times. To show, a pattern has to hold 5 or more times, most of the time
+     (6 in 10 or more), and far more often than on other days: a one-sided binomial test against the other days'
+     rate, at 1 in 100, because Florin runs twenty or more of these checks at once and a looser bar names foods by
+     chance (it did, on 30 days of Alex's logs: pasta, 5 of 5). Seen together is all a pattern ever claims. */
+  L.LOOSE_AT = 5; /* step 5 or looser: Type 5 in A, Loose or Watery in B, Soft or looser in C */
+  L.isLoose = (e) => Math.min(...L.stepsOf(e)) >= L.LOOSE_AT;
+  L.PATTERN_DAYS = 90;
+  L.PATTERN_BAR = { n: 5, rate: 0.6, p: 0.01 };
+  const choose = (n, k) => { let c = 1; for (let i = 1; i <= k; i++) c = (c * (n - k + i)) / i; return c; };
+  /* the chance of k or more of n by luck alone, if each held as often as on other days */
+  const tail = (k, n, p) => { let s = 0; for (let i = k; i <= n; i++) s += choose(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i); return s; };
+  L.patterns = (M, mode) => {
+    const d0 = Math.max(M.start, TODAY - L.PATTERN_DAYS + 1);
+    const F = {};
+    M.days.forEach((x) => (F[x.d] = L.facts(M, x, mode)));
+    const prev = (f) => F[f.d - 1];
+    const days = Object.values(F).filter((f) => f.d >= d0 && f.logged && prev(f) && prev(f).logged);
+    const mornings = days.filter((f) => f.first != null);
+    const B = L.PATTERN_BAR;
+    const test = (id, kind, food, cond, pool, hitOf, valOf) => {
+      const occ = [], oth = [];
+      pool.forEach((f) => (cond(prev(f)) ? occ : oth).push({ d: f.d, hit: hitOf(f), v: valOf(f) }));
+      const hit = occ.filter((o) => o.hit).length, oh = oth.filter((o) => o.hit).length;
+      const rate = hit / Math.max(1, occ.length), orate = oh / Math.max(1, oth.length);
+      const p = tail(hit, occ.length, (oh + 1) / (oth.length + 2));
+      const show = occ.length >= B.n && rate >= B.rate && rate > orate && p < B.p;
+      return { id, kind, food, occ, oth, n: occ.length, hit, rate, on: oth.length, oh, orate, p, show, tier: occ.length >= 8 && rate >= 0.7 ? { k: 3, label: "Consistent" } : { k: 2, label: "Showing up often" } };
+    };
+    const tests = [];
+    /* dinners after 8 PM, against dinners before 8: was the next first BM later than the usual window? */
+    const dinnered = mornings.filter((f) => prev(f).meals.some((m) => m.meal === "dinner"));
+    const lateCount = Object.values(F).filter((f) => f.d >= d0 - 1 && f.d < TODAY && L.lateDinner(M, f.d)).length;
+    if (M.usual) tests.push(test("late", "late", null, (p) => p.meals.some((m) => m.meal === "dinner" && m.t >= 20), dinnered, (f) => f.first > M.usual.tHi, (f) => f.first));
+    /* each food with 5 or more logs: a looser first BM the next morning (the first BM is the entry, so a word logged
+       in B counts by its steps), and bloating the next day */
+    const counts = L.foodCounts(M, L.PATTERN_DAYS);
+    const foods = Object.keys(counts).filter((f) => L.FOOD_NAMES[f]);
+    const checked = foods.filter((f) => counts[f] >= 5).sort((a, b) => counts[b] - counts[a]);
+    const waiting = foods.filter((f) => counts[f] < 5).sort((a, b) => counts[b] - counts[a]);
+    const ate = mornings.filter((f) => prev(f).meals.length), ateDays = days.filter((f) => prev(f).meals.length);
+    checked.forEach((food) => {
+      const has = (p) => p.meals.some((m) => (m.foods || []).includes(food));
+      tests.push(test(`${food}:loose`, "loose", food, has, ate, (f) => L.isLoose(f.bms[0]), (f) => f.bms[0]));
+      tests.push(test(`${food}:bloat`, "bloat", food, has, ateDays, (f) => f.sym.Bloating != null, (f) => (f.sym.Bloating != null ? f.sym.Bloating : null)));
+    });
+    const found = tests.filter((t) => t.show).sort((a, b) => b.tier.k - a.tier.k || b.rate - a.rate || b.n - a.n);
+    const quiet = checked.filter((food) => !found.some((t) => t.food === food));
+    return { found, tests, checked, quiet, waiting, counts, lateCount, d0 };
   };
 
   /* ---------- changing the model ---------- */

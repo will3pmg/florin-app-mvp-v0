@@ -232,7 +232,7 @@
         ${learn}${head}${body}
         <p class="ap-wk-meals">${plural(W.meals, "meal")} logged</p>
         ${legend ? `<div class="ap-legend ap-wk-legend">${legend}</div>` : ""}
-        <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights">See it on Insights ${ic("chev")}</button>
+        <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights" data-range="7">See the week on Insights ${ic("chev")}</button>
       </section>`;
   };
 
@@ -403,11 +403,6 @@
     const x = st.form != null ? st.form : st.word != null ? { form: null, word: st.word } : null;
     const sel = x == null ? null : { form: st.form, word: st.word };
     const anyFlag = L.FLAGS.some(([k]) => st.flags[k]);
-    const flagsOn = L.FLAGS.filter(([k]) => st.flags[k]).map(([, l]) => lower1(l));
-    /* urgency sits out of the fold: for IBS-D it's the detail most worth counting */
-    const FOLD = L.HOW.filter(([k]) => k !== "rush");
-    const others = FOLD.filter(([k]) => st.how[k]).length + (st.dur != null ? 1 : 0);
-    const detSum = flagsOn.length ? `Noted: ${flagsOn.join(", ")}${others ? ` · ${plural(others, "more detail")}` : ""}` : others ? `${plural(others, "detail")} added` : "Straining, how long, blood or mucus";
     const line = x != null ? `<b>${esc(L.formName(x, mode))}</b> · ${esc(L.formLine(x, mode))}` : `Tap the closest one. It doesn't need to be exact.`;
     return `<div class="ap-fsh" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
       ${sheetHead(st.edit ? "Edit BM" : "Log a BM").replace("<h2>", `<h2 id="${id}-h">`)}
@@ -417,17 +412,14 @@
           <div class="ap-f-lr"><span class="ap-f-l" id="${id}-fl">Consistency</span><button type="button" class="ap-gd-b" data-act="guide">${ic("info")}How to pick</button></div>
           ${RU.formTiles(mode, sel)}
           <p class="ap-fm-line${x != null ? " is-set" : ""}">${line}</p>
-          ${choice("how", [["rush", "Sudden urge to go"]], (v) => !!st.how[v], { label: "Urgency", wrap: true })}
         </div>
-        <div class="ap-det${st.details ? " is-open" : ""}">
-          <button type="button" class="ap-det-h" data-act="details" aria-expanded="${!!st.details}" aria-controls="${id}-det"><span><b>Add details</b><em${flagsOn.length ? ' class="is-flag"' : ""}>${esc(detSum)}</em></span>${ic("down")}</button>
-          <div class="ap-det-b" id="${id}-det"${st.details ? "" : " hidden"}>
-            <div class="ap-f"><span class="ap-f-l">How it went</span>${choice("how", FOLD, (v) => !!st.how[v], { label: "How it went", wrap: true })}</div>
-            <div class="ap-f"><span class="ap-f-l">How long</span>${choice("dur", L.DURATION.map((l, i) => [i, l]), (v, i) => st.dur === i, { label: "How long", single: true })}</div>
-            <div class="ap-f"><span class="ap-f-l">Noticed any of these?</span>${choice("flag", L.FLAGS, (v) => !!st.flags[v], { label: "Noticed any of these?", flag: true, wrap: true })}
-              ${anyFlag ? `<p class="ap-info">${ic("info")}<span>After you save, we'll show when to talk to a clinician. Florin won't try to read this.</span></p>` : ""}</div>
-          </div>
-        </div>
+        <section class="ap-xt" aria-labelledby="${id}-xt">
+          <div class="ap-xt-h"><span class="ap-f-l" id="${id}-xt">Details</span><span class="ap-f-h">All optional</span></div>
+          <div class="ap-f"><span class="ap-xt-l">How it went</span>${choice("how", L.HOW, (v) => !!st.how[v], { label: "How it went", wrap: true })}</div>
+          <div class="ap-f"><span class="ap-xt-l">How long</span>${choice("dur", L.DURATION.map((l, i) => [i, l]), (v, i) => st.dur === i, { label: "How long", single: true })}</div>
+          <div class="ap-f"><span class="ap-xt-l">Noticed any of these?</span>${choice("flag", L.FLAGS, (v) => !!st.flags[v], { label: "Noticed any of these?", flag: true, wrap: true })}
+            ${anyFlag ? `<p class="ap-info">${ic("info")}<span>After you save, we'll show when to talk to a clinician. Florin won't try to read this.</span></p>` : ""}</div>
+        </section>
         ${noteField(id, st, "Anything else? Optional")}
       </div>
       <div class="ap-fsh-f">
@@ -626,7 +618,7 @@
           <ul class="ap-ckr-list">${rows}</ul>
           ${st.tags.length || st.note ? `<p class="ap-ckr-note">${ic("note")}<span>${esc([st.tags.join(", "), st.note].filter(Boolean).join(". "))}</span></p>` : ""}
           <p class="ap-info">${ic("info")}<span>New for you, or getting stronger? Talk to a clinician. Blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain or waking at night to go: start with primary care soon.</span></p>
-          <div class="ap-ck-fin"><button type="button" class="ap-btn ap-btn--block" data-act="close">Done</button>${st.preview ? "" : `<button type="button" class="ap-link" data-act="ck-edit">Change an answer</button>`}<button type="button" class="ap-link" data-act="tab" data-tab="insights" data-close="1">See the trend on Insights ${ic("chev")}</button></div>
+          <div class="ap-ck-fin"><button type="button" class="ap-btn ap-btn--block" data-act="close">Done</button>${st.preview ? "" : `<button type="button" class="ap-link" data-act="ck-edit">Change an answer</button>`}<button type="button" class="ap-link" data-act="idetail" data-k="ck">See the trend on Insights ${ic("chev")}</button></div>
           ${fine(DISC)}
         </div>`;
     }
@@ -674,16 +666,5 @@
     </div>`;
   };
 
-  /* ============================== SECOND PASS ============================== */
-  RU.soon = (which) => {
-    const S = {
-      insights: { t: "Insights", k: "Second pass", p: "A card each for timing, how often, form mix, symptom days, the weekly check-in and meals. Each one leads with your usual in words, then the chart, with a chevron into the detail and Ask about this.", rows: ["Timing · first BM of the day", "How often · BMs a day", "Form mix", "Symptom days", "Weekly check-in trend", "Meals · possible patterns after 5 logs"] },
-      ask: { t: "Ask Florin", k: "Second pass", p: "Its own tab, plus Ask about this on every chart, which opens the chat with that chart's data loaded. The coach test bench rules carry over: answer first, one bold question per turn, options about one turn in three, and an alarm feature routes to primary care.", rows: ["Memories you can see and delete", "Check-ins you opt into", "Small charts in answers"] }
-    }[which];
-    return `<div class="ap-scr ap-soon">
-      <header class="ap-hist-top" data-a><h1 class="ap-h1">${esc(S.t)}</h1></header>
-      <section class="ap-card ap-soon-c" data-a><span class="ap-k">${esc(S.k)}</span><p>${esc(S.p)}</p><ul>${S.rows.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></section>
-      ${fine(DISC)}
-    </div>`;
-  };
+  /* Insights and the Ask tab live in refresh-insights.js */
 })();

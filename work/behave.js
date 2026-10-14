@@ -28,7 +28,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(/BM saved/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)) && await p.$eval(`${ph} .ap-tst`, (e) => /Add details/.test(e.textContent) && /Undo/.test(e.textContent)), "a plus tile logs the BM in one tap, with Add details and Undo");
   ok(await p.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-layer [data-act='edit']").length) === before + 1, "and it shows on Today");
   await p.click(`${ph} .ap-tst [data-act="edit"]`); await wait();
-  ok(await p.$eval(`${ph} .ap-det`, (e) => e.classList.contains("is-open")), "Add details opens the BM with its details open");
+  ok(await p.evaluate(() => !!document.activeElement && !!document.activeElement.closest(".ap-xt")), "Add details opens the BM with focus on its details");
   await p.keyboard.press("Escape"); await wait();
   await p.click(`${ph} .ap-tb-plus`); await wait();
   await p.click(`${ph} .ap-pbm-h`); await wait();
@@ -170,6 +170,69 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     return L.day(M, 87).logged === false;
   });
   ok(gapBack, "a past day emptied by a delete goes back to a gap");
+
+  /* 15. the BM extras show under the form, no fold (Will, Oct 14) */
+  await open("bm");
+  ok(await p.evaluate(() => { const x = document.querySelector(".rx-stage .ap-rx .ap-xt"); return !!x && !document.querySelector(".rx-stage .ap-rx .ap-det") && x.querySelectorAll('[data-act="how"]').length === 4 && x.querySelectorAll('[data-act="dur"]').length === 3 && x.querySelectorAll('[data-act="flag"]').length === 3; }), "Log a BM shows every extra under the form, with no Add details fold");
+  await p.keyboard.press("Escape"); await wait();
+
+  /* 16. Insights reads in all three options: six cards, and the form mix in each option's own terms */
+  const setForm = (v) => p.evaluate((v) => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === v); b && b.click(); }, v);
+  for (const [m, n, lbl] of [["A", 7, "1"], ["B", 5, "Hard"], ["C", 7, "Pellets"]]) {
+    await setForm(m); await wait();
+    await open("insights");
+    const cards = await p.$$eval(`${ph} .ap-ins .ap-ic`, (e) => e.length);
+    await open("i-form");
+    const axis = await p.$$eval(`${ph} .ap-idt .ap-fig:first-of-type .dv-ax`, (e) => e.map((t) => t.textContent));
+    ok(cards === 6 && axis.length === n && axis[0] === lbl, `Insights in ${m}: six cards, the mix as ${n} bins starting ${lbl} (${axis.slice(0, 3).join(", ")})`);
+  }
+
+  /* 17. a word logged in B that straddles the usual reads as could be either, never as a shift */
+  const straddle = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = L.build("alex", "est");
+    const u = M.usual;
+    const w = L.WORDS.find((x) => x.types.length > 1 && x.types.some((k) => k >= u.fLo && k <= u.fHi) && x.types.some((k) => k < u.fLo || k > u.fHi));
+    if (!w) return "no straddling word for this usual";
+    L.add(M, { kind: "bm", d: L.TODAY, t: 18, form: null, word: w.k, how: {}, dur: null, flags: {}, note: "" });
+    const f = L.facts(M, L.day(M, L.TODAY), "A");
+    const html = RU.idetail(M, { form: "A", uid: 99 }, { k: "form", range: 7, y: 0 });
+    return f.state === "unsure" && /Could be either/.test(html) && /is-maybe/.test(html) && !/Outside your usual/.test(html.split("ap-idt-now")[1] || "") ? "ok" : `state ${f.state}`;
+  });
+  ok(straddle === "ok", `a B word that straddles the usual is could be either in A, on neither side (${straddle})`);
+
+  /* 18. a symptom logged without a strength is never called mild on Insights */
+  const unrated = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = L.build("sarah", "est");
+    L.add(M, { kind: "sym", d: L.TODAY, t: 18, items: [{ name: "Nausea", s: 0 }], last: null, note: "" });
+    const html = RU.idetail(M, { form: "C", uid: 98 }, { k: "sym", range: 7, y: 0 });
+    return /Nausea, strength not said/.test(html) && !/Nausea, mild/.test(html);
+  });
+  ok(unrated, "a symptom without a strength reads as strength not said on Insights");
+
+  /* 19. focus follows Insights: into a detail lands on its title, back lands on the card you left */
+  await open("insights");
+  await p.focus(`${ph} .ap-ic-h[data-k="often"]`); await p.keyboard.press("Enter"); await wait(500);
+  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("ap-nav-t") && /How often/.test(document.activeElement.textContent)), "opening a card's detail puts focus on its title");
+  await p.click(`${ph} .ap-back`); await wait(500);
+  ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.matches('.ap-ic-h[data-k="often"]'); }), "back puts focus on the card you opened");
+  await p.click(`${ph} [data-act="irange"][data-v="7"]`); await wait(400);
+  ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.matches('[data-act="irange"][data-v="7"]') && a.getAttribute("aria-pressed") === "true"; }), "a range tab stays focused and pressed after the cards redraw");
+
+  /* 20. the week link on Today opens Insights on 7 days; the saved check-in opens its trend */
+  await open("today");
+  await p.click(`${ph} .ap-wk-go`); await wait(500);
+  ok(await p.evaluate(() => !!document.querySelector('.rx-stage .ap-rx [data-act="irange"][data-v="7"][aria-pressed="true"]') && document.activeElement && document.activeElement.classList.contains("ap-h1")), "See the week on Insights opens Insights on 7 days, focus on its title");
+  await open("ckdone");
+  await p.click(`${ph} .ap-ck-fin [data-act="idetail"]`); await wait(500);
+  ok(await p.evaluate(() => /Weekly check-in/.test((document.querySelector(".rx-stage .ap-rx .ap-nav-t") || {}).textContent || "") && !document.querySelector(".rx-stage .ap-rx .ap-o:not(.is-out)")), "See the trend on Insights closes the check-in and opens its detail");
+
+  /* 21. patterns: every established demo person has one food the logs find; a new person has none */
+  const pats = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS;
+    const est = ["sarah", "marcus", "alex"].map((id) => ["A", "B", "C"].every((m) => L.patterns(L.build(id, "est"), m).found.some((x) => x.food)));
+    return est.every(Boolean) && !L.patterns(L.build("sarah", "new"), "C").found.length;
+  });
+  ok(pats, "each demo person has a food pattern in A, B and C; a new person has none");
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

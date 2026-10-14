@@ -26,7 +26,7 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
     await p.waitForSelector(".ap-rx");
     const mobile = w < 760;
     const ids = mobile ? await p.$$eval('#rxMsheet [data-rx="screen"]', (bs) => bs.map((b) => b.dataset.v)) : await screens(p);
-    const runs = mobile ? [{ form: "A", data: "est" }] : [{ form: "A", data: "est" }, { form: "B", data: "est" }, { form: "A", data: "new" }];
+    const runs = mobile ? [{ form: "A", data: "est" }] : [{ form: "A", data: "est" }, { form: "B", data: "est" }, { form: "C", data: "est" }, { form: "A", data: "new" }, { form: "C", data: "new" }];
     for (const r of runs) {
       if (!mobile) {
         await p.click(`.rx-head [data-rx="form"][data-v="${r.form}"]`).catch(() => {});
@@ -66,7 +66,7 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
   }
 
   /* em dashes and exclamation points in the source strings */
-  for (const f of ["refresh-ui.js", "refresh-app.js", "refresh-data.js"]) {
+  for (const f of ["refresh-ui.js", "refresh-app.js", "refresh-data.js", "refresh-insights.js"]) {
     const src = fs.readFileSync(path.resolve(__dirname, "../prototype/js", f), "utf8");
     src.split("\n").forEach((line, i) => {
       if (/—/.test(line)) note(`${f}:${i + 1}: em dash`);

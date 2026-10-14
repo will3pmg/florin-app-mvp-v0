@@ -10,7 +10,7 @@ const ONLY = process.argv[3] ? process.argv[3].split(",") : null;
 const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 fs.mkdirSync(OUT, { recursive: true });
 
-const SCREENS = ["today", "ck-card", "plus", "earlier", "bm", "bm-details", "guide", "flag", "sym", "meal", "ck", "ck-last", "ckdone", "ckday", "history"];
+const SCREENS = ["today", "ck-card", "plus", "earlier", "bm", "bm-details", "guide", "flag", "sym", "meal", "ck", "ck-last", "ckdone", "ckday", "history", "insights", "i-timing", "i-often", "i-form", "i-sym", "i-ck", "i-pat", "i-pattern", "ask-about", "ask"];
 const STATES = [
   { id: "C-light-est", form: "C", theme: "light", data: "est" },
   { id: "A-light-est", form: "A", theme: "light", data: "est" },

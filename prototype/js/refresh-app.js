@@ -29,7 +29,7 @@
   const KIND = { plus: "sheet", earlier: "sheet", guide: "sheet", flag: "sheet", ckday: "sheet", nobm: "sheet", bm: "full", sym: "full", meal: "full", ck: "screen" };
 
   function Phone(host, cfg) {
-    const S = { form: cfg.form, persona: cfg.persona, data: cfg.data, tab: "today", ovl: [], hist: { filter: "all", n: 14 }, uid: ++UID, undo: null, drafts: {} };
+    const S = { form: cfg.form, persona: cfg.persona, data: cfg.data, tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {} };
     S.M = L.build(S.persona, S.data);
     host.innerHTML = `<div class="ap ap-rx" data-theme="${cfg.theme}">
         <div class="apx-status" aria-hidden="true"><span>7:40</span>${statusIcons}</div>
@@ -56,7 +56,8 @@
     function renderTab(soft) {
       const y = layer.scrollTop;
       S.M.ckDraft = S.ckDraft || null;
-      const html = S.tab === "today" ? RU.today(S.M, V()) : S.tab === "history" ? RU.history(S.M, V(), S.hist) : RU.soon(S.tab);
+      const html = S.tab === "today" ? RU.today(S.M, V()) : S.tab === "history" ? RU.history(S.M, V(), S.hist)
+        : S.tab === "insights" ? (S.ins.k ? RU.idetail(S.M, V(), S.ins) : RU.insights(S.M, V(), S.ins)) : RU.ask(S.M, V(), S.askCtx);
       layer.classList.remove("ap-anim");
       layer.innerHTML = html;
       if (!soft && !reduced()) {
@@ -67,6 +68,14 @@
       }
       layer.scrollTop = soft ? y : 0;
       tb.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-current", String(b.dataset.tab === S.tab)));
+    }
+    /* when the screen under the tab bar is replaced, focus lands on what the person moved to, or its heading */
+    function focusSel(sel) {
+      requestAnimationFrame(() => {
+        if (top()) return;
+        const el = (sel && layer.querySelector(sel)) || layer.querySelector(".ap-nav-t, .ap-h1");
+        if (el) el.focus({ preventScroll: true });
+      });
     }
 
     /* ---------- overlays: the plus menu, the log forms, the check-in ---------- */
@@ -92,8 +101,10 @@
       if (!ov) return;
       requestAnimationFrame(() => {
         if (ov.el.contains(document.activeElement)) return;
-        const t = ov.el.querySelector("[data-autofocus]") || [".ap-ck-q h3", ".ap-ck-opt.is-on", ".ap-ck-opt", ".ap-fm-b.is-on", ".ap-fm-b", ".ap-ch", ".ap-pbm-h", "textarea", "input", "button:not(.ap-o-scrim)"].map((s) => ov.el.querySelector(s)).find(Boolean);
-        if (t) t.focus({ preventScroll: true });
+        /* Add details from the toast lands on the extras, scrolled into view */
+        const xt = !!(ov.st && ov.st.details);
+        const t = ov.el.querySelector("[data-autofocus]") || [xt && ".ap-xt .ap-ch", ".ap-ck-q h3", ".ap-ck-opt.is-on", ".ap-ck-opt", ".ap-fm-b.is-on", ".ap-fm-b", ".ap-ch", ".ap-pbm-h", "textarea", "input", "button:not(.ap-o-scrim)"].filter(Boolean).map((s) => ov.el.querySelector(s)).find(Boolean);
+        if (t) t.focus({ preventScroll: !xt });
       });
     }
     /* what opened an overlay, as a key, so focus can find it again after the screen under it re-renders */
@@ -242,7 +253,7 @@
     function openEntry(id, o = {}) {
       const e = L.find(S.M, id);
       if (!e) return;
-      if (e.kind === "bm") push("bm", { edit: id, d: e.d, t: e.t, form: e.form, word: e.word == null ? null : e.word, how: Object.assign({}, e.how), dur: e.dur, flags: Object.assign({}, e.flags), note: e.note || "", details: !!o.details || Object.entries(e.how || {}).some(([k, v]) => v && k !== "rush") || e.dur != null || Object.values(e.flags || {}).some(Boolean) });
+      if (e.kind === "bm") push("bm", { edit: id, d: e.d, t: e.t, form: e.form, word: e.word == null ? null : e.word, how: Object.assign({}, e.how), dur: e.dur, flags: Object.assign({}, e.flags), note: e.note || "", details: !!o.details });
       else if (e.kind === "sym") { const own = e.items.map((i) => i.name).filter((n) => !L.SYMPTOMS.includes(n)); push("sym", { edit: id, d: e.d, t: e.t, items: e.items.map((i) => Object.assign({}, i)), s: Math.max(0, ...e.items.map((i) => i.s || 0)), last: e.last, note: e.note || "", custom: own.concat(ownSyms().filter((n) => !own.includes(n))) }); }
       else if (e.kind === "meal") push("meal", { edit: id, d: e.d, t: e.t, meal: e.meal, text: e.text, note: e.note || "" });
       else push("nobm", { edit: id, d: e.d, t: e.t });
@@ -273,7 +284,29 @@
 
     /* ---------- every tap inside the phone ---------- */
     const ACT = {
-      tab(b) { closeAll(); if (S.tab === b.dataset.tab) { layer.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" }); return; } S.tab = b.dataset.tab; renderTab(); nav(); },
+      tab(b) {
+        closeAll();
+        const inLayer = layer.contains(b);
+        if (b.dataset.range) S.ins.range = +b.dataset.range;
+        /* tapping the tab you're on goes back to its top: out of an Insights detail, or up the page */
+        if (S.tab === b.dataset.tab) {
+          if (S.tab === "insights" && S.ins.k) { S.ins.k = null; renderTab(); nav(); focusSel(); return; }
+          if (b.dataset.range) { renderTab(true); nav(); return; }
+          layer.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" }); return;
+        }
+        if (b.dataset.tab === "insights" && b.dataset.range) S.ins.k = null;
+        S.tab = b.dataset.tab; renderTab(); nav();
+        if (inLayer) focusSel();
+      },
+      irange(b) { S.ins.range = +b.dataset.v; renderTab(true); nav(); focusSel(`[data-act="irange"][data-v="${CSS.escape(b.dataset.v)}"]`); },
+      idetail(b) {
+        closeAll();
+        if (S.tab === "insights" && !S.ins.k) S.ins.y = layer.scrollTop;
+        S.tab = "insights"; S.ins.k = b.dataset.k; renderTab(); nav(); focusSel(".ap-nav-t");
+      },
+      iback() { const k = S.ins.k; S.ins.k = null; renderTab(true); layer.scrollTop = S.ins.y || 0; nav(); focusSel(k ? `[data-act="idetail"][data-k="${CSS.escape(k)}"]` : null); },
+      "ask-about"(b) { closeAll(); S.askCtx = { k: b.dataset.k, range: S.ins.range }; S.tab = "ask"; renderTab(); nav(); focusSel(); },
+      "ask-clear"() { S.askCtx = null; renderTab(true); nav(); focusSel(); },
       plus() { push("plus"); },
       close() { pop(); },
       "open-bm"(b) { const st = newBm(b.dataset.form ? +b.dataset.form : null, logDay(), b.dataset.word ? +b.dataset.word : null); if (top() && (top().type === "plus" || b.dataset.swap)) swap("bm", st); else push("bm", st); },
@@ -305,7 +338,6 @@
         renderTab(true);
         toast(`BM saved. ${L.formName(e, S.form)} at ${T(e.t)}.${res.replacedNoBm ? " It replaces No BM today." : ""}`, restore, { act: "edit", id: e.id, details: 1, label: "Add details" });
       },
-      details() { const st = top().st; st.details = !st.details; rerender(); },
       how(b) { const st = top().st; st.how[b.dataset.v] = !st.how[b.dataset.v]; rerender(); },
       dur(b) { const st = top().st, v = +b.dataset.v; st.dur = st.dur === v ? null : v; rerender(); },
       flag(b) { const st = top().st; st.flags[b.dataset.v] = !st.flags[b.dataset.v]; rerender(); },
@@ -549,6 +581,8 @@
     /* ---------- what the page needs to know ---------- */
     function key() {
       const t = top();
+      if (!t && S.tab === "insights" && S.ins.k) return S.ins.k.indexOf("pattern:") === 0 ? "i-pattern" : `i-${S.ins.k}`;
+      if (!t && S.tab === "ask" && S.askCtx) return "ask-about";
       if (!t) return S.tab;
       if (t.type === "ck") return t.st.step > L.CHECKIN.length ? "ckdone" : "ck";
       return t.type;
@@ -569,12 +603,13 @@
       closeAll();
       clearTimeout(S.ckT);
       const go = (tab) => { S.tab = tab; renderTab(true); layer.scrollTop = 0; };
+      const ins = (k) => { S.ins.k = k; go("insights"); };
       const now = { instant: true };
       switch (id) {
         case "plus": go("today"); push("plus", {}, now); break;
         case "earlier": go("today"); push("plus", {}, now); push("earlier", {}, now); break;
         case "bm": go("today"); push("bm", newBm(null), now); break;
-        case "bm-details": go("today"); push("bm", Object.assign(newBm(6), { details: true, how: { rush: true }, dur: 1 }), now); break;
+        case "bm-details": go("today"); push("bm", Object.assign(newBm(6), { how: { rush: true }, dur: 1 }), now); break;
         case "guide": go("today"); push("bm", newBm(null), now); push("guide", {}, now); break;
         case "flag": go("today"); push("flag", { flags: { blood: true } }, now); break;
         case "sym": go("today"); push("sym", Object.assign(newSym(), { items: [{ name: "Bloating", s: 0 }], s: 2, last: 1 }), now); break;
@@ -584,14 +619,22 @@
         case "ckdone": go("today"); push("ck", { step: L.CHECKIN.length + 1, answers: [1, 0, 1, 1], tags: ["Eating out"], note: "", preview: true }, now); break;
         case "ckday": go("today"); push("ckday", Object.assign({}, S.M.ckDay), now); break;
         case "history": go("history"); break;
-        case "insights": go("insights"); break;
-        case "ask": go("ask"); break;
+        case "insights": ins(null); break;
+        case "i-timing": ins("timing"); break;
+        case "i-often": ins("often"); break;
+        case "i-form": ins("form"); break;
+        case "i-sym": ins("sym"); break;
+        case "i-ck": ins("ck"); break;
+        case "i-pat": ins("pat"); break;
+        case "i-pattern": { const f = L.patterns(S.M, S.form).found; ins(f.length ? `pattern:${(f.find((p) => p.kind !== "late") || f[0]).id}` : "pat"); break; }
+        case "ask": S.askCtx = null; go("ask"); break;
+        case "ask-about": S.askCtx = { k: "timing", range: S.ins.range }; go("ask"); break;
         case "ck-card": go("today"); { const c = layer.querySelector(".ap-ckc"); if (c) layer.scrollTop = Math.max(0, c.offsetTop - 64); } break;
         default: go("today");
       }
       nav();
     }
-    function rebuild() { clearTimeout(S.ckT); S.ovl.forEach((o) => o.el.remove()); S.ovl = []; S.M = L.build(S.persona, S.data); S.ckDraft = null; S.drafts = {}; S.hist = { filter: "all", n: 14 }; tst.classList.remove("is-on"); S.undo = null; }
+    function rebuild() { clearTimeout(S.ckT); S.ovl.forEach((o) => o.el.remove()); S.ovl = []; S.M = L.build(S.persona, S.data); S.ckDraft = null; S.drafts = {}; S.hist = { filter: "all", n: 14 }; S.ins = { range: 30, k: null, y: 0 }; S.askCtx = null; tst.classList.remove("is-on"); S.undo = null; }
     const api = {
       el: root,
       open,
@@ -630,16 +673,61 @@
     return `This week A and C put ${ab.W[m].inForms} of ${ab.n} BMs within ${M.P.name}'s usual (${L.usualFormsText(M, m)}), and B puts ${ab.W.B.inForms} of ${ab.n} (${L.usualFormsText(M, "B")}). The difference is ${day} ${T(b.t)} BM: ${b.form != null ? `step ${b.form}, which B calls ${w.word}, a word that also covers step ${w.types.find((k) => k !== b.form)}` : `logged in B as ${w.word}`}.`;
   };
 
+  /* Will, Oct 14: show the extras, then decide which ones earn their place */
+  const EXTRAS_Q = "Which extras stay? Shown under the form now (Will, Oct 14), so each one costs height, not a tap: Sudden urge to go, Had to strain, Didn't feel finished, Burning, How long (three steps), and the flag for blood, mucus or black. The flag stays for safety and urgency matters most for IBS-D; the rest are a call.";
+  /* the patterns, said the way the notes need them */
+  const patSay = (M, f) => {
+    const R = L.patterns(M, f);
+    if (!R.found.length) return "No possible patterns clear the bar for this person yet.";
+    return `${M.P.name}: ${R.found.map((p) => `${p.kind === "late" ? "later dinners, later first BMs" : `${L.FOOD_NAMES[p.food][0].toLowerCase()}, then ${p.kind === "loose" ? "a looser first BM" : "bloating the next day"}`} (${p.hit} of ${p.n})`).join("; ")}.`;
+  };
+  /* a found food that clears the bar only with another found food's days in it */
+  const rideAlong = (M, f) => {
+    const fp = L.patterns(M, f).found.filter((p) => p.food);
+    const ate = (d, food) => { const x = L.day(M, d); return !!x && x.entries.some((e) => e.kind === "meal" && (e.foods || []).includes(food)); };
+    for (const p of fp) for (const q of fp) {
+      if (p.kind !== q.kind || p.food === q.food) continue;
+      const rest = p.occ.filter((o) => !ate(o.d - 1, q.food)), shared = p.n - rest.length, h = rest.filter((o) => o.hit).length;
+      /* enough days without the other food to judge, and the pattern falls under the bar on those days */
+      if (shared / p.n >= 0.3 && rest.length >= L.PATTERN_BAR.n && h / rest.length < L.PATTERN_BAR.rate) {
+        const pn = L.FOOD_NAMES[p.food][0], qn = L.FOOD_NAMES[q.food][0].toLowerCase();
+        return `${pn} clears the bar partly through ${qn}: they came together ${shared} of ${p.n} times, and without ${qn} the ${p.kind === "loose" ? "looser mornings" : "bloating"} came ${h} of ${rest.length} times. Hold back a food like this, or show it with a note?`;
+      }
+    }
+    return "";
+  };
+  /* the summary's day count, read all three ways */
+  const abDays = (M) => {
+    if (!M.usual) return "";
+    const k = (m) => { const F = L.span(M, 30, m); return { w: F.filter((x) => x.state === "usual").length, n: F.filter((x) => x.state === "usual" || x.state === "shifted").length }; };
+    const r = { A: k("A"), B: k("B"), C: k("C") };
+    const ac = r.A.w === r.C.w && r.A.n === r.C.n ? `A and C put ${r.A.w} of ${r.A.n}` : `A puts ${r.A.w} of ${r.A.n}, C ${r.C.w} of ${r.C.n},`;
+    if (r.A.w === r.B.w && r.B.w === r.C.w) return `Over 30 days all three agree: ${r.A.w} of ${r.A.n} days within ${M.P.name}'s usual.`;
+    return `The option moves the summary: over 30 days, ${ac} days within ${M.P.name}'s usual, and B ${r.B.w} of ${r.B.n}. A day with one BM outside the usual forms counts as shifted, and B's five words absorb some of those.`;
+  };
+  const abMonthN = (M) => L.span(M, 30, "A").reduce((s, x) => s + x.bms.length, 0);
+  const abMonthK = (M, m) => L.span(M, 30, m).reduce((s, x) => s + x.bms.filter((b) => L.inForms(M, b, m) === true).length, 0);
+  const abMonth = (M) => {
+    if (!M.usual) return "With a new person there's no usual yet.";
+    const n = abMonthN(M), k = { A: abMonthK(M, "A"), B: abMonthK(M, "B"), C: abMonthK(M, "C") };
+    /* the most common form, read each way: B's words can flip it */
+    const top = (m) => { const c = {}; L.span(M, 30, m).forEach((x) => x.bms.forEach((b) => { const w = L.formName(b, m); c[w] = (c[w] || 0) + 1; })); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [""])[0]; };
+    const tA = top("A"), tB = top("B"), tC = top("C");
+    const ac = k.A === k.C ? `A and C put ${k.A}` : `A puts ${k.A}, C ${k.C},`;
+    const flip = tB && tC && tB !== tC ? ` The most common form reads differently too: ${tC} in C (${tA} in A), ${tB} in B, because B counts two steps as one word.` : "";
+    return `Over 30 days, ${ac} of ${n} BMs within ${M.P.name}'s usual (${L.usualFormsText(M, "C")}), and B puts ${k.B} (${L.usualFormsText(M, "B")}).${flip}`;
+  };
+
   /* ---------- the Oct 14 workshop: what changed, and the calls ---------- */
   const WORKSHOP = {
     changed: [
       ["Plus menu", ["A close button, and a drag down closes it", "Tiles 44px wide with How to pick on the card, and a tile now logs the BM in one tap, with Add details and Undo", "Log for an earlier day, a week back, and Add to this day on a gap in History", "Log no BM today from 5 PM on the day"]],
-      ["Log a BM", ["A third option, C: seven steps in our own words, no numbers. A and B stay to compare", "Our own words and marks for the seven steps. The first pass followed the scale's own descriptions", "B saves its word, never a step the person didn't pick, and each B word sits on the step C gives the same word", "Sudden urge to go sits under the tiles; blood, mucus and black stools are named in the fold", "The flag note offers a report for a clinician, an urgent care line and Undo"]],
+      ["Log a BM", ["A third option, C: seven steps in our own words, no numbers. A and B stay to compare", "Our own words and marks for the seven steps. The first pass followed the scale's own descriptions", "B saves its word, never a step the person didn't pick, and each B word sits on the step C gives the same word", "The extras show under the form, all optional, as Will asked; blood, mucus and black stools are named on the flag", "The flag note offers a report for a clinician, an urgent care line and Undo"]],
       ["Log symptoms", ["One strength for the entry, how long it lasted, and when it started", "Low energy back, Burning moved to the BM, your own symptoms come back next time", "A symptom without a strength no longer reads as mild", "Fever, vomiting or blood typed into a note opens the primary care note"]],
       ["Log a meal", ["One food matcher for the seeded meals and for typing, with plurals and drinks", "The foods Florin counted show as you type", "Same as yesterday, and recent foods that add to the text", "The time follows the meal you pick; Other reads as Snack or drink"]],
       ["Weekly check-in", ["The chip and the band use one rule, so they can't disagree", "A taller trend with all four steps labelled, the first weeks named in words, and a table for screen readers", "The recall window in words, Next after an answer, and Change an answer", "Your logs this week above the answers; the clinician line and disclaimer at the end"]],
       ["Today", ["One sentence against the person's usual; the day chart is gone", "The week as three counts over seven-day strips, shifts as hollow Gold rings", "A next step from what today is missing", "The clinician line wherever symptoms show"]],
-      ["Throughout", ["Sheets hold focus, a half-filled log is kept when closed, and focus returns after saving", "44px targets, Ink 2 for anything to read, no colour meaning more than one thing in dark", "No sideways scroll at any width, and Add details stays folded"]]
+      ["Throughout", ["Sheets hold focus, a half-filled log is kept when closed, and focus returns after saving", "44px targets, Ink 2 for anything to read, no colour meaning more than one thing in dark", "No sideways scroll at any width"]]
     ],
     calls: [
       ["Types 1 to 7 (A), five words (B), or seven words (C)?", "C. Seven steps, one word each in our own words, no numbers or scale name in the app. The step is stored, so a clinician report can add the number once licensed. Send the Rome Foundation one request covering that export and IBS-SSS for the NSF study arm, and ship C once counsel has read its words and marks next to the scale.", "Built as C, A and B kept to compare; counsel to read C"],
@@ -651,13 +739,13 @@
       ["A FloraScore from manual logs?", "No. It would move whenever someone forgets to log, and read as a grade. The Forest card on Today keeps the slot for Florin One.", "Built"],
       ["Check-in baseline: the first three answered check-ins?", "Yes. Later, offer a way to start fresh from the next three.", "Built"],
       ["BM or visit?", "BM. It's what today's app says. Keep visit for what Florin One detects. The studio's claims rule should suggest BM, not visits.", "Built here; the studio rule to change"],
-      ["Urgency inside Add details, or out?", "Out, as one chip under the tiles. For IBS-D it's the detail most worth counting, and folded away it gets under-logged. The brief had it folded, so this is a change from it.", "Built; needs your OK"],
+      ["Which BM extras stay?", "All of them show under the form now, as Will asked on Oct 14, so each costs height, not a tap. Keep the flag for safety and Sudden urge to go for IBS-D. Burning and Didn't feel finished are the first to cut if the form feels long.", "Inline now; needs your call on which stay"],
       ["Fever, vomiting or blood typed into a note?", "It opens the same primary care note as a flagged BM, the way Ask Florin's alarm banner works. Florin never reads past naming the sign. Common phrases like blood pressure are left out.", "Built"],
       ["History: a tab, or under Today?", "A tab for now, doing what Today can't: catching up, and the report for a clinician. Revisit after Insights.", "Built"],
       ["A weekly report beyond the check-in?", "No. The saved check-in shows the week's logs above the answers.", "Built"]
     ]
   };
-  const workshopHTML = () => `<div class="rx-ws-h"><p class="rx-eyebrow">Workshop · Oct 14</p><h2>What changed, and the calls</h2><p>Nine reviews of the first pass, by screen, brand and claims, accessibility and the open questions. Everything below is in the prototype now, except where a call says it needs your OK. The report for a clinician is a placeholder until the second pass.</p></div>
+  const workshopHTML = () => `<div class="rx-ws-h"><p class="rx-eyebrow">Workshop · Oct 14</p><h2>What changed, and the calls</h2><p>Nine reviews of the first pass, by screen, brand and claims, accessibility and the open questions. Everything below is in the prototype now, except where a call says it needs your OK. Insights and the Ask hand-off came in from the second pass the same day; their questions sit in the notes beside each Insights screen. The report for a clinician is still a placeholder.</p></div>
       <div class="rx-ws-cols">
         <section aria-label="Calls"><h3 class="rx-h3">The calls</h3><ol class="rx-ws-calls">${WORKSHOP.calls.map(([q, r, s]) => `<li><b>${esc(q)}</b><p>${esc(r)}</p><span class="rx-ws-st${/OK|needs|counsel|regulatory|studio/i.test(s) ? " is-you" : ""}">${esc(s)}</span></li>`).join("")}</ol></section>
         <section aria-label="What changed"><h3 class="rx-h3">What changed</h3>${WORKSHOP.changed.map(([g, items]) => `<div class="rx-ws-g"><b>${esc(g)}</b><ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}</section>
@@ -701,21 +789,21 @@
       ba: [
         ["A slider from Hard to Watery", "Five tiles: Hard, Firm, Formed, Loose, Watery"],
         ["First pass: B saved a step the person never picked", "B saves its word. Seen through A it reads Loose (Type 5 or 6); through C, Loose (Soft or loose)"],
-        ["Ten symptom pills on every BM", "Moved to Log symptoms. Urgency sits under the tiles, the rest folds away"],
+        ["Ten symptom pills on every BM", "Moved to Log symptoms. Urgency, straining, how long and blood or mucus show under the form, all optional"],
         ["Bloody and Mucus as symptom pills", "A flag that shows a clinician note after saving, never a reading of it"]
       ],
-      open: ["B has no licensing question, but its five words merge 1 with 2 and 5 with 6. The line between 5 and 6 is the one that matters most for IBS-D.", abLine(M, f)],
+      open: ["B has no licensing question, but its five words merge 1 with 2 and 5 with 6. The line between 5 and 6 is the one that matters most for IBS-D.", abLine(M, f), EXTRAS_Q],
       res: ["A clinical reviewer criticised Bowelle's own 1 to 5 scale for not matching the 1 to 7.", "Throne: record the type number, not a description."]
     }) : f === "A" ? ({
       t: "Log a BM · A, types 1 to 7",
       lede: "Seven tiles, harder to looser, each with its number and a word. Shipping A means licensing the scale and using its own wording; the words here are stand-ins.",
       ba: [
-        ["Four sliders: consistency, duration, odor, completeness", "Seven tiles. Urgency sits under them; straining, how long and blood or mucus fold away"],
+        ["Four sliders: consistency, duration, odor, completeness", "Seven tiles, then the extras right under them, all optional"],
         ["Odor", "Dropped. It was a sensor-era field"],
         ["Ten symptom pills on every BM", "Moved to Log symptoms. The BM keeps a note"],
         ["First pass: lines that followed the scale's own descriptions, and bare numbers on the tiles", "Our own words from two cues, how firm and how many pieces, our own marks, and a word on every tile"]
       ],
-      open: ["A means licensing the scale from the Rome Foundation, then its own wording, word for word, in place of these.", abLine(M, f)],
+      open: ["A means licensing the scale from the Rome Foundation, then its own wording, word for word, in place of these.", abLine(M, f), EXTRAS_Q],
       res: ["Throne: record the type number. Urgency, straining and not feeling finished as three separate items.", "GutLog keeps its visual guide behind an (i) instead of crowding the picker."]
     }) : ({
       t: "Log a BM · C, seven words (proposed)",
@@ -724,9 +812,9 @@
         ["A: numbers a first-timer has to learn", "A word on every tile"],
         ["B: five words that merge two pairs of steps", "Seven words, one per step, so the loose end can be counted"],
         ["Today's five-word logs", "Carry over as one or two steps: Hard is 1 or 2, Loose is 5 or 6"],
-        ["Four sliders, odor and ten pills", "Seven tiles, urgency under them, the rest folded, symptoms on their own"]
+        ["Four sliders, odor and ten pills", "Seven tiles, the extras under them, symptoms on their own"]
       ],
-      open: ["Recommended. Send the Rome Foundation one request covering a licensed export and IBS-SSS for the NSF study arm.", "Ask counsel to read C's words, lines and marks next to the scale before it ships. They describe the same seven forms in our own words; whether that needs the licence is their call.", abLine(M, f)],
+      open: ["Recommended. Send the Rome Foundation one request covering a licensed export and IBS-SSS for the NSF study arm.", "Ask counsel to read C's words, lines and marks next to the scale before it ships. They describe the same seven forms in our own words; whether that needs the licence is their call.", abLine(M, f), EXTRAS_Q],
       res: ["Throne: record the type number. C stores it, and shows a word.", "A clinical reviewer criticised Bowelle's own 1 to 5 scale for not matching the 1 to 7. C matches it step for step."]
     }),
     guide: (M, f) => ({
@@ -795,17 +883,98 @@
     }),
     ckday: () => ({ t: "When it's due", lede: "Sunday evening by default. The person picks the day and morning or evening, and gets one reminder. The questions always cover the 7 days that end on that day.", ba: [["Due whenever you opened Insights", "Due once a week, on a day you choose"]], open: [], res: ["Oura's Advisor: opt-in check-ins at a frequency and time the person picks."] }),
     history: () => ({ t: "History (basic)", lede: "Every kind of entry in one list, newest day first. A gap stays a gap, with Add to this day for catching up. Not workshopped yet.", ba: [["Consistency in green, brown and yellow, with odor", "The same rows as Today, in neutral ink"]], open: ["Does History stay a tab, or move under Today?"], res: ["CareClinic lets people catch up on several entries in one go."] }),
-    insights: () => ({ t: "Insights", lede: "Second pass. Placeholder so the tab bar works.", ba: [], open: [], res: [] }),
-    ask: () => ({ t: "Ask Florin", lede: "Second pass. Placeholder so the tab bar works.", ba: [], open: [], res: [] })
+    insights: (M, f) => ({
+      t: "Insights",
+      lede: M.usual ? "A summary in the person's terms, then one card per question: timing, how often, form, symptoms, the weekly check-in and possible patterns. Each card says the usual in words, then a count, then the chart. The chevron opens the detail; Ask about this opens chat with the card's numbers." : "The learning state: counts only, no band and no Gold, until day 14. Patterns wait for 5 logs of a food.",
+      ba: [
+        ["Insights forced the weekly report on every visit", "The check-in is one card with its trend. It never blocks Insights"],
+        ["FloraScore, VOC and duration tiles from the sensor", "Only what the person logs: timing, how often, form, symptoms, check-ins and meals"],
+        ["The studio's 24-hour clock for timing", "A morning strip from the data vis board: one dot per morning on a straight time axis"],
+        ["Patterns from synced sleep and workouts", "Patterns from logged meals, only after a food comes up 5 times"]
+      ],
+      open: [
+        "A day counts as within your usual when the first BM landed in the window, the count was usual and every form was within the usual. A word logged in B that could sit either side counts on neither. Symptoms are counted on their own card. Right definition?",
+        `Symptoms have no band: their usual is how often they came up in the person's first weeks${M.usual && M.usual.sym.every ? ` (about 1 day in ${M.usual.sym.every} for ${M.P.name})` : ""}. Enough, or no usual for symptoms at all?`,
+        "Patterns use the last 90 days whatever the range. 30 days of manual logs named a food by chance in testing (Alex, pasta, 5 of 5), so the bar is a binomial test at 1 in 100 against other days.",
+        patSay(M, f),
+        rideAlong(M, f),
+        abDays(M)
+      ].filter(Boolean),
+      res: ["Function opens on summary counts, in range and out of range, with a pending state. The summary card does the same, in the person's terms.", "Oura's Vitals: one card per metric with the personal baseline, a down-arrow for what shaped it, a side-arrow into the detail.", "Oura waits up to 2 weeks before judging anything. Switch Logs to New, day 5 to see the learning state.", "Oura shows a Discovery only after a tag is used about 5 to 40 times, as one plain sentence."]
+    }),
+    "i-timing": (M) => ({
+      t: "Timing, the detail",
+      lede: "The detail template: the typical value and today against the usual, range tabs, the main chart, a second chart, What shaped this folded away, Ask about this, the table, and Next to move on.",
+      ba: [["A 24-hour clock with visits spiralling out", "The morning strip, with the window named under the axis, and every BM by day below it"], ["Visit duration from the sensor", "Not logged by hand any more, so not charted"]],
+      open: ["Next steps through the cards like Oura's swipe. Is a Next button enough, or should detail pages swipe?", M.usual ? "Late-dinner days are flagged in Teal (context), not Plum: on the board, Plum is reserved for your usual." : "No window until day 14."],
+      res: ["Oura's detail: the current value large, the average beside it, a Day, Week, Month toggle.", "Function's detail page got called a wall of text, so What shaped this is folded by default."]
+    }),
+    "i-often": () => ({
+      t: "How often, the detail",
+      lede: "Bars from zero over the usual band. Gold for a day outside it, a Gold ring for a day logged as No BM, a faint column for a day with nothing logged.",
+      ba: [["An empty day read as zero", "A gap stays a gap. Only No BM counts as zero"]],
+      open: ["Today counts as far as it has gone (one BM by 7:40 PM). Fine, or leave today out of averages until it ends?"],
+      res: ["Throne's guidance: log the days with no BM, so they're not read as missing."]
+    }),
+    "i-form": (M, f) => ({
+      t: `Form, the detail · ${L.MODES[f]}`,
+      lede: "The mix as a histogram with the usual as a bracket under the axis, then each BM by day with the usual forms as the band. A and C chart steps; B charts words.",
+      ba: [["A consistency slider average", "The mix, and every BM, against the person's own usual forms"], ["First take: a B log forced onto one type", "A word logged in B sits between its two steps, hollow when it could be either"]],
+      open: [`A, B and C read the same month differently. ${abMonth(M)}`, "Should Form show the first BM of the day only, or every BM (built: every BM)?"],
+      res: ["GI apps chart stool type over 7, 30 and 90 days.", "Throne: record the type number, not a description. C stores it and shows a word."]
+    }),
+    "i-sym": () => ({
+      t: "Symptoms, the detail",
+      lede: "Dot rows: a dot only on the days a symptom came up, bigger and darker when stronger, faint columns for days with nothing logged. Then each symptom against the stretch before, and when to see a clinician.",
+      ba: [["A heat map of four check-in feelings", "Dot rows for the symptoms the person logged, with a count under each name"], ["Improving or worsening", "More often, less often or about the same. Gold either way"], ["A symptom logged without a strength read as mild", "Its dot is the smallest, and its label says strength not said"]],
+      open: ["Seven days switch to cells (one Forest step per strength). Keep both, or dot rows everywhere?"],
+      res: ["The data vis board's symptom rows.", "DESIGN.md: the clinician note is Teal, primary care first, never red."]
+    }),
+    "i-ck": (M) => ({
+      t: "Weekly check-in, the detail",
+      lede: `The latest week next to the first three check-ins, each question with its 13-week trend.${M.checkin.status === "due" ? " This week's is due tonight, so the button starts it." : ""}`,
+      ba: [["The weekly report forced through symptom tracking", "Its own card and trend. Answered from Today, the plus menu or here"]],
+      open: ["Is a weekly report, Oura style, worth having beyond this?"],
+      res: ["Oura's weekly report is a dismissible Today card, archived under Reports."]
+    }),
+    "i-pat": (M, f) => ({
+      t: "Possible patterns",
+      lede: "Every pattern that clears the bar, the foods checked with nothing standing out, and the foods still short of 5 logs, with how the bar works.",
+      ba: [["Patterns from sensor reads, synced sleep and workouts", "From meals and dinner times the person logged"], ["Early signal, from a few examples", "Dropped: with the 5-log gate a pattern starts at Showing up often"]],
+      open: [patSay(M, f), rideAlong(M, f), "Name a food on Showing up often (5 or more), or wait for Consistent (8 or more)?"].filter(Boolean),
+      res: ["Oura's Discoveries: only after 5 to 40 uses of a tag, with a caveat that one may not hold for you.", "Manual logs are sparse: gate on repeats and say possible pattern, or the coach overclaims."]
+    }),
+    "i-pattern": () => ({
+      t: "One possible pattern",
+      lede: "One dot per time the condition came up, filled when it held, next to the same count for every other day. Then the pattern over time, seen together not proof, and a way to test it.",
+      ba: [["A strength meter and a sentence", "Count dots for both groups, so the comparison is the picture"]],
+      open: ["What you could try never says avoid. Right tone for a food the person enjoys?", "Late-dinner patterns use dinner times, so they need dinner logged on both kinds of evening."],
+      res: ["Oura frames Discoveries as yours, and says one may not hold for you. Florin says seen together, not proof."]
+    }),
+    ask: () => ({
+      t: "Ask Florin",
+      lede: "Its own tab. Chat is the next pass; this pass builds the way in: questions to start, and the composer.",
+      ba: [["A coach with a doctor's title", "Ask Florin, never a doctor's title"]],
+      open: ["Which starting questions on the plain tab?"],
+      res: ["Oura Advisor: memories the person can see and delete, opt-in check-ins, charts in answers."]
+    }),
+    "ask-about": () => ({
+      t: "Ask about this",
+      lede: "Every Insights card and detail has Ask about this. It opens the Ask tab with that card's numbers loaded, so chat starts from the same figures as the chart, plus three questions to start.",
+      ba: [["Chat that may not match the screen", "The same numbers as the chart, loaded with it"]],
+      open: ["The answers come next. The coach test bench rules carry over: answer first, one bold question per turn, options about one turn in three, an alarm feature routes to primary care."],
+      res: ["Oura admits Advisor's data may not always match the app. Loading the card's numbers avoids that."]
+    })
   };
 
   /* the list of screens beside the phone */
   const SCREENS = [
-    ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["compare-bm", "Log a BM, A, B and C side by side"], ["bm-details", "Log a BM, details open"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log a meal"]]],
+    ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["compare-bm", "Log a BM, A, B and C side by side"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log a meal"]]],
     ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
-    ["Tabs", [["today", "Today"], ["history", "History, basic"], ["insights", "Insights, second pass"], ["ask", "Ask, second pass"]]]
+    ["Insights", [["insights", "Insights"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
+    ["Tabs", [["today", "Today"], ["history", "History, basic"], ["ask", "Ask Florin"]]]
   ];
-  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", nobm: "today" }[k] || "today");
+  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", "ask-about": "ask-about", nobm: "today", "i-timing": "i-timing", "i-often": "i-often", "i-form": "i-form", "i-sym": "i-sym", "i-ck": "i-ck", "i-pat": "i-pat", "i-pattern": "i-pattern" }[k] || "today");
 
   /* ====================================================================== */
   /* THE PAGE                                                                */
@@ -835,9 +1004,9 @@
   mount.innerHTML = `
     <header class="rx-head">
       <div class="rx-head-l">
-        <p class="rx-eyebrow">Florin app refresh · First pass, workshopped · Oct 14</p>
-        <h1>Logging, the <span class="rx-nw">check-in</span> and Today</h1>
-        <p class="rx-lede">Today's app, the one that ships without hardware. Tap through it like the app: plus logs a BM, symptoms or a meal, and the weekly check-in never blocks anything. Consistency comes three ways: A and B as briefed, and C, the seven words this pass proposes.</p>
+        <p class="rx-eyebrow">Florin app refresh · Second pass · Oct 14</p>
+        <h1>Logging, Today and Insights</h1>
+        <p class="rx-lede">Today's app, the one that ships without hardware. Tap through it like the app: plus logs a BM, symptoms or a meal, the weekly check-in never blocks anything, and Insights reads it all against the person's own usual. Consistency comes three ways: A and B as briefed, and C, the seven words the workshop proposes.</p>
       </div>
       <div class="rx-head-r" role="group" aria-label="Consistency">
         <span class="rx-ctl-l">Consistency</span>
@@ -966,11 +1135,13 @@
     const ab = abWeek(M);
     /* each column from its own phone, so a log on phone B shows in B's column */
     const wk = (m) => { const ph = P.phones.find((p) => p.form() === m) || P.phones[0], Mi = ph.model(), Wi = RU.week(Mi, m); return Mi.usual ? `${Wi.inForms} of ${Wi.bms.length - Wi.unsure} BMs within the usual, ${L.usualFormsText(Mi, m)}` : `Still learning the usual, day ${L.learnDay(Mi)}`; };
+    const mo = (m) => { const ph = P.phones.find((p) => p.form() === m) || P.phones[0], Mi = ph.model(); return Mi.usual ? `${abMonthK(Mi, m)} of ${abMonthN(Mi)} BMs within the usual` : `Still learning the usual, day ${L.learnDay(Mi)}`; };
     const rows = [
       ["On each tile", "A number and a word", "One of five words", "One of seven words"],
       ["To log a usual BM", "Plus, then a tile. Saved, with Undo", "Plus, then a tile. Saved, with Undo", "Plus, then a tile. Saved, with Undo"],
       ["Steps the log keeps", "Seven", "Five. Hard covers 1 and 2, Loose covers 5 and 6", "Seven"],
       [`This week, ${M.P.name}`, wk("A"), wk("B"), wk("C")],
+      [`Last 30 days on Insights, ${M.P.name}`, mo("A"), mo("B"), mo("C")],
       ["With a clinician", "The numbers they know", "Words that cover one or two steps", "The step is stored, so a report can carry the number once licensed"],
       ["Licensing", "The Rome Foundation's licence, then the scale's own wording, word for word. The words here are stand-ins", "None for the words", "Pending counsel's read: the words, lines and marks are ours but describe the same seven forms. License the report's numbers"],
       ["Today's five-word logs", "Can't become one number each", "Carry over as they are", "Carry over as one or two steps"],

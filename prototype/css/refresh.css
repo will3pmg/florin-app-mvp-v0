@@ -272,16 +272,11 @@
 /* the icon box is one line of text tall, so the icon centres on the first line without a nudge */
 .ap-info .ic { width: 16px; height: 1.45em; flex: none; }
 
-/* Add details, folded away by default */
-.ap-det { border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
-.ap-det-h { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; text-align: left; }
-.ap-det-h span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.ap-det-h b { font-size: 15px; font-weight: 500; }
-.ap-det-h em { font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink2); }
-.ap-det-h em.is-flag { color: var(--ap-info-ink); font-weight: 500; }
-.ap-det-h > .ic { color: var(--ap-ink3); transition: transform .25s var(--ap-ease); }
-.ap-det.is-open .ap-det-h > .ic { transform: rotate(180deg); }
-.ap-det-b { display: flex; flex-direction: column; gap: 20px; padding: 0 16px 16px; }
+/* the BM extras, shown under the form (Oct 14: no Add details tap), all optional */
+.ap-xt { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-xt-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ap-xt-l { font-size: 13.5px; font-weight: 500; color: var(--ap-ink2); }
+.ap-xt .ap-f { gap: 8px; }
 
 /* the (i) guide */
 .ap-gd-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
@@ -426,14 +421,168 @@
 .ap-nx { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .ap-nx p { font-family: var(--serif); font-size: 16px; line-height: 1.4; color: var(--ap-ink); }
 
-/* History (basic) and the second-pass tabs */
+/* History (basic) */
 .ap-hist-top { display: flex; flex-direction: column; gap: 4px; padding: 4px; }
 .ap-hist-f { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; }
 .ap-hist-f::-webkit-scrollbar { display: none; }
 .ap-hd-none { padding-inline: 4px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
-.ap-soon-c { display: flex; flex-direction: column; gap: 12px; }
-.ap-soon-c p { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
-.ap-soon-c ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--ap-ink2); }
+
+/* ---------- Insights ---------- */
+.ap-rx { --dv-nock: color-mix(in srgb, var(--ap-ink) 7%, transparent); }
+.ap-top--ins .ap-chip { align-self: flex-end; }
+.ap-sum-top .ap-big small { font-size: 18px; white-space: nowrap; }
+.ap-dhero .ap-big small { white-space: nowrap; }
+.ap-sum-top p { font-size: 14.5px; line-height: 1.35; }
+.ap-sum-lede { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: var(--ap-ink2); margin-top: 12px; }
+.ap-sum-counts { list-style: none; margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid var(--ap-line); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ap-sum-counts li { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; line-height: 1.25; color: var(--ap-ink3); }
+.ap-sum-counts b { font-size: 24px; font-weight: 300; letter-spacing: -.02em; line-height: 1; color: var(--ap-ink); }
+.ap-sum--learn .ap-learn-bar { margin-top: 4px; }
+
+/* one card per question: the usual in words, a count, the chart, then Ask about this */
+.ap-ic { display: flex; flex-direction: column; gap: 12px; }
+.ap-ic-h { width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) 16px; gap: 12px; align-items: center; text-align: left; }
+.ap-ic-ic { --gl-bg: var(--ap-card2); width: 32px; height: 32px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); display: grid; place-items: center; }
+.ap-ic-ic .ic, .ap-ic-ic .ap-gl { width: 18px; height: 18px; }
+.ap-ic-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ap-ic-t b { font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -.01em; }
+.ap-ic-go { width: 16px !important; height: 16px !important; color: var(--ap-ink3); }
+.ap-ic-sum { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ic-sum b { font-weight: 500; color: var(--ap-ink); }
+.ap-ic-fig { margin-top: 4px; }
+.ap-ic .ap-legend { margin-top: 0; }
+.ap-ic-f { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-ic-f > .ap-btn { order: 2; }
+.ap-ask-b { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ap-ask-b .ic { width: 15px; height: 15px; }
+.ap-ic-note { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink3); }
+.ap-ic-ck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ap-ic-ck li { display: flex; flex-direction: column; gap: 4px; }
+.ap-ckt--mini { margin-top: 0; }
+
+/* possible patterns: one row each, with a dot per time it came up */
+.ap-ipats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ap-ipat { width: 100%; display: grid; grid-template-columns: 38px minmax(0, 1fr) 16px; gap: 12px; align-items: center; padding: 12px; border-radius: 16px; background: var(--ap-card2); text-align: left; }
+.ap-ins .ap-ipat { background: color-mix(in srgb, var(--ap-card2) 70%, transparent); }
+.ap-ipat-m { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.ap-ipat-m b { font-size: 14px; font-weight: 500; line-height: 1.25; }
+.ap-ipat-m em { font-style: normal; font-size: 11.5px; color: var(--ap-ink3); }
+.ap-idt .ap-ipat { background: var(--ap-card); box-shadow: var(--ap-shadow); }
+
+/* the detail pages */
+.ap-rx.is-full .ap-nav { margin-top: -24px; padding-top: 24px; }
+.ap-idt-now { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-idt-now-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ap-idt-now-h span { display: flex; align-items: baseline; gap: 8px; }
+.ap-idt-now-h em { font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.ap-idt-now-h b { font-size: 17px; font-weight: 500; }
+.ap-idt-h { font-size: 28px; font-weight: 300 !important; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; }
+.ap-idt-lede, .ap-sect-p { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-idt-cta { margin-top: 8px; }
+.ap-idt-ask .ic { width: 16px; height: 16px; margin-right: 8px; }
+.ap-idt-next { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-idt-next span { display: flex; flex-direction: column; gap: 4px; }
+.ap-idt-next em { font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.ap-idt-next b { font-size: 15px; font-weight: 500; }
+.ap-idt-next > .ic { color: var(--ap-ink3); }
+.ap-shaped { border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-shaped summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 16px; list-style: none; cursor: pointer; font-size: 14px; font-weight: 500; }
+.ap-shaped summary::-webkit-details-marker { display: none; }
+.ap-shaped summary .ic { width: 16px; height: 16px; color: var(--ap-ink3); transition: transform .25s var(--ap-ease); }
+.ap-shaped[open] summary .ic { transform: rotate(180deg); }
+.ap-shaped-b { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px; }
+.ap-rx .ap-table summary { display: flex; align-items: center; justify-content: space-between; min-height: 32px; list-style: none; }
+.ap-rx .ap-table summary::-webkit-details-marker { display: none; }
+.ap-rx .ap-table summary::after { content: ""; width: 7px; height: 7px; margin-right: 4px; border-right: 1.5px solid var(--ap-ink3); border-bottom: 1.5px solid var(--ap-ink3); transform: translateY(-2px) rotate(45deg); /* grid-exempt: a chevron drawn in CSS */ transition: transform .25s var(--ap-ease); }
+.ap-rx .ap-table[open] summary::after { transform: translateY(2px) rotate(-135deg); /* grid-exempt: a chevron drawn in CSS */ }
+.ap-shaped-b p { font-family: var(--serif); font-size: 14.5px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-idt .ap-ckr-list { margin: 0; }
+.ap-units { display: flex; flex-direction: column; gap: 16px; padding: 0 4px; }
+.ap-unit { display: flex; flex-direction: column; gap: 8px; }
+.ap-unit-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ap-unit-h b { font-size: 13px; font-weight: 500; }
+.ap-unit-h span { font-family: var(--mono); font-size: 11px; color: var(--ap-ink2); white-space: nowrap; }
+.ap-unit--other .dv-cd { opacity: .55; }
+.ap-waits { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.ap-wait { display: grid; grid-template-columns: 88px minmax(0, 1fr) 48px; gap: 8px; align-items: center; font-size: 13px; }
+.ap-wait i { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
+.ap-wait i b { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-usual-ink); }
+.ap-wait strong { font-family: var(--mono); font-size: 11px; font-weight: 400; text-align: right; color: var(--ap-ink2); }
+
+/* Ask Florin: the hand-off from a card */
+.ap-askc { display: flex; flex-direction: column; gap: 8px; }
+.ap-askc-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.ap-askc-x { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--ap-ink3); }
+.ap-askc-x .ic { width: 16px; height: 16px; }
+.ap-askc > b { font-size: 17px; font-weight: 500; line-height: 1.25; }
+.ap-askc ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-askc-note { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink3); }
+.ap-askc--intro p { margin-top: 4px; }
+.ap-asks { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ap-askq { min-height: 44px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); font-size: 14px; line-height: 1.35; text-align: left; }
+.ap-askbar { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 4px 4px 16px; border-radius: 999px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.ap-askbar-in { flex: 1; min-width: 0; font-size: 14px; color: var(--ap-ink3); }
+.ap-askbar-b { width: 40px; height: 40px; border-radius: 50%; background: var(--ray); color: var(--forest); display: grid; place-items: center; flex: none; }
+.ap-askbar-b .ic { width: 18px; height: 18px; stroke-width: 2; }
+
+/* chart marks from the data vis board (board-dataviz.css), scoped to the app */
+.ap-rx .dv-chart text { font-family: var(--sans); font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-chart .dv-ax { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-grid { stroke: var(--ap-grid); stroke-width: 1; }
+.ap-rx .dv-base { stroke: var(--ap-line); stroke-width: 1; }
+.ap-rx .dv-tick { stroke: var(--ap-ink3); stroke-width: 1; opacity: .6; }
+.ap-rx .dv-band-edge, .ap-rx .dv-bandbox { stroke: var(--ap-band-edge); stroke-width: 1; }
+.ap-rx .dv-chart .dv-bandlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-usual-ink); }
+.ap-rx .dv-chart .dv-newlbl { font-size: 11px; font-weight: 500; fill: var(--ap-ink); }
+.ap-rx .dv-new { fill: var(--ap-card); stroke: var(--ap-chart); stroke-width: 2; }
+.ap-rx .dv-new.is-shift { stroke: var(--ap-shift); }
+.ap-rx .dv-dot { fill: var(--ap-chart); }
+.ap-rx .dv-dot.is-shift { fill: var(--ap-shift); }
+.ap-rx .dv-dot.is-dim { opacity: .45; }
+.ap-rx .dv-dot.is-new { fill: var(--ap-card); stroke: var(--ap-chart); stroke-width: 2; }
+.ap-rx .dv-dot.is-new.is-shift { stroke: var(--ap-shift); }
+/* a word logged in B whose steps sit on both sides of the usual: hollow, never Gold */
+.ap-rx .dv-dot.is-maybe { fill: var(--ap-card); stroke: var(--ap-ink3); stroke-width: 1.5; }
+.ap-rx .dv-ctx { fill: var(--ap-teal); }
+.ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-bar { fill: var(--ap-chart); }
+.ap-rx .dv-bar.is-shift { fill: var(--ap-shift); }
+.ap-rx .dv-bar.is-out { fill: var(--ap-ink3); opacity: .42; }
+.ap-rx .dv-zero { fill: var(--ap-card); stroke: var(--ap-shift); stroke-width: 1.8; }
+.ap-rx .dv-chart .dv-val { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
+.ap-rx .dv-med { stroke: var(--ap-ink); stroke-width: 2.2; stroke-linecap: round; }
+.ap-rx .dv-chart .dv-medlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-ink); }
+.ap-rx .dv-chart .dv-glbl { font-size: 11px; fill: var(--ap-ink2); }
+.ap-rx .dv-chart .dv-rowlbl { font-size: 11.5px; fill: var(--ap-ink2); }
+.ap-rx .dv-nock { fill: var(--dv-nock); }
+.ap-rx .dv-sym, .ap-rx .dv-cell { fill: var(--ap-chart); }
+.ap-rx .dv-sym.s1 { opacity: .5; } .ap-rx .dv-sym.s2 { opacity: .75; }
+.ap-rx .dv-cell.s1 { opacity: .3; } .ap-rx .dv-cell.s2 { opacity: .6; }
+.ap-rx .dv-cell-none { fill: var(--ap-line); }
+.ap-rx .dv-brk { fill: none; stroke: var(--ap-usual-ink); stroke-width: 1.2; }
+.ap-rx .dv-lead { stroke: var(--ap-ink3); stroke-width: 1; opacity: .7; }
+.ap-rx .dv-cdots { display: block; overflow: visible; }
+.ap-rx .dv-cd.is-hit { fill: var(--ap-plum); }
+.ap-rx .dv-cd.is-miss { fill: none; stroke: var(--ap-plum); stroke-width: 1.2; }
+/* the studio's day rows: a late dinner is context, so Teal (Plum is your usual); a day not logged has a dashed base */
+.ap-rx .c-row-flag { fill: var(--ap-teal); }
+.ap-rx .c-row.is-gap .c-row-base { stroke: var(--ap-ink3); stroke-dasharray: 2 3; opacity: .6; }
+/* legend swatches for those marks */
+.ap-rx .ap-legend .sw--flag { background: var(--ap-teal); }
+.ap-rx .ap-legend .sw--ring { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-chart); }
+.ap-rx .ap-legend .sw--ctxbar { width: 10px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
+.ap-rx .ap-legend .sw--zero { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-shift); }
+.ap-rx .ap-legend .sw--out { background: var(--ap-ink3); opacity: .42; }
+.ap-rx .ap-legend .sw--maybe { background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
+.ap-rx .ap-legend .sw--sym1 { width: 5px; height: 5px; opacity: .5; }
+.ap-rx .ap-legend .sw--sym2 { width: 7px; height: 7px; opacity: .75; }
+.ap-rx .ap-legend .sw--sym3 { width: 9px; height: 9px; }
+.ap-rx .ap-legend .sw--c1, .ap-rx .ap-legend .sw--c2, .ap-rx .ap-legend .sw--c3 { border-radius: 2px; }
+.ap-rx .ap-legend .sw--c1 { opacity: .3; } .ap-rx .ap-legend .sw--c2 { opacity: .6; }
+.ap-rx .ap-legend .sw--nock { width: 8px; height: 12px; border-radius: 2px; background: var(--dv-nock); box-shadow: inset 0 0 0 1px var(--ap-line); }
+.ap-rx .ap-legend .sw--held { background: var(--ap-plum); }
+.ap-rx .ap-legend .sw--miss { background: transparent; box-shadow: inset 0 0 0 1.2px var(--ap-plum); }
+.ap-rx .ap-legend .sw--gapline { width: 16px; height: 0; border-radius: 0; background: none; border-top: 1px dashed var(--ap-ink3); }
 
 /* dark: the scrim has to dim a dark screen, the toast inverts, sheets get a hairline (as in the studio) */
 .ap-rx[data-theme="dark"] .ap-o-scrim { background: oklch(from var(--forest) calc(l - .22) c h / .6); }
@@ -492,6 +641,12 @@
 .ap-rx .ap-gd-b::after, .ap-rx .ap-ck-later::after { content: ""; position: absolute; inset: -4px 0; }
 .ap-rx .ap-hi-filter::after { content: ""; position: absolute; inset: -8px 0; }
 .ap-rx .ap-avatar::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+/* Insights: the range tabs, and Ask's clear and send */
+.ap-rx .ap-seg--range button, .ap-rx .ap-askc-x, .ap-rx .ap-askbar-b { position: relative; }
+.ap-rx .ap-seg--range button { min-width: 48px; }
+.ap-rx .ap-seg--range button::after { content: ""; position: absolute; inset: -8px 0; }
+.ap-rx .ap-askc-x::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
+.ap-rx .ap-askbar-b::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .ap-rx .ap-link { min-height: 44px; }
 
 /* Today: the hero is one sentence */
@@ -534,6 +689,9 @@
 .ap-rx[data-theme="dark"] .ap-tst :focus-visible { outline-color: var(--forest); }
 .ap-rx .ap-ck-q h3:focus { outline: none; }
 .ap-rx .ap-ck-q h3:focus-visible, .ap-rx .ap-ckr h3:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 4px; border-radius: 4px; }
+/* the heading an Insights screen opens on takes focus, so a keyboard or screen reader lands there */
+.ap-rx :is(.ap-nav-t, .ap-h1):focus { outline: none; }
+.ap-rx :is(.ap-nav-t, .ap-h1):focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 4px; border-radius: 4px; }
 .ap-ckc-day { min-height: 44px; }
 .ap-rx .ap-tst-b { position: relative; }
 .ap-rx .ap-tst-b::after { content: ""; position: absolute; inset: -4px 0; }
@@ -570,6 +728,8 @@
 .ap-fl-urgent { margin-top: 4px; font-weight: 500; }
 /* dark: a picked check-in answer and the progress are Cream, not Ray ("your usual") */
 .ap-rx[data-theme="dark"] .ap-ck-opt.is-on { background: var(--ap-ink); color: var(--ap-bg); }
+/* the range tabs too: in dark, Ray means your usual, so a picked tab is Cream */
+.ap-rx[data-theme="dark"] .ap-seg button[aria-pressed="true"] { background: var(--ap-ink); color: var(--ap-bg); }
 .ap-rx[data-theme="dark"] .ap-ck-prog i.is-done { background: var(--ap-ink); }
 .ap-rx[data-theme="dark"] .ap-ck-prog i.is-on { background: color-mix(in srgb, var(--ap-ink) 40%, transparent); }
 /* kickers sit in DESIGN.md's 11 to 13px eyebrow range */
