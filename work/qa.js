@@ -52,7 +52,9 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
               const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
               const hit = (x, y) => { const e = document.elementFromPoint(x, y); return !!e && (e === b || b.contains(e)); };
               /* probe only when the target and a margin round it are on screen; elementFromPoint can't see past the window */
-              if (r.left > 12 && r.top > 12 && r.right < innerWidth - 12 && r.bottom < innerHeight - 12 && hit(cx, cy)) {
+              /* ...and only when the target's own box isn't covered or scrolled out of its container (a sheet's footer, say) */
+              const whole = hit(cx, r.top + 1) && hit(cx, r.bottom - 1) && hit(r.left + 1, cy) && hit(r.right - 1, cy);
+              if (r.left > 12 && r.top > 12 && r.right < innerWidth - 12 && r.bottom < innerHeight - 12 && whole) {
                 /* probe at pixel centres (half a pixel past each step), then undo the phone's scale */
                 const reach = (dx, dy, half) => { let k = 0; while (k < 32 && hit(cx + dx * (half + k + 0.5), cy + dy * (half + k + 0.5))) k++; return k; };
                 w = (r.width + reach(-1, 0, r.width / 2) + reach(1, 0, r.width / 2)) / scale;
