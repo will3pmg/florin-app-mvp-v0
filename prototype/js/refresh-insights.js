@@ -58,7 +58,7 @@
     if (n <= 7) return F.map((f, i) => ({ i, label: f.today ? "Today" : Ut.DOW[f.dow], anchor: i === 0 ? "start" : i === n - 1 ? "end" : "middle" }));
     return [0, Math.floor((n - 1) / 2), n - 1].map((i, k) => ({ i, label: i === n - 1 ? "Today" : short(F[i].d), anchor: k === 0 ? "start" : k === 2 ? "end" : "middle" }));
   };
-  const rangeTabs = (n) => `<div class="ap-seg ap-seg--range" role="group" aria-label="Time range">${L.RANGES.map((v) => `<button type="button" data-act="irange" data-v="${v}" aria-pressed="${n === v}">${v}D</button>`).join("")}</div>`;
+  const rangeTabs = (n, free) => `<div class="ap-seg ap-seg--range" role="group" aria-label="Time range">${L.RANGES.map((v) => (free && v !== 7 ? `<button type="button" data-act="pay" data-pay="range" aria-pressed="false" aria-label="${v} days, with Florin membership">${icon("lock", "ap-seg-lock")}${v}D</button>` : `<button type="button" data-act="irange" data-v="${v}" aria-pressed="${n === v}">${v}D</button>`)).join("")}</div>`;
 
   /* ============================== DRAWINGS ============================== */
 
@@ -400,7 +400,7 @@
       : L.TYPES.slice(1).map((t) => ({ short: mode === "C" ? t.short : String(t.k), label: mode === "C" ? t.short : `Type ${t.k}`, count: bms.filter((o) => one(o) && L.stepsOf(o.b)[0] === t.k).length, inUsual: u ? t.k >= u.fLo && t.k <= u.fHi : null }));
     const split = B ? [] : bms.filter((o) => !one(o));
     const tally = {};
-    bms.forEach((o) => { const w = L.formName(o.b, mode); tally[w] = (tally[w] || 0) + 1; });
+    bms.forEach((o) => { const w = L.formKey(o.b, mode); tally[w] = (tally[w] || 0) + 1; });
     const tw0 = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
     const top = tw0 ? { label: tw0[0], count: tw0[1] } : null;
     const st = u ? bms.map((o) => L.inForms(M, o.b, mode)) : [];
@@ -417,7 +417,8 @@
     const rows = Object.entries(names).sort((a, b) => b[1] - a[1] || L.SYMPTOMS.indexOf(a[0]) - L.SYMPTOMS.indexOf(b[0])).map(([name, n]) => ({ name, n }));
     /* the top symptom's usual strength, as one word: left out when any of its logs had no strength */
     const ss = rows.length ? withSym.map((f) => f.sym[rows[0].name]).filter((s) => s != null) : [];
-    const how = !ss.length || ss.some((s) => !s) ? "" : L.STRENGTH[Math.round(Ut.median(ss)) - 1].toLowerCase();
+    const anyUnrated = rows.length && withSym.some((f) => f.unrated && f.unrated[rows[0].name]);
+    const how = !ss.length || anyUnrated || ss.some((s) => !s) ? "" : L.STRENGTH[Math.round(Ut.median(ss)) - 1].toLowerCase();
     return { logged, withSym, rows, how };
   };
   const symUsualText = (u) => (!u || !u.sym ? null : u.sym.every == null ? "Rarely" : u.sym.every <= 1 ? "Most days" : `About 1 day in ${u.sym.every}`);
@@ -465,17 +466,24 @@
     const vs = ser.filter((x) => x != null);
     const line = v == null ? "Not enough logged to score today." : `${S.rel}.`;
     const sub = v == null ? `FloraScore needs 2 of your last 3 days logged. ${RU.highlight(M)}` : RU.highlight(M);
-    return `<button type="button" class="ap-hero" data-act="idetail" data-k="score" data-a aria-label="${esc(`FloraScore ${v == null ? "not scored today" : v}. ${line} Your usual range ${S.su[0]} to ${S.su[1]}. Open the detail`)}">
+    return `<button type="button" class="ap-hero" ${V.plan === "free" ? 'data-act="pay" data-pay="score"' : 'data-act="idetail"'} data-k="score" data-a aria-label="${esc(`FloraScore ${v == null ? "not scored today" : v}. ${line} Your usual range ${S.su[0]} to ${S.su[1]}. Open the detail`)}">
         <span class="ap-hero-top"><span class="ap-k ap-k--ray">FloraScore</span><span class="ap-pill">${esc(v == null ? "Not scored today" : deltaTxt(S.mv))}</span></span>
         <span class="ap-hero-mid"><span class="ap-hero-ring">${C.ring({ value: v == null ? 0 : v, size: 124, stroke: 10, band: S.su, aria: `FloraScore ${v == null ? "not scored today" : v} out of 100` })}<b${v == null ? ' class="ap-hero-none"' : ` data-count="${v}"`}>${v == null ? "No score" : v}</b></span>
         <span class="ap-hero-copy"><span class="ap-hero-line">${esc(line)}</span><span class="ap-hero-sub">${esc(sub)}</span></span></span>
         <span class="ap-hero-spark">${C.spark(ser, { w: 320, h: 46, band: S.su, min: Math.min(50, ...vs) - 2, max: 100, area: true, aria: `FloraScore, last 30 days, against your usual range ${S.su[0]} to ${S.su[1]}` })}</span>
-        <span class="ap-hero-legend"><span>30 days</span><span><i class="sw sw--band"></i>Your usual ${S.su[0]} to ${S.su[1]}</span><span class="ap-hero-go">Why ${RU.icon("chev")}</span></span>
+        <span class="ap-hero-legend"><span>30 days</span><span><i class="sw sw--band"></i>Your usual ${S.su[0]} to ${S.su[1]}</span><span class="ap-hero-go">${V.plan === "free" ? `${icon("lock")}With membership` : `Why ${RU.icon("chev")}`}</span></span>
       </button>`;
   };
 
   /* the 13 Monday to Sunday weeks since day 0 */
   const weeksOf = (M, mode) => { const d0 = d0Of(M, 90); return Array.from({ length: 13 }, (_, i) => M.days.filter((x) => x.d >= Math.max(d0, i * 7) && x.d < i * 7 + 7).map((x) => L.facts(M, x, mode))).filter((wk) => wk.length); };
+
+  /* meals logged on few days: what the patterns card says instead, and the food check it offers */
+  const sparseHead = (PR) => (PR.withMeal ? "Not enough ordinary days yet" : "No meals logged");
+  const sparseLine = (PR) => (PR.withMeal
+    ? `Meals are logged on ${PR.withMeal} of your last ${PR.logged} days${PR.roughShare >= 0.6 ? ", most of them days with symptoms" : ""}, so there are few ordinary days to compare with. A ${L.FOOD_CHECK_DAYS}-day food check, good days too, lets Florin look.`
+    : `Florin looks for what tends to follow a food once meals are logged on most days. When a day feels off, say what you ate, and Florin starts from there.`);
+  const foodCheckBtn = (free) => free ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="pay" data-pay="food">${icon("lock")}Start a ${L.FOOD_CHECK_DAYS}-day food check</button>` : `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="toast" data-msg="${esc(`A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, good days too, then shows what tends to follow. It comes with the next pass.`)}">Start a ${L.FOOD_CHECK_DAYS}-day food check</button>`;
 
   /* the patterns, and how each one reads */
   const foodName = (f) => L.FOOD_NAMES[f] || [f.charAt(0).toUpperCase() + f.slice(1), false];
@@ -493,21 +501,21 @@
 
   /* ============================== THE INSIGHTS TAB ============================== */
   const card = (V, o) => `<section class="ap-card ap-ic" data-a aria-labelledby="ic-${o.k}-${V.uid}">
-      <button type="button" class="ap-ic-h" data-act="idetail" data-k="${o.k}">
+      <button type="button" class="ap-ic-h" ${V.plan === "free" ? `data-act="pay" data-pay="${o.k}"` : `data-act="idetail"`} data-k="${o.k}"${V.plan === "free" ? ` aria-describedby="ic-${o.k}-${V.uid}-m"` : ""}>
         <span class="ap-ic-ic">${o.glyph || icon(o.icon)}</span>
         <span class="ap-ic-t"><span class="ap-k">${esc(o.kicker)}</span><b id="ic-${o.k}-${V.uid}">${esc(o.head)}</b></span>
-        ${icon("chev", "ap-ic-go")}
+        ${V.plan === "free" ? `<span class="ap-lockp" id="ic-${o.k}-${V.uid}-m">${icon("lock")}<span class="sr">The detail comes with Florin membership</span></span>` : icon("chev", "ap-ic-go")}
       </button>
       ${o.sum ? `<p class="ap-ic-sum">${o.sum}</p>` : ""}
       ${o.body || ""}
       ${o.chart ? `<div class="ap-ic-fig">${o.chart}</div>` : ""}
       ${o.legend ? `<div class="ap-legend">${o.legend}</div>` : ""}
-      <div class="ap-ic-f">${o.foot || ""}<button type="button" class="ap-ask-b" data-act="ask-about" data-k="${o.k}">${icon("chat")}Ask about this</button></div>
+      <div class="ap-ic-f">${o.foot || ""}<button type="button" class="ap-ask-b" ${V.plan === "free" ? `data-act="pay" data-pay="ask"` : `data-act="ask-about"`} data-k="${o.k}">${icon(V.plan === "free" ? "lock" : "chat")}Ask about this</button></div>
     </section>`;
 
   RU.insights = (M, V, st) => {
-    const mode = V.form, u = M.usual, learning = !u;
-    const n = learning ? 7 : st.range;
+    const mode = V.form, u = M.usual, learning = !u, free = V.plan === "free";
+    const n = learning || free ? 7 : st.range;
     const F = L.span(M, n, mode);
     const live = F.filter((f) => !f.pending);
 
@@ -546,7 +554,7 @@
       k: "score", icon: "ring", kicker: "FloraScore · today",
       head: SC.v == null ? "Not scored today" : `${SC.v}, ${lower1(SC.rel)}`,
       sum: `Your usual range is <b>${SC.su[0]} to ${SC.su[1]}</b>.${SC.mv ? ` ${esc(SC.mv.delta === 0 ? "The same as last week, on average." : `${Math.abs(SC.mv.delta)} ${Math.abs(SC.mv.delta) === 1 ? "point" : "points"} ${SC.mv.delta > 0 ? "above" : "below"} last week, on average.`)}` : ""}`,
-      body: SC.mv ? `<div class="ap-comps" role="list" aria-label="The four parts, this week">${SC.mv.parts.map((p) => `<span role="listitem"><em>${esc(PARTN[p.key][0])}</em><i><b style="--w:${p.now}%"></b></i><strong>${p.now}</strong></span>`).join("")}</div>` : "",
+      body: SC.mv ? (free ? `<div class="ap-tease"><div class="ap-comps ap-tease-in" aria-hidden="true">${SC.mv.parts.map((p) => `<span><em>${esc(PARTN[p.key][0])}</em><i><b style="--w:${p.now}%"></b></i><strong>${p.now}</strong></span>`).join("")}</div><button type="button" class="ap-btn ap-btn--2 ap-btn--c ap-tease-b" data-act="pay" data-pay="score">${icon("lock")}See what moved it</button></div>` : `<div class="ap-comps" role="list" aria-label="The four parts, this week">${SC.mv.parts.map((p) => `<span role="listitem"><em>${esc(PARTN[p.key][0])}</em><i><b style="--w:${p.now}%"></b></i><strong>${p.now}</strong></span>`).join("")}</div>`) : "",
       chart: (() => { const ser = scoreSer(M, n, mode), vs = ser.map((x) => x.value).filter((x) => x != null); return vs.length ? C.spark(ser.map((x) => x.value), { w: 318, h: 56, band: SC.su, min: Math.min(50, ...vs) - 2, max: 100, area: true, aria: `FloraScore, ${RANGE_NAME[n].toLowerCase()}, against your usual range ${SC.su[0]} to ${SC.su[1]}` }) : ""; })(),
       legend: `${lg("sw--line", "FloraScore")}${lg("sw--band", "Your usual range")}`
     }) : card(V, {
@@ -633,15 +641,21 @@
         ${icon("chev", "ap-ic-go")}</button></li>`).join("");
     const quietTxt = PR.quiet.length ? `Checked, nothing stands out yet: ${joinMore(PR.quiet.map((f) => lower1(foodName(f)[0])), 4)}.` : "";
     const waitTxt = PR.waiting.length ? `Needs more logs: ${joinMore(PR.waiting.map((f) => `${lower1(foodName(f)[0])} (${PR.counts[f]} of 5)`), 3)}.` : "";
-    const patterns = card(V, {
+    const patterns = free && PR.found.length ? card(V, {
+      k: "pat", icon: "pat", kicker: `Possible patterns · ${L.PATTERN_DAYS} days`,
+      head: `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"} found`,
+      sum: "Florin membership shows which foods and dinner times tend to come before a change, and how often.",
+      body: `<div class="ap-tease"><ul class="ap-ipats ap-tease-in" aria-hidden="true">${PR.found.map((p) => `<li><span class="ap-ipat"><span class="ap-pat-ic">${icon(p.kind === "late" ? "moon" : "meal")}</span><span class="ap-ipat-m"><b>${esc(patTitle(p))}</b>${countDots(p.occ.map((o) => o.hit), { per: 26, r: 3, gap: 2.2 })}<em>${esc(p.tier.label)}</em></span></span></li>`).join("")}</ul><button type="button" class="ap-btn ap-btn--2 ap-btn--c ap-tease-b" data-act="pay" data-pay="pat">${icon("lock")}See your patterns</button></div><p class="ap-ic-note">Patterns show what tends to happen together. They don't prove cause.</p>`
+    }) : card(V, {
       k: "pat", icon: "pat", kicker: learning ? "Possible patterns" : `Possible patterns · ${L.PATTERN_DAYS} days`,
-      head: PR.found.length ? `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}` : learning ? "Not enough logs yet" : "Nothing stands out yet",
-      sum: PR.found.length ? "" : learning ? "Florin starts checking a food once you've logged it 5 times." : "",
+      head: PR.found.length ? `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}` : learning ? "Not enough logs yet" : PR.sparse ? sparseHead(PR) : "Nothing stands out yet",
+      sum: PR.found.length ? "" : learning ? "Florin starts checking a food once you've logged it 5 times." : PR.sparse ? esc(sparseLine(PR)) : "",
+      foot: !learning && PR.sparse && PR.withMeal ? foodCheckBtn(free) : "",
       body: `${patRows ? `<ul class="ap-ipats">${patRows}</ul>` : ""}${quietTxt || waitTxt ? `<p class="ap-ic-note">${esc([quietTxt, waitTxt].filter(Boolean).join(" "))}</p>` : ""}<p class="ap-ic-note">Patterns show what tends to happen together. They don't prove cause.</p>`
     });
 
     return `<div class="ap-scr ap-ins">
-      <header class="ap-top ap-top--ins" data-a><div><p class="ap-date">${esc(M.P.name)}'s logs</p><h1 class="ap-h1" tabindex="-1">Insights</h1></div>${learning ? chip(`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`, "usual") : rangeTabs(n)}</header>
+      <header class="ap-top ap-top--ins" data-a><div><p class="ap-date">${esc(M.P.name)}'s logs</p><h1 class="ap-h1" tabindex="-1">Insights</h1></div>${learning ? chip(`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`, "usual") : rangeTabs(n, free)}</header>
       ${scoreCard}${summary}
       ${timing}${often}${form}${symptoms}${checkin}${patterns}
       ${fine(DISC)}
@@ -764,13 +778,13 @@
         chart = bars({ w: 326, h: 120, values: vals, yMax: Math.max(3, ...F.map((f) => f.count || 0)), yTicks: [1, 2, 3], band: u ? [u.nLo, u.nHi] : null, bandLabel: u ? `Your usual ${u.nLo} to ${u.nHi}` : null, labels: n <= 7, xTicks: ticks(F), aria: `BMs a day, ${rn}` });
       }
       const splitN = of.known.length;
-      const split = `<div class="ap-hbars">${of.split.map((c, i) => `<div class="ap-hbar"><span>${esc(["No BM", "1", "2", "3 or more"][i])}</span><i><b style="--w:${pctOf(c, splitN)}%"></b></i><strong>${pctOf(c, splitN)}%</strong></div>`).join("")}</div>${of.gaps ? `<p class="ap-figcap-note">${esc(`${plural(of.gaps, "day")} not logged, left out rather than counted as zero.`)}</p>` : ""}`;
+      const split = `<div class="ap-hbars">${of.split.map((c, i) => `<div class="ap-hbar"><span>${esc(["No BM", "1", "2", "3 or more"][i])}</span><i><b style="--w:${pctOf(c, splitN)}%"></b></i><strong>${pctOf(c, splitN)}%</strong></div>`).join("")}</div>${of.gaps ? `<p class="ap-figcap-note">${esc(`${plural(of.gaps, "day")} with no BMs logged, left out rather than counted as zero.`)}</p>` : ""}`;
       const lines = [
         u ? `${of.inC} of ${plural(of.known.length, "day")} had ${u.nLo} to ${u.nHi} BMs, your usual.` : "",
         of.busy ? `${plural(of.busy, "day")} had more than ${u.nHi}.` : u ? `No days had more than ${u.nHi}.` : "",
         of.zero ? `${plural(of.zero, "day")} logged as No BM.` : "",
         of.gaps ? `${plural(of.gaps, "day")} with no BMs logged ${of.gaps === 1 ? "stays a gap" : "stay gaps"}. A gap never counts as a day with no BM.` : "",
-        today && !today.pending ? "Today counts as far as it has gone." : ""
+        today && today.count != null ? "Today counts as far as it has gone." : ""
       ];
       return page(M, V, st, "How often", `
         ${hero("BMs a day, on average", of.avg != null ? `${of.avg.toFixed(1)}<small>a day</small>` : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${u.nLo} to ${u.nHi} a day`, "plain")}${chip(`${of.inC} of ${plural(of.known.length, "day")} within`, "usual")}`, now)}
@@ -866,7 +880,7 @@
           ${icon("chev", "ap-ic-go")}</button></li>`).join("");
       const waiting = PR.waiting.slice(0, 6).map((f) => `<div class="ap-wait"><span>${esc(foodName(f)[0])}</span><i><b style="--w:${pctOf(PR.counts[f], 5)}%"></b></i><strong>${PR.counts[f]} of 5</strong></div>`).join("");
       return page(M, V, st, "Possible patterns", `
-        <div class="ap-dhero" data-a><span class="ap-k">Meals · last ${L.PATTERN_DAYS} days</span><h2 class="ap-idt-h">${esc(PR.found.length ? `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}` : learning ? "Not enough logs yet" : "Nothing stands out yet")}</h2><p class="ap-idt-lede">What tends to come the morning or the day after something you logged. Seen together, never proof of cause.</p></div>
+        <div class="ap-dhero" data-a><span class="ap-k">Meals · last ${L.PATTERN_DAYS} days</span><h2 class="ap-idt-h">${esc(PR.found.length ? `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}` : learning ? "Not enough logs yet" : PR.sparse ? sparseHead(PR) : "Nothing stands out yet")}</h2><p class="ap-idt-lede">${esc(!learning && PR.sparse ? sparseLine(PR) : "What tends to come the morning or the day after something you logged. Seen together, never proof of cause.")}</p>${!learning && PR.sparse && PR.withMeal ? `<div class="ap-idt-cta">${foodCheckBtn()}</div>` : ""}</div>
         ${rows ? `<ul class="ap-ipats" data-a>${rows}</ul>` : ""}
         ${PR.quiet.length ? sect("Checked, nothing stands out yet", `<p>${esc(join(PR.quiet.map((f) => `${lower1(foodName(f)[0])} (${PR.counts[f]})`)))}.</p>`) : ""}
         ${waiting ? `<section class="ap-sect" data-a><h3>Needs more logs</h3><p>Florin checks a food once you've logged it 5 times.</p><div class="ap-waits">${waiting}</div></section>` : ""}
@@ -937,7 +951,52 @@
     return null;
   };
 
+  /* Ask Florin on the free plan: what it is and what to ask, with the way in. No sample answer: it would be made up */
+  RU.askFree = (M, V) => {
+    const qs = ["What changed this week?", "What tends to come before my rougher days?", "How do I bring my logs to a clinician?"];
+    return `<div class="ap-scr ap-ask">
+      <header class="ap-hist-top" data-a><h1 class="ap-h1" tabindex="-1">Ask Florin</h1><p class="ap-hi-sub">Answers from your own logs.</p></header>
+      <section class="ap-card ap-askc ap-askc--lock" data-a>
+        <span class="ap-k">Florin membership</span>
+        <b>Ask about your own numbers</b>
+        <p class="ap-askc-note">Ask Florin reads your logs, your FloraScore and your patterns, and answers in plain words. Every Insights card can open it with its numbers loaded. It isn't a clinician, and it sends anything worrying to primary care.</p>
+        <button type="button" class="ap-btn ap-btn--block" data-act="pay" data-pay="ask">See Florin membership</button>
+      </section>
+      <div class="ap-asks" data-a><span class="ap-k">What people ask</span>${qs.map((q) => `<button type="button" class="ap-askq" data-act="pay" data-pay="ask">${icon("lock")}${esc(q)}</button>`).join("")}</div>
+      ${fine(DISC)}
+    </div>`;
+  };
+
+  /* ---------- the paywall: Florin membership ----------
+     What membership adds, said plainly, from wherever the person tapped. No hype, no countdowns, no made-up price */
+  const PAY_TITLE = { score: "See what moves your FloraScore", range: "See 30 and 90 days", pat: "See your possible patterns", ask: "Ask Florin about your own numbers", report: "Bring your logs to a clinician", food: "Run a 14-day food check" };
+  RU.paywall = (M, V, st) => {
+    const id = `pay${V.uid}`, from = st.from || "";
+    const title = PAY_TITLE[from] || "See the detail behind every card";
+    const rows = [
+      ["ring", "Why your FloraScore moved", "The four parts, week by week, and what to try"],
+      ["bars", "30 and 90 days on every card", "And the detail page behind each one"],
+      ["pat", "Possible patterns", `From what you eat and when, with a ${L.FOOD_CHECK_DAYS}-day food check`],
+      ["chat", "Ask Florin", "With your own numbers loaded"],
+      ["report", "A report for your clinician", "Your logs, so you don't have to remember dates"]
+    ];
+    return `<div class="ap-psh ap-pay" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
+      <div class="ap-psh-h"><span class="ap-fsh-sp"></span><button type="button" class="ap-lg-x" data-act="close" aria-label="Not now">${RU.icon("close")}</button></div>
+      <div class="ap-pay-hero">
+        <span class="ap-pay-ring" aria-hidden="true">${C.ring({ value: 72, size: 88, stroke: 8, aria: "" })}</span>
+        <span class="ap-k ap-k--ray">Florin membership</span>
+        <h2 id="${id}-h" tabindex="-1" data-autofocus>${esc(title)}</h2>
+        <p>Logging, Today, your FloraScore, the weekly check-in and 7 days of Insights stay free. Membership adds the explaining.</p>
+      </div>
+      <ul class="ap-pay-list">${rows.map(([ic2, b, e], i) => `<li style="--i:${i}"><span class="ap-pay-ic">${icon(ic2)}</span><span><b>${esc(b)}</b><em>${esc(e)}</em></span></li>`).join("")}</ul>
+      <p class="ap-pay-price">Membership price set at launch</p>
+      <div class="ap-pay-act"><button type="button" class="ap-btn ap-btn--block" data-act="pay-start">Start membership</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Not now</button></div>
+      ${fine(DISC)}
+    </div>`;
+  };
+
   RU.ask = (M, V, ctx) => {
+    if (V.plan === "free") return RU.askFree(M, V);
     const c = RU.askContext(M, V, ctx);
     const qs = c ? c.qs : ["What changed this week?", "What tends to come before my rougher days?", "How do I bring my logs to a clinician?"];
     const soon = "Answers come in the next pass, with the coach test bench rules: answer first, one bold question per turn.";

@@ -208,6 +208,8 @@
 /* the form tiles: A has seven, B has five */
 .ap-fm { display: grid; gap: 4px; }
 .ap-fm--A { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ap-rx .ap-fm-b { position: relative; }
+.ap-rx .ap-fm--A .ap-fm-b::after { content: ""; position: absolute; inset: 0 -2px; }
 .ap-fm--B { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .ap-fm-b { --gl-bg: var(--ap-card); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-height: 80px; padding: 8px 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink2); transition: background .2s, color .2s, box-shadow .2s, transform .15s var(--ap-ease); }
 .ap-fm-b .ap-gl { width: 28px; height: 28px; flex: none; }
@@ -434,7 +436,7 @@
 
 /* History (basic) */
 .ap-hist-top { display: flex; flex-direction: column; gap: 4px; padding: 4px; }
-.ap-hist-f { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; }
+.ap-hist-f { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; padding-block: 8px; margin-block: -8px; }
 .ap-hist-f::-webkit-scrollbar { display: none; }
 .ap-hd-none { padding-inline: 4px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
 
@@ -556,7 +558,7 @@
 /* a word logged in B whose steps sit on both sides of the usual: hollow, never Gold */
 .ap-rx .dv-dot.is-maybe { fill: var(--ap-card); stroke: var(--ap-ink3); stroke-width: 1.5; }
 .ap-rx .dv-ctx { fill: var(--ap-teal); }
-.ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink2); }
 .ap-rx .dv-bar { fill: var(--ap-chart); }
 .ap-rx .dv-bar.is-shift { fill: var(--ap-shift); }
 .ap-rx .dv-bar.is-out { fill: var(--ap-ink3); opacity: .42; }
@@ -649,8 +651,9 @@
 .ap-chs--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ap-chs--grid > .ap-ch { justify-content: center; }
 /* seven days in one row: a grid with a narrow gap, so each day is 44px wide at phone width */
-.ap-chs--week { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 4px; }
-.ap-chs--week > .ap-ch { padding-inline: 0; }
+.ap-chs--week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.ap-rx .ap-chs.ap-chs--week > .ap-ch { min-width: 0; padding-inline: 0; }
+.ap-rx .ap-chs.ap-chs--week > .ap-ch::after { inset: -4px -2px; }
 /* a symptom logged without a strength: present, strength not given */
 .ap-wk-sq--0 { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
 /* small controls keep their size on screen and get a finger-sized hit area (44px or more) */
@@ -713,7 +716,7 @@
 .ap-rx :where(.ap-f-l, .ap-tl-t, .ap-legend, .ap-k:not(.ap-k--ray), .ap-date, .ap-fsh-t p, .ap-hi-sub, .ap-tb-b) { color: var(--ap-ink2); }
 /* Insights and Ask: the same rule for their small text, with enough weight to beat the studio's own Ink 3 rules.
    Ink 3 stays for axis ticks and the Ask bar's placeholder */
-.ap-rx :is(.ap-ic-note, .ap-askc-note, .ap-ipat-m em, .ap-sum-counts li, .ap-idt-now-h em, .ap-idt-next em, .ap-figcap span, .ap-figcap-note, .ap-table th, .c-meter em, .ap-big small, .ap-sure em),
+.ap-rx :is(.ap-trow span em, .ap-ic-note, .ap-askc-note, .ap-ipat-m em, .ap-sum-counts li, .ap-idt-now-h em, .ap-idt-next em, .ap-figcap span, .ap-figcap-note, .ap-table th, .c-meter em, .ap-big small, .ap-sure em),
 .ap-rx .ap-seg--range button:not([aria-pressed="true"]) { color: var(--ap-ink2); }
 /* the pattern tiers: the one that applies has its ring; the others stay readable, not faded */
 .ap-rx .ap-sure span { opacity: 1; }
@@ -787,3 +790,73 @@
 }
 .rx.is-compare .rx-stage { flex-wrap: wrap; row-gap: 32px; }
 .rx-nw { white-space: nowrap; }
+
+/* ---------- the quick meal log: one big voice button, one box for the day ---------- */
+.ap-mq-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-mq-voice { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-mq-mic { position: relative; width: 96px; height: 96px; border-radius: 50%; background: var(--ray); color: var(--forest); display: grid; place-items: center; transition: transform .25s var(--ap-ease); }
+.ap-mq-mic:active { transform: scale(.96); }
+.ap-mq-mic .ic { position: relative; width: 40px; height: 40px; stroke-width: 1.7; }
+.ap-mq-rings, .ap-mq-rings i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.ap-mq-rings i { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ray) 70%, transparent); opacity: 0; }
+.ap-mq-state { min-height: 20px; font-size: 14px; font-weight: 500; color: var(--ap-ink); text-align: center; }
+.ap-mq-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 32px; }
+.ap-mq-wave i { display: block; width: 4px; height: 4px; border-radius: 999px; background: var(--ap-line); transition: height .3s var(--ap-ease), background .3s; }
+.ap-mq-voice.is-on .ap-mq-wave i { height: var(--h); background: var(--ap-chart); }
+.ap-mq-voice.is-done .ap-mq-wave i { height: 4px; background: var(--ap-ink3); }
+.ap-mq-text { min-height: 112px; font-size: 16px; line-height: 1.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .ap-mq-voice:not(.is-on) .ap-mq-mic { animation: mqBreathe 2.8s ease-in-out infinite; }
+  .ap-mq-voice.is-on .ap-mq-rings i { animation: mqRing 1.8s var(--ap-ease) infinite; }
+  .ap-mq-voice.is-on .ap-mq-rings i:nth-child(2) { animation-delay: .6s; }
+  .ap-mq-voice.is-on .ap-mq-rings i:nth-child(3) { animation-delay: 1.2s; }
+  .ap-mq-voice.is-on .ap-mq-wave i { animation: mqWave .9s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -70ms); }
+  .ap-mq .ap-ml-counted .ap-chip { animation: cPop .35s var(--ap-ease) both; }
+}
+@keyframes mqRing { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes mqWave { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+@keyframes mqBreathe { 50% { transform: scale(1.04); box-shadow: 0 0 0 8px color-mix(in srgb, var(--ray) 22%, transparent); } }
+
+/* ---------- Insights charts draw in: bars grow, dots pop, the newest point lands last ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ap-anim .dv-bar { transform-box: fill-box; transform-origin: 50% 100%; animation: cGrowY .7s .12s var(--ap-ease) both; }
+  .ap-anim :is(.dv-dot, .dv-sym, .dv-cell, .dv-cd, .dv-zero) { transform-box: fill-box; transform-origin: center; animation: cPop .45s .2s var(--ap-ease) both; }
+  .ap-anim .dv-dot:nth-child(3n) { animation-delay: .28s; } .ap-anim .dv-dot:nth-child(3n + 1) { animation-delay: .36s; }
+  .ap-anim .dv-new { transform-box: fill-box; transform-origin: center; animation: cPop .5s .7s var(--ap-ease) both; }
+  .ap-anim :is(.dv-newlbl, .dv-bandlbl, .dv-val) { animation: apFadeOnly .5s .8s both; }
+  .ap-anim .c-band, .ap-anim .dv-bandbox { animation: apFadeOnly .6s both; }
+  .ap-anim .ap-comps i b { transform-origin: left; animation: cGrowX .8s .2s var(--ap-ease) both; }
+  .ap-anim .ap-sum-counts b, .ap-anim .ap-big { animation: apFade .5s .1s var(--ap-ease) both; }
+}
+
+/* ---------- Florin membership: the paywall and the locked states ---------- */
+.ap-rx .ap-lockp { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ap-card2); color: var(--ap-ink2); }
+.ap-rx .ap-lockp .ic, .ap-rx .ap-ask-b .ic, .ap-rx .ap-hero-go .ic, .ap-rx .ap-tease-b .ic, .ap-rx .ap-askq .ic { width: 14px; height: 14px; }
+.ap-rx .ap-seg-lock { width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
+.ap-tease { position: relative; display: grid; place-items: center; }
+.ap-tease > * { grid-area: 1 / 1; }
+.ap-tease-in { width: 100%; filter: blur(6px); opacity: .55; pointer-events: none; user-select: none; }
+.ap-tease-b { position: relative; z-index: 1; box-shadow: var(--ap-shadow); }
+.ap-askc--lock { gap: 12px; }
+.ap-askc--lock > b { font-size: 20px; }
+.ap-askq { display: inline-flex; align-items: center; gap: 8px; }
+.ap-pay { display: flex; flex-direction: column; gap: 16px; }
+.ap-pay-hero { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
+.ap-pay-hero h2 { font-size: 26px; font-weight: 300; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; max-width: 15ch; }
+.ap-pay-hero p { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
+.ap-pay-ring { position: absolute; right: 16px; top: 16px; width: 88px; height: 88px; opacity: .9; }
+.ap-pay-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ap-pay-list li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; }
+.ap-pay-list li > span:last-child { display: flex; flex-direction: column; gap: 4px; }
+.ap-pay-list b { font-size: 15px; font-weight: 500; }
+.ap-pay-list em { font-style: normal; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-pay-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); }
+.ap-pay-price { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); text-align: center; }
+.ap-pay-act { display: flex; flex-direction: column; gap: 8px; }
+.ap-pay h2:focus { outline: none; }
+.ap-pay h2:focus-visible { outline: 2px solid var(--ray); outline-offset: 4px; border-radius: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .ap-pay .ap-pay-list li { animation: apFade .5s calc(var(--i) * 70ms + .15s) var(--ap-ease) both; }
+  .ap-pay .c-ring-arc { animation: cRing 1.4s .2s var(--ap-ease) both; }
+  .ap-tease-b { animation: apFade .5s .3s var(--ap-ease) both; }
+}

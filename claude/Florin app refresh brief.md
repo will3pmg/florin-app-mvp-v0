@@ -184,4 +184,15 @@ The second pass (Insights, its detail pages and the Ask Florin hand-off) was bui
 - The option moves the 30-day summary: B's five words absorb some forms A and C count as outside the usual. One more reason to settle A, B or C before Insights ships.
 - The second pass's own questions sit in the notes beside each Insights screen (the "within your usual" definition, a usual for symptoms, Next or swipe, today in averages, dots or cells for symptoms, when to name a pattern).
 
-**Next:** Ask Florin's answers, and the studio fold-back once the calls above are settled.
+## Will's notes (Oct 14) and what they changed
+
+Will, after seeing the second pass: the app is a lot of text and simple graphs; take inspiration from Oura and give a few looks for the data, toward a component library. Keep FloraScore: it ties Florin to the score people know from Oura. Meal logging only happens when people are having issues, so look at a version with no meal logging, and make logging food as simple as saying what you ate that day, with a big voice button or one text box. Add animation. Add a toggle for a free plan without the deeper insights and Ask Florin, behind a paywall. And a report on every feature: how valuable, how well designed, how it fits the personas.
+
+- **FloraScore is back,** built from the logs: timing, how often, form and comfort, weighted as the studio weights its four parts, blended over the last 3 logged days. A day not logged is left out, never scored as zero; no score before day 14. On Today as the studio's Forest hero with the Ray ring and the usual range on it, first on Insights, and its own detail page. This reverses the Oct 14 workshop's "no FloraScore from manual logs" call.
+- **Meals are occasional.** A Meal logs switch shows every day, rough days only and none. Logging only on rough days named toast for Sarah by selection alone, so under 60% of logged days with a meal, patterns are held back and a 14-day food check is offered instead. FloraScore doesn't depend on meals. Today no longer asks for a missing meal; a symptom today invites what you ate.
+- **The quick meal log:** a big voice button and one box for the whole day; Florin picks out the foods as the words land. The prototype plays a sample transcript, since an artifact can't use the microphone.
+- **Florin membership.** A Plan switch shows Free and Member. Free keeps logging, Today, FloraScore, the weekly check-in, History and 7 days of Insights; membership adds why the score moved, 30 and 90 days, every detail page, possible patterns and the food check, Ask Florin and the clinician report. The paywall says what membership adds and "Membership price set at launch", as the studio's membership page does. Teasers blur the person's own counts, never made-up content.
+- **Motion:** the ring fills and the score counts up, Insights bars grow and dots land, the mic pulses while listening. All of it off under reduced motion.
+- **Data looks** (library/, its own artifact): the same eleven data components drawn in three looks, Rings, Field journal and Bento, from the same numbers, as the start of a component library.
+
+**Next:** pick a look and take it through Insights; Ask Florin's answers; the studio fold-back once the calls above are settled.

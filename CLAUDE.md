@@ -25,8 +25,11 @@ prototype/js/refresh-ui.js    every app screen as a render function (window.FLOR
 prototype/js/refresh-insights.js  the Insights tab, its detail pages and the Ask tab hand-off (extends FLORIN_RUI)
 prototype/js/app-charts.js    the studio's small SVG chart kit (window.FLC), used by Insights
 prototype/js/refresh-app.js   the prototype page: phones, actions, the screen list, notes per screen, A/B/C compare
+library/                       Florin data looks: the same numbers drawn in three looks, the start of a component library
+library/js/looks-data.js       the one data object (FLD.build) every look draws from, built on refresh-data.js
+library/js/look-*.js, css/look-*.css   one look each, registered on window.FLOOKS, every rule scoped under .lk-<id>
 reference/shipping-app/       screenshots of the app that ships today (Log a visit, History)
-work/                          QA and screenshot scripts
+work/                          QA and screenshot scripts (work/shots-library.js for the looks)
 ```
 
 Every number a screen states is computed from the model, never typed. If copy states a figure, compute it.
@@ -42,6 +45,19 @@ Insights reads days through `L.facts` (a gap stays a gap, No BM is a zero, a day
 and patterns through `L.patterns` (90 days, a food needs 5 logs, a one-sided binomial test at 1 in 100). Each demo
 person has one dish their seeded logs follow (`PATTERN_DISH`), seeded on its own meal pass so Insights has to find it.
 A symptom logged without a strength keeps `s: 0` and reads as "strength not said", never mild.
+
+FloraScore (`L.score`, `L.scoreUsual`, `L.scoreMoved`) is built from four logged parts (timing, how often, form,
+comfort), weighted 30/25/25/20 like the studio's, blended over the last 3 logged days. A day not logged is left out,
+fewer than 2 logged days in 3 means no score, and there's no score before day 14. It doesn't depend on meals.
+
+Meals are occasional (Will, Oct 14). `L.build(persona, data, { meals })` takes "all", "rough" (only days with a
+symptom) or "none". Under 60% of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back
+(`sparse`), because rough-day-only logs name ordinary foods by selection. The quick log (`RU.mealQuick`) is one box
+for the day with a voice button; the prototype plays `L.mealSay` in place of the microphone.
+
+The page has a Plan switch. Free keeps logging, Today, FloraScore, the check-in, History and 7 days of Insights;
+Florin membership adds why the score moved, 30 and 90 days, details, patterns, the food check, Ask Florin and the
+clinician report (`RU.paywall`). Teasers blur the person's own counts; never show made-up content.
 
 ## Rules you must not break
 
@@ -69,5 +85,6 @@ NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every
 ## Publishing
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
-page and every css/js file as a published file at the same relative path. Read the artifact before republishing: other
+page and every css/js file as a published file at the same relative path. The data looks are a separate artifact
+(library/index.html, with the shared prototype css/js published under css/ and js/). Read the artifact before republishing: other
 sessions publish to it too (the second pass did, on Oct 14), so merge onto what's live rather than overwrite it.

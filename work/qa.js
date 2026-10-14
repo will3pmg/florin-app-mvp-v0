@@ -17,7 +17,7 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
   const browser = await chromium.launch();
   const screens = async (p) => p.$$eval('.rx-side [data-rx="screen"]', (bs) => bs.map((b) => b.dataset.v));
 
-  for (const [w, h] of [[1440, 1000], [1100, 900], [900, 900], [390, 844]]) {
+  for (const [w, h] of [[1440, 1000], [1100, 900], [900, 900], [390, 844], [375, 812], [360, 780]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const p = await ctx.newPage();
     p.on("console", (m) => { if (m.type() === "error") note(`${w}: console: ${m.text()}`); });
@@ -46,15 +46,28 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
               const r = b.getBoundingClientRect();
               if (!r.width || !r.height || b.closest("[hidden]")) return;
               if (b.matches(".ap-o-scrim")) return;
-              /* a ::before or ::after hit area (position absolute, negative insets) counts toward the target */
-              let w = r.width, h = r.height, ew = 0, eh = 0;
-              for (const pe of ["::before", "::after"]) {
-                const a = getComputedStyle(b, pe);
-                if (a.content === "none" || a.position !== "absolute") continue;
-                const px = (v) => Math.max(0, -(parseFloat(v) || 0));
-                ew = Math.max(ew, px(a.left) + px(a.right)); eh = Math.max(eh, px(a.top) + px(a.bottom));
+              /* the real target: probe outward from the centre with elementFromPoint, so a ::before or ::after hit area
+                 counts, and one clipped by a scrolling parent doesn't. Off screen, add the pseudo insets instead */
+              let w = r.width, h = r.height;
+              const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+              const hit = (x, y) => { const e = document.elementFromPoint(x, y); return !!e && (e === b || b.contains(e)); };
+              /* probe only when the target and a margin round it are on screen; elementFromPoint can't see past the window */
+              if (r.left > 12 && r.top > 12 && r.right < innerWidth - 12 && r.bottom < innerHeight - 12 && hit(cx, cy)) {
+                /* probe at pixel centres (half a pixel past each step), then undo the phone's scale */
+                const reach = (dx, dy, half) => { let k = 0; while (k < 32 && hit(cx + dx * (half + k + 0.5), cy + dy * (half + k + 0.5))) k++; return k; };
+                w = (r.width + reach(-1, 0, r.width / 2) + reach(1, 0, r.width / 2)) / scale;
+                h = (r.height + reach(0, -1, r.height / 2) + reach(0, 1, r.height / 2)) / scale;
+              } else {
+                let ew = 0, eh = 0;
+                for (const pe of ["::before", "::after"]) {
+                  const a = getComputedStyle(b, pe);
+                  if (a.content === "none" || a.position !== "absolute") continue;
+                  const px = (v) => Math.max(0, -(parseFloat(v) || 0));
+                  ew = Math.max(ew, px(a.left) + px(a.right)); eh = Math.max(eh, px(a.top) + px(a.bottom));
+                }
+                w += ew; h += eh;
               }
-              w = Math.round(w + ew); h = Math.round(h + eh);
+              w = Math.round(w); h = Math.round(h);
               /* 44 by 44 or more, every target */
               if (Math.min(h, w) < 44) out.small.push(`${(b.className || b.tagName).toString().split(" ")[0]} "${(b.textContent || b.getAttribute("aria-label") || "").trim().slice(0, 24)}" ${Math.round(w)}x${Math.round(h)}`);
             });

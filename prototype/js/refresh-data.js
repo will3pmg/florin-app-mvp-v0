@@ -85,6 +85,9 @@
     }
     return mode === "A" ? `Type ${s[0]}` : L.TYPES[s[0]].short;
   };
+  /* the name a BM is counted under for "most common": in A and C a one-step BM counts under its step, so a B word that
+     sits on one step joins the BMs logged as that step; a two-step word keeps its own name */
+  L.formKey = (x, mode) => (mode !== "B" && L.stepsOf(x).length === 1 ? L.formName(L.stepsOf(x)[0], mode) : L.formName(x, mode));
   L.formLine = (x, mode) => (mode === "B" || wordLog(x) ? L.WORDS[L.wordKey(x)].line : L.TYPES[L.stepsOf(x)[0]].line);
   L.glyphOf = (x, mode) => (mode === "B" || wordLog(x) ? L.WORDS[L.wordKey(x)].glyph : L.stepsOf(x)[0]);
 
@@ -137,10 +140,24 @@
     breakfast: { title: "Breakfast", recent: "breakfasts", save: "Save breakfast", ph: "For example: oatmeal with berries, coffee" },
     lunch: { title: "Lunch", recent: "lunches", save: "Save lunch", ph: "For example: chicken salad" },
     dinner: { title: "Dinner", recent: "dinners", save: "Save dinner", ph: "For example: salmon, rice and greens" },
-    other: { title: "Snack or drink", recent: "snacks and drinks", save: "Save snack or drink", ph: "For example: a latte, an apple, a glass of wine" }
+    other: { title: "Snack or drink", recent: "snacks and drinks", save: "Save snack or drink", ph: "For example: a latte, an apple, a glass of wine" },
+    /* the quick log (Will, Oct 14): the whole day in one line, said or typed */
+    day: { title: "What you ate", recent: "days", save: "Save what you ate", ph: "For example: oatmeal and coffee, a chicken salad, pizza for dinner" }
   };
   L.mealLabel = (k) => (L.MEAL_COPY[k] || { title: "Meal" }).title;
-  L.MEAL_DEFAULT_T = { breakfast: 8, lunch: 12.5, dinner: 18.5, other: 15.5 };
+  L.MEAL_DEFAULT_T = { breakfast: 8, lunch: 12.5, dinner: 18.5, other: 15.5, day: 20.5 };
+  /* what someone might say into the mic for a day: that day's meals, in order, as one sentence. The prototype can't use
+     the microphone, so the quick log plays this back as if dictated */
+  const DINNER_SAY = { sarah: "pizza", marcus: "chicken curry with rice", alex: "salmon, rice and greens" };
+  L.mealSay = (M, d) => {
+    const parts = ((M.seedMeals && M.seedMeals[d]) || []).map((m) => [m.meal, m.text]);
+    if (d === TODAY && L.NOW >= 18 && !parts.some(([k]) => k === "dinner")) parts.push(["dinner", DINNER_SAY[M.P.id] || "pasta"]);
+    if (!parts.length) parts.push(["dinner", DINNER_SAY[M.P.id] || "pasta"]);
+    const said = (t) => t.replace(/, (coffee|a glass of wine)$/i, " and $1");
+    const low = (t) => t.charAt(0).toLowerCase() + t.slice(1);
+    const bits = parts.map(([k, t], i) => `${i ? low(said(t)) : said(t)} ${k === "other" ? "as a snack" : `for ${k}`}`);
+    return bits.length === 1 ? `${bits[0]}.` : `${bits.slice(0, -1).join(", ")}, and ${bits[bits.length - 1]}.`;
+  };
 
   /* what the seeded days eat */
   const SEED_MEALS = {
@@ -312,8 +329,11 @@
     for (let d = start; d < TODAY; d++) if (!isGap(P, d)) meals[d] = mealsOf(A, d);
     const days = [];
     for (let d = start; d <= TODAY; d++) days.push(dayOf(A, d, mode, meals));
+    /* the seeded meals, kept aside before the meal-logs scenario drops any: the voice demo says them */
+    const seedMeals = {};
+    days.forEach((x) => (seedMeals[x.d] = x.entries.filter((e) => e.kind === "meal").map((e) => ({ meal: e.meal, text: e.text }))));
     keepMeals(days, opts.meals || "all");
-    const M = { A, P, persona: P, mode, start, days, seq: 0, meals: opts.meals || "all" };
+    const M = { A, P, persona: P, mode, start, days, seq: 0, meals: opts.meals || "all", seedMeals };
 
     if (mode === "new") {
       M.usual = null;
@@ -419,16 +439,17 @@
     const nobm = es.some((e) => e.kind === "nobm");
     const count = bms.length ? bms.length : nobm ? 0 : null; /* null: logged, but nothing said about BMs */
     const first = bms.length ? bms[0].t : null;
-    const sym = {};
-    /* the strongest of the day; 0 when it was logged without a strength, which is never read as mild */
-    es.filter((e) => e.kind === "sym").forEach((e) => e.items.forEach((i) => (sym[i.name] = Math.max(sym[i.name] || 0, i.s || 0))));
+    const sym = {}, unrated = {};
+    /* the strongest of the day; 0 when it was logged without a strength, which is never read as mild. unrated keeps the
+       names with any log that had no strength, so a strength word is never claimed for them */
+    es.filter((e) => e.kind === "sym").forEach((e) => e.items.forEach((i) => { sym[i.name] = Math.max(sym[i.name] || 0, i.s || 0); if (!i.s) unrated[i.name] = true; }));
     const u = M.usual;
     const inWin = u && first != null ? first >= u.tLo && first <= u.tHi : null;
     const inCount = u && count != null ? count >= u.nLo && count <= u.nHi : null;
     const fi = u && bms.length ? bms.map((b) => L.inForms(M, b, mode)) : null;
     const formsIn = !fi ? null : fi.includes(false) ? false : fi.includes(null) ? null : true;
     const state = !logged ? "none" : count == null ? "nocount" : !u ? "logged" : count > 0 && inWin && inCount ? (formsIn ? "usual" : formsIn === false ? "shifted" : "unsure") : "shifted";
-    return { d: x.d, date: x.date, dow: x.dow, today: x.d === TODAY, pending, logged, bms, nobm, count, first, sym, nsym: Object.keys(sym).length, meals: es.filter((e) => e.kind === "meal"), inWin, inCount, formsIn, state };
+    return { d: x.d, date: x.date, dow: x.dow, today: x.d === TODAY, pending, logged, bms, nobm, count, first, sym, unrated, nsym: Object.keys(sym).length, meals: es.filter((e) => e.kind === "meal"), inWin, inCount, formsIn, state };
   };
   L.span = (M, n, mode) => { const d0 = Math.max(M.start, TODAY - n + 1); return M.days.filter((x) => x.d >= d0).map((x) => L.facts(M, x, mode)); };
   /* the stretch just before, for "more or less often". 90 days compares your last 30 with your first 30 */
@@ -498,13 +519,13 @@
     /* meals logged on only some days (most often the rough ones) leave no ordinary days to compare with, and name
        foods by selection alone (in testing, Sarah with meals kept around rough days: toast, 13 of 19). Under 60% of
        logged days with a meal, every meal pattern, late dinners included, is held back and Insights offers a food check */
-    const logged = days.length, withMeal = days.filter((f) => f.meals.length).length;
+    const logged = days.length, withMeal = days.filter((f) => f.meals.length).length, roughMeal = days.filter((f) => f.meals.length && f.nsym).length;
     const coverage = logged ? withMeal / logged : 0;
     const sparse = coverage < L.MEAL_COVER;
     const shown = sparse ? [] : tests.filter((t) => t.show);
     const found = shown.sort((a, b) => b.tier.k - a.tier.k || b.rate - a.rate || b.n - a.n);
     const quiet = sparse ? [] : checked.filter((food) => !found.some((t) => t.food === food));
-    return { found, tests, checked: sparse ? [] : checked, quiet, waiting: sparse ? [] : waiting, counts, lateCount, d0, coverage, sparse, withMeal, logged };
+    return { found, tests, checked: sparse ? [] : checked, quiet, waiting: sparse ? [] : waiting, counts, lateCount, d0, coverage, sparse, withMeal, logged, roughShare: withMeal ? roughMeal / withMeal : 0 };
   };
 
   /* ---------- FloraScore, from manual logs ----------

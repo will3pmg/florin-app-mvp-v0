@@ -26,11 +26,11 @@
   /* ====================================================================== */
   let UID = 0;
   const statusIcons = `<span class="apx-status-r"><svg viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg> <svg viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0zM3.2 6.6a6.8 6.8 0 0 1 9.6 0l-1.4 1.4a4.8 4.8 0 0 0-6.8 0zM.8 4.2a10.2 10.2 0 0 1 14.4 0l-1.4 1.4a8.2 8.2 0 0 0-11.6 0z"/></svg> <svg viewBox="0 0 27 12" aria-hidden="true"><rect x=".5" y=".5" width="22" height="11" rx="3.2" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="17" height="8" rx="2"/><rect x="24" y="4" width="2" height="4" rx="1" opacity=".45"/></svg></span>`;
-  const KIND = { plus: "sheet", earlier: "sheet", guide: "sheet", flag: "sheet", ckday: "sheet", nobm: "sheet", bm: "full", sym: "full", meal: "full", ck: "screen" };
+  const KIND = { pay: "sheet", plus: "sheet", earlier: "sheet", guide: "sheet", flag: "sheet", ckday: "sheet", nobm: "sheet", bm: "full", sym: "full", meal: "full", ck: "screen" };
 
   function Phone(host, cfg) {
-    const S = { form: cfg.form, persona: cfg.persona, data: cfg.data, tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {} };
-    S.M = L.build(S.persona, S.data);
+    const S = { form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member", tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {} };
+    S.M = L.build(S.persona, S.data, { meals: S.meals });
     host.innerHTML = `<div class="ap ap-rx" data-theme="${cfg.theme}">
         <div class="apx-status" aria-hidden="true"><span>7:40</span>${statusIcons}</div>
         <div class="apx-island" aria-hidden="true"></div>
@@ -49,7 +49,7 @@
       </div>`;
     const root = host.querySelector(".ap"), layer = root.querySelector(".ap-layer"), tb = root.querySelector(".ap-tb");
     const ovlEl = root.querySelector(".ap-ovl"), tst = root.querySelector(".ap-tst");
-    const V = () => ({ form: S.form, uid: S.uid });
+    const V = () => ({ form: S.form, uid: S.uid, mealUI: S.mealUI, plan: S.plan });
     const top = () => S.ovl[S.ovl.length - 1];
 
     /* ---------- the tab underneath ---------- */
@@ -90,18 +90,20 @@
         if (!el) return;
         el.focus({ preventScroll: true });
         const r = el.getBoundingClientRect(), lr = layer.getBoundingClientRect();
-        if (r.top < lr.top || r.bottom > lr.bottom - 96) el.scrollIntoView({ block: "center", behavior: "auto" });
+        /* scroll the phone's screen only (scrollIntoView would move the page around it too); the phone may be scaled */
+        if (r.top < lr.top || r.bottom > lr.bottom - 96) { const k = lr.height / layer.clientHeight || 1; layer.scrollTop += ((r.top + r.bottom) / 2 - (lr.top + lr.bottom) / 2) / k; }
       });
     }
 
     /* ---------- overlays: the plus menu, the log forms, the check-in ---------- */
     function ovlHTML(o) {
       switch (o.type) {
+        case "pay": return RU.paywall(S.M, V(), o.st);
         case "plus": return RU.plus(S.M, V(), o.st);
         case "earlier": return RU.earlier(S.M, V());
         case "bm": return RU.bm(S.M, V(), o.st);
         case "sym": return RU.sym(S.M, V(), o.st);
-        case "meal": return RU.meal(S.M, V(), o.st);
+        case "meal": return o.st.quick ? RU.mealQuick(S.M, V(), o.st) : RU.meal(S.M, V(), o.st);
         case "guide": return RU.guide(V());
         case "flag": return RU.flagNote(o.st);
         case "ck": return RU.ck(S.M, V(), o.st);
@@ -131,6 +133,8 @@
         const a = document.activeElement;
         if (!id && a && a !== document.body && root.contains(a) && !a.closest(".ap-o.is-out, [inert]")) return;
         const q = [id && `[data-act="edit"][data-id="${CSS.escape(id)}"]`, k && k.id && `[data-act="edit"][data-id="${CSS.escape(k.id)}"]`, k && k.act && !k.id && `[data-act="${CSS.escape(k.act)}"]${k.tab ? `[data-tab="${CSS.escape(k.tab)}"]` : ""}`].filter(Boolean);
+        /* a finished check-in replaces Start: land on what took its place before falling back to plus */
+        if (k && k.act === "ck-start") q.push('[data-act="ck-result"]', '.ap-ic-h[data-k="ck"]');
         const el = q.map((s) => root.querySelector(s)).find(Boolean) || root.querySelector(".ap-tb-plus");
         if (el) el.focus({ preventScroll: true });
       });
@@ -172,6 +176,8 @@
     function pop(o = {}) {
       const ov = S.ovl.pop();
       if (!ov) return;
+      clearInterval(S.vT);
+      if (ov.st && ov.st.voice === "listening") ov.st.voice = ov.st.text ? "done" : "idle";
       ov.el.inert = true;
       /* leaving the check-in part way keeps the answers, so the Today card can say Continue (a preview from the list doesn't) */
       if (ov.type === "ck" && !ov.st.preview && ov.st.step <= L.CHECKIN.length && S.M.checkin.status !== "done") S.ckDraft = ov.st.step > 0 || ov.st.answers.some((v) => v != null) ? ov.st : null;
@@ -266,12 +272,47 @@
       return st;
     };
     const newCk = () => ({ step: 0, answers: [null, null, null, null], tags: [], note: "" });
+    const newMealQuick = (d = L.TODAY) => {
+      const kept = fromDraft("meal", d);
+      if (kept && kept.quick) return kept;
+      return { d, t: d === L.TODAY ? L.NOW : L.MEAL_DEFAULT_T.day, meal: "day", text: "", note: "", quick: true, voice: "idle" };
+    };
+    /* the pretend dictation: the words of a sample land in the box one at a time, with the counted foods following */
+    function voiceStop(ov, said) {
+      clearInterval(S.vT);
+      const st = ov.st;
+      st.voice = (st.text || "").trim() ? "done" : "idle";
+      rerender(ov);
+      const ta = ov.el.querySelector(".ap-mq-text");
+      if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); }
+      if (said) say(`Added: ${st.text.trim()}`);
+    }
+    function voiceStart(ov) {
+      const st = ov.st;
+      const words = L.mealSay(S.M, st.d).split(" ");
+      st.text = (st.text || "").trim() ? `${st.text.trim()} ` : "";
+      st.voice = "listening";
+      rerender(ov);
+      const mic = ov.el.querySelector(".ap-mq-mic"); if (mic) mic.focus({ preventScroll: true });
+      if (reduced()) { st.text += words.join(" "); voiceStop(ov, true); return; }
+      let i = 0;
+      clearInterval(S.vT);
+      S.vT = setInterval(() => {
+        if (top() !== ov) { clearInterval(S.vT); return; }
+        st.text += (i ? " " : "") + words[i++];
+        const ta = ov.el.querySelector(".ap-mq-text"); if (ta) ta.value = st.text;
+        const c = ov.el.querySelector(".ap-ml-count"); if (c && i % 3 === 0) c.innerHTML = RU.mealCount(S.M, st);
+        const btn = ov.el.querySelector('[data-act="save-meal"]'); if (btn) btn.removeAttribute("aria-disabled");
+        const hint = ov.el.querySelector(".ap-fsh-hint"); if (hint) hint.hidden = true;
+        if (i >= words.length) voiceStop(ov, true);
+      }, 150);
+    }
     function openEntry(id, o = {}) {
       const e = L.find(S.M, id);
       if (!e) return;
       if (e.kind === "bm") push("bm", { edit: id, d: e.d, t: e.t, form: e.form, word: e.word == null ? null : e.word, how: Object.assign({}, e.how), dur: e.dur, flags: Object.assign({}, e.flags), note: e.note || "", details: !!o.details });
       else if (e.kind === "sym") { const own = e.items.map((i) => i.name).filter((n) => !L.SYMPTOMS.includes(n)); push("sym", { edit: id, d: e.d, t: e.t, items: e.items.map((i) => Object.assign({}, i)), s: Math.max(0, ...e.items.map((i) => i.s || 0)), last: e.last, note: e.note || "", custom: own.concat(ownSyms().filter((n) => !own.includes(n))) }); }
-      else if (e.kind === "meal") push("meal", { edit: id, d: e.d, t: e.t, meal: e.meal, text: e.text, note: e.note || "" });
+      else if (e.kind === "meal") push("meal", { edit: id, d: e.d, t: e.t, meal: e.meal, text: e.text, note: e.note || "", quick: e.meal === "day", voice: "idle" });
       else push("nobm", { edit: id, d: e.d, t: e.t });
     }
     function logNoBm(d = L.TODAY) {
@@ -314,20 +355,30 @@
         S.tab = b.dataset.tab; renderTab(); nav();
         if (inLayer) focusSel();
       },
+      pay(b) { push("pay", { from: b.dataset.pay || b.dataset.k || "" }); },
+      "pay-start"() {
+        closeAll();
+        if (cfg.onPlan) cfg.onPlan("member"); else { S.plan = "member"; renderTab(true); nav(); }
+        toast("Membership is on in this demo. Insights and Ask Florin are open.");
+      },
       irange(b) { S.ins.range = +b.dataset.v; renderTab(true); nav(); focusSel(`[data-act="irange"][data-v="${CSS.escape(b.dataset.v)}"]`); },
       idetail(b) {
+        if (S.plan === "free") { push("pay", { from: b.dataset.k || "" }); return; }
         closeAll();
         if (S.tab === "insights" && !S.ins.k) S.ins.y = layer.scrollTop;
         S.tab = "insights"; S.ins.k = b.dataset.k; renderTab(); nav(); focusSel(".ap-nav-t");
       },
       iback() { const k = S.ins.k; S.ins.k = null; renderTab(true); layer.scrollTop = S.ins.y || 0; nav(); focusSel(k ? `[data-act="idetail"][data-k="${CSS.escape(k)}"]` : null); },
-      "ask-about"(b) { closeAll(); S.askCtx = { k: b.dataset.k, range: S.ins.range }; S.tab = "ask"; renderTab(); nav(); focusSel(); },
+      "ask-about"(b) { if (S.plan === "free") { push("pay", { from: "ask" }); return; } closeAll(); S.askCtx = { k: b.dataset.k, range: S.ins.range }; S.tab = "ask"; renderTab(); nav(); focusSel(); },
       "ask-clear"() { S.askCtx = null; renderTab(true); nav(); focusSel(); },
       plus() { push("plus"); },
       close() { pop(); },
       "open-bm"(b) { const st = newBm(b.dataset.form ? +b.dataset.form : null, logDay(), b.dataset.word ? +b.dataset.word : null); if (top() && (top().type === "plus" || b.dataset.swap)) swap("bm", st); else push("bm", st); },
       "open-sym"() { const st = newSym(logDay()); if (top() && top().type === "plus") swap("sym", st); else push("sym", st); },
-      "open-meal"(b) { const st = newMeal(logDay()); if (b && b.dataset.meal) { st.meal = b.dataset.meal; st.mealTouched = true; mealTime(st); } if (top() && top().type === "plus") swap("meal", st); else push("meal", st); },
+      "mq-mic"() { const ov = top(); if (!ov || !ov.st.quick) return; if (ov.st.voice === "listening") voiceStop(ov, true); else voiceStart(ov); },
+      "open-meal"(b) {
+        if (S.mealUI !== "detailed") { const st = newMealQuick(logDay()); if (top() && top().type === "plus") swap("meal", st); else push("meal", st); return; }
+        const st = newMeal(logDay()); if (b && b.dataset.meal) { st.meal = b.dataset.meal; st.mealTouched = true; mealTime(st); } if (top() && top().type === "plus") swap("meal", st); else push("meal", st); },
       "plus-earlier"() { push("earlier"); },
       "plus-day"(b) {
         const d = +b.dataset.v;
@@ -439,7 +490,8 @@
         st.saved = true;
         pop({ instant: true, focusId: e.id });
         renderTab(true);
-        toast(`${edit ? "Saved" : `${L.mealLabel(e.meal)} saved`}. ${T(e.t)}${whenTxt(e)}.${e.foods.length ? "" : " No foods counted from it."}`, restore);
+        if (e.meal === "day") toast(`${edit ? "Saved" : "Saved what you ate"}${whenTxt(e) || (e.d === L.TODAY ? " today" : "")}. ${e.foods.length ? `${e.foods.length} ${e.foods.length === 1 ? "food" : "foods"} counted.` : "No foods counted from it."}`, restore);
+        else toast(`${edit ? "Saved" : `${L.mealLabel(e.meal)} saved`}. ${T(e.t)}${whenTxt(e)}.${e.foods.length ? "" : " No foods counted from it."}`, restore);
       },
       "ck-start"() {
         const st = S.ckDraft || newCk();
@@ -478,6 +530,8 @@
         S.ckDraft = null;
         renderTab(true);
         toast("Skipped for this week. It's still in the plus menu if you change your mind.", restore);
+        /* the button that was pressed is gone: Undo in the toast is the next thing to do */
+        requestAnimationFrame(() => { const u = tst.querySelector('[data-act="undo"]'); if (u) u.focus({ preventScroll: true }); });
       },
       "ck-result"() {
         const c = S.M.checkin, st = { step: L.CHECKIN.length + 1, answers: c.answers.slice(), tags: (c.tags || []).slice(), note: c.note || "" };
@@ -619,7 +673,7 @@
       closeAll();
       clearTimeout(S.ckT);
       const go = (tab) => { S.tab = tab; renderTab(true); layer.scrollTop = 0; };
-      const ins = (k) => { S.ins.k = k; go("insights"); };
+      const ins = (k) => { if (S.plan === "free" && k) { S.ins.k = null; go("insights"); push("pay", { from: k.indexOf("pattern:") === 0 ? "pat" : k }, now); return; } S.ins.k = k; go("insights"); };
       const now = { instant: true };
       switch (id) {
         case "plus": go("today"); push("plus", {}, now); break;
@@ -629,13 +683,17 @@
         case "guide": go("today"); push("bm", newBm(null), now); push("guide", {}, now); break;
         case "flag": go("today"); push("flag", { flags: { blood: true } }, now); break;
         case "sym": go("today"); push("sym", Object.assign(newSym(), { items: [{ name: "Bloating", s: 0 }], s: 2, last: 1 }), now); break;
-        case "meal": go("today"); push("meal", newMeal(), now); break;
+        case "meal": go("today"); push("meal", S.mealUI === "detailed" ? newMeal() : newMealQuick(), now); break;
+        case "meal-voice": go("today"); { const st = newMealQuick(); st.text = L.mealSay(S.M, L.TODAY); st.voice = "done"; push("meal", st, now); } break;
         case "ck": go("today"); push("ck", newCk(), now); break;
         case "ck-last": go("today"); push("ck", { step: 4, answers: [1, 0, 1, 1], tags: [], note: "", preview: true }, now); break;
         case "ckdone": go("today"); push("ck", { step: L.CHECKIN.length + 1, answers: [1, 0, 1, 1], tags: ["Eating out"], note: "", preview: true }, now); break;
         case "ckday": go("today"); push("ckday", Object.assign({}, S.M.ckDay), now); break;
         case "history": go("history"); break;
         case "insights": ins(null); break;
+        case "pay": go("insights"); push("pay", { from: "" }, now); break;
+        case "free-insights": if (cfg.onPlan && S.plan !== "free") { cfg.onPlan("free", "free-insights"); return; } S.ins.k = null; go("insights"); break;
+        case "free-ask": if (cfg.onPlan && S.plan !== "free") { cfg.onPlan("free", "free-ask"); return; } S.askCtx = null; go("ask"); break;
         case "i-score": ins("score"); break;
         case "i-timing": ins("timing"); break;
         case "i-often": ins("often"); break;
@@ -651,7 +709,7 @@
       }
       nav();
     }
-    function rebuild() { clearTimeout(S.ckT); S.ovl.forEach((o) => o.el.remove()); S.ovl = []; S.M = L.build(S.persona, S.data); S.ckDraft = null; S.drafts = {}; S.hist = { filter: "all", n: 14 }; S.ins = { range: 30, k: null, y: 0 }; S.askCtx = null; tst.classList.remove("is-on"); S.undo = null; }
+    function rebuild() { clearTimeout(S.ckT); S.ovl.forEach((o) => o.el.remove()); S.ovl = []; S.M = L.build(S.persona, S.data, { meals: S.meals }); S.ckDraft = null; S.drafts = {}; S.hist = { filter: "all", n: 14 }; S.ins = { range: 30, k: null, y: 0 }; S.askCtx = null; tst.classList.remove("is-on"); S.undo = null; }
     const api = {
       el: root,
       open,
@@ -661,6 +719,9 @@
       setForm(f) { S.form = f; renderTab(true); S.ovl.forEach((o) => rerender(o)); },
       setPersona(p) { S.persona = p; rebuild(); open("today"); },
       setData(d) { S.data = d; rebuild(); open("today"); },
+      setMeals(m) { S.meals = m; rebuild(); open("today"); },
+      setMealUI(m) { S.mealUI = m; if (top() && top().type === "meal") open("meal"); else { renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); } },
+      setPlan(p) { S.plan = p; renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); },
       setTheme(t) { root.dataset.theme = t; },
       setFull(b) { root.classList.toggle("is-full", !!b); },
       reset() { rebuild(); open("today"); }
@@ -725,7 +786,7 @@
     const k = (m) => { const F = L.span(M, 30, m); return { w: F.filter((x) => x.state === "usual").length, n: F.filter((x) => x.state === "usual" || x.state === "shifted").length }; };
     const r = { A: k("A"), B: k("B"), C: k("C") };
     const ac = r.A.w === r.C.w && r.A.n === r.C.n ? `A and C put ${r.A.w} of ${r.A.n}` : `A puts ${r.A.w} of ${r.A.n}, C ${r.C.w} of ${r.C.n},`;
-    if (r.A.w === r.B.w && r.B.w === r.C.w) return `Over 30 days all three count ${r.A.w} of ${r.A.n} days within ${M.P.name}'s usual.`;
+    if (r.A.w === r.B.w && r.B.w === r.C.w && r.A.n === r.B.n && r.B.n === r.C.n) return `Over 30 days all three count ${r.A.w} of ${r.A.n} days within ${M.P.name}'s usual.`;
     return `The option moves the summary: over 30 days, ${ac} days within ${M.P.name}'s usual, and B ${r.B.w} of ${r.B.n}. A day with one BM outside the usual forms counts as shifted, and B's usual (${L.usualFormsText(M, "B")}) doesn't cover the same steps as A's (${L.usualFormsText(M, "A")}), so a day can sit inside one and outside the other.`;
   };
   const abMonthN = (M) => L.span(M, 30, "A").reduce((s, x) => s + x.bms.length, 0);
@@ -734,7 +795,7 @@
     if (!M.usual) return "With a new person there's no usual yet.";
     const n = abMonthN(M), k = { A: abMonthK(M, "A"), B: abMonthK(M, "B"), C: abMonthK(M, "C") };
     /* the most common form, read each way: B's words can flip it */
-    const top = (m) => { const c = {}; L.span(M, 30, m).forEach((x) => x.bms.forEach((b) => { const w = L.formName(b, m); c[w] = (c[w] || 0) + 1; })); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [""])[0]; };
+    const top = (m) => { const c = {}; L.span(M, 30, m).forEach((x) => x.bms.forEach((b) => { const w = L.formKey(b, m); c[w] = (c[w] || 0) + 1; })); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || [""])[0]; };
     const tA = top("A"), tB = top("B"), tC = top("C");
     const same = k.A === k.B && k.B === k.C, ac = k.A === k.C ? `A and C put ${k.A}` : `A puts ${k.A}, C ${k.C},`;
     const flip = tB && tC && tB !== tC ? ` The most common form reads differently${same ? "" : " too"}: ${tC} in C (${tA} in A), ${tB} in B, because B counts two steps as one word.` : "";
@@ -775,6 +836,25 @@
         <section aria-label="What changed"><h3 class="rx-h3">What changed</h3>${WORKSHOP.changed.map(([g, items]) => `<div class="rx-ws-g"><b>${esc(g)}</b><ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}</section>
       </div>`;
 
+  /* the quick meal log's notes */
+  const MEAL_QUICK = (M) => {
+    const PR = L.patterns(M, "C");
+    return {
+      t: "What you ate, said or typed",
+      lede: "Will, Oct 14: meal logging happens when things feel off, so it has to be as quick as saying it. One big voice button and one box for the whole day. Florin picks out the foods as the words land. The prototype plays a sample in place of the microphone; in the app it's the phone's own dictation.",
+      ba: [
+        ["Pick a meal, type it, set a time", "Say the whole day in one go, or type it in one box. The day is enough; no times"],
+        ["A dinner nudge every evening", "No nudge for a missing meal. A symptom logged today invites what you ate"],
+        ["Patterns read from rough days only", `Under ${Math.round(L.MEAL_COVER * 100)}% of days with a meal, patterns are held back and a ${L.FOOD_CHECK_DAYS}-day food check is offered`]
+      ],
+      open: [
+        "One line for the day loses meal times, so the later-dinner pattern can't be read from it. Keep the one-meal sheet a tap away for people who want times, or drop times altogether?",
+        M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.withMeal} of ${PR.logged} days, so Insights holds patterns back and offers the food check.` : `With meals every day, ${M.P.name}'s logs find ${PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}. Switch Meal logs to Rough days only to see what happens when people log only when things feel off.`) : "",
+        "Food check: 14 days, one line a day, good days too, then Insights reads it. Membership, or for everyone?"
+      ].filter(Boolean),
+      res: ["Oura shows a Discovery only after a tag is used about 5 to 40 times.", "Logging only on rough days can make ordinary foods look like triggers: every meal day is a rough day. In testing, Sarah's logs named toast this way."]
+    };
+  };
   const NOTES = {
     today: (M) => ({
       t: "Today",
@@ -871,7 +951,7 @@
       open: ["Is this the right six? Bloating, Belly pain, Cramping, Gas, Nausea and Low energy. Gas and Nausea are new. Burning moved to the BM's details, where today's app used it. Urgency is a BM detail. Greasy or oily is dropped for now."],
       res: ["Stool Log keeps every extra optional.", "The only slider found was research grade, and people found it heavy."]
     }),
-    meal: () => ({
+    meal: (M) => P.mealUI !== "detailed" ? MEAL_QUICK(M) : ({
       t: "Log a meal",
       lede: "Pick the meal, then type what you had. Florin shows the foods it counted as you type, so a missed word is visible. Recent foods add to the text, and the time follows the meal you pick.",
       ba: [
@@ -918,13 +998,28 @@
       ],
       open: [
         "A day counts as within your usual when the first BM landed in the window, the count was usual and every form was within the usual. A word logged in B that could sit either side counts on neither, and so does a day with only symptoms or meals logged. Symptoms are counted on their own card. Right definition?",
-        `Symptoms have no band: their usual is how often they came up in the same weeks as the other usuals, ${RU.spanText(28, 83)}${M.usual && M.usual.sym.every ? ` (about 1 day in ${M.usual.sym.every} for ${M.P.name})` : ""}. Enough, or no usual for symptoms at all?`,
+        M.usual ? `Symptoms have no band: their usual is how often they came up in the same weeks as the other usuals, ${RU.spanText(28, 83)}${M.usual.sym.every ? ` (about 1 day in ${M.usual.sym.every} for ${M.P.name})` : ""}. Enough, or no usual for symptoms at all?` : `Symptoms have no band: their usual will be how often they come up in the person's first ${L.LEARN_DAYS} days of logs. Enough, or no usual for symptoms at all?`,
         "Patterns use the last 90 days whatever the range. 30 days of manual logs named a food by chance in testing (Alex, pasta, 5 of 5), so the bar is a binomial test at 1 in 100 against other days.",
         patSay(M, f),
         rideAlong(M, f),
         abDays(M)
       ].filter(Boolean),
       res: ["Function opens on summary counts, in range and out of range, with a pending state. The summary card does the same, in the person's terms.", "Oura's Vitals: one card per metric with the personal baseline, a down-arrow for what shaped it, a side-arrow into the detail.", "Oura waits up to 2 weeks before judging anything. Switch Logs to New, day 5 to see the learning state.", "Oura shows a Discovery only after a tag is used about 5 to 40 times, as one plain sentence."]
+    }),
+    pay: (M) => ({
+      t: "Florin membership",
+      lede: "The paywall, from wherever a member feature was tapped: a title for that feature, what membership adds in five lines, and the price as the studio has it, set at launch. Logging, Today, FloraScore, the weekly check-in and 7 days of Insights stay free.",
+      ba: [
+        ["Everything free, with no plan for paying", "A free app that logs and shows today, and a membership that explains"],
+        ["A paywall in front of logging", "Logging is never behind the paywall: without logs there's nothing to explain"],
+        ["Sample answers and fake data as a teaser", "Teasers show the person's own counts (how many patterns, the score's parts) blurred, never made-up content"]
+      ],
+      open: [
+        "Where's the line? Built: FloraScore today and its 30-day line are free; why it moved is membership. Insights is free at 7 days; 30 and 90 days, the detail pages, possible patterns, the food check, Ask Florin and the clinician report are membership.",
+        "Is the clinician report membership? It's the thing a person with alarm features most needs. Consider keeping a basic report free.",
+        "The studio's membership page lists app features without membership as to be decided. This is a first proposal for it."
+      ],
+      res: ["Studio membership page: a daily FloraScore, patterns, guided food trials, doctor reports and Apple Health sync. Price set at launch.", "Oura: a score up front, with contributors and trends you can open."]
     }),
     "i-score": (M, f) => ({
       t: "FloraScore, the detail",
@@ -948,7 +1043,13 @@
       t: "How often, the detail",
       lede: "Bars from zero over the usual band. Gold for a day outside it, a Gold ring for a day logged as No BM, a faint column for a day with nothing logged.",
       ba: [["An empty day read as zero", "A gap stays a gap. Only No BM counts as zero"]],
-      open: [(() => { const n = L.bms(L.day(M, L.TODAY)).length; return n ? `Today counts as far as it has gone (${n === 1 ? "one BM" : `${n} BMs`} by ${T(L.NOW)}). Fine, or leave today out of averages until it ends?` : "Nothing is logged today yet, so today stays out of the averages until it has a log. Once it does, it counts as far as it has gone. Fine, or leave today out until it ends?"; })()],
+      open: [(() => {
+        const f = L.facts(M, L.day(M, L.TODAY), "C");
+        if (f.pending) return "Nothing is logged today yet, so today stays out of the averages until it has a log. Once it does, it counts as far as it has gone. Fine, or leave today out until it ends?";
+        if (f.count === 0) return `Today is logged as No BM so far, so it counts as a zero until a BM is logged. Fine, or leave today out of averages until it ends?`;
+        if (f.count == null) return "Today has logs, but nothing about BMs yet, so it's left out of the averages, never counted as zero. Fine?";
+        return `Today counts as far as it has gone (${f.count === 1 ? "one BM" : `${f.count} BMs`} by ${T(L.NOW)}). Fine, or leave today out of averages until it ends?`;
+      })()],
       res: ["Throne's guidance: log the days with no BM, so they're not read as missing."]
     }),
     "i-form": (M, f) => ({
@@ -986,7 +1087,13 @@
       open: ["What you could try never says avoid. Right tone for a food the person enjoys?", "Late-dinner patterns use dinner times, so they need dinner logged on both kinds of evening."],
       res: ["Oura frames Discoveries as yours, and says one may not hold for you. Florin says seen together, not proof."]
     }),
-    ask: () => ({
+    ask: () => P.plan === "free" ? ({
+      t: "Ask Florin, free plan",
+      lede: "On the free plan Ask Florin is a page about what it does, the questions people ask, and the way into membership. No sample answer: it would have to be made up.",
+      ba: [["A chat open to everyone, or hidden entirely", "Its own tab either way; on the free plan, the tab explains it"]],
+      open: ["Offer one free question a week, so people see an answer from their own numbers before paying?"],
+      res: ["Oura Advisor sits inside the membership."]
+    }) : ({
       t: "Ask Florin",
       lede: "Its own tab. Chat is the next pass; this pass builds the way in: questions to start, and the composer.",
       ba: [["A coach with a doctor's title", "Ask Florin, never a doctor's title"]],
@@ -1004,12 +1111,13 @@
 
   /* the list of screens beside the phone */
   const SCREENS = [
-    ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["compare-bm", "Log a BM, A, B and C side by side"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log a meal"]]],
+    ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["compare-bm", "Log a BM, A, B and C side by side"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log what you ate"], ["meal-voice", "What you ate, said"]]],
     ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
     ["Insights", [["insights", "Insights"], ["i-score", "FloraScore"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
+    ["Membership", [["pay", "The paywall"], ["free-insights", "Insights, free"], ["free-ask", "Ask Florin, free"]]],
     ["Tabs", [["today", "Today"], ["history", "History, basic"], ["ask", "Ask Florin"]]]
   ];
-  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", "ask-about": "ask-about", nobm: "today", "i-score": "i-score", "i-timing": "i-timing", "i-often": "i-often", "i-form": "i-form", "i-sym": "i-sym", "i-ck": "i-ck", "i-pat": "i-pat", "i-pattern": "i-pattern" }[k] || "today");
+  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", "meal-voice": "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", "ask-about": "ask-about", nobm: "today", "i-score": "i-score", pay: "pay", "i-timing": "i-timing", "i-often": "i-often", "i-form": "i-form", "i-sym": "i-sym", "i-ck": "i-ck", "i-pat": "i-pat", "i-pattern": "i-pattern" }[k] || "today");
 
   /* ====================================================================== */
   /* THE PAGE                                                                */
@@ -1021,6 +1129,9 @@
     compare: !!store.get("compare", false),
     persona: "sarah",
     data: "est",
+    meals: "all",
+    mealUI: "quick",
+    plan: "member",
     themeSet: null,
     key: "today",
     phones: []
@@ -1031,6 +1142,9 @@
   const demoControls = () => `
       <div class="rx-ctl"><span class="rx-ctl-l">Person</span>${seg("persona", Object.values(AD.personas).map((p) => [p.id, p.name]), P.persona)}</div>
       <div class="rx-ctl"><span class="rx-ctl-l">Logs</span>${seg("data", [["est", "12 weeks"], ["new", "New, day 5"]], P.data)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Meal logs</span>${seg("meals", L.MEAL_LOGS, P.meals)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Meal sheet</span>${seg("mealUI", [["quick", "Quick, voice or text"], ["detailed", "One meal at a time"]], P.mealUI)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Plan</span>${seg("plan", [["member", "Member"], ["free", "Free"]], P.plan)}</div>
       <div class="rx-ctl"><span class="rx-ctl-l">App theme</span>${seg("theme", [["light", "Light"], ["dark", "Dark"]], appTheme())}</div>
       <button type="button" class="rx-btn rx-btn--line" data-rx="reset">${ic("undo")}Reset the demo</button>
       <p class="rx-small">Demo time is Sunday, October 11, 7:40 PM: the check-in is due tonight. Logs you add stay until you reset or reload.</p>`;
@@ -1104,7 +1218,7 @@
     forms.forEach((f, i) => {
       const sh = phoneShell(compare ? L.MODES[f] : null);
       stage.appendChild(sh);
-      const ph = Phone(sh.querySelector(".rx-mount"), { form: f, persona: P.persona, data: P.data, theme: appTheme(), onNav: (k, p) => onNav(k, p) });
+      const ph = Phone(sh.querySelector(".rx-mount"), { form: f, persona: P.persona, data: P.data, meals: P.meals, mealUI: P.mealUI, plan: P.plan, theme: appTheme(), onNav: (k, p) => onNav(k, p), onPlan: (v, then) => setPlanAll(v, then) });
       P.phones.push(ph);
       ph.setFull(isM());
       ph.el.setAttribute("aria-label", compare ? `Option ${f}` : "Florin app prototype");
@@ -1187,11 +1301,19 @@
       <tbody>${rows.map(([q, a, b, c]) => `<tr><th scope="row">${esc(q)}</th><td>${esc(a)}</td><td>${esc(b)}</td><td>${esc(c)}</td></tr>`).join("")}</tbody></table></div>
       <p class="rx-small">Each phone is its own copy of the app, so you can log in one without changing the others. The list on the left moves all three.</p>`;
   }
+  /* the plan for every phone at once: the switch, Start membership, or a free screen from the list */
+  function setPlanAll(v, then) {
+    P.plan = v;
+    P.phones.forEach((p) => p.setPlan(v));
+    if (then) P.phones.forEach((p) => p.open(then));
+    syncControls(); notes();
+  }
   function syncControls() {
     mount.querySelectorAll('[data-rx="form"]').forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset.v === P.form)); b.disabled = P.compare && !isM(); });
     mount.querySelectorAll('[data-rx="compare"]').forEach((b) => b.setAttribute("aria-pressed", String(P.compare)));
     mount.querySelectorAll('[data-rx="persona"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.persona)));
     mount.querySelectorAll('[data-rx="data"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.data)));
+    ["meals", "mealUI", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
     mount.querySelectorAll('[data-rx="theme"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === appTheme())));
   }
 
@@ -1221,6 +1343,12 @@
       P.persona = v; P.phones.forEach((p) => p.setPersona(v)); syncControls(); notes(); if (P.compare) compareTable();
     } else if (k === "data") {
       P.data = v; P.phones.forEach((p) => p.setData(v)); syncControls(); notes(); if (P.compare) compareTable();
+    } else if (k === "meals") {
+      P.meals = v; P.phones.forEach((p) => p.setMeals(v)); syncControls(); notes(); if (P.compare) compareTable();
+    } else if (k === "mealUI") {
+      P.mealUI = v; P.phones.forEach((p) => p.setMealUI(v)); syncControls(); notes();
+    } else if (k === "plan") {
+      setPlanAll(v);
     } else if (k === "theme") {
       P.themeSet = v; P.phones.forEach((p) => p.setTheme(v)); syncControls();
     } else if (k === "reset") {
