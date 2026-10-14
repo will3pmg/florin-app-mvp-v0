@@ -1,0 +1,178 @@
+/* Behaviour checks for the refresh prototype: the interactions the Oct 14 workshop fixed.
+   NODE_PATH=$(npm root -g) node work/behave.js     (exits 1 on any failure) */
+const { chromium } = require("playwright");
+const path = require("path");
+const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
+const fails = [];
+const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`); if (!cond) fails.push(what); };
+
+(async () => {
+  const b = await chromium.launch();
+  const p = await b.newPage({ viewport: { width: 390, height: 844 } });
+  const errs = [];
+  p.on("pageerror", (e) => errs.push(e.message));
+  p.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
+  await p.goto(PAGE);
+  await p.waitForSelector(".ap-rx");
+  const ph = ".rx-stage .ap-rx";
+  const wait = (ms = 450) => p.waitForTimeout(ms);
+  const open = async (id) => { await p.evaluate((id) => document.querySelector(`#rxMsheet [data-rx="screen"][data-v="${id}"]`).click(), id); await wait(); };
+
+  /* 1. a half-filled BM survives a close */
+  await open("today");
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  ok(await p.$eval(`${ph} .ap-psh-h .ap-lg-x`, () => true).catch(() => false), "plus menu has a close button");
+  /* a tile on the plus card logs the BM in one tap; the toast offers Add details and Undo */
+  const before = await p.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-layer [data-act='edit']").length);
+  await p.click(`${ph} .ap-pbm [data-act="quick-bm"]:nth-child(5)`); await wait();
+  ok(/BM saved/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)) && await p.$eval(`${ph} .ap-tst`, (e) => /Add details/.test(e.textContent) && /Undo/.test(e.textContent)), "a plus tile logs the BM in one tap, with Add details and Undo");
+  ok(await p.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-layer [data-act='edit']").length) === before + 1, "and it shows on Today");
+  await p.click(`${ph} .ap-tst [data-act="edit"]`); await wait();
+  ok(await p.$eval(`${ph} .ap-det`, (e) => e.classList.contains("is-open")), "Add details opens the BM with its details open");
+  await p.keyboard.press("Escape"); await wait();
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} .ap-pbm-h`); await wait();
+  await p.click(`${ph} .ap-fm-b[data-form="6"]`); await wait(200);
+  ok(await p.$eval(`${ph} .ap-fm-b[data-form="6"]`, (e) => e.getAttribute("aria-checked") === "true"), "in Log a BM a tile is a radio, checked when picked");
+  ok(await p.$eval(`${ph} .ap-stack`, (e) => e.inert) && await p.$eval(`${ph} .ap-tb`, (e) => e.inert), "the screen and tab bar are inert under a form");
+  await p.fill(`${ph} [data-in="note"]`, "After the late dinner");
+  await p.keyboard.press("Escape"); await wait();
+  ok(/Not saved yet/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "closing a half-filled BM says it's kept");
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} .ap-pbm-h`); await wait();
+  ok(await p.$eval(`${ph} [data-in="note"]`, (e) => e.value) === "After the late dinner", "reopening brings the note back");
+  ok(await p.$eval(`${ph} .ap-fm-b[data-form="6"]`, (e) => e.getAttribute("aria-checked") === "true"), "and the picked tile");
+  await p.click(`${ph} [data-act="save-bm"]`); await wait(600);
+  const focusedRow = await p.evaluate(() => { const a = document.activeElement; return a && a.dataset ? a.dataset.act : null; });
+  ok(focusedRow === "edit", "after Save, focus lands on the new entry");
+  ok(/BM saved/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "BM saved toast");
+
+  /* 2. a typed custom symptom counts on Save */
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} .ap-psh [data-act="open-sym"]`); await wait();
+  await p.click(`${ph} [data-act="sym-other"]`); await wait(200);
+  await p.fill(`${ph} [data-in="newsym"]`, "headache");
+  ok(await p.$eval(`${ph} [data-act="save-sym"]`, (e) => e.getAttribute("aria-disabled") !== "true"), "Save turns on while a name is typed");
+  await p.click(`${ph} [data-act="save-sym"]`); await wait(600);
+  ok(/Headache/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "the typed symptom is saved");
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} .ap-psh [data-act="open-sym"]`); await wait();
+  ok(await p.$$eval(`${ph} [data-act="sym"]`, (bs) => bs.some((b) => b.dataset.v === "Headache")), "and it's one tap away next time");
+  await p.keyboard.press("Escape"); await wait();
+
+  /* 3. an alarm word in a note opens the primary care note */
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} .ap-psh [data-act="open-sym"]`); await wait();
+  await p.click(`${ph} [data-act="sym"][data-v="Nausea"]`); await wait(200);
+  await p.fill(`${ph} [data-in="note"]`, "Threw up twice");
+  await p.click(`${ph} [data-act="save-sym"]`); await wait(600);
+  ok(/Vomiting/.test(await p.$eval(`${ph} .ap-o:last-child`, (e) => e.textContent).catch(() => "")), "vomiting typed in a note routes to primary care");
+  await p.click(`${ph} .ap-o:last-child [data-act="close"]:not(.ap-o-scrim)`); await wait();
+
+  /* 4. meal: the time follows the meal, foods are counted */
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} .ap-psh [data-act="open-meal"]`); await wait();
+  await p.click(`${ph} [data-act="meal"][data-v="breakfast"]`); await wait(200);
+  const tv = await p.$eval(`${ph} [data-in="time"]`, (e) => e.value);
+  ok(tv < "11:00", `picking Breakfast at 7:40 PM moves the time (${tv})`);
+  await p.fill(`${ph} [data-in="text"]`, "Lentil soup and a latte");
+  await wait(400);
+  const counted = await p.$eval(`${ph} .ap-ml-count`, (e) => e.textContent);
+  ok(/Lentils/.test(counted) && /Coffee/.test(counted), "lentil soup and a latte count as lentils and coffee");
+  await p.click(`${ph} [data-act="save-meal"]`); await wait(500);
+
+  /* 5. check-in: auto-advance puts focus on the next question, not on an answer */
+  await open("ck");
+  await p.click(`${ph} [data-act="ck-ans"][data-v="2"]`); await wait(700);
+  const af = await p.evaluate(() => document.activeElement && document.activeElement.tagName);
+  ok(af === "H3", `after an answer, focus is on the next question (${af})`);
+  ok(/2 of 4/.test(await p.$eval(`${ph} .ap-ck-q .ap-k`, (e) => e.textContent)), "and it's question 2");
+
+  /* 6. the chip and the band agree for every answer, for every persona */
+  const agree = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, bad = [];
+    for (const who of ["sarah", "marcus", "alex"]) {
+      const M = L.build(who, "est"), b = L.baseline(M);
+      L.CHECKIN.forEach((q, i) => [0, 1, 2, 3].forEach((v) => { const c = L.compare(b, i, v), inside = v >= b[i].lo && v <= b[i].hi; if ((c.k === "same") !== inside) bad.push(`${who} ${q.k} ${v}`); }));
+    }
+    return bad;
+  });
+  ok(!agree.length, `check-in chip and band agree everywhere${agree.length ? ": " + agree.join(", ") : ""}`);
+
+  /* 7. a symptom without a strength never reads as mild */
+  const mild = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI;
+    const M = L.build("sarah", "new");
+    L.add(M, { kind: "sym", d: L.TODAY, t: 19, items: [{ name: "Belly pain", s: 0 }], last: null, note: "" });
+    const html = RU.weekCard(M, "A");
+    return /strength not given/.test(html);
+  });
+  ok(mild, "an unrated symptom shows as strength not given");
+
+  /* 8. a No BM day is never drawn as a gap */
+  const nobm = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI;
+    const M = L.build("sarah", "new");
+    L.add(M, { kind: "nobm", d: L.TODAY, t: 19 });
+    const html = RU.weekCard(M, "A");
+    const today = html.split('<ol class="ap-wk-strip"')[2] || "";
+    return /no BM, logged/.test(today) && !/Sunday, Oct 11: nothing logged/.test(today);
+  });
+  ok(nobm, "a No BM day reads as logged, not as a gap");
+
+  /* 9. a BM logged in B keeps its word, and A and C never turn it into one step */
+  const bword = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, e = { form: null, word: 3 };
+    return [L.formName(e, "B"), L.formName(e, "A"), L.formName(e, "C")];
+  });
+  ok(bword[0] === "Loose" && /Type 5 or 6/.test(bword[1]) && /or loose/.test(bword[2]), `a B log reads honestly in every option (${bword.join(" / ")})`);
+
+  /* 10. B through the full form: saves with a toast, and reads as its own word in C */
+  await p.evaluate(() => document.querySelector('#rxMsheet [data-rx="form"][data-v="B"]') ? null : null);
+  await p.evaluate(() => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === "B"); b && b.click(); });
+  await wait();
+  await open("bm");
+  await p.click(`${ph} .ap-fm-b[data-word="1"]`); await wait(200);
+  await p.click(`${ph} [data-act="save-bm"]`); await wait(500);
+  ok(/BM saved\. Firm/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "saving a B log through the form shows its toast");
+  await p.evaluate(() => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === "C"); b && b.click(); });
+  await wait();
+  ok(await p.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer .ap-tl-m b")].some((b) => b.textContent === "BM · Firm")), "and reads as Firm in C, not another word");
+
+  /* 11. reset with a half-filled form leaves nothing behind */
+  await open("bm");
+  await p.fill(`${ph} [data-in="note"]`, "left over");
+  await p.evaluate(() => document.querySelector('#rxMsheet [data-rx="reset"]').click()); await wait();
+  await open("bm");
+  ok(await p.$eval(`${ph} [data-in="note"]`, (e) => e.value) === "", "reset doesn't carry a draft into the new demo");
+  await p.keyboard.press("Escape"); await wait();
+
+  /* 12. stacked sheets: Escape closes the top one and focus stays in the one under it, so Escape works again */
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} [data-act="plus-earlier"]`); await wait();
+  await p.keyboard.press("Escape"); await wait(500);
+  const inPlus = await p.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest(".ap-o") && a !== document.body; });
+  ok(inPlus, "after closing a stacked sheet, focus is in the sheet under it");
+  await p.keyboard.press("Escape"); await wait(500);
+  ok(await p.evaluate(() => !document.querySelector(".rx-stage .ap-rx .ap-o:not(.is-out)")), "and Escape closes that one too");
+
+  /* 13. a double tap on plus doesn't press what opens under the finger */
+  const box = await p.$eval(`${ph} .ap-tb-plus`, (e) => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+  await p.mouse.click(box.x, box.y); await p.waitForTimeout(200); await p.mouse.click(box.x, box.y); await wait(500);
+  ok(await p.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")]; return o.length === 1 && !!o[0].querySelector(".ap-pbm"); }), "a double tap on plus leaves just the plus menu open");
+  await p.keyboard.press("Escape"); await wait();
+
+  /* 14. a past day emptied by a delete is a gap again */
+  const gapBack = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, M = L.build("sarah", "est");
+    const e = { kind: "meal", d: 87, t: 12.5, meal: "lunch", text: "Lentil soup", foods: ["lentils"], note: "" };
+    L.add(M, e); L.remove(M, e.id);
+    return L.day(M, 87).logged === false;
+  });
+  ok(gapBack, "a past day emptied by a delete goes back to a gap");
+
+  ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
+  await b.close();
+  console.log(fails.length ? `\n${fails.length} failed` : "\nAll behaviour checks pass.");
+  process.exitCode = fails.length ? 1 : 0;
+})();

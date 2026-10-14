@@ -29,6 +29,11 @@ work/                          QA and screenshot scripts
 
 Every number a screen states is computed from the model, never typed. If copy states a figure, compute it.
 
+Consistency has three options, A (types 1 to 7, licence needed), B (today's five words) and C (seven of our own
+words, proposed). A and C store a step from 1 to 7; a B log stores its word (`{ form: null, word }`), which covers
+one or two steps. Read a BM's consistency only through `L.formName`, `L.formLine`, `L.glyphOf` and `L.inForms`, which
+take the entry. Foods are counted only through `L.matchFoods`, for seeded meals and typed ones alike.
+
 ## Rules you must not break
 
 - **No em dashes, no exclamation points, no humor** in any copy.
@@ -47,6 +52,7 @@ Every number a screen states is computed from the model, never typed. If copy st
 
 ```
 NODE_PATH=$(npm root -g) node work/qa.js            # console errors, sideways scroll, claims check, tap targets
+NODE_PATH=$(npm root -g) node work/behave.js        # interactions and data: drafts, focus, one-tap log, check-in rule
 node work/audit-spacing.js                          # must say the prototype is on the scale
 NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every screen in every state
 ```

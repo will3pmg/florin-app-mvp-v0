@@ -32,24 +32,28 @@
     nobm: '<circle cx="10" cy="10" r="7"/><path d="M6.8 10h6.4"/>',
     trash: '<path d="M4 6h12M8 6V4.2h4V6M5.8 6l.8 10.3h6.8L14.2 6"/>',
     undo: '<path d="M7.5 6.5 4 10l3.5 3.5M4.5 10H12a4 4 0 0 1 0 8h-1.5"/>',
-    pen: '<path d="M4 16l.7-3.1 8.6-8.6a1.6 1.6 0 0 1 2.3 2.3L7 15.3z"/>'
+    pen: '<path d="M4 16l.7-3.1 8.6-8.6a1.6 1.6 0 0 1 2.3 2.3L7 15.3z"/>',
+    report: '<path d="M6 3.5h6l3 3V16a.5.5 0 0 1-.5.5h-8.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M12 3.5V7h3M7.5 10.5h5M7.5 13h5"/>',
+    repeat: '<path d="M4.5 9V7.5A2.5 2.5 0 0 1 7 5h9l-2.5-2.5M15.5 11v1.5A2.5 2.5 0 0 1 13 15H4l2.5 2.5"/>'
   };
   const ic = (k, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 20 20" aria-hidden="true">${IC[k] || ""}</svg>`;
   RU.icon = ic;
 
-  /* ---------- the form marks: abstract, our own, never a picture of the thing ----------
-     1 separate pieces · 2 a lumpy log · 3 a log with cracks · 4 a smooth log · 5 soft pieces · 6 a ragged mass · 7 waves */
+  /* ---------- the marks: abstract, our own, never a picture of the thing ----------
+     Drawn from the same two cues as our words, firmness and pieces: 1 small hard pebbles · 2 an uneven bar ·
+     3 a short, thick bar · 4 a long, smooth bar · 5 three soft blobs, well apart · 6 a low, spread shape · 7 waves.
+     Each one still reads at 24px, in light, dark and on the plus card. */
   const GL = {
-    1: '<circle cx="6.4" cy="10.2" r="2.4"/><circle cx="12.2" cy="7.4" r="2.4"/><circle cx="17.8" cy="10.6" r="2.4"/><circle cx="9.4" cy="15.8" r="2.4"/><circle cx="15.4" cy="16.6" r="2.2"/>',
+    1: '<circle cx="5.6" cy="12.6" r="2.3"/><circle cx="11" cy="9.6" r="2.3"/><circle cx="12.4" cy="15.6" r="2.3"/><circle cx="17.6" cy="11.6" r="2.3"/>',
     2: '<circle cx="5.8" cy="12.6" r="3"/><circle cx="9.8" cy="11.4" r="3.2"/><circle cx="14" cy="12.7" r="3.1"/><circle cx="18.2" cy="11.7" r="3"/>',
-    3: '<rect x="2.5" y="8.5" width="19" height="7" rx="3.5"/><path class="ap-gl-cut" d="M7.6 8.4l1.1 2.3M12.4 8.4l-.9 2.1M16.6 8.4l1 2"/>',
+    3: '<rect x="4.5" y="7.5" width="15" height="9" rx="4.5"/>',
     4: '<rect x="2.5" y="8.5" width="19" height="7" rx="3.5"/>',
-    5: '<ellipse cx="5.9" cy="13.2" rx="3.4" ry="2.7"/><ellipse cx="12.2" cy="10.6" rx="3.2" ry="2.6"/><ellipse cx="18.1" cy="13.5" rx="3.3" ry="2.7"/>',
-    6: '<path d="M4.4 15c-1.3-.4-1.7-2.1-.6-3-.4-1.5.9-2.8 2.3-2.4.3-1.5 2.1-2.2 3.3-1.2.9-1.2 2.8-1.3 3.7-.1 1.1-1 2.9-.7 3.4.7 1.5-.3 2.8 1 2.5 2.5 1.2.7 1.2 2.4 0 3 .2 1.4-1.2 2.5-2.5 2-.8 1.1-2.4 1.3-3.4.4-1 .9-2.6.8-3.4-.2-1.1.6-2.6.2-3-1-1 .1-1.7-.5-1.7-1.5z"/><circle cx="3.2" cy="18.6" r="1"/><circle cx="20.8" cy="8.4" r="1"/>',
+    5: '<ellipse cx="4.9" cy="13.4" rx="3.1" ry="2.6"/><ellipse cx="12" cy="10.8" rx="3.1" ry="2.6"/><ellipse cx="19.1" cy="13.4" rx="3.1" ry="2.6"/>',
+    6: '<path d="M2.6 15.4c0-1.9 1.5-2.6 3-2.9.6-1.9 2.6-2.8 4.4-2.1 1.3-1.5 3.6-1.6 4.9-.2 1.7-.6 3.6.5 3.9 2.2 1.5.3 2.6 1.3 2.6 2.7 0 .9-.7 1.6-1.6 1.6H4.2c-.9 0-1.6-.6-1.6-1.3z"/>',
     7: '<path class="ap-gl-st" d="M2.6 9.6c1.6-1.5 3.2-1.5 4.8 0s3.2 1.5 4.8 0 3.2-1.5 4.8 0 3.2 1.5 4.8 0"/><path class="ap-gl-st" d="M2.6 14.8c1.6-1.5 3.2-1.5 4.8 0s3.2 1.5 4.8 0 3.2-1.5 4.8 0 3.2 1.5 4.8 0"/>'
   };
   RU.glyph = (k, cls = "") => `<svg class="ap-gl ${cls}" viewBox="0 0 24 24" aria-hidden="true">${GL[k] || ""}</svg>`;
-  const formGlyph = (form, mode) => RU.glyph(mode === "B" ? L.WORDS[L.wordOf(form)].glyph : form);
+  const formGlyph = (e, mode) => RU.glyph(L.glyphOf(e, mode));
 
   /* ---------- small helpers ---------- */
   const WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
@@ -81,7 +85,7 @@
     if (e.kind === "bm") {
       const extra = [...L.HOW.filter(([k]) => e.how && e.how[k]).map(([, l]) => l), e.dur != null ? L.DURATION[e.dur] : null].filter(Boolean);
       const flags = L.FLAGS.filter(([k]) => e.flags && e.flags[k]).map(([, l]) => l);
-      return { title: `BM · ${L.formName(e.form, mode)}`, sub: extra.length ? extra.join(" · ") : L.formLine(e.form, mode), flags, note: e.note };
+      return { title: `BM · ${L.formName(e, mode)}`, sub: extra.length ? extra.join(" · ") : L.formLine(e, mode), flags, note: e.note };
     }
     if (e.kind === "sym") {
       const names = e.items.map((i, k) => (k ? lower1(i.name) : i.name));
@@ -91,9 +95,9 @@
       return { title, sub: [sw, e.last != null ? L.LASTED[e.last] : ""].filter(Boolean).join(" · "), flags: [], note: e.note };
     }
     if (e.kind === "meal") return { title: L.mealLabel(e.meal), sub: e.text, flags: [], note: e.note };
-    return { title: "No BM today", sub: "Logged, so the day doesn't read as a gap", flags: [], note: "" };
+    return { title: e.d === L.TODAY ? "No BM today" : "No BM that day", sub: "Logged, so the day doesn't read as a gap", flags: [], note: "" };
   };
-  const entryIcon = (e, mode) => (e.kind === "bm" ? formGlyph(e.form, mode) : e.kind === "sym" ? ic("sym") : e.kind === "meal" ? ic("meal") : ic("nobm"));
+  const entryIcon = (e, mode) => (e.kind === "bm" ? formGlyph(e, mode) : e.kind === "sym" ? ic("sym") : e.kind === "meal" ? ic("meal") : ic("nobm"));
   RU.row = (e, mode, o = {}) => {
     const t = RU.entryText(e, mode);
     return `<li><button type="button" class="ap-tl-row" data-act="edit" data-id="${esc(e.id)}">
@@ -118,7 +122,10 @@
     });
     const live = cols.filter((c) => !c.before && !c.pending);
     const bms = cols.flatMap((c) => c.bms);
-    const inForms = M.usual ? bms.filter((b) => L.inForms(M, b.form, mode)).length : null;
+    /* a B word that straddles the usual (null) is left out of the count, never called a shift */
+    const ks = M.usual ? bms.map((b) => L.inForms(M, b, mode)) : [];
+    const inForms = M.usual ? ks.filter((k) => k === true).length : null;
+    const unsure = ks.filter((k) => k === null).length;
     const mornings = cols.filter((c) => c.bms.length);
     const inWin = M.usual ? mornings.filter((c) => L.inWindow(M, c.bms[0].t)).length : null;
     const loggedDays = live.filter((c) => c.logged).length;
@@ -126,59 +133,107 @@
     const symItems = symDays.flatMap((c) => c.syms.flatMap((s) => s.items));
     const meals = cols.reduce((s, c) => s + c.meals.length, 0);
     const formCount = {};
-    bms.forEach((b) => { const k = L.formName(b.form, mode); formCount[k] = (formCount[k] || 0) + 1; });
+    bms.forEach((b) => { const k = L.formName(b, mode); formCount[k] = (formCount[k] || 0) + 1; });
     const topForm = Object.entries(formCount).sort((a, b) => b[1] - a[1])[0];
     const gaps = live.filter((c) => !c.logged);
-    return { ds, cols, bms, inForms, mornings, inWin, loggedDays, symDays, symItems, meals, topForm, gaps };
+    return { ds, cols, bms, inForms, unsure, mornings, inWin, loggedDays, symDays, symItems, meals, topForm, gaps };
   };
 
-  /* ---------- the one sentence on Today, from the person's own logs ---------- */
-  RU.highlight = (M, mode) => {
-    const x = L.day(M, L.TODAY);
-    const es = x ? x.entries.filter((e) => e.t <= L.NOW + 6) : [];
-    const bms = es.filter((e) => e.kind === "bm"), syms = es.filter((e) => e.kind === "sym"), nobm = es.some((e) => e.kind === "nobm");
-    const u = M.usual;
-    const out = [];
-    if (!es.length) {
-      out.push("Nothing logged yet today.");
-      out.push(u ? `Your first BM usually comes between ${winText(M)}.` : `Day ${L.learnDay(M)} of learning your usual. Log as you go and it fills in.`);
-      return out.join(" ");
-    }
-    if (bms.length) {
-      const f = bms[0];
-      const where = !u ? "" : L.inWindow(M, f.t) ? ", inside your usual window" : f.t > u.tHi ? ", later than your usual window" : ", earlier than your usual window";
-      out.push(bms.length === 1 ? `One BM so far, at ${T(f.t)}${where}.` : `${WORDS[bms.length] || bms.length} BMs so far, the first at ${T(f.t)}${where}.`);
-    } else if (nobm) out.push("No BM today, and it's logged as that.");
-    else out.push(u ? `No BM logged yet today. Your first usually comes between ${winText(M)}.` : "No BM logged yet today.");
-    if (syms.length) {
-      const s = syms[syms.length - 1];
-      const top = s.items.slice().sort((a, b) => (b.s || 0) - (a.s || 0))[0];
-      out.push(`You logged ${top.s ? L.STRENGTH[top.s - 1].toLowerCase() + " " : ""}${top.name.toLowerCase()}${s.items.length > 1 ? " and more" : ""} at ${T(s.t)}.`);
-    } else if (u && bms.length && L.inWindow(M, bms[0].t)) {
-      const W = RU.week(M, mode);
-      if (W.mornings.length > 2) out.push(`That's ${W.inWin} of ${W.mornings.length} mornings this week.`);
-    } else if (!u) out.push(`Day ${L.learnDay(M)} of learning your usual.`);
-    return out.join(" ");
-  };
-
-  /* the day so far, on a 6 AM to midnight line. Ray on Forest, so it reads on the dark hero */
-  RU.ribbon = (M) => {
+  /* ---------- the one sentence on Today ----------
+     One sentence, and it says what the list below can't: how the day sits next to the person's usual. Symptoms and
+     meals are left to the list. */
+  const winBetween = (M) => `${T(M.usual.tLo).replace(/ AM$/, "")} and ${T(M.usual.tHi)}`;
+  RU.highlight = (M) => {
     const x = L.day(M, L.TODAY);
     const es = x ? x.entries : [];
-    const W = 318, L0 = 8, R0 = 8, h0 = 6, h1 = 24;
-    const X = (h) => +(L0 + ((Math.max(h0, Math.min(h1, h)) - h0) / (h1 - h0)) * (W - L0 - R0)).toFixed(1);
-    const band = M.usual ? `<rect class="ap-rb-band" x="${X(M.usual.tLo)}" y="17" width="${(X(M.usual.tHi) - X(M.usual.tLo)).toFixed(1)}" height="22" rx="4"><title>Your usual window for the first BM</title></rect>` : "";
-    const ticks = [[6, "6a"], [12, "12p"], [18, "6p"], [24, "12a"]].map(([h, l]) => `<text class="ap-rb-tk" x="${X(h)}" y="66" text-anchor="${h === 6 ? "start" : h === 24 ? "end" : "middle"}">${l}</text><line class="ap-rb-grid" x1="${X(h)}" x2="${X(h)}" y1="24" y2="32"/>`).join("");
-    const now = `<line class="ap-rb-now" x1="${X(L.NOW)}" x2="${X(L.NOW)}" y1="4" y2="54"/><text class="ap-rb-nowl" x="${X(L.NOW) - 4}" y="10" text-anchor="end">Now</text>`;
-    const marks = es.map((e) => {
-      const tip = `${T(e.t)} · ${RU.entryText(e, "A").title.replace(/^BM · Type \d$/, "BM")}`;
-      if (e.kind === "bm") return `<circle class="ap-rb-bm" cx="${X(e.t)}" cy="28" r="5.5"><title>${esc(tip)}</title></circle>`;
-      if (e.kind === "sym") return `<circle class="ap-rb-sym" cx="${X(e.t)}" cy="11" r="4.2"><title>${esc(tip)}</title></circle>`;
-      if (e.kind === "meal") return `<rect class="ap-rb-meal" x="${(X(e.t) - 1.5).toFixed(1)}" y="41" width="3" height="10" rx="1.5"><title>${esc(tip)}</title></rect>`;
-      return `<line class="ap-rb-no" x1="${X(e.t) - 5}" x2="${X(e.t) + 5}" y1="28" y2="28"><title>No BM today</title></line>`;
-    }).join("");
-    return `<svg class="ap-rb" viewBox="0 0 ${W} 70" role="img" aria-label="${esc(`Today from 6 AM to midnight: ${es.length ? es.map((e) => `${RU.entryText(e, "A").title} at ${T(e.t)}`).join(", ") : "nothing logged yet"}`)}">
-      <line class="ap-rb-axis" x1="${L0}" x2="${W - R0}" y1="28" y2="28"/>${band}${ticks}${now}${marks}</svg>`;
+    const bms = es.filter((e) => e.kind === "bm"), no = es.find((e) => e.kind === "nobm");
+    const u = M.usual;
+    if (bms.length) {
+      const f = bms[0], more = bms.length - 1;
+      const tail = more ? `, and ${WORDS[more].toLowerCase()} more since` : "";
+      if (!u) return `Your first BM today came at ${T(f.t)}${tail}.`;
+      const where = L.inWindow(M, f.t) ? "inside" : f.t > u.tHi ? "later than" : "earlier than";
+      return `Your first BM came at ${T(f.t)}, ${where} your usual ${winText(M)} window${tail}.`;
+    }
+    if (no) return `No BM today, logged at ${T(no.t)}.`;
+    if (!u) return es.length ? "No BM logged yet today." : "Nothing logged yet today.";
+    return `${es.length ? "No BM logged yet today" : "Nothing logged yet today"}; your first usually comes between ${winBetween(M)}.`;
+  };
+
+  /* ---------- the week so far: three rows, each a count in plain words over a seven-day strip ----------
+     The count leads (Function's summary counts), the strip shows which days. Each row names its own usual, so one
+     legend can cover them. A gap is marked once, on the day itself, never as a zero. */
+  RU.weekCard = (M, mode) => {
+    const u = M.usual, W = RU.week(M, mode), today = L.TODAY;
+    const dow = ["M", "T", "W", "T", "F", "S", "S"];
+    const seen = {};
+    const cellName = (c) => `${Ut.DOWL[dateOf(c.d).getDay()]}, ${shortDate(c.d)}`;
+    const head = `<div class="ap-wk-days" aria-hidden="true">${W.cols.map((c, i) => `<span class="${c.d === today ? "is-today" : ""}${c.before ? " is-before" : ""}${!c.before && !c.pending && !c.logged ? " is-gap" : ""}"><b>${dow[i]}</b><em>${dateOf(c.d).getDate()}</em></span>`).join("")}</div>`;
+    const strip = (label, fn) => `<ol class="ap-wk-strip" aria-label="${esc(label)}, by day">${W.cols.map((c) => {
+      let html = "", aria;
+      if (c.before) aria = "before you started";
+      else if (c.pending) aria = "nothing yet";
+      else if (!c.logged) { aria = "nothing logged"; seen.gap = true; }
+      else [html, aria] = fn(c);
+      return `<li class="${c.before ? "is-before" : ""}${!c.before && !c.pending && !c.logged ? " is-gap" : ""}"><span class="sr">${esc(`${cellName(c)}: ${aria}`)}</span>${html}</li>`;
+    }).join("")}</ol>`;
+    const dot = (k) => { seen[k === true ? "usual" : k === false ? "shift" : u ? "either" : "dot"] = true; return `<i class="ap-wk-dot${k === true ? " is-usual" : k === false ? " is-shift" : ""}"></i>`; };
+    const noBm = (c) => (c.nobm ? (seen.no = true, ['<i class="ap-wk-no"></i>', "no BM, logged"]) : ["", "no BM logged"]);
+    const bmStrip = strip("BMs", (c) => {
+      if (!c.bms.length) return noBm(c);
+      const k = c.bms.map((b) => (u ? L.inForms(M, b, mode) : null));
+      return [`<span class="ap-wk-dots">${k.map(dot).join("")}</span>`, `${plural(c.bms.length, "BM")}${u ? `, ${k.filter((v) => v === true).length} within your usual` : ""}`];
+    });
+    const firstStrip = strip("First BM", (c) => {
+      if (!c.bms.length) return noBm(c);
+      const f = c.bms[0].t, k = u ? L.inWindow(M, f) : null;
+      return [dot(k), `first at ${T(f)}${k === true ? ", inside your usual window" : k === false ? ", outside your usual window" : ""}`];
+    });
+    const symStrip = strip("Symptoms", (c) => {
+      if (!c.syms.length) return ["", "no symptoms logged"];
+      const s = Math.max(0, ...c.syms.flatMap((e) => e.items.map((i) => i.s || 0)));
+      seen[s ? "sym" : "sym0"] = true;
+      return [`<i class="ap-wk-sq ap-wk-sq--${s}"></i>`, `${c.syms.flatMap((e) => e.items.map((i) => i.name.toLowerCase())).join(", ")}${s ? `, ${L.STRENGTH[s - 1].toLowerCase()}` : ", strength not given"}`];
+    });
+    const symWords = (() => {
+      if (!W.symDays.length) return `none on the ${plural(W.loggedDays, "day")} logged`;
+      const names = {}; W.symItems.forEach((i) => (names[i.name] = (names[i.name] || 0) + 1));
+      const top = Object.entries(names).sort((a, b) => b[1] - a[1])[0][0];
+      /* the strength word comes from the top symptom's own entries, and only when every one of them gave one */
+      const mine = W.symItems.filter((i) => i.name === top).map((i) => i.s);
+      const how = !mine.length || mine.some((s) => !s) ? "" : Math.min(...mine) === Math.max(...mine) ? `${L.STRENGTH[mine[0] - 1].toLowerCase()} ` : `${L.STRENGTH[Math.min(...mine) - 1].toLowerCase()} to ${L.STRENGTH[Math.max(...mine) - 1].toLowerCase()} `;
+      const each = W.symItems.every((i) => i.name === top);
+      const lead = W.symDays.length === 1 ? "" : each ? "each time " : names[top] > W.symItems.length / 2 ? "mostly " : "most often ";
+      return `${W.symDays.length} of ${plural(W.loggedDays, "day")} logged, ${lead}${how}${top.toLowerCase()}`;
+    })();
+    const rows = u ? [
+      ["BMs", `<b>${W.inForms} of ${W.bms.length - W.unsure}</b> within your usual, ${esc(L.usualFormsText(M, mode))}${W.unsure ? `, and ${W.unsure} that could be either` : ""}`, bmStrip],
+      ["First BM", `<b>${W.inWin} of ${plural(W.mornings.length, "morning")}</b> inside your usual window, ${esc(winText(M))}`, firstStrip],
+      ["Symptoms", esc(symWords), symStrip]
+    ] : [
+      ["BMs", `<b>${plural(W.bms.length, "BM")}</b> logged${W.topForm && W.topForm[1] > 1 ? `, ${W.topForm[1] > W.bms.length / 2 ? "mostly" : "most often"} ${esc(W.topForm[0])}` : ""}`, bmStrip],
+      ["First BM", `logged on <b>${plural(W.mornings.length, "day")}</b>`, firstStrip],
+      ["Symptoms", esc(symWords), symStrip]
+    ];
+    const body = rows.map(([l, s, st]) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${st}</div>`).join("");
+    const legend = [
+      seen.usual ? `<span><i class="ap-wk-dot is-usual"></i>Within your usual</span>` : "",
+      seen.shift ? `<span><i class="ap-wk-dot is-shift"></i>Outside it</span>` : "",
+      seen.dot ? `<span><i class="ap-wk-dot"></i>Logged</span>` : "",
+      seen.either ? `<span><i class="ap-wk-dot"></i>Could be either</span>` : "",
+      seen.sym ? `<span><i class="ap-wk-sq ap-wk-sq--1"></i><i class="ap-wk-sq ap-wk-sq--3"></i>Symptoms, milder to stronger</span>` : "",
+      seen.sym0 ? `<span><i class="ap-wk-sq ap-wk-sq--0"></i>Strength not given</span>` : "",
+      seen.no ? `<span><i class="ap-wk-no"></i>No BM, logged</span>` : "",
+      seen.gap ? `<span><i class="ap-wk-gapday">T</i>Nothing logged that day</span>` : ""
+    ].join("");
+    const learn = u ? "" : `<div class="ap-learn-st"><p><b>Day ${L.learnDay(M)} of ${L.LEARN_DAYS}.</b> Florin learns your usual from your first two weeks of logs, so this week shows counts, not comparisons.</p><div class="ap-learn-bar" role="img" aria-label="${esc(`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`)}"><i style="--w:${((L.learnDay(M) / L.LEARN_DAYS) * 100).toFixed(1)}%"></i></div></div>`;
+    return `<section class="ap-card ap-wk" data-a>
+        <div class="ap-card-h"><h2>This week so far</h2><span class="ap-k">${esc(spanText(W.ds[0], W.ds[6]))}</span></div>
+        ${learn}${head}${body}
+        <p class="ap-wk-meals">${plural(W.meals, "meal")} logged</p>
+        ${legend ? `<div class="ap-legend ap-wk-legend">${legend}</div>` : ""}
+        <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights">See it on Insights ${ic("chev")}</button>
+      </section>`;
   };
 
   /* ============================== TODAY ============================== */
@@ -189,102 +244,45 @@
     const hasBm = es.some((e) => e.kind === "bm"), hasNo = es.some((e) => e.kind === "nobm");
     const t = dateOf(L.TODAY);
     const hello = L.NOW < 12 ? "Good morning" : L.NOW < 17 ? "Good afternoon" : "Good evening";
-    const W = RU.week(M, mode);
     const ck = M.checkin;
 
-    /* the check-in card: only when it's due, and never in the way */
+    /* the check-in card: only when it's due, and never in the way. Its Start is secondary: Ray stays on logging */
     const firstCk = M.checkins.filter((c) => c.answers).length === 0;
+    const draft = M.ckDraft;
+    const answered = draft ? draft.answers.filter((v) => v != null).length : 0;
+    const ckLine = answered ? `${answered} of ${L.CHECKIN.length} answered. Pick up where you left off.` : firstCk ? `Four quick questions and an optional note, about a minute. Your first three check-ins become the starting point for every week after.` : `Four quick questions and an optional note, about a minute. Your answers are only ever compared with your own first weeks.`;
     const ckCard = ck.status === "due" ? `<section class="ap-ckc" data-a aria-label="Weekly check-in">
-        <div class="ap-ckc-top"><span class="ap-k">Weekly check-in</span><span class="ap-due"><i class="ap-live"></i>Due tonight</span></div>
+        <div class="ap-ckc-top"><span class="ap-k">Weekly check-in</span><span class="ap-due"><i class="ap-pck-dot" aria-hidden="true"></i>${esc(dueText(M))}</span></div>
         <h2>How did this week go?</h2>
-        <p>${firstCk ? "Five questions, about a minute. Your first three check-ins become the starting point for every week after." : "Five questions, about a minute. Your answers are only ever compared with your own first weeks."}</p>
-        <div class="ap-ckc-act"><button type="button" class="ap-btn" data-act="ck-start">${M.ckDraft && M.ckDraft.step > 0 ? "Continue" : "Start"}</button><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="ck-skip">Skip this week</button></div>
+        <p>${esc(ckLine)}</p>
+        <div class="ap-ckc-act"><button type="button" class="ap-btn ap-btn--2" data-act="ck-start">${answered ? "Continue" : "Start"}</button><button type="button" class="ap-btn ap-btn--line" data-act="ck-skip">Skip this week</button></div>
         <button type="button" class="ap-ckc-day" data-act="ck-day">${ic("cal")}<span>${esc(RU.ckDayText(M))}</span><b>Change</b></button>
       </section>` : ck.status === "done" ? `<button type="button" class="ap-ckc ap-ckc--done" data-act="ck-result" data-a>
-        <span class="ap-ckc-ok">${ic("check")}</span><span class="ap-ckc-m"><b>Check-in saved</b><em>${esc(spanText(ck.ws, ck.ws + 6))} · See how it compares</em></span>${ic("chev", "ap-tl-go")}
+        <span class="ap-ckc-ok">${ic("check")}</span><span class="ap-ckc-m"><b>Check-in saved</b><em>${esc(spanText(ck.ws, ck.ws + 6))} · ${L.baseline(M) ? "See how it compares" : "See your answers"}</em></span>${ic("chev", "ap-tl-go")}
       </button>` : "";
 
-    /* today's entries, as a short timeline */
+    /* today's entries: the one timeline */
     const empty = !es.length;
-    const late = L.NOW >= 17;
-    const tl = empty ? `<div class="ap-card ap-tl-empty"><p>Nothing logged yet today.</p><div class="ap-tl-empty-act"><button type="button" class="ap-btn" data-act="open-bm">${ic("plus")}Log a BM</button><button type="button" class="ap-btn ap-btn--line" data-act="nobm">No BM today</button></div></div>`
+    const late = L.isLate();
+    const tl = empty ? `<div class="ap-card ap-tl-empty"><p>Today's logs show up here, in time order.</p><div class="ap-tl-empty-act"><button type="button" class="ap-btn" data-act="open-bm">${ic("plus")}Log a BM</button>${late ? `<button type="button" class="ap-btn ap-btn--line" data-act="nobm">No BM today</button>` : ""}</div></div>`
       : `<ol class="ap-card ap-tl">${es.map((e) => RU.row(e, mode)).join("")}</ol>${!hasBm && !hasNo && late ? `<button type="button" class="ap-tl-nobm" data-act="nobm">${ic("nobm")}<span><b>No BM today?</b><em>Log it, so the day doesn't read as a gap</em></span></button>` : ""}`;
 
-    /* this week so far: a small grid, then the counts in plain words */
-    const today = L.TODAY;
-    const dow = ["M", "T", "W", "T", "F", "S", "S"];
-    const cellBm = (c) => {
-      if (c.before) return `<td class="is-before" aria-label="Before you started"></td>`;
-      if (c.pending) return `<td aria-label="Nothing yet today"></td>`;
-      if (!c.logged) return `<td class="is-gap" aria-label="Nothing logged"><i class="ap-wk-gap"></i></td>`;
-      if (!c.bms.length) return `<td aria-label="${c.nobm ? "No BM" : "No BM logged"}">${c.nobm ? '<i class="ap-wk-no"></i>' : '<i class="ap-wk-gap"></i>'}</td>`;
-      const dots = c.bms.map((b) => { const k = L.inForms(M, b.form, mode); return `<i class="ap-wk-dot${k === true ? " is-usual" : k === false ? " is-shift" : ""}" title="${esc(`${T(b.t)} · ${L.formName(b.form, mode)}`)}"></i>`; }).join("");
-      return `<td aria-label="${esc(plural(c.bms.length, "BM"))}"><span class="ap-wk-dots">${dots}</span></td>`;
-    };
-    const cellFirst = (c) => {
-      if (c.before || c.pending) return `<td class="is-before"></td>`;
-      if (!c.logged || !c.bms.length) return `<td class="is-gap"><i class="ap-wk-gap"></i></td>`;
-      const f = c.bms[0], k = M.usual ? L.inWindow(M, f.t) : null;
-      return `<td aria-label="${esc(`First at ${T(f.t)}`)}"><i class="ap-wk-dot${k === true ? " is-usual" : k === false ? " is-shift" : ""}" title="${esc(`First BM ${T(f.t)}`)}"></i></td>`;
-    };
-    const cellSym = (c) => {
-      if (c.before || c.pending) return `<td class="is-before"></td>`;
-      if (!c.logged) return `<td class="is-gap"><i class="ap-wk-gap"></i></td>`;
-      const s = Math.max(0, ...c.syms.flatMap((e) => e.items.map((i) => i.s || 1)));
-      if (!s) return `<td aria-label="No symptoms logged"></td>`;
-      return `<td aria-label="${esc(`Symptoms, ${L.STRENGTH[s - 1].toLowerCase()}`)}"><i class="ap-wk-sq ap-wk-sq--${s}" title="${esc(c.syms.flatMap((e) => e.items.map((i) => i.name)).join(", "))}"></i></td>`;
-    };
-    const cellMeal = (c) => (c.before || c.pending ? `<td class="is-before"></td>` : !c.logged ? `<td class="is-gap"><i class="ap-wk-gap"></i></td>` : `<td><span class="ap-wk-n">${c.meals.length}</span></td>`);
-    const grid = `<table class="ap-wk-grid">
-        <thead><tr><th scope="col"><span class="sr">Day</span></th>${W.cols.map((c, i) => `<th scope="col" class="${c.d === today ? "is-today" : ""}${c.before ? " is-before" : ""}"><span>${dow[i]}</span><em>${dateOf(c.d).getDate()}</em></th>`).join("")}</tr></thead>
-        <tbody>
-          <tr><th scope="row">BMs</th>${W.cols.map(cellBm).join("")}</tr>
-          <tr><th scope="row">First BM</th>${W.cols.map(cellFirst).join("")}</tr>
-          <tr><th scope="row">Symptoms</th>${W.cols.map(cellSym).join("")}</tr>
-          <tr><th scope="row">Meals</th>${W.cols.map(cellMeal).join("")}</tr>
-        </tbody></table>`;
-    const strength = `<span><i class="ap-wk-sq ap-wk-sq--1"></i><i class="ap-wk-sq ap-wk-sq--3"></i>Milder to stronger</span>`;
-    const legend = u ? `<div class="ap-legend ap-wk-legend"><span><i class="sw sw--usual"></i>Within your usual</span><span><i class="sw sw--shift"></i>Outside it</span>${strength}<span><i class="ap-wk-no"></i>No BM</span><span><i class="ap-wk-gap"></i>Nothing logged</span></div>`
-      : `<div class="ap-legend ap-wk-legend"><span><i class="sw"></i>Logged</span>${strength}<span><i class="ap-wk-no"></i>No BM</span><span><i class="ap-wk-gap"></i>Nothing logged</span></div>`;
-    const symLine = (() => {
-      if (!W.symDays.length) return `No symptoms logged on the ${plural(W.loggedDays, "day")} you logged.`;
-      const names = {}; W.symItems.forEach((i) => (names[i.name] = (names[i.name] || 0) + 1));
-      const top = Object.entries(names).sort((a, b) => b[1] - a[1])[0][0];
-      const ss = W.symItems.map((i) => i.s || 1);
-      const how = Math.max(...ss) === 1 ? "mild" : Math.min(...ss) === Math.max(...ss) ? L.STRENGTH[ss[0] - 1].toLowerCase() : "mostly " + L.STRENGTH[Math.round(Ut.median(ss)) - 1].toLowerCase();
-      return `Symptoms on ${W.symDays.length} of the ${W.loggedDays} days you logged, ${W.symDays.length === 1 ? "" : W.symItems.every((i) => i.name === top) ? "each time " : "mostly "}${how} ${top.toLowerCase()}.`;
-    })();
-    const sums = u ? [
-      `<b>${W.inForms} of ${plural(W.bms.length, "BM")}</b> within your usual forms, ${esc(L.usualFormsText(M, mode))}.`,
-      `<b>First BM inside your usual window</b> on ${W.inWin} of ${plural(W.mornings.length, "morning")}, ${esc(winText(M))}.`,
-      esc(symLine)
-    ] : [
-      `<b>Learning your usual: day ${L.learnDay(M)} of ${L.LEARN_DAYS}.</b> Until then, counts only, no comparisons.`,
-      `${plural(W.bms.length, "BM")} logged${W.topForm ? `, mostly ${esc(W.topForm[0])}` : ""}. ${plural(W.meals, "meal")} logged.`,
-      esc(symLine)
-    ];
-    const learnBar = u ? "" : `<div class="ap-learn-bar" role="img" aria-label="${esc(`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`)}"><i style="--w:${((L.learnDay(M) / L.LEARN_DAYS) * 100).toFixed(1)}%"></i></div>`;
-    const weekCard = `<section class="ap-card ap-wk" data-a>
-        <div class="ap-card-h"><h2>This week so far</h2><span class="ap-k">${esc(spanText(W.ds[0], W.ds[6]))}</span></div>
-        ${grid}${legend}${learnBar}
-        <ul class="ap-wk-sum">${sums.map((s) => `<li>${s}</li>`).join("")}</ul>
-        <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights">See it on Insights ${ic("chev")}</button>
-      </section>`;
-
-    /* one next step, tied to the person's own logs */
+    /* one next step, from what today is missing first: a meal not logged yet, then a food close to its 5 */
     const next = (() => {
-      if (!u) {
-        const left = L.LEARN_DAYS - L.learnDay(M);
-        return { k: "Next step", line: `Keep logging as you go. In ${plural(left, "more day")}, Florin can start showing your usual.`, act: hasBm || hasNo ? ["open-meal", "Log a meal"] : ["open-bm", "Log a BM"] };
-      }
+      const had = (m) => es.some((e) => e.kind === "meal" && e.meal === m);
+      const gap = L.NOW >= 19 && !had("dinner") ? "dinner" : L.NOW >= 14 && !had("lunch") ? "lunch" : L.NOW >= 10.5 && !had("breakfast") ? "breakfast" : null;
+      if (gap) return { line: `${L.mealLabel(gap)} isn't logged yet. Add it now, or when you're done eating.`, act: ["open-meal", `Log ${gap}`, gap] };
+      if (!u) return { line: `Keep logging as you go. In ${plural(L.LEARN_DAYS - L.learnDay(M), "more day")}, Florin can start showing your usual.`, act: ["open-meal", "Log a meal"] };
       const fc = L.foodCounts(M, 30);
-      const lastSeen = {};
-      M.days.forEach((dd) => dd.entries.filter((e) => e.kind === "meal").forEach((m) => (m.foods || []).forEach((f) => (lastSeen[f] = dd.d * 100 + m.t))));
-      const cand = Object.entries(fc).filter(([f, n]) => n < 5 && L.FOOD_NAMES[f]).sort((a, b) => b[1] - a[1] || (lastSeen[b[0]] || 0) - (lastSeen[a[0]] || 0))[0];
-      if (!cand) return { k: "Next step", line: "Keep logging meals. Florin checks a food for what tends to follow once it has come up 5 times.", act: ["open-meal", "Log a meal"] };
+      const cand = Object.entries(fc).filter(([f, n]) => n < 5 && n >= 3 && L.FOOD_NAMES[f]).sort((a, b) => b[1] - a[1])[0];
+      if (!cand) return { line: "Everything so far today is logged. Anything else, plus is one tap away.", act: ["plus", "Add something"] };
       const [name, pl] = L.FOOD_NAMES[cand[0]];
-      return { k: "Next step", line: `${name} ${pl ? "have" : "has"} come up in ${cand[1]} of your meals this month. At 5, Florin starts checking what tends to follow ${pl ? "them" : "it"}.`, act: ["open-meal", "Log a meal"] };
+      return { line: `${name} ${pl ? "have" : "has"} come up in ${cand[1]} of your meals in the last 30 days. At 5, Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`, act: ["open-meal", "Log a meal"] };
     })();
+
+    /* symptoms on screen bring the clinician line with them */
+    const W = RU.week(M, mode);
+    const symOn = es.some((e) => e.kind === "sym") || W.symDays.length > 0;
 
     return `<div class="ap-scr ap-today">
       <header class="ap-top" data-a>
@@ -292,11 +290,9 @@
         <button type="button" class="ap-avatar" data-act="toast" data-msg="Profile and settings come later." aria-label="Profile">${esc(M.P.initial)}</button>
       </header>
 
-      <section class="ap-hl" data-a>
+      <section class="ap-hl" data-a aria-label="Today so far">
         <span class="ap-k ap-k--ray">Today so far</span>
-        <p class="ap-hl-line">${esc(RU.highlight(M, mode))}</p>
-        ${RU.ribbon(M)}
-        <div class="ap-hl-legend"><span><i class="ap-hl-sw ap-hl-sw--bm"></i>BM</span><span><i class="ap-hl-sw ap-hl-sw--sym"></i>Symptom</span><span><i class="ap-hl-sw ap-hl-sw--meal"></i>Meal</span>${u ? `<span><i class="ap-hl-sw ap-hl-sw--band"></i>Usual first BM</span>` : ""}</div>
+        <p class="ap-hl-line">${esc(RU.highlight(M))}</p>
       </section>
 
       ${ckCard}
@@ -306,93 +302,137 @@
         ${tl}
       </section>
 
-      ${weekCard}
+      ${RU.weekCard(M, mode)}
 
       <section class="ap-card ap-nx" data-a>
-        <span class="ap-k">${esc(next.k)}</span>
+        <span class="ap-k">Next step</span>
         <p>${esc(next.line)}</p>
-        <button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="${next.act[0]}">${esc(next.act[1])}</button>
+        <button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="${next.act[0]}"${next.act[2] ? ` data-meal="${next.act[2]}"` : ""}>${esc(next.act[1])}</button>
       </section>
-      ${fine(DISC)}
+      ${fine(symOn ? `${DISC} If a symptom is new for you or keeps showing up, talk to a clinician.` : DISC)}
     </div>`;
   };
 
   /* ============================== PLUS MENU ============================== */
+  /* the tiles. Inside Log a BM they're toggles; on the plus card each one opens Log a BM with it picked */
   RU.formTiles = (mode, sel, o = {}) => {
-    const items = mode === "B" ? L.WORDS.map((w) => ({ v: w.rep, k: w.k, g: w.glyph, label: w.word, aria: `${w.word}: ${w.line}` })) : L.TYPES.slice(1).map((t) => ({ v: t.k, k: t.k, g: t.k, label: String(t.k), aria: `Type ${t.k}: ${t.line}` }));
-    const on = (it) => sel != null && (mode === "B" ? L.wordOf(sel) === it.k : sel === it.v);
-    return `<div class="ap-fm ap-fm--${mode}${o.dark ? " ap-fm--dark" : ""}" role="group" aria-label="${esc(o.label || "Form")}">${items.map((it) => `<button type="button" class="ap-fm-b${on(it) ? " is-on" : ""}" data-act="${o.act || "form"}" data-form="${it.v}" aria-pressed="${on(it)}" aria-label="${esc(it.aria)}">${RU.glyph(it.g)}<span>${esc(it.label)}</span></button>`).join("")}</div>
-      <div class="ap-fm-scale" aria-hidden="true"><span>Harder</span><span>Looser</span></div>`;
+    /* sel: { form, word } or null. A shows the step's number and word, C the word, B one of its five words */
+    const items = mode === "B"
+      ? L.WORDS.map((w) => ({ attr: `data-word="${w.k}"`, on: !!sel && (sel.word === w.k || (sel.form != null && L.wordOf(sel.form) === w.k)), g: w.glyph, label: `<span class="ap-fm-w">${esc(w.word)}</span>`, aria: `${w.word}: ${w.line}` }))
+      : L.TYPES.slice(1).map((t) => ({ attr: `data-form="${t.k}"`, on: !!sel && sel.form === t.k, maybe: !!sel && sel.form == null && sel.word != null && L.WORDS[sel.word].types.includes(t.k), g: t.k, label: `${mode === "A" ? `<span class="ap-fm-n">${t.k}</span>` : ""}<span class="ap-fm-w">${esc(t.short)}</span>`, aria: `${mode === "A" ? `Type ${t.k}, ` : ""}${t.short}: ${t.line}` }));
+    const toggle = !o.act;
+    return `<div class="ap-fm ap-fm--${mode === "B" ? "B" : "A"}${o.dark ? " ap-fm--dark" : ""}" role="${toggle ? "radiogroup" : "group"}" aria-label="${esc(o.label || "Consistency")}">${items.map((it) => `<button type="button" class="ap-fm-b${it.on ? " is-on" : it.maybe ? " is-maybe" : ""}" data-act="${o.act || "form"}" ${it.attr}${toggle ? ` role="radio" aria-checked="${it.on}"` : ""} aria-label="${esc(it.aria + (o.act ? `. ${o.actLabel || "Opens Log a BM"}` : ""))}">${RU.glyph(it.g)}${it.label}</button>`).join("")}</div>
+      <div class="ap-fm-scale"><span aria-hidden="true">Harder</span>${o.guide ? `<button type="button" class="ap-gd-b" data-act="guide">${ic("info")}How to pick</button>` : ""}<span aria-hidden="true">Looser</span></div>`;
   };
-  RU.ckDayText = (M) => `${Ut.DOWL[M.ckDay.dow]}s, ${M.ckDay.when}`;
+  RU.ckDayText = (M) => `Due ${Ut.DOWL[M.ckDay.dow]} ${M.ckDay.when}s`;
+  const dueText = (M) => ((M.checkin.when || M.ckDay.when) === "morning" ? "Due this morning" : "Due tonight");
+  RU.dueText = dueText;
+  /* "yesterday" inside a sentence, the weekday and date for anything older */
+  const dayIn = (d) => (d === L.TODAY ? "today" : d === L.TODAY - 1 ? "yesterday" : dayName(d));
 
-  RU.plus = (M, V) => {
+  /* the plus menu, for today or (catching up) an earlier day */
+  RU.plus = (M, V, st = {}) => {
     const mode = V.form;
-    const x = L.day(M, L.TODAY), es = x ? x.entries : [];
+    const d = st.d != null ? st.d : L.TODAY, isToday = d === L.TODAY;
+    const x = L.day(M, d), es = x && x.logged ? x.entries : [];
     const bms = es.filter((e) => e.kind === "bm"), hasNo = es.some((e) => e.kind === "nobm");
     const ck = M.checkin;
-    const ckSub = ck.status === "due" ? "Due tonight · about a minute" : ck.status === "done" ? "Done for this week" : "Skipped this week · check in anyway";
-    const meal = L.mealLabel(L.mealFor(L.NOW));
-    return `<div class="ap-psh" role="dialog" aria-modal="true" aria-label="Add to today">
+    const k = M.ckDraft ? M.ckDraft.answers.filter((v) => v != null).length : 0;
+    const ckSub = ck.status === "due" ? (k ? `${k} of ${L.CHECKIN.length} answered · pick up where you left off` : `${dueText(M)} · about a minute`) : ck.status === "done" ? `Saved for ${spanText(ck.ws, ck.ws + 6)} · ${L.baseline(M) ? "see how it compares" : "see your answers"}` : k ? `Skipped · ${k} of ${L.CHECKIN.length} answered, pick up where you left off` : "Skipped this week · you can still do it";
+    const mk = L.mealFor(L.NOW);
+    const mealHint = isToday && mk !== "other" ? `${L.mealLabel(mk)}, or any meal` : "Breakfast, lunch, dinner or other";
+    const sub = bms.length ? `<span class="ap-k">Last BM ${isToday ? "today" : "that day"}: ${esc(T(bms[bms.length - 1].t))}</span>`
+      : hasNo ? `<span class="ap-k">Logged: no BM ${isToday ? "today" : "that day"}</span>`
+      : !isToday || L.isLate() ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="nobm">${ic("nobm")}Log no BM ${isToday ? "today" : "that day"}</button>` : "";
+    const hid = `plus-h${V.uid}`;
+    const quick = isToday && M.days.reduce((s, y) => s + y.entries.filter((e) => e.kind === "bm").length, 0) >= 5;
+    return `<div class="ap-psh" role="dialog" aria-modal="true" aria-labelledby="${hid}">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
-      <div class="ap-psh-h"><h2>Add to today</h2><span class="ap-k">${esc(Ut.DOWL[dateOf(L.TODAY).getDay()])} · ${esc(T(L.NOW))}</span></div>
-      <section class="ap-pbm">
-        <button type="button" class="ap-pbm-h" data-act="open-bm"><span class="ap-pbm-ic">${RU.glyph(4)}</span><span class="ap-pbm-t"><b>BM</b><em>Tap the closest form. Details are optional.</em></span>${ic("chev")}</button>
-        ${RU.formTiles(mode, null, { dark: true, act: "open-bm", label: "Start a BM log with this form" })}
+      <div class="ap-psh-h"><h2 id="${hid}">${isToday ? "Add to today" : `Add to ${esc(dayIn(d))}`}</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
+      ${isToday ? "" : `<p class="ap-psh-day">${ic("cal")}<span>Catching up. Everything here is logged for ${esc(dayIn(d))}.</span></p>`}
+      <section class="ap-pbm" aria-label="BM">
+        <button type="button" class="ap-pbm-h" data-act="open-bm" data-autofocus><span class="ap-pbm-ic">${RU.glyph(4)}</span><span class="ap-pbm-t"><b>BM</b><em>${quick ? "Tap one to log it now. Add details after." : "Tap the closest one, then Save. Details are optional."}</em></span>${ic("chev")}</button>
+        ${RU.formTiles(mode, null, { dark: true, act: quick ? "quick-bm" : "open-bm", actLabel: quick ? "Logs a BM now" : "Opens Log a BM", guide: true, label: quick ? "Log a BM now" : "Start a BM log with this one" })}
       </section>
-      <div class="ap-pbm-sub">${bms.length ? `<span class="ap-k">Last BM today: ${esc(T(bms[bms.length - 1].t))}</span>` : hasNo ? `<span class="ap-k">Logged: no BM today</span>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="nobm">${ic("nobm")}No BM today</button>`}</div>
+      ${sub ? `<div class="ap-pbm-sub">${sub}</div>` : ""}
       <div class="ap-pgrid">
         <button type="button" class="ap-pt" data-act="open-sym"><span class="ap-read-ic">${ic("sym")}</span><b>Symptoms</b><em>Bloating, pain, cramping and more</em></button>
-        <button type="button" class="ap-pt" data-act="open-meal"><span class="ap-read-ic">${ic("meal")}</span><b>Meal</b><em>${esc(meal)}, or any meal</em></button>
+        <button type="button" class="ap-pt" data-act="open-meal"><span class="ap-read-ic">${ic("meal")}</span><b>Meal</b><em>${esc(mealHint)}</em></button>
       </div>
-      <button type="button" class="ap-pck${ck.status === "due" ? " is-due" : ""}" data-act="${ck.status === "done" ? "ck-result" : "ck-start"}"><span class="ap-read-ic">${ic("ck")}</span><span class="ap-pck-m"><b>Weekly check-in</b><em>${esc(ckSub)}</em></span>${ck.status === "due" ? '<i class="ap-pck-dot" aria-label="Due"></i>' : ""}${ic("chev", "ap-tl-go")}</button>
+      ${isToday ? `<button type="button" class="ap-pck${ck.status === "due" ? " is-due" : ""}" data-act="${ck.status === "done" ? "ck-result" : "ck-start"}"><span class="ap-read-ic">${ic("ck")}</span><span class="ap-pck-m"><b>Weekly check-in</b><em>${esc(ckSub)}</em></span>${ck.status === "due" ? '<i class="ap-pck-dot" aria-hidden="true"></i>' : ""}${ic("chev", "ap-tl-go")}</button>` : ""}
+      ${isToday ? `<button type="button" class="ap-psh-ago" data-act="plus-earlier">${ic("cal")}Log for an earlier day</button>` : `<button type="button" class="ap-psh-ago" data-act="plus-day" data-v="${L.TODAY}">${ic("back")}Back to today</button>`}
+    </div>`;
+  };
+
+  /* catching up: which day */
+  RU.earlier = (M, V) => {
+    const ds = [];
+    for (let d = L.TODAY - 1; d >= Math.max(M.start, L.TODAY - 7); d--) ds.push(d);
+    const hid = `ea-h${V.uid}`;
+    const rows = ds.map((d) => {
+      const x = L.day(M, d), gap = !x || !x.logged;
+      const n = gap ? 0 : x.entries.length;
+      return `<li><button type="button" class="ap-ea-row" data-act="plus-day" data-v="${d}"><span class="ap-ea-m"><b>${esc(d === L.TODAY - 1 ? "Yesterday" : dayName(d))}</b><em>${gap ? "Nothing logged" : esc(plural(n, "entry", "entries"))}</em></span>${gap ? chip("Gap", "plain") : ""}${ic("chev", "ap-tl-go")}</button></li>`;
+    }).join("");
+    return `<div class="ap-psh" role="dialog" aria-modal="true" aria-labelledby="${hid}">
+      <div class="ap-sheet-grab" aria-hidden="true"></div>
+      <div class="ap-psh-h"><h2 id="${hid}">Which day?</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
+      <p class="ap-gd-lede">Pick the day, then log the way you would today. A day with nothing logged stays a gap until you add to it.</p>
+      <ol class="ap-card ap-ea">${rows}</ol>
     </div>`;
   };
 
   /* ============================== LOG FORMS ============================== */
   const sheetHead = (title, sub) => `<div class="ap-fsh-h"><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button><div class="ap-fsh-t"><h2>${esc(title)}</h2>${sub ? `<p>${esc(sub)}</p>` : ""}</div><span class="ap-fsh-sp"></span></div>`;
-  const whenRow = (M, st, id) => {
-    const opts = [[L.TODAY, "Today"], [L.TODAY - 1, "Yesterday"], [L.TODAY - 2, "2 days ago"]].filter(([d]) => d >= M.start);
+  const whenRow = (M, st, id, label = "When") => {
+    /* a week back, for catching up */
+    const opts = [[L.TODAY, "Today"], [L.TODAY - 1, "Yesterday"]].concat([2, 3, 4, 5, 6].map((k) => [L.TODAY - k, `${Ut.DOW[dateOf(L.TODAY - k).getDay()]}, ${shortDate(L.TODAY - k)}`])).filter(([d]) => d >= M.start);
     if (!opts.some(([d]) => d === st.d)) opts.push([st.d, dayName(st.d)]); /* an older entry, opened from History */
-    return `<div class="ap-f"><span class="ap-f-l" id="${id}-wl">When</span>
+    return `<div class="ap-f"><span class="ap-f-l" id="${id}-wl">${esc(label)}</span>
       <div class="ap-when" role="group" aria-labelledby="${id}-wl">
         <label class="ap-fld ap-fld--sel">${ic("cal")}<span class="sr">Day</span><select id="${id}-day" data-in="day">${opts.map(([d, l]) => `<option value="${d}"${st.d === d ? " selected" : ""}>${l}</option>`).join("")}</select>${ic("down", "ap-fld-dn")}</label>
         <label class="ap-fld">${ic("clock")}<span class="sr">Time</span><input id="${id}-time" type="time" data-in="time" value="${RU.toInput(st.t)}"></label>
       </div></div>`;
   };
-  const choice = (act, items, isOn, o = {}) => `<div class="ap-chs${o.wrap ? " ap-chs--wrap" : ""}" role="group"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${items.map(([v, l], i) => `<button type="button" class="ap-ch${o.flag ? " ap-ch--flag" : ""}${isOn(v, i) ? " is-on" : ""}" data-act="${act}" data-v="${esc(v)}" aria-pressed="${isOn(v, i)}">${isOn(v, i) && !o.noCheck ? ic("check") : ""}${esc(l)}</button>`).join("")}</div>`;
+  const choice = (act, items, isOn, o = {}) => `<div class="ap-chs${o.wrap ? " ap-chs--wrap" : ""}${o.grid ? " ap-chs--grid" : ""}" role="${o.single ? "radiogroup" : "group"}"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${items.map(([v, l], i) => `<button type="button" class="ap-ch${o.flag ? " ap-ch--flag" : ""}${isOn(v, i) ? " is-on" : ""}" data-act="${act}" data-v="${esc(v)}" ${o.single ? `role="radio" aria-checked="${isOn(v, i)}"` : `aria-pressed="${isOn(v, i)}"`}>${isOn(v, i) && !o.noCheck ? ic("check") : ""}${esc(l)}</button>`).join("")}</div>`;
   const noteField = (id, st, ph) => `<div class="ap-f"><label class="ap-f-l" for="${id}-note">Note</label><textarea id="${id}-note" class="ap-ta" data-in="note" rows="3" placeholder="${esc(ph)}">${esc(st.note || "")}</textarea></div>`;
 
   /* ---------- Log a BM: one tap on a form, then optional detail ---------- */
   RU.bm = (M, V, st) => {
     const mode = V.form, id = `bm${V.uid}`;
-    const sel = st.form;
+    const x = st.form != null ? st.form : st.word != null ? { form: null, word: st.word } : null;
+    const sel = x == null ? null : { form: st.form, word: st.word };
     const anyFlag = L.FLAGS.some(([k]) => st.flags[k]);
-    const detCount = L.HOW.filter(([k]) => st.how[k]).length + (st.dur != null ? 1 : 0) + L.FLAGS.filter(([k]) => st.flags[k]).length;
-    const line = sel != null ? `<b>${esc(L.formName(sel, mode))}</b> · ${esc(L.formLine(sel, mode))}` : `Tap the closest one. It doesn't need to be exact.`;
+    const flagsOn = L.FLAGS.filter(([k]) => st.flags[k]).map(([, l]) => lower1(l));
+    /* urgency sits out of the fold: for IBS-D it's the detail most worth counting */
+    const FOLD = L.HOW.filter(([k]) => k !== "rush");
+    const others = FOLD.filter(([k]) => st.how[k]).length + (st.dur != null ? 1 : 0);
+    const detSum = flagsOn.length ? `Noted: ${flagsOn.join(", ")}${others ? ` · ${plural(others, "more detail")}` : ""}` : others ? `${plural(others, "detail")} added` : "Straining, how long, blood or mucus";
+    const line = x != null ? `<b>${esc(L.formName(x, mode))}</b> · ${esc(L.formLine(x, mode))}` : `Tap the closest one. It doesn't need to be exact.`;
     return `<div class="ap-fsh" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
       ${sheetHead(st.edit ? "Edit BM" : "Log a BM").replace("<h2>", `<h2 id="${id}-h">`)}
       <div class="ap-fsh-b">
         ${whenRow(M, st, id)}
         <div class="ap-f">
-          <div class="ap-f-lr"><span class="ap-f-l">Form</span><button type="button" class="ap-gd-b" data-act="guide">${ic("info")}How to pick</button></div>
+          <div class="ap-f-lr"><span class="ap-f-l" id="${id}-fl">Consistency</span><button type="button" class="ap-gd-b" data-act="guide">${ic("info")}How to pick</button></div>
           ${RU.formTiles(mode, sel)}
-          <p class="ap-fm-line${sel != null ? " is-set" : ""}" aria-live="polite">${line}</p>
+          <p class="ap-fm-line${x != null ? " is-set" : ""}">${line}</p>
+          ${choice("how", [["rush", "Sudden urge to go"]], (v) => !!st.how[v], { label: "Urgency", wrap: true })}
         </div>
         <div class="ap-det${st.details ? " is-open" : ""}">
-          <button type="button" class="ap-det-h" data-act="details" aria-expanded="${!!st.details}" aria-controls="${id}-det"><span><b>Add details</b><em>${detCount ? `${plural(detCount, "detail")} added` : "Rushing, straining, how long, anything you noticed"}</em></span>${ic("down")}</button>
+          <button type="button" class="ap-det-h" data-act="details" aria-expanded="${!!st.details}" aria-controls="${id}-det"><span><b>Add details</b><em${flagsOn.length ? ' class="is-flag"' : ""}>${esc(detSum)}</em></span>${ic("down")}</button>
           <div class="ap-det-b" id="${id}-det"${st.details ? "" : " hidden"}>
-            <div class="ap-f"><span class="ap-f-l">How it went</span>${choice("how", L.HOW, (v) => !!st.how[v], { label: "How it went", wrap: true })}</div>
-            <div class="ap-f"><span class="ap-f-l">How long</span>${choice("dur", L.DURATION.map((l, i) => [i, l]), (v, i) => st.dur === i, { label: "How long" })}</div>
-            <div class="ap-f"><span class="ap-f-l">Anything you noticed</span>${choice("flag", L.FLAGS, (v) => !!st.flags[v], { label: "Anything you noticed", flag: true, wrap: true })}
+            <div class="ap-f"><span class="ap-f-l">How it went</span>${choice("how", FOLD, (v) => !!st.how[v], { label: "How it went", wrap: true })}</div>
+            <div class="ap-f"><span class="ap-f-l">How long</span>${choice("dur", L.DURATION.map((l, i) => [i, l]), (v, i) => st.dur === i, { label: "How long", single: true })}</div>
+            <div class="ap-f"><span class="ap-f-l">Noticed any of these?</span>${choice("flag", L.FLAGS, (v) => !!st.flags[v], { label: "Noticed any of these?", flag: true, wrap: true })}
               ${anyFlag ? `<p class="ap-info">${ic("info")}<span>After you save, we'll show when to talk to a clinician. Florin won't try to read this.</span></p>` : ""}</div>
           </div>
         </div>
         ${noteField(id, st, "Anything else? Optional")}
       </div>
       <div class="ap-fsh-f">
-        ${sel == null ? `<p class="ap-fsh-hint">Pick a form to save</p>` : ""}
-        <button type="button" class="ap-btn ap-btn--block" data-act="save-bm"${sel == null ? ' aria-disabled="true"' : ""}>${st.edit ? "Save changes" : "Save BM"}</button>
+        ${x == null ? `<p class="ap-fsh-hint" id="${id}-hint">Tap the closest one above to save</p>` : ""}
+        <button type="button" class="ap-btn ap-btn--block" data-act="save-bm"${x == null ? ` aria-disabled="true" aria-describedby="${id}-hint"` : ""}>${st.edit ? "Save changes" : "Save BM"}</button>
         ${st.edit ? `<button type="button" class="ap-fsh-del" data-act="delete">${ic("trash")}Delete this BM</button>` : ""}
       </div>
     </div>`;
@@ -400,143 +440,194 @@
 
   /* the (i) guide: the full lines, so the tiles can stay small */
   RU.guide = (V) => {
-    const B = V.form === "B";
-    const rows = B ? L.WORDS.map((w) => [w.glyph, w.word, w.line]) : L.TYPES.slice(1).map((t) => [t.k, `Type ${t.k}`, t.line]);
+    const m = V.form;
+    const rows = m === "B" ? L.WORDS.map((w) => [w.glyph, w.word, w.line]) : L.TYPES.slice(1).map((t) => [t.k, m === "A" ? `${t.k}\u00a0·\u00a0${t.short}` : t.short, t.line]);
+    const lede = m === "B" ? "Five words, from hardest to loosest. Pick the closest one; it doesn't need to be exact." : `Seven steps, from hardest to loosest${m === "A" ? ", numbered 1 to 7" : ""}. Pick the closest one; it doesn't need to be exact.`;
     return `<div class="ap-psh ap-gd" role="dialog" aria-modal="true" aria-label="How to pick">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
-      <div class="ap-psh-h"><h2>${B ? "Picking a word" : "Picking a type"}</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
-      <p class="ap-gd-lede">${B ? "Five words, from hardest to loosest. Pick the closest one." : "Types 1 to 7 run from hardest to loosest. It's the scale clinicians use, so your logs make sense to them. Pick the closest one; it doesn't need to be exact."}</p>
+      <div class="ap-psh-h"><h2>How to pick</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
+      <p class="ap-gd-lede">${esc(lede)}</p>
       <ol class="ap-gd-list">${rows.map(([g, k, l]) => `<li><span class="ap-gd-ic">${RU.glyph(g)}</span><b>${esc(k)}</b><span>${esc(l)}</span></li>`).join("")}</ol>
     </div>`;
   };
 
   /* after a BM with blood, mucus or a black stool: a clinician note, never a reading of it */
+  /* the same note when an alarm feature is typed into a note or a symptom name (st.sign) */
   RU.flagNote = (st) => {
-    const f = L.FLAGS.filter(([k]) => st.flags[k]).map(([k]) => k);
-    const serious = f.includes("blood") || f.includes("black");
-    const sign = f.length === 1 ? { blood: "Blood in your stool", mucus: "Mucus in your stool", black: "A black or tar-like stool" }[f[0]] : f.includes("black") ? "A black stool, and more" : "Blood and mucus in your stool";
+    const f = L.FLAGS.filter(([k]) => st.flags && st.flags[k]).map(([k]) => k);
+    const serious = !!st.sign || f.includes("blood") || f.includes("black");
+    const sign = st.sign ? st.sign : f.length === 1 ? { blood: "Blood in your stool", mucus: "Mucus in your stool", black: "A black or tar-like stool" }[f[0]] : f.includes("black") ? "A black stool, and more" : "Blood and mucus in your stool";
     return `<div class="ap-psh ap-fl" role="dialog" aria-modal="true" aria-label="When to see a clinician">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
       <div class="ap-psh-h"><h2>Saved, with a note</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
-      <div class="ap-ask-alarm" role="note"><span class="ap-k">When to see a clinician</span><b>${esc(sign)}</b><p>${serious ? "Even a small amount is worth a clinician's look soon. Florin won't try to read it." : "If it's new for you, keeps showing up, or comes with pain or blood, check in with a clinician. Florin won't try to read it."}</p></div>
+      <div class="ap-ask-alarm" role="note"><span class="ap-k">When to see a clinician</span><b>${esc(sign)}</b><p>${st.sign ? "You wrote this in your log. It's worth a clinician's look soon. Florin won't try to read it." : f.includes("blood") ? "Even a small amount is worth a clinician's look soon. Florin won't try to read it." : f.includes("black") ? "A black or tar-like stool is worth a clinician's look soon. Florin won't try to read it." : "If it's new for you, keeps showing up, or comes with pain or blood, check in with a clinician. Florin won't try to read it."}</p>${f.includes("blood") || f.includes("black") || st.sign === "Blood" || st.sign === "A black or tar-like stool" ? `<p class="ap-fl-urgent">If there's a lot of blood, or you feel faint or dizzy, get urgent care now.</p>` : ""}</div>
       <p class="ap-fl-body">Primary care is the right first stop: your GP or a nurse practitioner. Your logs can go with you as a report, so you don't have to remember dates.</p>
-      <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="toast" data-msg="Ask Florin opens with this log loaded. That comes in the second pass." data-close="1">Talk it through with Ask Florin</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Done</button></div>
+      <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="toast" data-msg="Ask Florin opens on the clinician path, with this log and a report ready to bring. That comes in the second pass." data-close="1">Make a report for your clinician</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Done</button>${st.restore ? `<button type="button" class="ap-fsh-del" data-act="flag-undo">${ic("undo")}Undo this log</button>` : ""}</div>
     </div>`;
   };
 
+  /* what a toast names after a delete */
+  RU.deletedText = (e) => (e.kind === "bm" ? `BM at ${T(e.t)}` : e.kind === "sym" ? `${lower1(RU.entryText(e).title)} at ${T(e.t)}` : e.kind === "meal" ? `${L.mealLabel(e.meal).toLowerCase()} at ${T(e.t)}` : "no BM");
+
   /* tapping a "No BM today" entry: log a BM after all, or take it back */
-  RU.nobmSheet = (st) => `<div class="ap-psh" role="dialog" aria-modal="true" aria-label="No BM today">
+  RU.nobmSheet = (st) => `<div class="ap-psh" role="dialog" aria-modal="true" aria-label="${st.d === L.TODAY ? "No BM today" : "No BM that day"}">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
-      <div class="ap-psh-h"><h2>No BM today</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
-      <p class="ap-gd-lede">Logged at ${esc(T(st.t))}, so today reads as a day without one, not a day you didn't log. Logging a BM later replaces it.</p>
+      <div class="ap-psh-h"><h2>${st.d === L.TODAY ? "No BM today" : `No BM ${esc(dayIn(st.d))}`}</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
+      <p class="ap-gd-lede">Logged at ${esc(T(st.t))}, so ${st.d === L.TODAY ? "today" : "that day"} reads as a day without one, not a day you didn't log. Logging a BM later replaces it.</p>
       <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="open-bm" data-swap="1">Log a BM instead</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="delete">Take it back</button></div>
     </div>`;
 
-  /* ---------- Log symptoms: the pills, then how strong and how long ---------- */
+  /* ---------- Log symptoms: the pills, then one strength and how long, both optional ----------
+     One strength for the entry (at its worst), not a row per symptom: Will asked for one or two follow-ups, and the
+     weekly check-in already asks about belly pain and bloating one by one. The time is when it started. */
   RU.sym = (M, V, st) => {
     const id = `sy${V.uid}`;
     const names = L.SYMPTOMS.concat(st.custom || []);
     const on = (n) => st.items.some((i) => i.name === n);
-    const rows = st.items.map((it) => `<div class="ap-sy-row"><b>${esc(it.name)}</b>${choice("str", L.STRENGTH.map((l, i) => [`${it.name}|${i + 1}`, l]), (v) => v === `${it.name}|${it.s}`, { label: `How strong: ${it.name}` })}</div>`).join("");
+    const picked = st.items.length > 0;
     return `<div class="ap-fsh" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
       ${sheetHead(st.edit ? "Edit symptoms" : "Log symptoms").replace("<h2>", `<h2 id="${id}-h">`)}
       <div class="ap-fsh-b">
-        ${whenRow(M, st, id)}
         <div class="ap-f"><div class="ap-f-lr"><span class="ap-f-l">What you're feeling</span><span class="ap-f-h">Pick any</span></div>
           ${choice("sym", names.map((n) => [n, n]), (v) => on(v), { label: "Symptoms", wrap: true })}
-          ${st.adding ? `<div class="ap-sy-add"><label class="sr" for="${id}-new">Name it</label><input id="${id}-new" class="ap-in" data-in="newsym" type="text" placeholder="Name it" value="${esc(st.newName || "")}" autocomplete="off"><button type="button" class="ap-btn ap-btn--c" data-act="sym-add">Add</button></div>`
+          ${st.adding ? `<div class="ap-sy-add"><label class="sr" for="${id}-new">Name it</label><input id="${id}-new" class="ap-in" data-in="newsym" type="text" enterkeyhint="done" placeholder="Name it" value="${esc(st.newName || "")}" autocomplete="off"><button type="button" class="ap-btn ap-btn--c" data-act="sym-add">Add</button></div>`
             : `<button type="button" class="ap-sy-more" data-act="sym-other">${ic("plus")}Something else</button>`}
         </div>
-        ${st.items.length ? `<div class="ap-f"><span class="ap-f-l">How strong</span><div class="ap-sy-rows">${rows}</div></div>
-        <div class="ap-f"><span class="ap-f-l">How long has it lasted</span>${choice("last", L.LASTED.map((l, i) => [i, l]), (v, i) => st.last === i, { label: "How long has it lasted", wrap: true })}</div>` : ""}
+        ${picked ? `<div class="ap-f"><span class="ap-f-l">How strong at its worst</span>${choice("str", L.STRENGTH.map((l, i) => [i + 1, l]), (v) => st.s === +v, { label: "How strong at its worst", single: true })}</div>
+        <div class="ap-f"><span class="ap-f-l">How long it lasted</span>${choice("last", L.LASTED.map((l, i) => [i, l]), (v, i) => st.last === i, { label: "How long it lasted", grid: true, single: true })}</div>` : ""}
+        ${whenRow(M, st, id, "Started")}
         ${noteField(id, st, "Anything that came before it? Optional")}
-        <p class="ap-info">${ic("info")}<span>See a clinician about blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain, or waking at night to go.</span></p>
+        <p class="ap-info">${ic("info")}<span>New for you, or getting stronger? Talk to a clinician. Blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain or waking at night to go: start with primary care soon.</span></p>
       </div>
       <div class="ap-fsh-f">
-        ${st.items.length ? "" : `<p class="ap-fsh-hint">Pick at least one to save</p>`}
-        <button type="button" class="ap-btn ap-btn--block" data-act="save-sym"${st.items.length ? "" : ' aria-disabled="true"'}>${st.edit ? "Save changes" : "Save symptoms"}</button>
-        ${st.edit ? `<button type="button" class="ap-fsh-del" data-act="delete">${ic("trash")}Delete</button>` : ""}
+        ${picked ? "" : `<p class="ap-fsh-hint" id="${id}-hint" aria-live="polite">Pick at least one to save</p>`}
+        <button type="button" class="ap-btn ap-btn--block" data-act="save-sym"${picked ? "" : ` aria-disabled="true" aria-describedby="${id}-hint"`}>${st.edit ? "Save changes" : "Save symptoms"}</button>
+        ${st.edit ? `<button type="button" class="ap-fsh-del" data-act="delete">${ic("trash")}Delete this entry</button>` : ""}
       </div>
     </div>`;
   };
 
-  /* ---------- Log a meal: which one, then free text ---------- */
+  /* ---------- Log a meal: which one, then free text ----------
+     The text stays free. Under it, the foods Florin recognized and how often each came up, so a missed word is
+     visible and the 5-log gate is honest. Recent foods add to the text, never replace it. The time follows the
+     meal until the person sets it. */
+  RU.mealFoods = (M, k) => {
+    const n = {};
+    M.days.filter((x) => x.d > L.TODAY - 30).forEach((x) => x.entries.filter((e) => e.kind === "meal" && e.meal === k).forEach((e) => (e.foods || []).forEach((f) => (n[f] = (n[f] || 0) + 1))));
+    return Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([f]) => f);
+  };
+  RU.mealCount = (M, st) => {
+    const fs = L.matchFoods(st.text || "");
+    if (!fs.length) return `<p class="ap-ml-why">Florin counts each food it recognizes. Once one comes up 5 times in 30 days, Insights can look for a possible pattern in what tends to follow it.</p>`;
+    const fc = L.foodCounts(M, 30);
+    const was = st.edit ? (L.find(M, st.edit) || {}).foods || [] : [];
+    const n = (f) => (fc[f] || 0) + (was.includes(f) ? 0 : 1);
+    const hit = fs.find((f) => n(f) === 5 && !was.includes(f));
+    const said = hit ? (() => { const [nm, pl] = L.FOOD_NAMES[hit]; return `${nm} ${pl ? "have" : "has"} now come up 5 times in 30 days. Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`; })() : "At 5 times in 30 days, Insights can look for a possible pattern.";
+    return `<div class="ap-ml-counted"><span class="ap-ml-cl">Counted</span>${fs.map((f) => chip(`${L.FOOD_NAMES[f][0]} · ${n(f)} in 30 days`, "plain")).join("")}</div><p class="ap-ml-why">${esc(said)}</p>`;
+  };
   RU.meal = (M, V, st) => {
     const id = `ml${V.uid}`;
-    const recent = [];
-    for (let i = M.days.length - 1; i >= 0 && recent.length < 3; i--) {
-      M.days[i].entries.filter((e) => e.kind === "meal" && e.meal === st.meal).reverse().forEach((e) => { if (recent.length < 3 && !recent.includes(e.text)) recent.push(e.text); });
+    const C = L.MEAL_COPY[st.meal];
+    /* the same meal again in one tap: the latest of this kind, before this one */
+    let same = null;
+    for (let i = M.days.length - 1; i >= 0 && !same; i--) {
+      const x = M.days[i];
+      const es = x.logged ? x.entries.filter((e) => e.kind === "meal" && e.meal === st.meal && e.id !== st.edit && (x.d < st.d || (x.d === st.d && e.t < st.t))) : [];
+      if (es.length) same = { e: es[es.length - 1], d: x.d };
     }
+    const tops = RU.mealFoods(M, st.meal);
+    const inText = L.matchFoods(st.text || "");
     const ok = (st.text || "").trim().length > 0;
+    const sameWhen = same ? (same.d === st.d ? (st.d === L.TODAY ? "earlier today" : "earlier that day") : dayIn(same.d)) : "";
     return `<div class="ap-fsh" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
       ${sheetHead(st.edit ? "Edit meal" : "Log a meal").replace("<h2>", `<h2 id="${id}-h">`)}
       <div class="ap-fsh-b">
-        <div class="ap-f"><span class="ap-f-l">Which meal</span>${choice("meal", L.MEALS, (v) => st.meal === v, { label: "Which meal" })}</div>
-        ${whenRow(M, st, id)}
-        <div class="ap-f"><label class="ap-f-l" for="${id}-text">What you had</label><textarea id="${id}-text" class="ap-ta" data-in="text" rows="3" placeholder="For example: salmon, rice and greens">${esc(st.text || "")}</textarea>
-          ${recent.length ? `<div class="ap-ml-rec"><span class="ap-f-h">Recent ${esc(L.mealLabel(st.meal).toLowerCase())}s</span>${choice("recent", recent.map((r) => [r, r]), (v) => v === st.text, { label: "Recent", wrap: true })}</div>` : ""}
+        <div class="ap-f"><span class="ap-f-l">Which meal</span>${choice("meal", L.MEALS, (v) => st.meal === v, { label: "Which meal", noCheck: true, single: true })}${st.meal === "other" ? `<p class="ap-f-h">Snacks, drinks, or anything between meals.</p>` : ""}</div>
+        <div class="ap-f"><label class="ap-f-l" for="${id}-text">What you had</label><textarea id="${id}-text" class="ap-ta" data-in="text" rows="3" placeholder="${esc(C.ph)}">${esc(st.text || "")}</textarea>
+          <div class="ap-ml-count" aria-live="polite">${RU.mealCount(M, st)}</div>
         </div>
-        <p class="ap-fine ap-ml-fine">Florin starts checking what tends to follow a food once it has come up 5 times.</p>
+        ${same || tops.length ? `<div class="ap-f"><span class="ap-f-l">From your recent ${esc(C.recent)}</span>
+          ${same ? `<button type="button" class="ap-ml-same" data-act="meal-same" data-v="${esc(same.e.text)}">${ic("repeat")}<span><b>Same as ${esc(sameWhen)}</b><em>${esc(same.e.text)}</em></span></button>` : ""}
+          ${tops.length ? `<div class="ap-ml-foods"><span class="ap-f-h">Add a food</span>${choice("meal-food", tops.map((k) => [k, L.FOOD_NAMES[k][0]]), (v) => inText.includes(v), { label: "Add a food", wrap: true, noCheck: true })}</div>` : ""}
+        </div>` : ""}
+        ${whenRow(M, st, id)}
+        ${st.autoT ? `<p class="ap-f-h ap-ml-auto">${esc(st.autoT)}</p>` : ""}
       </div>
       <div class="ap-fsh-f">
-        ${ok ? "" : `<p class="ap-fsh-hint">Write what you had to save</p>`}
-        <button type="button" class="ap-btn ap-btn--block" data-act="save-meal"${ok ? "" : ' aria-disabled="true"'}>${st.edit ? "Save changes" : `Save ${esc(L.mealLabel(st.meal).toLowerCase())}`}</button>
-        ${st.edit ? `<button type="button" class="ap-fsh-del" data-act="delete">${ic("trash")}Delete</button>` : ""}
+        ${ok ? "" : `<p class="ap-fsh-hint" id="${id}-hint" aria-live="polite">Type what you had, then save</p>`}
+        <button type="button" class="ap-btn ap-btn--block" data-act="save-meal"${ok ? "" : ` aria-disabled="true" aria-describedby="${id}-hint"`}>${st.edit ? "Save changes" : esc(C.save)}</button>
+        ${st.edit ? `<button type="button" class="ap-fsh-del" data-act="delete">${ic("trash")}Delete this entry</button>` : ""}
       </div>
     </div>`;
   };
 
   /* ============================== WEEKLY CHECK-IN ============================== */
-  /* a 13-week trend for one question: dots on four steps, the person's first weeks as the band */
+  /* a 13-week trend for one question: the first three weeks as a band (named in words right under the chart), each
+     week a dot on four labelled steps, this week ringed. A table twin for screen readers */
   RU.ckTrend = (M, qi, cur) => {
     const q = L.CHECKIN[qi];
     const weeks = M.checkins.concat(cur != null ? [{ w: 12, answers: Object.assign([], { [qi]: cur }) }] : []);
     const b = L.baseline(M);
-    const W = 318, H = 60, left = 64, right = 8, top = 8, bot = 40;
+    const W = 318, H = 100, left = 76, right = 12, top = 8, bot = 80;
     const X = (i) => +(left + (i / 12) * (W - left - right)).toFixed(1);
     const Y = (v) => +(bot - (v / 3) * (bot - top)).toFixed(1);
-    /* the first weeks' range runs the full width, so this week reads against it */
-    const band = b ? `<rect class="c-band" x="${left - 6}" y="${(Y(b[qi].hi) - 5).toFixed(1)}" width="${W - left - right + 12}" height="${(Y(b[qi].lo) - Y(b[qi].hi) + 10).toFixed(1)}" rx="4"/>` : "";
-    const grid = [0, 1, 2, 3].map((v) => `<line class="ap-ckt-grid" x1="${left - 6}" x2="${W - right + 6}" y1="${Y(v)}" y2="${Y(v)}"/>`).join("");
-    const ends = `<text class="ap-ckt-y" x="0" y="${Y(3) + 3}">${esc(q.ends[1])}</text><text class="ap-ckt-y" x="0" y="${Y(0) + 3}">${esc(q.ends[0])}</text>`;
+    const band = b ? `<rect class="c-band" x="${left - 8}" y="${(Y(b[qi].hi) - 8).toFixed(1)}" width="${W - left - right + 16}" height="${(Y(b[qi].lo) - Y(b[qi].hi) + 16).toFixed(1)}" rx="4"/>` : "";
+    const grid = [0, 1, 2, 3].map((v) => `<line class="ap-ckt-grid" x1="${left - 8}" x2="${W - right + 4}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ap-ckt-y" x="0" y="${Y(v) + 3.5}">${esc(q.ticks[v])}</text>`).join("");
     const xs = `<text class="ap-ckt-x" x="${X(0)}" y="${H - 4}" text-anchor="start">${esc(shortDate(0))}</text><text class="ap-ckt-x" x="${X(12)}" y="${H - 4}" text-anchor="end">This week</text>`;
-    const dots = weeks.map((c) => (c.answers && c.answers[qi] != null ? `<circle class="ap-ckt-dot${c.w === 12 ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="${c.w === 12 ? 4.4 : 3}"><title>${esc(c.w === 12 ? `This week: ${q.opts[c.answers[qi]]}` : `Week of ${shortDate(c.w * 7)}: ${q.opts[c.answers[qi]]}`)}</title></circle>` : "")).join("");
-    return `<svg class="ap-ckt" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`${q.label}, each week since ${shortDate(0)}. The band is your first three weeks.`)}">${band}${grid}${ends}${xs}${dots}</svg>`;
+    const dots = weeks.map((c) => (c.answers && c.answers[qi] != null ? `<circle class="ap-ckt-dot${c.w === 12 ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="${c.w === 12 ? 4.5 : 3}"/>` : "")).join("");
+    const now = cur != null ? `<circle class="ap-ckt-ring" cx="${X(12)}" cy="${Y(cur)}" r="8"/>` : "";
+    const lbl = `${q.label}, each week since ${shortDate(0)}.${cur != null ? ` This week: ${q.opts[cur].toLowerCase()}.` : ""}${b ? (b[qi].lo === b[qi].hi ? ` Your first three weeks were ${q.opts[b[qi].lo].toLowerCase()}.` : ` Your first three weeks ran from ${q.opts[b[qi].lo].toLowerCase()} to ${q.opts[b[qi].hi].toLowerCase()}.`) : ""}`;
+    const table = `<table class="sr"><caption>${esc(q.label)} by week</caption><tbody>${weeks.map((c) => `<tr><th scope="row">${esc(c.w === 12 ? "This week" : `Week of ${shortDate(c.w * 7)}`)}</th><td>${esc(c.answers && c.answers[qi] != null ? q.opts[c.answers[qi]] : "Skipped")}</td></tr>`).join("")}</tbody></table>`;
+    return `<svg class="ap-ckt" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lbl)}">${band}${grid}${xs}${dots}${now}</svg>${table}`;
   };
 
   RU.ck = (M, V, st) => {
     const id = `ck${V.uid}`;
     const ck = M.checkin;
     const span = spanText(ck.ws, ck.ws + 6);
-    const n = L.CHECKIN.length + 1;
-    const prog = `<div class="ap-ck-prog" role="img" aria-label="${esc(`Question ${Math.min(st.step + 1, n)} of ${n}`)}">${Array.from({ length: n }, (_, i) => `<i class="${i < st.step ? "is-done" : i === st.step ? "is-on" : ""}"></i>`).join("")}</div>`;
-    const head = `<div class="ap-ck-h"><button type="button" class="ap-lg-x" data-act="${st.step > 0 && st.step < n ? "ck-back" : "close"}" aria-label="${st.step > 0 && st.step < n ? "Back" : "Close"}">${ic(st.step > 0 && st.step < n ? "back" : "close")}</button><div class="ap-fsh-t"><h2 id="${id}-h">Weekly check-in</h2><p>${esc(span)}</p></div>${st.step < n ? `<button type="button" class="ap-ck-later" data-act="close">Later</button>` : `<span class="ap-fsh-sp"></span>`}</div>`;
+    const nq = L.CHECKIN.length, n = nq + 1;
+    const done = st.step > nq;
+    const prog = `<div class="ap-ck-prog" role="img" aria-label="${esc(st.step < nq ? `Question ${st.step + 1} of ${nq}` : "Last step, optional")}">${Array.from({ length: n }, (_, i) => `<i class="${i < st.step ? "is-done" : i === st.step ? "is-on" : ""}"></i>`).join("")}</div>`;
+    /* question 1 has one way out (Later); after it, Back. The result closes */
+    const lead = done ? `<button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button>` : st.step > 0 ? `<button type="button" class="ap-lg-x" data-act="ck-back" aria-label="Back">${ic("back")}</button>` : `<span class="ap-fsh-sp"></span>`;
+    const head = `<div class="ap-ck-h">${lead}<div class="ap-fsh-t"><h2 id="${id}-h">Weekly check-in</h2><p>${esc(span)}</p></div>${done ? `<span class="ap-fsh-sp"></span>` : `<button type="button" class="ap-ck-later" data-act="close">${M.checkin.status === "done" ? "Cancel" : "Later"}</button>`}</div>`;
     let body;
-    if (st.step < L.CHECKIN.length) {
+    if (st.step < nq) {
       const q = L.CHECKIN[st.step];
-      body = `${prog}<div class="ap-ck-q"><span class="ap-k">${st.step + 1} of ${n}</span><h3>${esc(q.q)}</h3></div>
-        <div class="ap-ck-opts" role="group" aria-label="${esc(q.q)}">${q.opts.map((o, i) => `<button type="button" class="ap-ck-opt${st.answers[st.step] === i ? " is-on" : ""}" data-act="ck-ans" data-v="${i}" aria-pressed="${st.answers[st.step] === i}"><span>${esc(o)}</span>${st.answers[st.step] === i ? ic("check") : ""}</button>`).join("")}</div>
-        <p class="ap-ck-foot">Think about the whole week, Monday to today.</p>`;
-    } else if (st.step === L.CHECKIN.length) {
-      body = `${prog}<div class="ap-ck-q"><span class="ap-k">${n} of ${n}</span><h3>Anything else to note about this week?</h3></div>
+      const a = st.answers[st.step];
+      body = `${prog}<div class="ap-ck-q"><span class="ap-k">${st.step + 1} of ${nq}</span><h3 tabindex="-1">${esc(q.q)}</h3><p class="ap-ck-recall">Think about the last 7 days, ${esc(span)}.</p></div>
+        <div class="ap-ck-opts" role="radiogroup" aria-label="${esc(q.q)}">${q.opts.map((o, i) => `<button type="button" class="ap-ck-opt${a === i ? " is-on" : ""}" data-act="ck-ans" data-v="${i}" role="radio" aria-checked="${a === i}"><span>${esc(o)}</span>${a === i ? ic("check") : ""}</button>`).join("")}</div>
+        ${a != null ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c ap-ck-next" data-act="ck-next">Next</button>` : ""}`;
+    } else if (st.step === nq) {
+      body = `${prog}<div class="ap-ck-q"><span class="ap-k">Optional</span><h3 tabindex="-1">Anything else to note about this week?</h3></div>
         ${choice("ck-tag", L.CHECKIN_TAGS.concat(M.P.cycle ? ["Period"] : []).map((t) => [t, t]), (v) => st.tags.includes(v), { label: "This week", wrap: true })}
         <div class="ap-f"><label class="ap-f-l" for="${id}-note">Note</label><textarea id="${id}-note" class="ap-ta" data-in="cknote" rows="3" placeholder="Optional">${esc(st.note || "")}</textarea></div>
         <div class="ap-ck-fin"><button type="button" class="ap-btn ap-btn--block" data-act="ck-finish">Finish</button></div>`;
     } else {
       const b = L.baseline(M);
+      const first = M.checkins.filter((c) => c.answers);
       const rows = L.CHECKIN.map((q, i) => {
         const cmp = L.compare(b, i, st.answers[i]);
-        return `<li class="ap-ckr-row"><div class="ap-ckr-top"><span class="ap-k">${esc(q.label)}</span>${cmp ? chip(cmp.text, cmp.k === "same" ? "usual" : "shift") : ""}</div><b>${esc(q.opts[st.answers[i]])}</b>${b ? RU.ckTrend(M, i, st.answers[i]) : ""}</li>`;
+        const words = b ? `First three weeks: ${q.opts[b[i].lo].toLowerCase()}${b[i].lo === b[i].hi ? "" : ` to ${q.opts[b[i].hi].toLowerCase()}`}.` : "";
+        return `<li class="ap-ckr-row"><div class="ap-ckr-top"><span class="ap-k">${esc(q.label)}</span>${cmp ? chip(cmp.text, cmp.k === "same" ? "usual" : "shift") : ""}</div><b>${esc(q.opts[st.answers[i]])}</b>${b ? `${RU.ckTrend(M, i, st.answers[i])}<p class="ap-ckr-w">${esc(words)}</p>` : ""}</li>`;
       }).join("");
-      const first = M.checkins.filter((c) => c.answers);
       body = `<div class="ap-ckr">
           <span class="ap-k">${esc(span)} · Saved</span>
-          <h3>${b ? "This week, next to your first weeks" : "Your first check-in is saved"}</h3>
-          <p class="ap-ckr-lede">${b ? `Compared only with your first three check-ins, ${esc(spanText(first[0].ws, first[2].ws + 6))}. No score and no bands, only how this week sits next to your own start.` : "This is your starting point. After three check-ins, each week is compared with these first ones. No score and no bands, only you next to you."}</p>
+          <h3 tabindex="-1">${b ? "This week, next to your first weeks" : "Your first check-in is saved"}</h3>
+          <p class="ap-ckr-lede">${b ? `Compared only with your first three check-ins, ${esc(spanText(first[0].ws, first[2].ws + 6))}. Each chip says whether this week is about the same as then, or moved, and which way. No score and no severity labels.` : "This is your starting point. After three check-ins, each week is compared with these first ones. No score and no severity labels, only you next to you."}</p>
+          ${(() => {
+            /* the week's own logs next to the answers: the weekly view, with no separate report */
+            const Wk = RU.week(M, V.form);
+            if (!M.usual) return "";
+            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li><b>${Wk.inForms} of ${plural(Wk.bms.length, "BM")}</b> within your usual</li><li>First BM inside your usual window on <b>${Wk.inWin} of ${plural(Wk.mornings.length, "morning")}</b></li><li>Symptoms on <b>${Wk.symDays.length} of ${plural(Wk.loggedDays, "day")}</b> logged</li></ul></div>`;
+          })()}
+          ${b ? `<div class="ap-legend"><span><i class="sw sw--band"></i>Your first three weeks</span><span><i class="sw ap-ckt-sw--past"></i>Each week</span><span><i class="sw ap-ckt-sw--now"></i>This week</span></div>` : ""}
           <ul class="ap-ckr-list">${rows}</ul>
-          ${b ? `<div class="ap-legend"><span><i class="sw sw--band"></i>Your first three weeks</span><span><i class="sw ap-ckt-sw--past"></i>Each week</span><span><i class="sw ap-ckt-sw--now"></i>This week</span><span><i class="ap-chip ap-chip--usual ap-ckt-chip"></i>About the same</span><span><i class="ap-chip ap-chip--shift ap-ckt-chip"></i>Moved, either way</span></div>` : ""}
           ${st.tags.length || st.note ? `<p class="ap-ckr-note">${ic("note")}<span>${esc([st.tags.join(", "), st.note].filter(Boolean).join(". "))}</span></p>` : ""}
-          <div class="ap-ck-fin"><button type="button" class="ap-btn ap-btn--block" data-act="close">Done</button><button type="button" class="ap-link" data-act="tab" data-tab="insights" data-close="1">See the trend on Insights ${ic("chev")}</button></div>
+          <p class="ap-info">${ic("info")}<span>New for you, or getting stronger? Talk to a clinician. Blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain or waking at night to go: start with primary care soon.</span></p>
+          <div class="ap-ck-fin"><button type="button" class="ap-btn ap-btn--block" data-act="close">Done</button>${st.preview ? "" : `<button type="button" class="ap-link" data-act="ck-edit">Change an answer</button>`}<button type="button" class="ap-link" data-act="tab" data-tab="insights" data-close="1">See the trend on Insights ${ic("chev")}</button></div>
+          ${fine(DISC)}
         </div>`;
     }
     return `<div class="ap-ck" role="dialog" aria-modal="true" aria-labelledby="${id}-h">${head}<div class="ap-ck-b">${body}</div></div>`;
@@ -545,8 +636,8 @@
   RU.ckDay = (M, st) => `<div class="ap-psh" role="dialog" aria-modal="true" aria-label="When your check-in is due">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
       <div class="ap-psh-h"><h2>When should it be due?</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
-      <div class="ap-f"><span class="ap-f-l">Day</span>${choice("ckd-dow", Ut.DOW.map((d, i) => [i, d]), (v, i) => st.dow === i, { label: "Day", noCheck: true })}</div>
-      <div class="ap-f"><span class="ap-f-l">Time</span>${choice("ckd-when", [["morning", "Morning"], ["evening", "Evening"]], (v) => st.when === v, { label: "Time" })}</div>
+      <div class="ap-f"><span class="ap-f-l">Day</span>${choice("ckd-dow", Ut.DOW.map((d, i) => [i, d]), (v, i) => st.dow === i, { label: "Day", noCheck: true, single: true })}</div>
+      <div class="ap-f"><span class="ap-f-l">Time</span>${choice("ckd-when", [["morning", "Morning"], ["evening", "Evening"]], (v) => st.when === v, { label: "Time", single: true })}</div>
       <p class="ap-fine">One reminder when it's due. Skipping is fine; it never blocks logging or Insights.</p>
       <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="ckd-save">Save</button></div>
     </div>`;
@@ -563,15 +654,23 @@
       if (x.logged && !es.length && F !== "all") return "";
       return `<section class="ap-hd" data-a>
           <div class="ap-card-h ap-card-h--pad"><h2>${esc(dayName(x.d))}</h2><span class="ap-k">${x.logged ? plural(es.length, "entry", "entries") : "Nothing logged"}</span></div>
-          ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.row(e, mode)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<p class="ap-hd-none">No logs this day. It stays a gap, never a zero.</p>`}
+          ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.row(e, mode)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">No logs this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
         </section>`;
     }).join("");
     return `<div class="ap-scr ap-hist">
       <header class="ap-hist-top" data-a><h1 class="ap-h1">History</h1><p class="ap-hi-sub">${plural(total, "entry", "entries")} since ${esc(shortDate(M.start))}</p></header>
+      <button type="button" class="ap-hist-rep" data-a data-act="toast" data-msg="A report of your logs to bring to a clinician: dates, BMs, symptoms, meals and check-ins. That comes in the second pass.">${ic("report")}<span><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button>
       <div class="ap-hist-f" role="group" aria-label="Show" data-a>${[["all", "All"], ["bm", "BMs"], ["sym", "Symptoms"], ["meal", "Meals"], ["note", "Notes"]].map(([k, l]) => `<button type="button" class="ap-hi-filter" data-act="hfilter" data-v="${k}" aria-pressed="${F === k}">${l}</button>`).join("")}</div>
       ${groups}
       ${(st.n || 14) < M.days.length ? `<button type="button" class="ap-btn ap-btn--line ap-hi-more" data-act="hmore" data-a>Show earlier days</button>` : ""}
-      ${fine(DISC)}
+      ${(() => {
+        /* one next step: the latest gap this past week, or nothing to catch up on */
+        const g = M.days.slice().reverse().find((x) => !x.logged && x.d >= L.TODAY - 7);
+        const line = g ? `${dayName(g.d)} has no logs. If you remember it, add it now.` : "Nothing to catch up on this past week. Keep logging as you go.";
+        const act = g ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${g.d}">Add to ${esc(Ut.DOWL[dateOf(g.d).getDay()])}</button>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus">Log something</button>`;
+        return `<section class="ap-card ap-nx" data-a><span class="ap-k">Next step</span><p>${esc(line)}</p>${act}</section>`;
+      })()}
+      ${fine(`${DISC} If a symptom is new for you or keeps showing up, talk to a clinician.`)}
     </div>`;
   };
 

@@ -37,57 +37,117 @@
   };
   const between = (r, a, b) => +(a + r() * (b - a)).toFixed(3);
 
-  /* ---------- the stool form, two ways ----------
-     A: the 1 to 7 scale clinicians use. The short labels and lines are our own words, and the icons are our own
-        abstract marks: the scale's wording and imagery need the licence confirmed before anything ships.
-     B: today's five words as chips. No licensing question, but they group the seven types unevenly. */
+  /* ---------- consistency, two ways ----------
+     A: the seven-step scale's numbers (Type 1 to 7). Shipping A means licensing the scale from the Rome Foundation
+        and using its own wording, word for word. Until then the words and lines here are ours, written from two
+        cues only (how firm, and one piece or several), so they don't paraphrase the scale's descriptors, and the
+        marks are our own. Nothing names the scale.
+     B: our own words, no numbers. See L.WORDS. */
   L.TYPES = [
     null,
-    { k: 1, short: "Hard pieces", line: "Small, hard, separate pieces" },
-    { k: 2, short: "Lumpy", line: "In one piece, firm and lumpy" },
-    { k: 3, short: "Cracked", line: "In one piece, with a cracked surface" },
-    { k: 4, short: "Smooth", line: "In one piece, smooth and soft" },
-    { k: 5, short: "Soft pieces", line: "Soft pieces with clear edges" },
-    { k: 6, short: "Mushy", line: "Mushy, with ragged edges" },
-    { k: 7, short: "Liquid", line: "All liquid, no solid pieces" }
+    { k: 1, short: "Pellets", line: "Very hard and dry" },
+    { k: 2, short: "Hard", line: "One piece, hard and uneven" },
+    { k: 3, short: "Firm", line: "One piece, firm" },
+    { k: 4, short: "Formed", line: "One piece, soft, holds its shape" },
+    { k: 5, short: "Soft", line: "Soft, breaks apart easily" },
+    { k: 6, short: "Loose", line: "Very soft, barely holds a shape" },
+    { k: 7, short: "Watery", line: "No shape at all" }
   ];
+  /* B: today's five words, as briefed. Each word sits on the step C gives the same word, so a word never names two
+     different steps: Hard covers steps 1 and 2, Loose covers 5 and 6. A B log keeps its word and the app never claims
+     to know which step. That is B's cost: it can't split 5 from 6, the line that matters most for IBS-D */
   L.WORDS = [
-    { k: 0, word: "Hard", line: "Hard, separate pieces", types: [1], rep: 1, glyph: 1 },
-    { k: 1, word: "Firm", line: "In one piece, firm or lumpy", types: [2], rep: 2, glyph: 2 },
-    { k: 2, word: "Formed", line: "In one piece and soft", types: [3, 4], rep: 4, glyph: 4 },
-    { k: 3, word: "Loose", line: "Soft or mushy pieces", types: [5, 6], rep: 5, glyph: 5 },
-    { k: 4, word: "Watery", line: "Mostly or all liquid", types: [7], rep: 7, glyph: 7 }
+    { k: 0, word: "Hard", line: "Hard, in bits or in one piece", types: [1, 2], glyph: 2 },
+    { k: 1, word: "Firm", line: "One piece, firm", types: [3], glyph: 3 },
+    { k: 2, word: "Formed", line: "One piece, soft, holds its shape", types: [4], glyph: 4 },
+    { k: 3, word: "Loose", line: "Soft, or barely holds a shape", types: [5, 6], glyph: 6 },
+    { k: 4, word: "Watery", line: "No shape at all", types: [7], glyph: 7 }
   ];
   L.wordOf = (type) => L.WORDS.find((w) => w.types.includes(type)).k;
-  /* how a BM's form reads in each option */
-  L.formName = (form, mode) => (mode === "B" ? L.WORDS[L.wordOf(form)].word : `Type ${form}`);
-  L.formLine = (form, mode) => (mode === "B" ? L.WORDS[L.wordOf(form)].line : L.TYPES[form].line);
+  /* C, proposed: the seven steps in our own words (L.TYPES short words), no numbers and no scale name in the app.
+     The step is stored, so a clinician export can carry the number once it's licensed */
+  L.MODES = { A: "A · Types 1 to 7", B: "B · Five words", C: "C · Seven words" };
+  L.MODES_SHORT = { A: "A · 1 to 7", B: "B · 5 words", C: "C · 7 words" };
+
+  /* how a BM's consistency reads in each option. x is a step (1 to 7), or an entry: { form } or, logged in B, { word } */
+  L.stepsOf = (x) => (typeof x === "number" ? [x] : x.form != null ? [x.form] : L.WORDS[x.word].types);
+  L.wordKey = (x) => (typeof x === "number" ? L.wordOf(x) : x.form != null ? L.wordOf(x.form) : x.word);
+  /* a B log always reads as its own word; seen through A or C it adds the step or steps the word covers */
+  const wordLog = (x) => typeof x === "object" && x !== null && x.form == null && x.word != null;
+  L.formName = (x, mode) => {
+    const s = L.stepsOf(x);
+    if (mode === "B") return L.WORDS[L.wordKey(x)].word;
+    if (wordLog(x)) {
+      const w = L.WORDS[x.word].word;
+      if (mode === "A") return `${w} (Type ${s.join(" or ")})`;
+      const cw = s.map((k, i) => (i ? L.TYPES[k].short.toLowerCase() : L.TYPES[k].short));
+      return cw.length === 1 && cw[0] === w ? w : `${w} (${cw.join(" or ")})`;
+    }
+    return mode === "A" ? `Type ${s[0]}` : L.TYPES[s[0]].short;
+  };
+  L.formLine = (x, mode) => (mode === "B" || wordLog(x) ? L.WORDS[L.wordKey(x)].line : L.TYPES[L.stepsOf(x)[0]].line);
+  L.glyphOf = (x, mode) => (mode === "B" || wordLog(x) ? L.WORDS[L.wordKey(x)].glyph : L.stepsOf(x)[0]);
 
   /* ---------- the lists the forms use ----------
      Symptoms are body symptoms only. The stool words that sat in the old pills moved to the BM: the form covers
-     loose or watery and hard or pellet-like, urgency is a BM detail, and blood or mucus became the BM flag. */
-  L.SYMPTOMS = ["Bloating", "Belly pain", "Cramping", "Gas", "Nausea", "Burning"];
+     loose or watery and hard or pellet-like, urgency and burning are BM details, and blood or mucus became the BM flag.
+     Gas and Nausea are new; Low energy comes back from the studio's check-in. */
+  L.SYMPTOMS = ["Bloating", "Belly pain", "Cramping", "Gas", "Nausea", "Low energy"];
   L.STRENGTH = ["Mild", "Moderate", "Strong"]; /* s = 1, 2, 3; 0 = not said */
-  L.LASTED = ["Under an hour", "A few hours", "Most of the day"];
+  L.LASTED = ["Under an hour", "A few hours", "Most of the day", "Still going"];
   L.DURATION = ["Under 5 min", "5 to 10 min", "Over 10 min"];
-  L.HOW = [["rush", "Had to rush"], ["strain", "Had to strain"], ["unfinished", "Didn't feel finished"]];
+  L.HOW = [["rush", "Sudden urge to go"], ["strain", "Had to strain"], ["unfinished", "Didn't feel finished"], ["burn", "Burning"]];
   L.FLAGS = [["blood", "Blood"], ["mucus", "Mucus"], ["black", "Black or tar-like"]];
   L.MEALS = [["breakfast", "Breakfast"], ["lunch", "Lunch"], ["dinner", "Dinner"], ["other", "Other"]];
-  L.mealLabel = (k) => (L.MEALS.find((m) => m[0] === k) || ["", "Meal"])[1];
+  L.ALARM = [
+    [/\b(bloody|bleed\w*)\b|\bblood\b(?! (orange|sugar|pressure|test|work|type|donation))/i, "Blood"], [/\b(black|tarry|tar-like) (stool|bm|poo)\w*|\btar-like\b|\btarry\b/i, "A black or tar-like stool"],
+    [/\bfever\w*\b/i, "A fever"], [/\b(vomit\w*|threw up|throwing up)\b/i, "Vomiting"], [/\b(weight loss|lost weight|losing weight)\b/i, "Weight loss"],
+    [/\bw(o|a)k\w* (up )?(at night|in the night) to go\b|\bw(o|a)k\w* (up )?at night\b/i, "Waking at night to go"]
+  ];
+  L.alarmIn = (text) => { const hit = L.ALARM.find(([rx]) => rx.test(text || "")); return hit ? hit[1] : null; };
+  /* "No BM today" is an end-of-day fact: offered from 5 PM on the day itself, any time for an earlier day */
+  L.LATE = 17;
+  L.isLate = () => L.NOW >= L.LATE;
   L.mealFor = (h) => (h >= 4.5 && h < 10.75 ? "breakfast" : h >= 10.75 && h < 15 ? "lunch" : h >= 17 && h < 22.5 ? "dinner" : "other");
 
-  /* foods, with the plain names Florin would match on (a food needs 5 or more logs before patterns are checked) */
-  const FOODS = {
-    breakfast: [["Oatmeal with berries", ["oatmeal"]], ["Eggs and toast", ["eggs", "toast"]], ["Greek yogurt and granola", ["yogurt"]], ["A smoothie", ["smoothie"]], ["Avocado toast", ["avocado", "toast"]]],
-    lunch: [["Chicken salad", ["salad"]], ["Turkey sandwich", ["sandwich"]], ["Salmon rice bowl", ["salmon", "rice"]], ["Lentil soup", ["lentils"]], ["Leftover pasta", ["pasta"]], ["Burrito bowl", ["beans", "rice"]]],
-    dinner: [["Salmon, rice and greens", ["salmon", "rice"]], ["Pasta with tomato sauce", ["pasta"]], ["Tofu stir-fry", ["tofu"]], ["Tacos", ["tacos"]], ["Pizza", ["pizza"]], ["Chicken curry with rice", ["curry", "rice"]], ["Roast chicken and potatoes", ["potatoes"]]],
-    other: [["Apple and peanut butter", ["apple"]], ["A protein bar", ["protein bar"]], ["Ice cream", ["ice cream"]]]
+  /* ---------- foods ----------
+     One matcher for everything: the seeded meals, a meal the person types, and the counts Today and Insights read.
+     Each key has a name to show, whether it reads as plural, and the words that count as it (a plural s or es is
+     fine). A food needs 5 logs in 30 days before Insights looks at what tends to follow it. */
+  const FOOD = {
+    oatmeal: ["Oatmeal", false, ["oatmeal", "oats", "porridge"]], eggs: ["Eggs", true, ["egg"]], toast: ["Toast", false, ["toast"]],
+    yogurt: ["Yogurt", false, ["yogurt", "yoghurt"]], smoothie: ["Smoothies", true, ["smoothie"]], avocado: ["Avocado", false, ["avocado"]],
+    salad: ["Salad", false, ["salad"]], sandwich: ["Sandwiches", true, ["sandwich"]], chicken: ["Chicken", false, ["chicken"]],
+    salmon: ["Salmon", false, ["salmon"]], rice: ["Rice", false, ["rice"]], lentils: ["Lentils", true, ["lentil"]],
+    beans: ["Beans", true, ["bean"]], pasta: ["Pasta", false, ["pasta", "spaghetti", "noodle"]], tofu: ["Tofu", false, ["tofu"]],
+    tacos: ["Tacos", true, ["taco"]], pizza: ["Pizza", false, ["pizza"]], curry: ["Curry", false, ["curry", "curries"]],
+    potatoes: ["Potatoes", true, ["potato", "fries"]], apple: ["Apples", true, ["apple"]], "protein bar": ["Protein bars", true, ["protein bar"]],
+    "ice cream": ["Ice cream", false, ["ice cream"]],
+    coffee: ["Coffee", false, ["coffee(?![ -]cakes?)", "(?<!\\b(?:chai|matcha|turmeric|golden) )latte", "espresso", "cappuccino", "americano", "flat white", "cold brew", "mocha"]],
+    tea: ["Tea", false, ["tea", "chai", "matcha"]], alcohol: ["Alcohol", false, ["wine(?! gums?)", "(?<!\\b(?:ginger|root) )beer", "cocktail", "cider(?! vinegar)", "prosecco"]],
+    milk: ["Milk", false, ["milk"]]
   };
-  /* the foods a "next step" may name, with how to say them */
-  L.FOOD_NAMES = {
-    coffee: ["Coffee", false], curry: ["Curry", false], tacos: ["Tacos", true], pizza: ["Pizza", false], "ice cream": ["Ice cream", false],
-    lentils: ["Lentils", true], pasta: ["Pasta", false], beans: ["Beans", true], salmon: ["Salmon", false], oatmeal: ["Oatmeal", false],
-    yogurt: ["Yogurt", false], tofu: ["Tofu", false], smoothie: ["Smoothies", true], eggs: ["Eggs", true], salad: ["Salad", false]
+  const FOOD_RX = Object.entries(FOOD).map(([k, [, , al]]) => [k, new RegExp(`\\b(${al.join("|")})(e?s)?\\b`, "i")]);
+  L.matchFoods = (text) => FOOD_RX.filter(([, rx]) => rx.test(text || "")).map(([k]) => k);
+  /* the foods a "next step" or a count may name, with how to say them */
+  L.FOOD_NAMES = Object.fromEntries(Object.entries(FOOD).map(([k, [n, pl]]) => [k, [n, pl]]));
+
+  /* the words around each meal. Other stays "Other" on its chip, as Will wrote it, and reads as a snack or drink */
+  L.MEAL_COPY = {
+    breakfast: { title: "Breakfast", recent: "breakfasts", save: "Save breakfast", ph: "For example: oatmeal with berries, coffee" },
+    lunch: { title: "Lunch", recent: "lunches", save: "Save lunch", ph: "For example: chicken salad" },
+    dinner: { title: "Dinner", recent: "dinners", save: "Save dinner", ph: "For example: salmon, rice and greens" },
+    other: { title: "Snack or drink", recent: "snacks and drinks", save: "Save snack or drink", ph: "For example: a latte, an apple, a glass of wine" }
+  };
+  L.mealLabel = (k) => (L.MEAL_COPY[k] || { title: "Meal" }).title;
+  L.MEAL_DEFAULT_T = { breakfast: 8, lunch: 12.5, dinner: 18.5, other: 15.5 };
+
+  /* what the seeded days eat */
+  const SEED_MEALS = {
+    breakfast: ["Oatmeal with berries", "Eggs and toast", "Greek yogurt and granola", "A smoothie", "Avocado toast"],
+    lunch: ["Chicken salad", "Turkey sandwich", "Salmon rice bowl", "Lentil soup", "Leftover pasta", "Burrito bowl, beans and rice"],
+    dinner: ["Salmon, rice and greens", "Pasta with tomato sauce", "Tofu stir-fry with rice", "Tacos", "Pizza", "Chicken curry with rice", "Roast chicken and potatoes"],
+    other: ["Apple and peanut butter", "A protein bar", "Ice cream", "Afternoon latte", "Green tea"]
   };
 
   /* ---------- this week, written out ----------
@@ -98,8 +158,8 @@
   const CRAFT_SYM = { 86: { t: 10.33, items: [{ name: "Bloating", s: 1 }], last: 1, note: "" } };
   const TODAY_ENTRIES = (mode) => (mode === "new" ? [] : [
     { kind: "bm", t: null /* the seeded first visit */, form: 4, how: {}, dur: null, flags: {}, note: "" },
-    { kind: "meal", t: 8.08, meal: "breakfast", text: "Oatmeal with berries, coffee", foods: ["oatmeal", "coffee"], note: "" },
-    { kind: "meal", t: 12.67, meal: "lunch", text: "Chicken salad", foods: ["salad"], note: "" },
+    { kind: "meal", t: 8.08, meal: "breakfast", text: "Oatmeal with berries, coffee", note: "" },
+    { kind: "meal", t: 12.67, meal: "lunch", text: "Chicken salad", note: "" },
     { kind: "sym", t: 15.17, items: [{ name: "Bloating", s: 1 }], last: 1, note: "" }
   ]);
 
@@ -115,7 +175,7 @@
     const gap = d !== TODAY && (CRAFT_GAP[d] || (d < 84 && r() < 0.07));
     if (gap) { day.logged = false; return day; }
     if (d === TODAY) {
-      TODAY_ENTRIES(mode).forEach((e) => day.entries.push(Object.assign({ id: nid(e.kind), d }, e, { t: e.t == null ? x.visits[0].t : e.t })));
+      TODAY_ENTRIES(mode).forEach((e) => day.entries.push(Object.assign({ id: nid(e.kind), d }, e, { t: e.t == null ? x.visits[0].t : e.t }, e.kind === "meal" ? { foods: L.matchFoods(e.text) } : {})));
       return day;
     }
 
@@ -140,7 +200,7 @@
       if (form >= 6 && r() < 0.3) bm.how.unfinished = true;
       if (urg > 0 || r() < 0.22) bm.dur = v.dur < 5 ? 0 : v.dur < 10 ? 1 : 2;
       if (i === 0) {
-        if (urg > 0) bm.note = "Had to hurry this morning.";
+        if (urg > 0) bm.note = "Sudden urge this morning.";
         else if (afterLate && r() < 0.3) bm.note = "Late dinner last night.";
         else if (menses && r() < 0.5) bm.note = `Cycle day ${x.cycleDay}.`;
       }
@@ -148,7 +208,9 @@
     });
     if (!x.visits.length) day.entries.push({ id: nid("nobm"), d, kind: "nobm", t: between(r, 20.75, 21.75) });
 
-    /* symptoms: from the seeded check-ins. Low energy and urgency don't log here any more */
+    /* symptoms: from the seeded check-ins. Urgency is a BM detail now; low energy logs in the morning (its own
+       generator, so the meals after it don't shift) */
+    if (felt.energy) { const r2 = mulberry(P.seed * 977 + d); day.entries.push({ id: nid("sym"), d, kind: "sym", t: between(r2, 8.6, 10.4), items: [{ name: "Low energy", s: 1 }], last: r2() < 0.55 ? 2 : 1, note: "" }); }
     if (CRAFT_SYM[d]) day.entries.push(Object.assign({ id: nid("sym"), d, kind: "sym" }, JSON.parse(JSON.stringify(CRAFT_SYM[d]))));
     else {
       if (felt.cramping) day.entries.push({ id: nid("sym"), d, kind: "sym", t: between(r, 9.6, 11.4), items: [{ name: "Cramping", s: felt.cramping }], last: r() < 0.6 ? 0 : 1, note: "" });
@@ -162,15 +224,15 @@
 
     /* meals: dinner after 8 PM on the seeded late-dinner days */
     const meal = (k, t) => {
-      const [text, foods] = pick(r, FOODS[k]);
-      const m = { id: nid("meal"), d, kind: "meal", t, meal: k, text, foods: foods.slice(), note: "" };
-      if (k === "breakfast" && r() < 0.55) { m.text += ", coffee"; m.foods.push("coffee"); }
-      day.entries.push(m);
+      let text = pick(r, SEED_MEALS[k]);
+      if (k === "breakfast" && r() < 0.55) text += ", coffee";
+      if (k === "dinner" && date.getDay() === 5 && r() < 0.6) text += ", a glass of wine";
+      day.entries.push({ id: nid("meal"), d, kind: "meal", t, meal: k, text, foods: L.matchFoods(text), note: "" });
     };
     if (r() < 0.72) meal("breakfast", Math.max(between(r, 7.55, 8.7), x.first != null ? Math.min(9.6, x.first + 0.25) : 0));
     if (r() < 0.62) meal("lunch", between(r, 12.1, 13.6));
     if (x.lateDinner || r() < 0.8) meal("dinner", x.lateDinner ? between(r, 20.15, 21.4) : between(r, 18.3, 19.85));
-    if (r() < 0.12) meal("other", between(r, 15.2, 16.4));
+    if (r() < 0.2) meal("other", between(r, 15.2, 16.4));
 
     day.entries.sort((a, b) => a.t - b.t);
     return day;
@@ -190,10 +252,10 @@
 
   /* the weekly check-in, answered from the seeded days (0 is the lightest answer, 3 the heaviest) */
   L.CHECKIN = [
-    { k: "pain", label: "Belly pain", q: "How much belly pain did you have this week?", opts: ["None", "A little", "Some", "A lot"], ends: ["None", "A lot"], less: "Less than at first", more: "More than at first" },
-    { k: "way", label: "Days it got in the way", q: "On how many days did your gut get in the way of your plans?", opts: ["None", "1 or 2 days", "3 or 4 days", "5 or more days"], ends: ["None", "5+ days"], less: "Fewer days than at first", more: "More days than at first" },
-    { k: "bloat", label: "Bloating", q: "How much bloating did you have this week?", opts: ["None", "A little", "Some", "A lot"], ends: ["None", "A lot"], less: "Less than at first", more: "More than at first" },
-    { k: "settled", label: "Bowel habits", q: "How settled did your bowel habits feel this week?", opts: ["Settled", "Mostly settled", "Up and down", "Unsettled"], ends: ["Settled", "Unsettled"], less: "More settled than at first", more: "Less settled than at first" }
+    { k: "pain", label: "Belly pain", q: "How much belly pain did you have this week?", opts: ["None", "A little", "Some", "A lot"], ticks: ["None", "A little", "Some", "A lot"], less: "Less than at first", more: "More than at first" },
+    { k: "way", label: "Days it got in the way", q: "On how many days did your gut get in the way of your plans?", opts: ["None", "1 or 2 days", "3 or 4 days", "5 or more days"], ticks: ["None", "1 or 2", "3 or 4", "5+"], less: "Fewer days than at first", more: "More days than at first" },
+    { k: "bloat", label: "Bloating", q: "How much bloating did you have this week?", opts: ["None", "A little", "Some", "A lot"], ticks: ["None", "A little", "Some", "A lot"], less: "Less than at first", more: "More than at first" },
+    { k: "settled", label: "Bowel habits", q: "How settled did your bowel habits feel this week?", opts: ["Settled", "Mostly settled", "Up and down", "Unsettled"], ticks: ["Settled", "Mostly", "Up and down", "Unsettled"], less: "More settled than at first", more: "Less settled than at first" }
   ];
   L.CHECKIN_TAGS = ["Travel", "Stress", "Short nights", "Eating out", "Feeling unwell"];
   function weekAnswers(A, ws) {
@@ -228,7 +290,11 @@
       const c5 = [0, 0, 0, 0, 0];
       base.forEach((b) => c5[L.wordOf(b.form)]++);
       const a = usualRun(c7, base.length), b = usualRun(c5, base.length);
-      M.usual = { tLo: U.tLo, tHi: U.tHi, nLo: U.nLo, nHi: U.nHi, fLo: a.lo + 1, fHi: a.hi + 1, wLo: b.lo, wHi: b.hi };
+      /* the usual window for the first BM, from the logged first BMs of the same weeks (10th to 75th percentile, to
+         the quarter hour, the studio's rule), so a day the person didn't log never shapes it */
+      const firsts = days.filter((x) => x.d >= 28 && x.d <= 83 && x.logged).map((x) => x.entries.find((e) => e.kind === "bm")).filter(Boolean).map((e) => e.t);
+      const tLo = Math.floor(Ut.pct(firsts, 0.1) / 0.25) * 0.25, tHi = Math.ceil(Ut.pct(firsts, 0.75) / 0.25) * 0.25;
+      M.usual = { tLo, tHi, nLo: U.nLo, nHi: U.nHi, fLo: a.lo + 1, fHi: a.hi + 1, wLo: b.lo, wHi: b.hi };
       /* twelve answered Sundays (one skipped), tonight's still to come */
       M.checkins = [];
       for (let w = 0; w < 12; w++) {
@@ -236,8 +302,9 @@
         M.checkins.push(w === 6 ? { w, ws, skipped: true } : { w, ws, answers: weekAnswers(A, ws), tags: [], note: "" });
       }
     }
-    M.checkin = { w: 12, ws: 84, status: "due", answers: null, tags: [], note: "" };
     M.ckDay = { dow: 0, when: "evening" };
+    /* this week's check-in keeps its own slot; changing ckDay moves next week's */
+    M.checkin = { w: 12, ws: 84, status: "due", answers: null, tags: [], note: "", when: M.ckDay.when };
     return M;
   };
 
@@ -249,14 +316,18 @@
   };
   L.bms = (x) => (x && x.logged ? x.entries.filter((e) => e.kind === "bm") : []);
   L.inWindow = (M, t) => !!M.usual && t >= M.usual.tLo && t <= M.usual.tHi;
-  L.inForms = (M, form, mode) => {
+  /* within the person's usual: a word against the usual words (B); a step against the usual steps (A and C). A B word
+     whose steps sit on both sides of the usual can't be told apart: null, never a shift */
+  L.inForms = (M, x, mode) => {
     if (!M.usual) return null;
-    if (mode === "B") { const w = L.wordOf(form); return w >= M.usual.wLo && w <= M.usual.wHi; }
-    return form >= M.usual.fLo && form <= M.usual.fHi;
+    if (mode === "B") { const w = L.wordKey(x); return w >= M.usual.wLo && w <= M.usual.wHi; }
+    const s = L.stepsOf(x), n = s.filter((k) => k >= M.usual.fLo && k <= M.usual.fHi).length;
+    return n === s.length ? true : n === 0 ? false : null;
   };
   L.usualFormsText = (M, mode) => {
     const u = M.usual;
     if (mode === "B") return u.wLo === u.wHi ? L.WORDS[u.wLo].word : `${L.WORDS[u.wLo].word} ${u.wHi - u.wLo === 1 ? "or" : "to"} ${L.WORDS[u.wHi].word}`;
+    if (mode === "C") return u.fLo === u.fHi ? L.TYPES[u.fLo].short : `${L.TYPES[u.fLo].short} to ${L.TYPES[u.fHi].short}`;
     return u.fLo === u.fHi ? `Type ${u.fLo}` : `Types ${u.fLo} to ${u.fHi}`;
   };
   /* the Monday to Sunday week holding day d */
@@ -265,6 +336,13 @@
     return Array.from({ length: 7 }, (_, i) => ws + i);
   };
   L.learnDay = (M) => TODAY - M.start + 1;
+
+  /* when this person usually logs a meal: the middle of their last 30 days, or a plain default */
+  L.mealUsualTime = (M, k) => {
+    const ts = [];
+    M.days.filter((x) => x.d > TODAY - 30).forEach((x) => x.entries.filter((e) => e.kind === "meal" && e.meal === k && !(x.d === TODAY && e.t > L.NOW)).forEach((e) => ts.push(e.t)));
+    return ts.length >= 3 ? Math.round(Ut.median(ts) * 12) / 12 : L.MEAL_DEFAULT_T[k];
+  };
 
   /* how many times each food came up in the last n days */
   L.foodCounts = (M, n = 30) => {
@@ -283,10 +361,10 @@
       return { mean: Ut.mean(v), lo: Math.min(...v), hi: Math.max(...v) };
     });
   };
+  /* one rule for the chip and the band it sits next to: inside the first weeks' range is about the same */
   L.compare = (b, i, v) => {
     if (!b) return null;
-    const diff = v - b[i].mean;
-    return Math.abs(diff) < 0.5 ? { k: "same", text: "About the same" } : diff < 0 ? { k: "less", text: L.CHECKIN[i].less } : { k: "more", text: L.CHECKIN[i].more };
+    return v < b[i].lo ? { k: "less", text: L.CHECKIN[i].less } : v > b[i].hi ? { k: "more", text: L.CHECKIN[i].more } : { k: "same", text: "About the same" };
   };
 
   /* ---------- changing the model ---------- */
@@ -309,7 +387,12 @@
   L.remove = (M, id) => {
     for (const x of M.days) {
       const i = x.entries.findIndex((y) => y.id === id);
-      if (i >= 0) { const [e] = x.entries.splice(i, 1); return { e, x }; }
+      if (i >= 0) {
+        const [e] = x.entries.splice(i, 1);
+        /* a past day with nothing left goes back to being a gap; today just isn't over */
+        if (!x.entries.length && x.d !== TODAY) x.logged = false;
+        return { e, x };
+      }
     }
     return null;
   };

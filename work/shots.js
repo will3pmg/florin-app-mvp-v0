@@ -10,12 +10,13 @@ const ONLY = process.argv[3] ? process.argv[3].split(",") : null;
 const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 fs.mkdirSync(OUT, { recursive: true });
 
-const SCREENS = ["today", "ck-card", "plus", "bm", "bm-details", "guide", "flag", "sym", "meal", "ck", "ck-last", "ckdone", "ckday", "history"];
+const SCREENS = ["today", "ck-card", "plus", "earlier", "bm", "bm-details", "guide", "flag", "sym", "meal", "ck", "ck-last", "ckdone", "ckday", "history"];
 const STATES = [
+  { id: "C-light-est", form: "C", theme: "light", data: "est" },
   { id: "A-light-est", form: "A", theme: "light", data: "est" },
   { id: "B-light-est", form: "B", theme: "light", data: "est" },
-  { id: "A-dark-est", form: "A", theme: "dark", data: "est" },
-  { id: "A-light-new", form: "A", theme: "light", data: "new" }
+  { id: "C-dark-est", form: "C", theme: "dark", data: "est" },
+  { id: "C-light-new", form: "C", theme: "light", data: "new" }
 ];
 
 (async () => {
@@ -30,7 +31,7 @@ const STATES = [
   await page.evaluate(() => document.fonts && document.fonts.ready);
   const report = [];
   for (const s of STATES) {
-    await page.click(`[data-rx="form"][data-v="${s.form}"]`).catch(() => {});
+    await page.click(`.rx-head [data-rx="form"][data-v="${s.form}"]`).catch(() => {});
     await page.click(`.rx-side [data-rx="theme"][data-v="${s.theme}"]`);
     await page.click(`.rx-side [data-rx="data"][data-v="${s.data}"]`);
     for (const id of SCREENS) {

@@ -1,5 +1,6 @@
 /* The studio's 22 claims rules, copied from js/data-brand.js (claimsRules) so the prototype can run the same live check.
-   Keep in sync with the studio: the studio is the source of truth. */
+   Keep in sync with the studio: the studio is the source of truth. One change waits on the studio: the "term" rule's
+   fix now says BM in the app, not visits (workshop, Oct 14). */
 window.FLORIN = Object.assign(window.FLORIN || {}, {
   claimsRules: [
     {
@@ -119,7 +120,7 @@ window.FLORIN = Object.assign(window.FLORIN || {}, {
       "sev": "low",
       "re": "\\bdigestive health\\b|\\bgut health management\\b|\\btoilet monitoring\\b|\\bbowel movements?\\b",
       "why": "Off-brand or clinical term from the SNIFR era.",
-      "fix": "gut health optimization, or 'visits' in the app"
+      "fix": "gut health optimization, or 'BM' in the app (keep 'visit' for what Florin One detects)"
     },
     {
       "id": "modifier",

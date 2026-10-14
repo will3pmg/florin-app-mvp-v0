@@ -46,7 +46,12 @@ const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
               const r = b.getBoundingClientRect();
               if (!r.width || !r.height || b.closest("[hidden]")) return;
               if (b.matches(".ap-o-scrim")) return;
-              if (r.height < 44 && r.width < 44 || Math.min(r.height, r.width) < 32) out.small.push(`${(b.className || b.tagName).toString().split(" ")[0]} "${(b.textContent || b.getAttribute("aria-label") || "").trim().slice(0, 24)}" ${Math.round(r.width)}x${Math.round(r.height)}`);
+              /* a ::after hit area (position absolute, negative insets) counts toward the target */
+              const a = getComputedStyle(b, "::after");
+              let w = r.width, h = r.height;
+              if (a.content !== "none" && a.position === "absolute") { const px = (v) => Math.max(0, -(parseFloat(v) || 0)); w += px(a.left) + px(a.right); h += px(a.top) + px(a.bottom); }
+              w = Math.round(w); h = Math.round(h);
+              if (h < 44 && w < 44 || Math.min(h, w) < 32) out.small.push(`${(b.className || b.tagName).toString().split(" ")[0]} "${(b.textContent || b.getAttribute("aria-label") || "").trim().slice(0, 24)}" ${Math.round(w)}x${Math.round(h)}`);
             });
           }
           return out;

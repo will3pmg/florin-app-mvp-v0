@@ -101,17 +101,17 @@
 }
 
 /* ---------- the app, inside the phone ---------- */
-.ap-rx { --ap-hl-teal: oklch(from var(--teal) calc(l + .269) calc(c * .91) h); }
 .ap-rx .apx-status { z-index: 45; }
 .ap-rx .apx-island, .ap-rx .apx-homebar { z-index: 46; }
 .ap-rx.has-ovl .apx-status { background: none; }
 .ap-rx :focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
-.ap-rx input, .ap-rx select, .ap-rx textarea { font: inherit; color: inherit; }
+/* zero specificity, so a field keeps its own 16px (under 16px, iOS zooms the page on focus) */
+:where(.ap-rx) :is(input, select, textarea) { font: inherit; color: inherit; }
 .ap-gl { display: block; fill: currentColor; }
 .ap-gl .ap-gl-cut { fill: none; stroke: var(--gl-bg, var(--ap-card)); stroke-width: 1.4; stroke-linecap: round; }
 .ap-gl .ap-gl-st { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
 .ap-btn--block { width: 100%; }
-.ap-btn--c { min-height: 36px; padding: 0 12px; font-size: 13.5px; }
+.ap-btn--c { min-height: 36px; padding: 0 12px; font-size: 14px; }
 .ap-btn[aria-disabled="true"] { background: var(--ap-card2); color: var(--ap-ink3); }
 .ap-btn--line[aria-disabled="true"] { background: transparent; }
 
@@ -145,8 +145,11 @@
 @keyframes apNudge { 30% { transform: translateX(-4px); } 60% { transform: translateX(4px); } }
 
 /* toast, with undo */
-.ap-tst { position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 60; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 8px 8px 16px; border-radius: 16px; background: var(--forest); color: var(--cream); font-size: 13.5px; line-height: 1.35; box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .45); opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .3s var(--ap-ease); pointer-events: none; }
+.ap-tst { position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 60; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 8px 8px 16px; border-radius: 16px; background: var(--forest); color: var(--cream); font-size: 13.5px; line-height: 1.35; box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--forest) 45%, transparent); opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .3s var(--ap-ease); pointer-events: none; }
 .ap-tst.is-on { opacity: 1; transform: none; pointer-events: auto; }
+/* a faded toast is gone for real: no invisible Undo for the keyboard to find */
+.ap-tst { visibility: hidden; transition: opacity .25s, transform .3s var(--ap-ease), visibility 0s .3s; }
+.ap-tst.is-on { visibility: visible; transition-delay: 0s; }
 .ap-tst span { flex: 1; min-width: 0; }
 .ap-tst-b { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; background: color-mix(in srgb, var(--cream) 14%, transparent); color: var(--ray); font-size: 13.5px; font-weight: 500; flex: none; }
 .ap-tst-b .ic { width: 15px; height: 15px; }
@@ -154,7 +157,12 @@
 /* ---------- sheets ---------- */
 .ap-psh { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; scrollbar-width: none; background: var(--ap-bg); border-radius: 32px 32px 0 0; padding: 12px 20px 32px; }
 .ap-psh::-webkit-scrollbar { display: none; }
-.ap-psh .ap-sheet-grab { margin: 0 auto -4px; }
+/* the handle and the header take a drag down to close; the handle gets a finger-sized strip */
+.ap-psh .ap-sheet-grab { margin: -12px auto -16px; height: 5px; padding-block: 12px; background-clip: content-box; box-sizing: content-box; touch-action: none; cursor: grab; }
+.ap-psh-h { touch-action: none; }
+/* every close and back button reaches 44px for a finger without growing on screen */
+.ap-rx .ap-lg-x { position: relative; }
+.ap-rx .ap-lg-x::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .ap-psh-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ap-psh-h h2 { font-size: 22px; font-weight: 400 !important; letter-spacing: -.015em; line-height: 1.15; }
 
@@ -167,35 +175,53 @@
 .ap-pbm-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .ap-pbm-t b { font-size: 20px; font-weight: 500; letter-spacing: -.01em; line-height: 1.1; }
 .ap-pbm-t em { font-style: normal; font-size: 13px; line-height: 1.35; color: color-mix(in srgb, var(--cream) 80%, transparent); }
-.ap-pbm .ap-fm-scale { color: color-mix(in srgb, var(--cream) 65%, transparent); margin-top: -4px; }
+/* the tiles reach to 8px from the card's edge, so seven fit at 44px; corners nest (24 minus 8) */
+.ap-pbm .ap-fm, .ap-pbm .ap-fm-scale { margin-inline: -8px; }
+.ap-pbm .ap-fm-scale { color: color-mix(in srgb, var(--cream) 80%, transparent); margin-top: -4px; }
+.ap-pbm .ap-fm-scale .ap-gd-b { color: var(--cream); }
 .ap-pbm-sub { display: flex; justify-content: center; min-height: 36px; align-items: center; margin-top: -4px; }
+.ap-pbm-sub .ap-k { font-size: 12px; color: var(--ap-ink2); }
+.ap-psh-day { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 13.5px; line-height: 1.4; }
+.ap-psh-day .ic { width: 16px; height: 16px; flex: none; }
+.ap-psh-ago { align-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
+.ap-psh-ago .ic { width: 16px; height: 16px; }
+.ap-ea { list-style: none; margin: 0; padding: 0 16px; }
+.ap-ea li + li { border-top: 1px solid var(--ap-line); }
+.ap-ea-row { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; text-align: left; }
+.ap-ea-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ea-m b { font-size: 15px; font-weight: 500; }
+.ap-ea-m em { font-style: normal; font-size: 12.5px; color: var(--ap-ink2); }
 .ap-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ap-pt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
 .ap-pt .ap-read-ic { margin-bottom: 8px; color: var(--ap-ink); }
 .ap-pt b { font-size: 16px; font-weight: 500; }
-.ap-pt em { font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink3); }
+.ap-pt em { font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink2); }
 .ap-pck { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
 .ap-pck .ap-read-ic { color: var(--ap-ink); }
 .ap-pck-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .ap-pck-m b { font-size: 15px; font-weight: 500; }
-.ap-pck-m em { font-style: normal; font-size: 12.5px; color: var(--ap-ink3); }
-.ap-pck-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ap-live); flex: none; box-shadow: 0 0 0 4px var(--ap-usual-bg); }
+.ap-pck-m em { font-style: normal; font-size: 12.5px; color: var(--ap-ink2); }
+/* due is a reminder: neutral ink, never the Plum (or Ray) that means "your usual" */
+.ap-pck-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ap-ink2); flex: none; box-shadow: 0 0 0 4px var(--ap-card2); }
 .ap-pck.is-due .ap-pck-m em { color: var(--ap-ink2); }
 
 /* the form tiles: A has seven, B has five */
 .ap-fm { display: grid; gap: 4px; }
 .ap-fm--A { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .ap-fm--B { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.ap-fm-b { --gl-bg: var(--ap-card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 64px; padding: 8px 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink2); transition: background .2s, color .2s, box-shadow .2s, transform .15s var(--ap-ease); }
-.ap-fm-b .ap-gl { width: 26px; height: 26px; }
-.ap-fm-b span { font-family: var(--mono); font-size: 13px; line-height: 1; }
-.ap-fm--B .ap-fm-b span { font-family: var(--sans); font-size: 12.5px; font-weight: 500; }
+.ap-fm-b { --gl-bg: var(--ap-card); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-height: 80px; padding: 8px 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink2); transition: background .2s, color .2s, box-shadow .2s, transform .15s var(--ap-ease); }
+.ap-fm-b .ap-gl { width: 28px; height: 28px; flex: none; }
+/* A: the number, then a short word; B: the word. Words wrap to two lines at most */
+.ap-fm-n { font-family: var(--mono); font-size: 10px; line-height: 1; opacity: .8; }
+.ap-fm-w { font-family: var(--sans); font-size: 11.5px; font-weight: 500; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.ap-fm--B .ap-fm-w { font-size: 12.5px; }
 .ap-fm-b:active { transform: scale(.95); }
 .ap-fm-b.is-on { --gl-bg: var(--ap-chart); background: var(--ap-chart); color: var(--ap-card); box-shadow: none; }
 .ap-fm--dark .ap-fm-b { --gl-bg: color-mix(in srgb, var(--cream) 10%, var(--ap-hero)); background: color-mix(in srgb, var(--cream) 10%, transparent); box-shadow: none; color: var(--cream); }
 .ap-fm--dark .ap-fm-b:hover { background: color-mix(in srgb, var(--cream) 16%, transparent); }
-.ap-fm-scale { display: flex; justify-content: space-between; margin-top: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
-.ap-fm-line { min-height: 20px; font-size: 14px; line-height: 1.4; color: var(--ap-ink3); }
+.ap-fm-scale { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.ap-fm-scale .ap-gd-b { font-family: var(--sans); letter-spacing: 0; text-transform: none; }
+.ap-fm-line { min-height: 20px; font-size: 14px; line-height: 1.4; color: var(--ap-ink2); }
 .ap-fm-line.is-set { color: var(--ap-ink2); }
 .ap-fm-line b { font-weight: 500; color: var(--ap-ink); }
 
@@ -204,21 +230,21 @@
 .ap-fsh-h { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; padding: 16px 16px 8px; }
 .ap-fsh-t { text-align: center; min-width: 0; }
 .ap-fsh-t h2 { font-size: 17px; font-weight: 500 !important; letter-spacing: -.01em; line-height: 1.2; }
-.ap-fsh-t p { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ap-ink3); margin-top: 4px !important; }
+.ap-fsh-t p { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--ap-ink2); margin-top: 4px !important; }
 .ap-fsh-sp { width: 36px; }
 .ap-fsh-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 8px 20px 24px; display: flex; flex-direction: column; gap: 24px; }
 .ap-fsh-b::-webkit-scrollbar { display: none; }
 .ap-fsh-f { display: flex; flex-direction: column; gap: 8px; padding: 12px 20px 32px; background: var(--ap-bg); box-shadow: 0 -1px 0 var(--ap-line); }
-.ap-fsh-hint { text-align: center; font-size: 12.5px; color: var(--ap-ink3); }
+.ap-fsh-hint { text-align: center; font-size: 12.5px; color: var(--ap-ink2); }
 .ap-fsh-hint.is-flash { animation: apNudge .4s var(--ap-ease); color: var(--ap-ink); }
 .ap-fsh-del { align-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; font-size: 13.5px; font-weight: 500; color: var(--ap-ink2); }
 .ap-fsh-del .ic { width: 16px; height: 16px; }
 
 .ap-f { display: flex; flex-direction: column; gap: 8px; }
-.ap-f-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.ap-f-l { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
 .ap-f-lr { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
 .ap-f-h { font-size: 12px; color: var(--ap-ink3); }
-.ap-gd-b { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 8px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ap-gd-b { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
 .ap-gd-b .ic { width: 16px; height: 16px; }
 .ap-when { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 8px; }
 .ap-fld { position: relative; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border-radius: 16px; background: var(--ap-card2); color: var(--ap-ink); cursor: pointer; }
@@ -243,14 +269,16 @@
 .ap-ch.is-on { background: var(--ap-chart); color: var(--ap-card); box-shadow: none; }
 .ap-ch--flag.is-on { background: var(--ap-info-bg); color: var(--ap-info-ink); box-shadow: inset 0 0 0 1.5px var(--ap-teal); }
 .ap-info { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 13px; line-height: 1.45; }
-.ap-info .ic { width: 16px; height: 16px; margin-top: 1px; /* grid-exempt: optical nudge onto the first line of text */ }
+/* the icon box is one line of text tall, so the icon centres on the first line without a nudge */
+.ap-info .ic { width: 16px; height: 1.45em; flex: none; }
 
 /* Add details, folded away by default */
 .ap-det { border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
 .ap-det-h { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; text-align: left; }
 .ap-det-h span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .ap-det-h b { font-size: 15px; font-weight: 500; }
-.ap-det-h em { font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink3); }
+.ap-det-h em { font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-det-h em.is-flag { color: var(--ap-info-ink); font-weight: 500; }
 .ap-det-h > .ic { color: var(--ap-ink3); transition: transform .25s var(--ap-ease); }
 .ap-det.is-open .ap-det-h > .ic { transform: rotate(180deg); }
 .ap-det-b { display: flex; flex-direction: column; gap: 20px; padding: 0 16px 16px; }
@@ -258,7 +286,7 @@
 /* the (i) guide */
 .ap-gd-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
 .ap-gd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.ap-gd-list li { display: grid; grid-template-columns: 40px 64px minmax(0, 1fr); gap: 12px; align-items: center; padding-block: 8px; border-top: 1px solid var(--ap-line); }
+.ap-gd-list li { display: grid; grid-template-columns: 40px 88px minmax(0, 1fr); gap: 12px; align-items: center; padding-block: 8px; border-top: 1px solid var(--ap-line); }
 .ap-gd-ic { --gl-bg: var(--ap-card2); width: 40px; height: 40px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); display: grid; place-items: center; }
 .ap-gd-ic .ap-gl { width: 26px; height: 26px; }
 .ap-gd-list b { font-size: 14px; font-weight: 500; }
@@ -272,19 +300,26 @@
 .ap-sy-more { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 13.5px; font-weight: 500; color: var(--ap-ink2); }
 .ap-sy-more .ic { width: 14px; height: 14px; }
 .ap-sy-add { display: flex; gap: 8px; }
-.ap-sy-rows { display: flex; flex-direction: column; gap: 8px; }
-.ap-sy-row { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
-.ap-sy-row > b { font-size: 15px; font-weight: 500; padding-left: 4px; }
 
 /* meals */
-.ap-ml-rec { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
-.ap-ml-rec .ap-ch { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.ap-ml-fine { padding: 0; }
+/* the meal: what Florin counted, the same meal again, foods to add */
+.ap-ml-count { display: flex; flex-direction: column; gap: 8px; }
+.ap-ml-counted { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ap-ml-cl { margin-right: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.ap-ml-why { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ml-same { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); text-align: left; }
+.ap-ml-same .ic { width: 18px; height: 18px; color: var(--ap-ink2); }
+.ap-ml-same span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ml-same b { font-size: 14px; font-weight: 500; }
+.ap-ml-same em { font-style: normal; font-size: 13px; color: var(--ap-ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-ml-foods { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.ap-ml-auto { margin-top: -16px; color: var(--ap-ink2); }
+.ap-f-h { color: var(--ap-ink2); }
 
 /* ---------- weekly check-in ---------- */
 .ap-ck { height: 100%; display: flex; flex-direction: column; background: var(--ap-bg); }
 .ap-ck-h { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; padding: 56px 16px 8px; }
-.ap-ck-later { justify-self: end; min-height: 36px; padding: 0 8px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
+.ap-ck-later { position: relative; justify-self: end; min-height: 36px; padding: 0 12px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
 .ap-ck-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 8px 20px 56px; display: flex; flex-direction: column; gap: 24px; }
 .ap-ck-b::-webkit-scrollbar { display: none; }
 .ap-ck-prog { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
@@ -297,7 +332,8 @@
 .ap-ck-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 16px; font-weight: 500; color: var(--ap-ink); text-align: left; transition: background .2s, color .2s, box-shadow .2s; }
 .ap-ck-opt .ic { width: 18px; height: 18px; stroke-width: 2; }
 .ap-ck-opt.is-on { background: var(--ap-chart); color: var(--ap-card); box-shadow: none; }
-.ap-ck-foot { font-size: 12.5px; color: var(--ap-ink3); }
+.ap-ck-recall { font-size: 14px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ck-next { align-self: flex-start; }
 .ap-ck-fin { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
 .ap-ckr { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .ap-ckr h3 { font-size: 28px; font-weight: 300 !important; line-height: 1.15; letter-spacing: -.02em; text-wrap: balance; }
@@ -308,41 +344,26 @@
 .ap-ckr-row > b { font-size: 17px; font-weight: 500; }
 .ap-ckt { width: 100%; height: auto; display: block; overflow: visible; margin-top: 4px; }
 .ap-ckt-grid { stroke: var(--ap-grid); stroke-width: 1; }
-.ap-ckt-y, .ap-ckt-x { font-family: var(--mono); font-size: 9px; fill: var(--ap-ink3); }
+.ap-ckt-y, .ap-ckt-x { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
+.ap-ckt-ring { fill: none; stroke: var(--ap-chart); stroke-width: 1.5; }
+.ap-ckr-w { font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); padding-bottom: 4px; }
 .ap-ckt-dot { fill: var(--ap-ink3); }
-.ap-ckt-dot.is-now { fill: var(--ap-chart); stroke: var(--ap-card); stroke-width: 2; }
+.ap-ckt-dot.is-now { fill: var(--ap-chart); }
 .ap-legend .ap-ckt-sw--past { background: var(--ap-ink3); }
 .ap-legend .ap-ckt-sw--now { background: var(--ap-chart); box-shadow: 0 0 0 2px var(--ap-bg), 0 0 0 3px var(--ap-chart); }
-.ap-legend .ap-ckt-chip { width: 16px; min-height: 9px; height: 9px; padding: 0; }
 .ap-ckr-note { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
 .ap-ckr-note .ic { width: 16px; height: 16px; }
 
 /* ---------- Today ---------- */
 .ap-hl { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); }
 .ap-hl-line { font-family: var(--serif); font-size: 20px; line-height: 1.32; }
-.ap-rb { display: block; width: 100%; height: auto; overflow: visible; margin-top: 4px; }
-.ap-rb-axis { stroke: color-mix(in srgb, var(--cream) 24%, transparent); stroke-width: 1; }
-.ap-rb-grid { stroke: color-mix(in srgb, var(--cream) 24%, transparent); stroke-width: 1; }
-.ap-rb-band { fill: color-mix(in srgb, var(--ray) 17%, transparent); stroke: color-mix(in srgb, var(--ray) 40%, transparent); stroke-width: 1; }
-.ap-rb-tk, .ap-rb-nowl { font-family: var(--mono); font-size: 9px; fill: color-mix(in srgb, var(--cream) 70%, transparent); }
-.ap-rb-now { stroke: color-mix(in srgb, var(--cream) 50%, transparent); stroke-width: 1; }
-.ap-rb-bm { fill: var(--ray); stroke: var(--ap-hero); stroke-width: 2; }
-.ap-rb-sym { fill: var(--ap-hero); stroke: var(--cream); stroke-width: 1.6; }
-.ap-rb-meal { fill: var(--ap-hl-teal); }
-.ap-rb-no { stroke: var(--cream); stroke-width: 2; stroke-linecap: round; }
-.ap-hl-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: color-mix(in srgb, var(--cream) 78%, transparent); }
-.ap-hl-legend span { display: inline-flex; align-items: center; gap: 4px; }
-.ap-hl-sw { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.ap-hl-sw--bm { background: var(--ray); }
-.ap-hl-sw--sym { box-shadow: inset 0 0 0 1.5px var(--cream); }
-.ap-hl-sw--meal { width: 3px; height: 10px; border-radius: 2px; background: var(--ap-hl-teal); }
-.ap-hl-sw--band { width: 16px; border-radius: 2px; background: color-mix(in srgb, var(--ray) 17%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ray) 40%, transparent); }
 
 /* the check-in card */
 .ap-ckc { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
 .ap-ckc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ap-ckc .ap-k { color: var(--ap-teal); }
 .ap-due { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--ap-ink2); }
+.ap-due .ap-pck-dot { box-shadow: 0 0 0 3px var(--ap-card2); }
 .ap-ckc h2 { font-size: 22px; font-weight: 400 !important; line-height: 1.15; letter-spacing: -.015em; }
 .ap-ckc p { font-size: 14px; line-height: 1.45; color: var(--ap-ink2); }
 .ap-ckc-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -381,34 +402,25 @@
 .ap-tl-nobm em { font-style: normal; font-size: 12.5px; color: var(--ap-ink3); }
 
 /* this week so far */
-.ap-wk-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.ap-wk-grid th, .ap-wk-grid td { padding: 0; height: 32px; text-align: center; vertical-align: middle; }
-.ap-wk-grid thead th { height: auto; padding-bottom: 8px; font-weight: 400; vertical-align: bottom; }
-.ap-wk-grid thead th:first-child { width: 72px; }
-.ap-wk-grid thead th span { display: block; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
-.ap-wk-grid thead th em { display: grid; place-items: center; width: 24px; height: 24px; margin: 4px auto 0; border-radius: 50%; font-style: normal; font-size: 12px; font-weight: 500; color: var(--ap-ink2); }
-.ap-wk-grid thead th.is-today em { background: var(--ap-chart); color: var(--ap-card); }
-.ap-wk-grid thead th.is-before { opacity: .4; }
-.ap-wk-grid tbody th { text-align: left; font-size: 12px; font-weight: 500; color: var(--ap-ink2); white-space: nowrap; }
-.ap-wk-grid tbody tr + tr > * { border-top: 1px solid var(--ap-grid); }
 .ap-wk-dots { display: inline-flex; gap: 4px; vertical-align: middle; }
-.ap-wk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-chart); vertical-align: middle; }
+.ap-wk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-ink2); vertical-align: middle; }
 .ap-wk-dot.is-usual { background: var(--ap-usual-ink); }
-.ap-wk-dot.is-shift { background: var(--ap-shift); }
+/* a shift is a hollow Gold ring: a shape cue as well as a colour, so it holds in dark next to Ray */
+.ap-wk-dot.is-shift { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-shift); }
 .ap-wk-gap { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--ap-ink3); opacity: .6; vertical-align: middle; }
 .ap-wk-no { display: inline-block; width: 12px; height: 2px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
 .ap-wk-sq { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: var(--ap-card2); vertical-align: middle; }
-.ap-wk-sq--1 { background: color-mix(in srgb, var(--ap-chart) 26%, transparent); }
-.ap-wk-sq--2 { background: color-mix(in srgb, var(--ap-chart) 55%, transparent); }
-.ap-wk-sq--3 { background: var(--ap-chart); }
+/* symptom strength in neutral ink, never the reading colour (Ray in dark means "your usual") */
+.ap-wk-sq--1 { background: color-mix(in srgb, var(--ap-ink2) 25%, transparent); }
+.ap-wk-sq--2 { background: color-mix(in srgb, var(--ap-ink2) 55%, transparent); }
+.ap-wk-sq--3 { background: var(--ap-ink2); }
 .ap-wk-n { font-family: var(--mono); font-size: 11px; color: var(--ap-info-ink); }
-.ap-wk-legend { margin-top: 12px; }
+.ap-wk-legend { margin-top: 4px; }
 .ap-wk-legend .ap-wk-sq { width: 9px; height: 9px; border-radius: 2px; }
-.ap-wk-sum { list-style: none; margin: 12px 0 0; padding: 12px 0 0; border-top: 1px solid var(--ap-line); display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
-.ap-wk-sum b { font-weight: 500; color: var(--ap-ink); }
-.ap-wk-go { margin-top: 12px; min-height: 32px; }
-.ap-learn-bar { height: 8px; margin-top: 12px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
-.ap-learn-bar i { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-usual-ink); }
+.ap-wk-go { align-self: flex-start; }
+.ap-learn-bar { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
+/* learning has no usual yet, so the bar is neutral ink, never the usual colour */
+.ap-learn-bar i { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-ink2); }
 
 /* one next step */
 .ap-nx { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -418,7 +430,7 @@
 .ap-hist-top { display: flex; flex-direction: column; gap: 4px; padding: 4px; }
 .ap-hist-f { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; }
 .ap-hist-f::-webkit-scrollbar { display: none; }
-.ap-hd-none { padding-inline: 4px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink3); }
+.ap-hd-none { padding-inline: 4px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
 .ap-soon-c { display: flex; flex-direction: column; gap: 12px; }
 .ap-soon-c p { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
 .ap-soon-c ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--ap-ink2); }
@@ -428,7 +440,7 @@
 .ap-rx[data-theme="dark"] .ap-tst { background: var(--cream); color: var(--forest); }
 .ap-rx[data-theme="dark"] .ap-tst-b { background: color-mix(in srgb, var(--forest) 10%, transparent); color: var(--forest); }
 .ap-rx[data-theme="dark"] :is(.ap-psh, .ap-fsh) { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 9%, transparent); }
-.ap-rx[data-theme="dark"] .ap-hl { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ray) 12%, transparent); }
+.ap-rx[data-theme="dark"] .ap-hl { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 9%, transparent); }
 
 /* ---------- the app full screen, on a phone ---------- */
 .ap-rx.is-full .apx-status, .ap-rx.is-full .apx-island, .ap-rx.is-full .apx-homebar { display: none; }
@@ -441,7 +453,8 @@
 
 @media (max-width: 759px) {
   .rx { padding-inline: 0; padding-block: 0; }
-  .rx-head, .rx-side, .rx-foot, .rx-cmpt { display: none !important; }
+  .rx-head, .rx-side, .rx-foot, .rx-cmpt, .rx-center > .rx-ws { display: none !important; }
+  .rx-ws--m { display: block; }
   .rx-main, .rx-center, .rx-stage, .rx-ph { display: block; }
   .rx-mbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; gap: 8px; height: calc(48px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); background: var(--bg); box-shadow: 0 1px 0 var(--line); }
   .rx-mbar-t { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; margin-right: auto; }
@@ -458,8 +471,126 @@
   .rx-x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
   .rx-msheet .rx-panel { padding: 16px; }
 }
-@media (max-width: 379px) { .rx-mbar-t { display: none; } }
+@media (max-width: 519px) { .rx-mbar-t { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .ap-rx *, .rx * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- workshop, Oct 14 ---------- */
+/* in dark, Ray means "your usual", so a picked tile or chip is Cream; Ray stays on the one Save button */
+.ap-rx[data-theme="dark"] .ap-fm-b.is-on, .ap-rx[data-theme="dark"] .ap-ch.is-on:not(.ap-ch--flag) { --gl-bg: var(--ap-ink); background: var(--ap-ink); color: var(--ap-bg); }
+.ap-hd-gap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+/* how long it lasted: four equal chips, two by two */
+.ap-chs--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ap-chs--grid > .ap-ch { justify-content: center; }
+/* a symptom logged without a strength: present, strength not given */
+.ap-wk-sq--0 { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
+/* small controls keep their size on screen and get a finger-sized hit area (44px or more) */
+.ap-rx .ap-ch, .ap-rx .ap-gd-b, .ap-rx .ap-hi-filter, .ap-rx .ap-avatar { position: relative; }
+.ap-rx .ap-ch::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-rx .ap-gd-b::after, .ap-rx .ap-ck-later::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-rx .ap-hi-filter::after { content: ""; position: absolute; inset: -8px 0; }
+.ap-rx .ap-avatar::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.ap-rx .ap-link { min-height: 44px; }
+
+/* Today: the hero is one sentence */
+.ap-hl { gap: 8px; }
+/* the week so far: a day header, then three rows of a count over a seven-day strip */
+.ap-wk { display: flex; flex-direction: column; gap: 12px; }
+.ap-wk-days, .ap-wk-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ap-wk-days span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ap-wk-days b { font-family: var(--mono); font-size: 10px; font-weight: 400; color: var(--ap-ink2); }
+.ap-wk-days em { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-style: normal; font-size: 12px; font-weight: 500; color: var(--ap-ink); }
+.ap-wk-days .is-today em { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+/* before the person started: the strip dims; the day letters stay readable */
+.ap-wk-strip .is-before { opacity: .4; }
+.ap-wk-days .is-before :is(b, em) { color: var(--ap-ink2); font-weight: 400; }
+.ap-wk-days .is-gap em { color: var(--ap-ink2); text-decoration: line-through; text-decoration-thickness: 1px; }
+.ap-wk-m { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-wk-m p { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-wk-m p b { font-weight: 500; color: var(--ap-ink); }
+.ap-wk-l { font-weight: 500; color: var(--ap-ink); }
+.ap-wk-l::after { content: " ·"; color: var(--ap-ink3); }
+.ap-wk-strip { list-style: none; margin: 0; padding: 0; min-height: 24px; align-items: center; }
+.ap-wk-strip li { display: grid; place-items: center; min-height: 24px; }
+.ap-wk-strip li.is-gap { background: repeating-linear-gradient(135deg, var(--ap-card2) 0 2px, transparent 2px 6px); border-radius: 4px; }
+.ap-wk-meals { font-size: 13.5px; color: var(--ap-ink2); padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-wk-gapday { display: inline-grid; place-items: center; width: 16px; height: 16px; font-style: normal; font-size: 10px; color: var(--ap-ink2); text-decoration: line-through; }
+.ap-learn-st { display: flex; flex-direction: column; gap: 8px; }
+.ap-learn-st p { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-learn-st b { font-weight: 500; color: var(--ap-ink); }
+/* a secondary button: Forest on light, a Cream line on dark. Ray stays on logging */
+.ap-btn--2 { background: var(--forest); color: var(--cream); }
+.ap-rx[data-theme="dark"] .ap-btn--2 { background: transparent; color: var(--cream); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 60%, transparent); }
+/* status is neutral: the usual colours only ever mean usual */
+.ap-ckc-ok { background: var(--ap-card2); color: var(--ap-ink2); }
+.ap-ckc-m em, .ap-ckc-day, .ap-tl-nobm em { color: var(--ap-ink2); }
+.ap-rx .ap-fine { color: var(--ap-ink2); }
+/* anything a person reads is Ink 2; Ink 3 is for axis ticks, placeholders and the disabled Save */
+.ap-rx :where(.ap-f-l, .ap-tl-t, .ap-legend, .ap-k:not(.ap-k--ray), .ap-date, .ap-fsh-t p, .ap-hi-sub, .ap-tb-b) { color: var(--ap-ink2); }
+/* on Forest (the plus card, the hero, the toast) the focus ring is Ray, so it shows */
+.ap-rx :is(.ap-pbm, .ap-hl, .ap-tst) :focus-visible { outline-color: var(--ray); }
+.ap-rx[data-theme="dark"] .ap-tst :focus-visible { outline-color: var(--forest); }
+.ap-rx .ap-ck-q h3:focus { outline: none; }
+.ap-rx .ap-ck-q h3:focus-visible, .ap-rx .ap-ckr h3:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 4px; border-radius: 4px; }
+.ap-ckc-day { min-height: 44px; }
+.ap-rx .ap-tst-b { position: relative; }
+.ap-rx .ap-tst-b::after { content: ""; position: absolute; inset: -4px 0; }
+
+/* ---------- the workshop panel, under the phone (and in the notes sheet on a phone) ---------- */
+.rx-ws { box-sizing: border-box; width: 100%; max-width: 920px; margin: 0 auto; background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: inset 0 0 0 1px var(--line-2); }
+.rx-ws--m { display: none; max-width: none; padding: 16px; }
+.rx-ws-h h2 { font-weight: 400; font-size: 28px; line-height: 1.1; letter-spacing: -.02em; margin: 8px 0; text-wrap: balance; }
+.rx-ws-h > p:last-child { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; margin: 0; }
+.rx-ws-cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px; }
+.rx-ws--m .rx-ws-cols { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.rx-ws-calls { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rx-ws-calls li { display: flex; flex-direction: column; gap: 4px; padding-block: 12px; border-top: 1px solid var(--line-2); }
+.rx-ws-calls b { font-size: 14.5px; font-weight: 500; line-height: 1.35; }
+.rx-ws-calls p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-ws-st { align-self: flex-start; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+/* a call that still needs Will: a Ray highlighter band with Forest text */
+.rx-ws-st.is-you { padding: 0 8px; border-radius: 999px; background: var(--ray); color: var(--forest); }
+.rx-ws-g { padding-block: 12px; border-top: 1px solid var(--line-2); }
+.rx-ws-g b { font-size: 14px; font-weight: 500; }
+.rx-ws-g ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+@media (max-width: 1020px) { .rx-ws-cols { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+
+/* History: the report for a clinician, first */
+.ap-hist-rep { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-hist-rep > .ic:first-child { width: 20px; height: 20px; color: var(--ap-ink2); }
+.ap-hist-rep span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-hist-rep b { font-size: 15px; font-weight: 500; }
+.ap-hist-rep em { font-style: normal; font-size: 12.5px; color: var(--ap-ink2); }
+/* the check-in result: this week's own logs above the answers */
+.ap-ckr-logs { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card2); }
+.ap-ckr-logs ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ckr-logs b { font-weight: 500; color: var(--ap-ink); }
+.ap-fl-urgent { margin-top: 4px; font-weight: 500; }
+/* dark: a picked check-in answer and the progress are Cream, not Ray ("your usual") */
+.ap-rx[data-theme="dark"] .ap-ck-opt.is-on { background: var(--ap-ink); color: var(--ap-bg); }
+.ap-rx[data-theme="dark"] .ap-ck-prog i.is-done { background: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-ck-prog i.is-on { background: color-mix(in srgb, var(--ap-ink) 40%, transparent); }
+/* kickers sit in DESIGN.md's 11 to 13px eyebrow range */
+.ap-rx .ap-k { font-size: 11px; }
+
+/* ---------- verification, Oct 14 ---------- */
+/* dark: the check-in trend's newest point, the History filter and field focus are Cream, not Ray ("your usual") */
+.ap-rx[data-theme="dark"] .ap-ckt-ring { stroke: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-ckt-dot.is-now { fill: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-legend .ap-ckt-sw--now { background: var(--ap-ink); box-shadow: 0 0 0 2px var(--ap-bg), 0 0 0 3px var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-hi-filter[aria-pressed="true"] { background: var(--ap-ink); color: var(--ap-bg); }
+.ap-rx[data-theme="dark"] .ap-fld:focus-within, .ap-rx[data-theme="dark"] :is(.ap-ta, .ap-in):focus { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+/* the avatar is neutral: Plum on light screens means only "your usual" */
+.ap-rx .ap-avatar { background: var(--ap-card2); color: var(--ap-ink); }
+/* a five-word log seen through A or C: the steps its word covers, outlined, not picked */
+.ap-fm-b.is-maybe { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+/* compare mode below 1240px: the screen list moves under the phones, so three phones keep a readable size */
+@media (max-width: 1240px) {
+  .rx.is-compare .rx-main { grid-template-columns: minmax(0, 1fr); }
+  .rx.is-compare .rx-side--l { order: 2; position: static; max-height: none; overflow: visible; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .rx.is-compare .rx-center { order: 1; }
+}
+.rx.is-compare .rx-stage { flex-wrap: wrap; row-gap: 32px; }
+.rx-nw { white-space: nowrap; }

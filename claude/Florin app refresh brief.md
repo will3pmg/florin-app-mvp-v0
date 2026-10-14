@@ -133,3 +133,39 @@ The prototype: https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB (private until 
 
 - BM or visit as the in-app word? The brief says BM; the studio's version of today's app said "Log a visit", and the claims checker flags "bowel movement" as a SNIFR-era term ("BM" itself passes).
 - Does a FloraScore built from manual logs come back, or stay away until the sensor?
+
+## First pass, workshopped (Oct 14)
+
+Nine reviews of the Oct 13 build (one per first-pass screen, brand and claims, accessibility, and the open calls), a synthesis that verified and deduplicated them, and a four-way verification of the result (copy and claims, data, visual and dark mode, regressions), whose findings are fixed too. Everything below is in the prototype, at the same link. The page itself carries this as "What changed, and the calls" under the phone.
+
+**The calls**
+
+| Question | Recommendation | Status |
+|---|---|---|
+| Types 1 to 7 (A), five words (B), or seven words (C)? | **C.** Seven steps, one word each in our own words, no numbers or scale name in the app. The step (1 to 7) is stored, so a clinician report can add the number once licensed. One request to the Rome Foundation covering that export and IBS-SSS for the NSF study arm. Counsel reads C's words, lines and marks next to the scale before it ships: they're our own but describe the same seven forms. | Built as C; A and B kept to compare; counsel to read C |
+| Tiles on the plus card? | Yes, and a tile logs the BM in one tap, with Add details and Undo in the toast. Catching up an earlier day, or a person's first few BMs, still open the form. | Built; needs Will's OK |
+| Check-in in plus every week, or only when due? | Every week, last in the menu, dot only when due. | Built |
+| A skipped check-in? | Stays skipped. One reminder. One that's ignored (not skipped) stays on Today through Tuesday evening, then the week closes as a gap. | Skip built; Tuesday rule needs Will's OK |
+| The six symptoms? | Bloating, Belly pain, Cramping, Gas, Nausea, Low energy, plus the person's own (remembered). Burning moves to the BM; urgency is a BM detail. | Built; needs Will's OK |
+| Urgency inside Add details, or out? | Out, as one chip under the tiles: for IBS-D it's the detail most worth counting. A change from the brief. | Built; needs Will's OK |
+| Black or tar-like on the flag? | Yes, with its own line. Plus "If there's a lot of blood, or you feel faint or dizzy, get urgent care now", which needs the regulatory pass. | Built; regulatory pass |
+| Alarm words typed into a note? | Open the same primary care note, as Ask Florin's alarm banner does. Never read further. | Built |
+| FloraScore from manual logs? | No. The Forest card on Today keeps the slot for Florin One. | Built |
+| Check-in baseline? | The first three answered check-ins. The chip and the band now use one rule. Later: start fresh. | Built |
+| BM or visit? | BM. Keep visit for what Florin One detects. The studio's claims rule should suggest BM. | Built here; studio rule to change |
+| History a tab? | Yes for now: catching up, and the report for a clinician. Revisit after Insights. | Built |
+| A weekly report beyond the check-in? | No. The saved check-in shows the week's logs above the answers. | Built |
+
+**What changed, by screen**
+
+- **Plus menu:** close button and drag-down; tiles 44px with How to pick on the card; one-tap tile log; Log for an earlier day (a week back) and Add to this day on History gaps; Log no BM today from 5 PM.
+- **Log a BM:** option C; our own words and marks for the seven steps (the first pass paraphrased the scale's descriptors); B keeps its word and never a step nobody picked, and each B word sits on the step C gives the same word (Hard covers 1 and 2, Loose 5 and 6); Sudden urge to go under the tiles; blood, mucus and black named in the fold; the flag note offers a report, an urgent care line and Undo.
+- **Log symptoms:** one strength for the entry, how long it lasted, when it started; Low energy back, Burning to the BM, own symptoms remembered; an unrated symptom never reads as mild; a typed name counts on Save.
+- **Log a meal:** one food matcher (seed and typing, plurals, drinks); counted foods shown as you type; Same as yesterday and recent foods that add; time follows the meal; Other reads as Snack or drink; fields at 16px.
+- **Weekly check-in:** one comparison rule for chip and band; taller trend with labelled steps, the first weeks in words and a table twin; recall window in words; Next, Change an answer, Later after a skip; the week's logs above the answers; clinician line and disclaimer.
+- **Today:** one sentence against the usual; the day chart cut; the week as three counts over strips with hollow Gold rings for shifts; a next step from what today is missing; the clinician line when symptoms show.
+- **Throughout:** focus held in sheets and returned after saving; half-filled logs kept; 44px targets; Ink 2 for anything to read; colours carry one meaning each in dark; no sideways scroll.
+
+**Checks:** `work/qa.js` (four widths, every screen through the 22 claims rules, targets), `work/behave.js` (32 interaction and data checks), `work/audit-spacing.js` (0 off-scale).
+
+**Next:** the second pass (Insights and the detail page, then Ask Florin with Ask about this), and the studio fold-back once the calls above are settled.
