@@ -12,7 +12,6 @@
   const sum = (a) => a.reduce((s, v) => s + v, 0);
   const pl = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
   const low = (t) => t.charAt(0).toLowerCase() + t.slice(1);
-  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const andList = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
   const DOWS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const DOWL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
@@ -31,7 +30,7 @@
   };
   const ORDER = ["usual", "shifted", "unsure", "nocount", "logged", "none"];
   const stOf = (d) => (d.pending ? ["x", "Not logged yet"] : ST[d.state] || ST.none);
-  const stateLegend = (days) => ORDER.filter((k) => days.some((d) => d.state === k)).map((k) => [ST[k][0], ST[k][1]]);
+  const stateLegend = (days) => ORDER.filter((k) => days.some((d) => d.state === k)).map((k) => [ST[k][0] === "u" ? "uf" : ST[k][0], ST[k][1]]);
 
   /* ---------- markup ---------- */
   const board = (x, label, tiles, foot) => `<article class="bt" aria-label="${x.esc(label)}"><div class="bt-g">${tiles.filter(Boolean).join("")}</div>${foot || ""}</article>`;
@@ -70,7 +69,10 @@
   const steps = (x, n, of, aria) => `<div class="bt-steps" role="img" aria-label="${x.esc(aria)}">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? "is-on" : ""}${i === n - 1 ? " is-now" : ""}" style="--j:${i}"></i>`).join("")}</div>`;
 
   /* a one-line strip of days, each a short pill in its state's colour */
-  const dayStrip = (x, cells, aria) => `<div class="bt-strip" role="img" aria-label="${x.esc(aria)}">${cells.map((c, j) => `<i class="bt-strip--${c.cls}${c.today ? " is-today" : ""}" style="--j:${j}"></i>`).join("")}</div>`;
+  const dayStrip = (x, cells, aria) => {
+    const n = cells.length, st = 8, bw = 6, W = Math.max(1, n * st - 2), H = 24;
+    return `<svg class="bt-strip" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="max-width:${n * 12}px" role="img" aria-label="${x.esc(aria)}">${cells.map((c, j) => `<rect class="bt-sc bt-sc--${c.cls}${c.today ? " is-today" : ""} bt-grow" x="${j * st}" y="${c.cls === "x" ? H / 2 : 0}" width="${bw}" height="${c.cls === "x" ? H / 2 : H}" rx="3" vector-effect="non-scaling-stroke" style="--j:${j}"/>`).join("")}</svg>`;
+  };
 
   /* runs of consecutive points, so a gap stays a gap */
   const runs = (pts) => { const out = []; let cur = []; pts.forEach((p) => { if (p) cur.push(p); else if (cur.length) { out.push(cur); cur = []; } }); if (cur.length) out.push(cur); return out; };
@@ -88,7 +90,6 @@
     const out = (v) => o.band && v != null && (v < o.band[0] || v > o.band[1]);
     return `<svg class="bt-spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="${x.esc(o.aria)}">
       ${o.band ? `<rect class="bt-band" x="0" y="${r1(Y(o.band[1]))}" width="${w}" height="${r1(Math.max(2, Y(o.band[0]) - Y(o.band[1])))}" rx="4"/>` : ""}
-      ${segs.map((s) => `<path class="bt-area bt-fade" d="${x.C.path(s)}L${r1(s[s.length - 1][0])},${h}L${r1(s[0][0])},${h}Z"/>`).join("")}
       ${segs.map((s) => `<path class="bt-line bt-draw" pathLength="1" d="${x.C.path(s)}"/>`).join("")}
       ${pts.map((p, i) => (p && i !== last && out(vals[i]) ? `<circle class="bt-dot is-s bt-pop" cx="${r1(p[0])}" cy="${r1(p[1])}" r="3" style="--j:${i}"/>` : "")).join("")}
       ${last != null ? `<circle class="bt-end bt-pop${out(vals[last]) ? " is-s" : ""}" cx="${r1(pts[last][0])}" cy="${r1(pts[last][1])}" r="4.5" style="--j:${vals.length}"/>` : ""}
@@ -98,7 +99,8 @@
   /* the learning tile: where Florin is in its first days */
   const learnTile = (x, D, o) => {
     const L = D.learning;
-    return tile({ s: o.s || 6, i: o.i || 0, cls: o.cls }, `${kick(x, o.k, `Day ${L.day} of ${L.of}`)}${ans(x, o.a, o.acls)}${steps(x, L.day, L.of, `Day ${L.day} of ${L.of}. Florin is still learning your usual.`)}${o.sub ? sub(x, o.sub) : ""}`);
+    const wide = (o.s || 6) > 3;
+    return tile({ s: o.s || 6, i: o.i || 0, cls: o.cls }, `${kick(x, o.k, wide ? `Day ${L.day} of ${L.of}` : "")}${ans(x, o.a, o.acls)}${steps(x, L.day, L.of, `Day ${L.day} of ${L.of}. Florin is still learning your usual.`)}${wide ? "" : sub(x, `Day ${L.day} of ${L.of}`)}${o.sub ? sub(x, o.sub) : ""}`);
   };
 
   /* ===================================================================== FloraScore: the glass hero */
@@ -160,7 +162,7 @@
     const sp = s7.length ? tile({ s: 3, i: 2 }, `${kick(x, "Last 7 days")}
         ${spark(x, s7.map((p) => p.value), { w: 143, h: 64, band: u, aria: `FloraScore over the last 7 days, today ${v != null ? v : "not yet"}. Your usual range is ${u[0]} to ${u[1]}.` })}
         <div class="bt-ax"><span>${E(s7[0].dow)}</span><span>Today</span></div>
-        ${legend(x, [["band", "Your usual"]])}`) : "";
+        ${legend(x, [["band", "Your usual"], s7.some((p) => p.value != null && (p.value < u[0] || p.value > u[1])) && ["sdot", "Outside it"]])}`) : "";
     const how = tile({ s: 6, i: 3, cls: "bt-t--how" }, `<span class="bt-ico" aria-hidden="true">i</span><p class="bt-how" data-disclaimer>${E(S.how)}</p>`);
     return board(x, `FloraScore today${v != null ? `, ${v}` : ""}`, [h, wk, sp, how]);
   }
@@ -170,7 +172,8 @@
     const S = D.score, P = S.parts || [];
     if (!S.usual || !P.length) {
       return board(x, "The four parts of FloraScore, not started yet", [
-        D.learning ? learnTile(x, D, { k: "What makes up the score", a: "Timing, How often, Form and Comfort fill in with your FloraScore." }) : tile({ s: 6 }, `${kick(x, "What makes up the score")}${ans(x, "The four parts fill in once this week and last week both have logs.")}`)
+        D.learning ? learnTile(x, D, { k: "What makes up the score", a: "Four parts, each read against your own usual. They fill in with your FloraScore." }) : tile({ s: 6 }, `${kick(x, "What makes up the score")}${ans(x, "The four parts fill in once this week and last week both have logs.")}`),
+        ...["Timing", "How often", "Form", "Comfort"].map((nm, k) => tile({ s: 3, i: k + 1, cls: "bt-t--c bt-t--ghost" }, `<p class="bt-pname">${x.esc(nm)}</p><div class="bt-meter" aria-hidden="true"></div>${sub(x, "Not started", "bt-sub--xs")}`))
       ]);
     }
     const byMove = P.reduce((a, p) => (Math.abs(p.delta) > Math.abs(a.delta) ? p : a), P[0]);
@@ -179,20 +182,19 @@
     const rest = P.filter((p) => p !== lead);
     const pct = (p) => `${Math.round(p.weight * 100)}%`;
     const dWord = (p) => (p.delta > 0 ? `Up ${p.delta.toFixed(1)} points` : p.delta < 0 ? `Down ${Math.abs(p.delta).toFixed(1)} points` : "About the same");
-    const dShort = (p) => (p.delta > 0 ? `+${p.delta.toFixed(1)}` : p.delta < 0 ? `−${Math.abs(p.delta).toFixed(1)}` : "0.0");
+    const dShort = (p) => (p.delta > 0 ? `+${p.delta.toFixed(1)} pts` : p.delta < 0 ? `−${Math.abs(p.delta).toFixed(1)} pts` : "Same");
     const leadTile = tile({ s: 3, i: 0, cls: "bt-t--tall" }, `
-      ${kick(x, moved ? "Moved it most" : "Biggest part")}
-      ${ans(x, moved ? `${lead.label} moved your score most this week.` : `Every part held about the same as last week.`, "bt-a--md")}
+      ${kick(x, moved ? "Moved it most" : "The biggest part")}
+      ${ans(x, moved ? `${lead.label}, ${low(dWord(lead))} on last week.` : "Every part held about the same as last week.", "bt-a--md")}
       ${miniRing(x, { size: 112, sw: 11, segs: [{ v: lead.now, cls: "r" }], total: 100, tick: lead.before, aria: `${lead.label}: ${lead.now} out of 100 this week, ${lead.before} last week. ${dWord(lead)}.`, center: `<b class="bt-ring-n">${num(lead.now, { dur: 1100 })}</b><span class="bt-ring-s">this week</span>` })}
-      <p class="bt-pname">${x.esc(lead.label)} <span>${pct(lead)} of the score</span></p>
-      <div class="bt-chips">${chip(x, "none", dWord(lead))}</div>
+      <p class="bt-pname bt-pname--lead">${x.esc(lead.label)} <span>${pct(lead)}</span></p>
       ${sub(x, `Last week ${lead.before}`)}`);
     const small = rest.map((p, k) => tile({ s: 3, i: k + 1, cls: "bt-t--c" }, `
       <p class="bt-pname">${x.esc(p.label)} <span>${pct(p)}</span></p>
       <div class="bt-prow"><p class="bt-n bt-n--md">${num(p.now, { dur: 900 })}</p><p class="bt-delta" aria-label="${x.esc(dWord(p))}">${dShort(p)}</p></div>
       <div class="bt-meter" role="img" aria-label="${x.esc(`${p.label}: ${p.now} out of 100 this week, ${p.before} last week. ${dWord(p)}.`)}"><i style="--w:${clamp(p.now, 0, 100)}%"></i><b style="--at:${clamp(p.before, 0, 100)}%"></b></div>`));
     return board(x, `What makes up the score. ${moved ? `${lead.label} moved it most, ${low(dWord(lead))}.` : "About the same as last week."}`, [leadTile, ...small],
-      `${legend(x, [["r", "This week, out of 100"], ["tick", "Last week"]], "bt-lg--out")}${fine(x, "Each part reads you against your own usual. Points are what each part added to or took from the score since last week. FloraScore isn't a medical score, and a lower number isn't a diagnosis.", "data-disclaimer")}`);
+      `${legend(x, [["r", "This week, out of 100"], ["tick", "Last week"], ["pct", "Share of the score"]], "bt-lg--out")}${fine(x, "Each part reads you against your own usual. Points are what each part added to or took from the score since last week. FloraScore isn't a medical score, and a lower number isn't a diagnosis.", "data-disclaimer")}`);
   }
 
   /* ===================================================================== FloraScore over 30 days */
@@ -212,26 +214,22 @@
     const lastI = ser.map((s, i) => (s.value != null ? i : -1)).filter((i) => i >= 0).pop();
     /* the chart */
     const w = 326, top = 22, left = 24, right = 8, ph = 132, H = top + ph + 22;
-    const lo = Math.floor((Math.min(...known.map((s) => s.value), u[0]) - 3) / 10) * 10, hi = Math.ceil((Math.max(...known.map((s) => s.value), u[1]) + 3) / 10) * 10;
+    const lo = Math.floor((Math.min(...known.map((s) => s.value), u[0]) - 2) / 5) * 5, hi = Math.ceil((Math.max(...known.map((s) => s.value), u[1]) + 2) / 5) * 5;
     const X = x.lin(0, Math.max(1, ser.length - 1), left + 6, w - right - 6), Y = x.lin(lo, hi, top + ph, top);
-    const ticks = []; for (let t = lo; t <= hi; t += 10) ticks.push(t);
+    const ticks = []; for (let t = Math.ceil(lo / 10) * 10; t <= hi; t += 10) ticks.push(t);
     const pts = ser.map((s, i) => (s.value == null ? null : [X(i), Y(s.value)]));
     const segs = runs(pts);
     const outside = (vv) => vv < u[0] || vv > u[1];
-    const gid = `${x.uid}-tg`;
     const lv = ser[lastI] ? ser[lastI].value : null;
     const lx = lastI != null ? X(lastI) : 0, ly = lv != null ? Y(lv) : 0;
     const chart = `<svg class="bt-chart" viewBox="0 0 ${w} ${H}" role="img" aria-label="${E(`FloraScore over the last 30 days. Within your usual range of ${u[0]} to ${u[1]} on ${inN} of ${known.length} days with a score, above it on ${above} and below it on ${below}. Today ${lv != null ? lv : "not yet"}.`)}">
-      <defs><linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" class="bt-g0"/><stop offset="1" class="bt-g1"/></linearGradient></defs>
       ${ticks.map((t) => `<line class="bt-gl" x1="${left}" x2="${w - right}" y1="${r1(Y(t))}" y2="${r1(Y(t))}"/><text class="bt-tick" x="${left - 6}" y="${r1(Y(t) + 3.5)}" text-anchor="end">${t}</text>`).join("")}
       <rect class="bt-band bt-fade" x="${left}" y="${r1(Y(u[1]))}" width="${w - left - right}" height="${r1(Y(u[0]) - Y(u[1]))}" rx="4"/>
       <line class="bt-bedge" x1="${left}" x2="${w - right}" y1="${r1(Y(u[1]))}" y2="${r1(Y(u[1]))}"/><line class="bt-bedge" x1="${left}" x2="${w - right}" y1="${r1(Y(u[0]))}" y2="${r1(Y(u[0]))}"/>
-      <text class="bt-lbl bt-lbl--u" x="${left + 8}" y="${r1(Y(u[1]) + 12)}">Your usual</text>
-      ${segs.map((s) => `<path class="bt-area2 bt-fade" fill="url(#${gid})" d="${x.C.path(s)}L${r1(s[s.length - 1][0])},${top + ph}L${r1(s[0][0])},${top + ph}Z"/>`).join("")}
       ${segs.map((s) => `<path class="bt-line bt-draw" pathLength="1" d="${x.C.path(s)}"/>`).join("")}
       ${pts.map((p, i) => (!p || i === lastI ? "" : `<circle class="bt-dot bt-pop${outside(ser[i].value) ? " is-s" : ""}" cx="${r1(p[0])}" cy="${r1(p[1])}" r="${outside(ser[i].value) ? 3.4 : 2.2}" style="--j:${i}"/>`)).join("")}
       ${lv != null ? `<circle class="bt-halo bt-pop" cx="${r1(lx)}" cy="${r1(ly)}" r="9" style="--j:${ser.length}"/><circle class="bt-end bt-pop${outside(lv) ? " is-s" : ""}" cx="${r1(lx)}" cy="${r1(ly)}" r="5" style="--j:${ser.length}"/>
-      <text class="bt-lbl bt-lbl--now" x="${r1(lx)}" y="${r1(Math.max(12, ly - 14))}" text-anchor="end">Today ${lv}</text>` : ""}
+      <text class="bt-lbl bt-lbl--now bt-halo-t" x="${r1(lx + 4)}" y="${r1(ly > top + ph / 2 ? ly - 14 : ly + 22)}" text-anchor="end">Today ${lv}</text>` : ""}
       <text class="bt-tick" x="${left + 6}" y="${H - 4}">${E(ser[0].label)}</text>
       <text class="bt-tick" x="${r1(X(Math.floor((ser.length - 1) / 2)))}" y="${H - 4}" text-anchor="middle">${E(ser[Math.floor((ser.length - 1) / 2)].label)}</text>
       <text class="bt-tick" x="${w - right - 6}" y="${H - 4}" text-anchor="end">Today</text>
@@ -268,7 +266,7 @@
     const pills = `<ol class="bt-week" role="img" aria-label="${E(aria)}">${pads.map((d) => `<li class="bt-day bt-day--pad"><span class="bt-pill"></span><span class="bt-dow">${d}</span></li>`).join("")}${W.map((f, j) => pill(f, j + padN)).join("")}</ol>`;
     const hasScore = W.some((f) => f.logged && f.score != null);
     const main = tile({ s: 6, i: 0 }, `${kick(x, "This week", W.length ? `${W[0].label} to ${W[W.length - 1].label}` : "")}${ans(x, answer)}${pills}
-      ${legend(x, [...stateLegend(W), hasScore && ["num", "FloraScore"], ["bms", "One dot per BM"], ["today", "Today"]])}`);
+      ${legend(x, [...stateLegend(W), ["bms", "One dot per BM"], ["today", "Today"]])}${hasScore ? sub(x, "The number in each pill is that day's FloraScore.", "bt-sub--xs") : ""}`);
     /* today */
     const t = W[W.length - 1];
     let today;
@@ -287,7 +285,8 @@
     const bw = 143, bh = 40, slot = bw / 7;
     const bars = [...pads.map(() => null), ...W].map((f, i) => {
       const cx = r1(slot * i + slot / 2);
-      if (!f || f.count == null) return `<line class="bt-gapmark" x1="${r1(cx - 3)}" x2="${r1(cx + 3)}" y1="${bh - 1}" y2="${bh - 1}"/>`;
+      if (!f) return "";
+      if (f.count == null) return `<line class="bt-gapmark" x1="${r1(cx - 3)}" x2="${r1(cx + 3)}" y1="${bh - 1}" y2="${bh - 1}"/>`;
       if (f.count === 0) return `<circle class="bt-zero bt-pop" cx="${cx}" cy="${bh - 4}" r="3" style="--j:${i}"/>`;
       const hh = r1(((bh - 4) * f.count) / mx);
       return `<rect class="bt-mbar bt-grow${f.today ? " is-today" : ""}" x="${r1(cx - 5)}" y="${r1(bh - hh)}" width="10" height="${hh}" rx="3" style="--j:${i}"/>`;
@@ -365,7 +364,7 @@
       ${legend(x, [["u", "In your window"], ["s", "Outside it"]])}`)
       : learnTile(x, D, { s: 3, i: 1, k: "Your window", a: "Learning your usual window.", acls: "bt-a--md" });
     let chipT = "";
-    if (today.first != null && U) chipT = today.inWin ? chip(x, "usual", "Within your usual window") : chip(x, "shift", today.first < U[0] ? "Earlier than usual" : "Later than usual");
+    if (today.first != null && U) chipT = today.inWin ? chip(x, "usual", "In your usual window") : chip(x, "shift", today.first < U[0] ? "Earlier than usual" : "Later than usual");
     const todayT = tile({ s: 3, i: 2 }, `${kick(x, "Today")}${today.first != null ? `${big(x, hm(today.firstText), ampm(today.firstText), { raw: true, size: "md" })}${sub(x, "First BM")}${chipT ? `<div class="bt-chips">${chipT}</div>` : ""}` : `${ans(x, today.count === 0 ? "No BM logged today" : "No first BM yet today", "bt-a--md")}${U ? sub(x, `Your usual window ${Tm.usualText}`) : ""}`}`);
     return board(x, `Timing. ${answer}`, [main, ringT, todayT]);
   }
@@ -382,8 +381,9 @@
     const w = 326, left = 18, top = 8, axis = 22, uh = 14, ug = 4;
     const mx = Math.max(3, ...known.map((f) => f.count), U ? U[1] + 1 : 0);
     const ph = mx * (uh + ug) + 4, H = top + ph + axis, base = top + ph;
-    const slot = (w - left) / Math.max(7, M.length), bw = Math.min(8, slot - 3);
-    const cx = (i) => left + slot * i + slot / 2;
+    const nSlots = Math.max(14, M.length), off = nSlots - M.length;
+    const slot = (w - left) / nSlots, bw = Math.min(8, slot - 3);
+    const cx = (i) => left + slot * (i + off) + slot / 2;
     const yU = (k) => base - k * (uh + ug); /* the top edge of unit k (1-based) is yU(k) + ug */
     const units = M.map((f, i) => {
       if (f.count == null) return `<line class="bt-gapmark" x1="${r1(cx(i) - bw / 2)}" x2="${r1(cx(i) + bw / 2)}" y1="${r1(base + 3)}" y2="${r1(base + 3)}"/>`;
@@ -392,7 +392,8 @@
       return Array.from({ length: f.count }, (_, k) => `<rect class="bt-unit bt-pop${out ? " is-s" : ""}" x="${r1(cx(i) - bw / 2)}" y="${r1(yU(k + 1) + ug)}" width="${r1(bw)}" height="${uh}" rx="${r1(bw / 2)}" style="--j:${i + k * 2}"/>`).join("");
     }).join("");
     const ti = M.length - 1, tf = M[ti];
-    const todayMark = `<rect class="bt-todaycol" x="${r1(cx(ti) - slot / 2 + 0.5)}" y="${top}" width="${r1(slot - 1)}" height="${r1(ph)}" rx="4"/>`;
+    const tTop = tf.count ? yU(tf.count) + ug - 3 : base - 11;
+    const todayMark = `<rect class="bt-todaycol" x="${r1(cx(ti) - bw / 2 - 3)}" y="${r1(tTop)}" width="${r1(bw + 6)}" height="${r1(base + 3 - tTop)}" rx="${r1(bw / 2 + 3)}"/>`;
     const chart = `<svg class="bt-chart" viewBox="0 0 ${w} ${H}" role="img" aria-label="${E(`${answer} ${more ? `More often on ${pl(more, "day")}. ` : ""}${fewer ? `Less often on ${pl(fewer, "day")}. ` : ""}${gaps ? `${pl(gaps, "day")} with no BM logs, left as gaps. ` : ""}Today ${tf.count == null ? "not logged yet" : pl(tf.count, "BM")}.`)}">
       ${U ? `<rect class="bt-band bt-fade" x="${left}" y="${r1(yU(U[1]) + ug / 2)}" width="${w - left}" height="${r1((U[1] - U[0] + 1) * (uh + ug))}" rx="6"/>` : ""}
       ${todayMark}
@@ -403,7 +404,7 @@
       <text class="bt-tick" x="${w}" y="${H - 4}" text-anchor="end">Today</text>
     </svg>`;
     const main = tile({ s: 6, i: 0 }, `${kick(x, "BMs a day · 30 days", `${M[0].label} to ${M[M.length - 1].label}`)}${ans(x, answer)}${chart}
-      ${legend(x, [["unit", "One BM"], U && ["band", `Your usual, ${O.usualText}`], (more || fewer) && ["s", "Outside your usual"], zeros && ["zero", "Logged no BM"], gaps && ["gap", "No logs, left as a gap"]])}`);
+      ${legend(x, [["unit", "One BM"], U && ["band", `Your usual, ${O.usualText}`], (more || fewer) && ["s", "Outside your usual"], zeros && ["zero", "Logged no BM"], gaps && ["gap", "No logs, left as a gap"], ["today", "Today"]])}`);
     const avgT = O.avg30 != null ? tile({ s: 3, i: 1 }, `${kick(x, "Average")}${big(x, O.avg30, "a day", { dec: 1, size: "md" })}${sub(x, U ? `Your usual ${O.usualText}` : `Over ${pl(known.length, "day")}`)}`) : "";
     const splitT = U ? tile({ s: 3, i: 2 }, `${kick(x, "Day by day")}
       <div class="bt-seg" role="img" aria-label="${E(`${inN} days within your usual, ${more} more often, ${fewer} less often${gaps ? `, ${gaps} not logged` : ""}.`)}">${[["u", inN], ["s", more + fewer], ["x", gaps]].filter(([, n]) => n).map(([c, n], k) => `<i class="bt-seg--${c}" style="flex:${n};--k:${k}"></i>`).join("")}</div>
@@ -457,30 +458,36 @@
     const nowText = !Sy.logged30 ? null : every == null ? "Rarely" : every <= 1 ? "Most days" : `About 1 day in ${every}`;
     const top1 = rows[0];
     const answer = !Sy.logged30 ? "Nothing logged yet." : !Sy.withSym30 ? `No symptoms on any of your ${pl(Sy.logged30, "logged day")}.` : `Symptoms came up on ${Sy.withSym30} of ${pl(Sy.logged30, "logged day")}, ${low(top1.name)} most often.`;
-    const w = 326, n = M.length, gap = 2, cw = (w - gap * (Math.max(n, 7) - 1)) / Math.max(n, 7), ch = 16, rowH = ch + 26;
+    const w = 326, n = M.length, gap = 2, cw = Math.min(14, (w - gap * (n - 1)) / n), ch = 16, rowH = ch + 26;
+    const x0 = w - (n * cw + (n - 1) * gap);
     const cls = (v) => (v === null ? "x" : v === false ? "n" : v === 0 ? "z" : `l${v}`);
     const H = rows.length * rowH + 16;
     const present = new Set(rows.flatMap((r) => r.cells.map(cls)));
     const heat = rows.length ? `<svg class="bt-chart" viewBox="0 0 ${w} ${H}" role="img" aria-label="${E(`${answer} ${rows.map((r) => `${r.name} on ${pl(r.days, "day")}`).join(", ")}.`)}">
       ${rows.map((r, ri) => { const y0 = ri * rowH; return `<text class="bt-rowl" x="0" y="${y0 + 13}">${E(r.name)}</text><text class="bt-rowv" x="${w}" y="${y0 + 13}" text-anchor="end">${pl(r.days, "day")}</text>
-        ${r.cells.map((v, i) => `<rect class="bt-hc bt-hc--${cls(v)} bt-pop" x="${r1(i * (cw + gap))}" y="${y0 + 20}" width="${r1(cw)}" height="${ch}" rx="3" style="--j:${i + ri * 3}"/>`).join("")}`; }).join("")}
-      <text class="bt-tick" x="0" y="${H - 2}">${E(M[0].label)}</text><text class="bt-tick" x="${w}" y="${H - 2}" text-anchor="end">Today</text>
+        ${r.cells.map((v, i) => `<rect class="bt-hc bt-hc--${cls(v)} bt-pop" x="${r1(x0 + i * (cw + gap))}" y="${y0 + 20}" width="${r1(cw)}" height="${ch}" rx="3" style="--j:${i + ri * 3}"/>`).join("")}`; }).join("")}
+      <text class="bt-tick" x="${r1(x0)}" y="${H - 2}">${E(M[0].label)}</text><text class="bt-tick" x="${w}" y="${H - 2}" text-anchor="end">Today</text>
     </svg>` : "";
     const lg = [present.has("l1") && ["l1", "Mild"], present.has("l2") && ["l2", "Moderate"], present.has("l3") && ["l3", "Strong"], present.has("z") && ["z", "Strength not said"], present.has("n") && ["n", "None"], present.has("x") && ["x", "Not logged"]];
     const main = tile({ s: 6, i: 0 }, `${kick(x, "Symptoms · 30 days", `${M[0].label} to ${M[M.length - 1].label}`)}${ans(x, answer)}${heat}
       ${rows.length ? legend(x, lg) : ""}${more.length ? sub(x, `Also: ${andList(more.map((r) => `${low(r.name)} on ${pl(r.days, "day")}`))}.`) : ""}`);
+    const same = nowText && Sy.usualText && nowText === Sy.usualText;
     const howT = tile({ s: 3, i: 1 }, `${kick(x, "How often")}${big(x, Sy.withSym30, `of ${Sy.logged30} days`, { size: "md" })}
-      ${dayStrip(x, M.map((f) => ({ cls: !f.logged ? "x" : f.sym.length ? "r" : "n", today: f.today })), `Symptoms on ${Sy.withSym30} of ${Sy.logged30} logged days.`)}
-      ${nowText ? sub(x, `This month: ${low(nowText)}`) : ""}${Sy.usualText ? sub(x, `Your usual: ${low(Sy.usualText)}`) : ""}
-      ${nowText && Sy.usualText && nowText === Sy.usualText ? `<div class="bt-chips">${chip(x, "usual", "About the same as your usual")}</div>` : ""}`);
+      ${dayStrip(x, M.map((f) => ({ cls: !f.logged ? "x" : f.sym.length ? "r" : "n", today: f.today })), `Symptoms on ${Sy.withSym30} of ${Sy.logged30} logged days${nowText ? `, ${low(nowText)}` : ""}.${Sy.usualText ? ` Your usual: ${low(Sy.usualText)}.` : ""}`)}
+      <dl class="bt-pair">${nowText ? `<div><dt>This month</dt><dd>${E(nowText)}</dd></div>` : ""}${Sy.usualText ? `<div><dt>Your usual</dt><dd>${E(Sy.usualText)}</dd></div>` : ""}</dl>
+      ${same ? `<div class="bt-chips">${chip(x, "usual", "About the same")}</div>` : ""}`);
     /* the strongest day: the highest strength said, the latest day it came up */
     let strong = null;
     Sy.rows.forEach((r) => r.cells.forEach((v, i) => { if (typeof v === "number" && v > 0 && (!strong || v > strong.v || (v === strong.v && i > strong.i))) strong = { v, i, name: r.name }; }));
     const words = ["Mild", "Moderate", "Strong"];
+    const spread = [1, 2, 3, 0].map((k) => ({ k, n: sum(Sy.rows.map((r) => r.cells.filter((v) => v === k).length)) })).filter((g) => g.n);
+    const spreadBar = spread.length ? `<div class="bt-seg bt-seg--sym" role="img" aria-label="${E(`Strengths logged: ${spread.map((g) => `${g.k ? words[g.k - 1].toLowerCase() : "strength not said"} ${g.n}`).join(", ")}.`)}">${spread.map((g, k) => `<i class="bt-seg--${g.k ? "l" + g.k : "z"}" style="flex:${g.n};--k:${k}"></i>`).join("")}</div>
+      ${legend(x, spread.map((g) => [g.k ? "l" + g.k : "z", `${g.k ? words[g.k - 1] : "Not said"} ${g.n}`]))}` : "";
     const strongT = tile({ s: 3, i: 2 }, `${kick(x, "Strongest")}${strong ? `${big(x, words[strong.v - 1], "", { raw: true, size: "word" })}${sub(x, `${strong.name}, ${M[strong.i].today ? "today" : M[strong.i].label}`)}
-      <div class="bt-meter3" role="img" aria-label="${E(`${words[strong.v - 1]}, the strongest you logged this month`)}">${[1, 2, 3].map((k) => `<i class="${k <= strong.v ? "is-on" : ""}" style="--j:${k}"></i>`).join("")}</div>` : ans(x, Sy.withSym30 ? "No strength said" : "None logged", "bt-a--md")}`);
+      <div class="bt-meter3" role="img" aria-label="${E(`${words[strong.v - 1]}, the strongest you logged this month`)}">${[1, 2, 3].map((k) => `<i class="${k <= strong.v ? "is-on" : ""}" style="--j:${k}"></i>`).join("")}</div>
+      <p class="bt-k bt-k--gap">All symptom logs</p>${spreadBar}` : ans(x, Sy.withSym30 ? "No strength said" : "None logged", "bt-a--md")}`);
     return board(x, `Symptoms. ${answer}`, [main, howT, strongT],
-      `<p class="bt-care">${E("Blood, black or tar-like stools, fever, vomiting that won't stop, weight loss or waking at night to go: talk to your primary care clinician.")}</p>`);
+      `<div class="bt-care"><p class="bt-k">When to see a clinician</p><p>${E("Blood, black or tar-like stools, fever, vomiting that won't stop, weight loss or waking at night to go: talk to your primary care clinician first.")}</p></div>`);
   }
 
   /* ===================================================================== the weekly check-in: stacked chips */
@@ -513,7 +520,7 @@
         ${sub(x, `${answered} weeks answered`, "bt-sub--xs")}`);
     };
     const head = tile({ s: 6, i: 0 }, `${kick(x, "Weekly check-in", latest ? latest.label : "")}${ans(x, answer)}
-      ${legend(x, [["band", "Your first three weeks"], ["now", "Latest week"], diff.length && ["s", "Outside your first weeks"]])}`);
+      ${legend(x, [["rail", "Your first three weeks"], ["now", "Latest week"], diff.length && ["s", "Outside your first weeks"]])}`);
     return board(x, `Weekly check-in. ${answer}`, [head, ...Q.map(qTile),
       C.due ? tile({ s: 6, i: 5, cls: "bt-t--cta" }, `<p class="bt-cta-l"><span class="bt-live" aria-hidden="true"></span>This week's check-in is ready</p><button type="button" class="bt-btn">Answer it</button>`) : ""]);
   }
@@ -531,11 +538,13 @@
     if (!P.found.length && P.sparse) {
       const pct = Math.round(P.coverage * 100);
       return board(x, "A possible pattern: not enough ordinary days to compare", [
-        tile({ s: 6, i: 0 }, `${kick(x, "A possible pattern")}${ans(x, "Not enough ordinary days to compare yet.")}${sub(x, P.sparseLine)}`),
+        tile({ s: 6, i: 0 }, pct ? `${kick(x, "A possible pattern")}${ans(x, "Not enough ordinary days to compare yet.")}${sub(x, P.sparseLine)}`
+          : `${kick(x, "A possible pattern")}${ans(x, "No meals logged yet, so there is nothing to compare.")}${sub(x, P.sparseLine.split(". ").pop())}`),
         tile({ s: 3, i: 1 }, `${kick(x, "Days with meals")}${miniRing(x, { size: 88, sw: 9, segs: [{ v: pct, cls: "r" }], total: 100, aria: `Meals logged on ${pct}% of your days.`, center: `<b class="bt-ring-n bt-ring-n--sm">${num(pct, { dur: 900 })}<small>%</small></b>` })}
           ${legend(x, [["r", "Meals logged"], ["trk", "No meals logged"]])}`),
-        tile({ s: 3, i: 2, cls: "bt-t--food" }, `${kick(x, "Food check")}${sub(x, "One line a day, typed or said. Rough days and ordinary ones.")}
-          <button type="button" class="bt-btn bt-btn--sm"><span class="bt-mic" aria-hidden="true"></span>Start a food check</button>`)
+        tile({ s: 3, i: 2, cls: "bt-t--food" }, `${kick(x, "Food check")}
+          <button type="button" class="bt-mic" aria-label="Start a food check: say what you ate"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button>
+          <p class="bt-pname">Say what you ate</p>${sub(x, "Or type one line. Ordinary days count too.")}`)
       ], note);
     }
     if (!P.found.length) {
@@ -544,9 +553,9 @@
       ], note);
     }
     const p = P.found[0];
-    const lab = p.kind === "late" ? ["After a late dinner", "After an earlier dinner", "Later first BM"]
-      : p.kind === "loose" ? [`The morning after ${low(p.food)}`, "Other mornings", "Looser first BM"]
-      : [`The day after ${low(p.food)}`, "Other days", "Bloating"];
+    const lab = p.kind === "late" ? ["Late dinners", "Earlier dinners", "Later first BM"]
+      : p.kind === "loose" ? [`After ${low(p.food)}`, "Other mornings", "Looser first BM"]
+      : [`After ${low(p.food)}`, "Other days", "Bloating"];
     const waffle = (arr, aria) => {
       const cols = 13, sz = 8, st = 11, rows = Math.ceil(arr.length / cols);
       return `<svg class="bt-waf" viewBox="0 0 ${cols * st - 3} ${rows * st - 3}" role="img" aria-label="${E(aria)}">${arr.map((hit, i) => `<rect class="bt-wc${hit ? " is-hit" : ""} bt-pop" x="${(i % cols) * st}" y="${Math.floor(i / cols) * st}" width="${sz}" height="${sz}" rx="2" style="--j:${i}"/>`).join("")}</svg>`;

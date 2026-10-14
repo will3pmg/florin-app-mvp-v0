@@ -1,13 +1,15 @@
 /* Look: rings. Every rule scoped under .lk-rings.
-   One calm ring up front on a dark hero card, and every other card read as rings and beads that draw themselves in.
-   Colours are the app tokens (--ap-*) or derived from the six brand colours; nothing is a literal. Spacing and radii
-   are on the DESIGN.md scales. All motion sits inside prefers-reduced-motion: no-preference, and only animates *from*
-   a state, so the still page is the final page. */
+   One calm ring up front on the one dark hero card, and every other card read as rings, segments and dots that draw
+   themselves in. Colours are the app tokens (--ap-*) or derived from the six brand colours; nothing is a literal.
+   Spacing and radii are on the DESIGN.md scales. Charts use solid lines only (DESIGN.md: no dashed lines), so a day
+   not logged is a 1px hairline, never a dash. All motion sits inside prefers-reduced-motion: no-preference, and only
+   animates *from* a state, so the still page is the final page. */
 
 /* ---------- the card ---------- */
 .lk-rings .rg {
   --rg-read: var(--ap-chart);
   --rg-trk: color-mix(in srgb, var(--ap-ink) 9%, transparent);
+  --rg-empty: color-mix(in srgb, var(--ap-ink) 24%, transparent);
   --rg-uband: var(--ap-ring-band);
   --rg-uband-ink: var(--ap-usual-ink);
   --rg-shift: var(--ap-shift);
@@ -18,13 +20,14 @@
   --rg-st: 70ms;
   position: relative; overflow: hidden;
   display: flex; flex-direction: column; gap: 20px;
-  padding: 20px; border-radius: 24px;
+  padding: 16px; border-radius: 24px;
   background: var(--rg-ground); color: var(--rg-ink); box-shadow: var(--ap-shadow);
   font-family: var(--sans);
 }
 .lk-rings .rg > * { position: relative; }
 .lk-rings .rg :where(p, h3, ul, ol, dl, dd, figure) { margin: 0; }
 .lk-rings .rg :where(ul, ol) { list-style: none; padding: 0; }
+.lk-rings .rg-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* the hero: Forest on light, Card 2 on dark. Ray is the reading and Ray at half strength is your usual */
 .lk-rings .rg--hero {
@@ -38,20 +41,12 @@
   --rg-ink3: color-mix(in srgb, var(--cream) 62%, transparent);
   --rg-ground: var(--ap-hero);
   background-color: var(--ap-hero);
-  background-image: radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--ray) 9%, transparent), transparent 64%);
+  background-image: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--ray) 9%, transparent), transparent 64%);
 }
-/* two hairline rings off the top corner: the mark's pill and ring, as texture */
-.lk-rings .rg--hero::before, .lk-rings .rg--hero::after {
-  content: ""; position: absolute; border-radius: 50%; pointer-events: none;
-  border: 1px solid color-mix(in srgb, var(--ray) 20%, transparent);
-}
-.lk-rings .rg--hero::before, .lk-rings .rg--hero::after { right: 0; top: 0; transform: translate(calc(50% - 16px), calc(-50% - 8px)); }
-.lk-rings .rg--hero::before { width: 224px; height: 224px; }
-.lk-rings .rg--hero::after { width: 304px; height: 304px; border-color: color-mix(in srgb, var(--ray) 10%, transparent); }
 
 /* ---------- type ---------- */
 .lk-rings .rg-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
-.lk-rings .rg-k { font-family: var(--mono); font-size: 11px; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; color: var(--rg-ink2); }
+.lk-rings .rg-k { font-family: var(--mono); font-size: 11px; font-weight: 400; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; color: var(--rg-ink2); }
 .lk-rings .rg-k--date { letter-spacing: .04em; text-align: right; }
 .lk-rings .rg-lead { display: flex; flex-direction: column; gap: 8px; }
 .lk-rings .rg-big { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; font-size: 48px; line-height: 1; font-weight: 300; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
@@ -59,7 +54,6 @@
 .lk-rings .rg-of { font-size: 14px; line-height: 1.3; letter-spacing: 0; font-weight: 400; color: var(--rg-ink2); }
 .lk-rings .rg-ans { font-family: var(--serif); font-size: 16px; line-height: 1.45; color: var(--rg-ink); text-wrap: pretty; }
 .lk-rings .rg-note { font-size: 12.5px; line-height: 1.45; color: var(--rg-ink2); }
-.lk-rings .rg-mono { font-family: var(--mono); font-size: 11px; }
 .lk-rings .rg-chip { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 500; line-height: 1; white-space: nowrap; background: var(--ap-card2); color: var(--ap-ink2); }
 .lk-rings .rg-chip--usual { background: var(--ap-usual-bg); color: var(--ap-usual-ink); }
 .lk-rings .rg-chip--shift { background: var(--ap-shift-bg); color: var(--ap-shift-ink); }
@@ -68,38 +62,46 @@
 /* ---------- legends: every colour has a word ---------- */
 .lk-rings .rg-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 11.5px; line-height: 1.3; color: var(--rg-ink2); }
 .lk-rings .rg-legend li { display: inline-flex; align-items: center; gap: 8px; }
-.lk-rings .rg-legend--c { justify-content: center; }
 .lk-rings .rg-sw { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--rg-read); }
 .lk-rings .rg-sw--usual { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-usual-ink); }
-.lk-rings .rg-sw--usual-ring { background: transparent; box-shadow: inset 0 0 0 2.5px var(--rg-read); }
+.lk-rings .rg-sw--logged { background: transparent; box-shadow: inset 0 0 0 2.5px var(--rg-read); }
 .lk-rings .rg-sw--shift { background: var(--rg-shift); }
 .lk-rings .rg-sw--shiftring { background: var(--ap-shift-bg); box-shadow: inset 0 0 0 2.5px var(--rg-shift); }
 .lk-rings .rg-sw--unsure { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-ink3); }
-.lk-rings .rg-sw--hollow { background: transparent; box-shadow: inset 0 0 0 2px var(--rg-trk); }
+.lk-rings .rg-sw--empty { background: transparent; box-shadow: inset 0 0 0 2.5px var(--rg-empty); }
+.lk-rings .rg-sw--gap { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
+.lk-rings .rg-sw--gapline { width: 16px; height: 1px; border-radius: 0; background: var(--ap-ink3); }
 .lk-rings .rg-sw--sym { width: 6px; height: 6px; background: var(--ap-teal); }
-.lk-rings .rg-sw--arcnote { background: transparent; border: 2px solid var(--rg-ink3); border-left-color: transparent; border-bottom-color: transparent; transform: rotate(45deg); }
 .lk-rings .rg-sw--line { width: 16px; height: 2.5px; border-radius: 2px; }
 .lk-rings .rg-sw--band { width: 16px; height: 10px; border-radius: 2px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
 .lk-rings .rg-sw--uband-l { width: 16px; height: 4px; border-radius: 2px; background: var(--rg-uband); }
-.lk-rings .rg-sw--now { box-shadow: 0 0 0 3px color-mix(in srgb, var(--rg-read) 22%, transparent); width: 8px; height: 8px; }
+.lk-rings .rg-sw--now, .lk-rings .rg-sw--now-shift { width: 8px; height: 8px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--rg-read) 22%, transparent); }
+.lk-rings .rg-sw--now-shift { background: var(--rg-shift); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rg-shift) 30%, transparent); }
 .lk-rings .rg-sw--todayring { background: transparent; box-shadow: inset 0 0 0 1.5px var(--rg-ink); }
 .lk-rings .rg-sw--zero { background: transparent; box-shadow: inset 0 0 0 1.5px var(--rg-shift); }
 .lk-rings .rg-sw--ring { background: transparent; box-shadow: inset 0 0 0 3px var(--rg-read); }
-.lk-rings .rg-sw--uband { width: 16px; height: 4px; border-radius: 2px; background: var(--rg-uband); }
-.lk-rings .rg-sw--shiftdot { background: var(--rg-shift); }
 .lk-rings .rg-sw--tick { width: 2px; height: 12px; border-radius: 2px; background: var(--rg-ink); }
+.lk-rings .rg-sw--div { position: relative; width: 16px; height: 4px; border-radius: 2px; background: var(--rg-read); }
+.lk-rings .rg-sw--div::before { content: ""; position: absolute; left: 0; top: -4px; width: 1px; height: 12px; background: var(--rg-ink2); }
+.lk-rings .rg-sw--pct { width: auto; height: auto; border-radius: 0; background: none; font-family: var(--mono); font-size: 11px; color: var(--rg-ink2); }
+.lk-rings .rg-sw--pct::before { content: "%"; }
+.lk-rings .rg-sw--pair { width: 12px; height: 6px; border-radius: 0 0 2px 2px; background: none; box-shadow: inset 1px -1px 0 var(--rg-ink2), inset -1px 0 0 var(--rg-ink2); }
 .lk-rings .rg-sw--s1, .lk-rings .rg-sw--s2, .lk-rings .rg-sw--s3 { background: var(--rg-read); }
 .lk-rings .rg-sw--s1 { width: 5px; height: 5px; opacity: .6; }
 .lk-rings .rg-sw--s2 { width: 7px; height: 7px; opacity: .82; }
 .lk-rings .rg-sw--s3 { width: 10px; height: 10px; }
 .lk-rings .rg-sw--unsaid { width: 6px; height: 6px; background: transparent; box-shadow: inset 0 0 0 1.3px var(--rg-read); }
 .lk-rings .rg-sw--sdnone { width: 3px; height: 3px; background: var(--ap-ink3); }
-.lk-rings .rg-sw--hist { width: 6px; height: 6px; background: var(--ap-ink3); box-shadow: 8px 0 0 var(--ap-ink3), 16px 0 0 var(--rg-read); margin-right: 16px; }
-.lk-rings .rg-sw--ring.rg-sw { width: 10px; height: 10px; }
-.lk-rings .rg-sw--pshift, .lk-rings .rg-sw--pusual, .lk-rings .rg-sw--pseg { width: 8px; height: 12px; border-radius: 2px; }
-.lk-rings .rg-sw--pshift { background: var(--ap-shift); }
-.lk-rings .rg-sw--pusual { background: var(--ap-usual-ink); }
-.lk-rings .rg-sw--pseg { background: var(--rg-trk); }
+.lk-rings .rg-sw--hist { width: 6px; height: 6px; background: var(--ap-ink3); box-shadow: 8px 0 0 var(--ap-ink3); margin-right: 16px; position: relative; }
+.lk-rings .rg-sw--hist::after { content: ""; position: absolute; left: 16px; top: 0; width: 6px; height: 6px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--rg-read); }
+.lk-rings .rg-sw--pread, .lk-rings .rg-sw--pshift, .lk-rings .rg-sw--ptrack { width: 8px; height: 12px; border-radius: 2px; }
+.lk-rings .rg-sw--pread { background: var(--rg-read); }
+.lk-rings .rg-sw--pshift { background: var(--rg-shift); }
+.lk-rings .rg-sw--ptrack { background: var(--rg-empty); }
+.lk-rings .rg-glyph { flex: none; display: block; width: 12px; height: 12px; overflow: visible; }
+.lk-rings .rg-glyph-t { fill: none; stroke: var(--rg-trk); stroke-width: 2.2; }
+.lk-rings .rg-glyph-a { fill: none; stroke: var(--rg-read); stroke-width: 2.2; stroke-linecap: round; }
+.lk-rings .rg-glyph-ctx { fill: none; stroke: var(--ap-teal); stroke-width: 1.2; }
 
 /* ---------- svg basics ---------- */
 .lk-rings .rg-svg { display: block; width: 100%; height: auto; overflow: visible; }
@@ -111,13 +113,18 @@
 .lk-rings .rg-arc.is-shift { stroke: var(--rg-shift); }
 .lk-rings .rg-arc.is-ctx { stroke: var(--ap-teal); }
 .lk-rings .rg-band { fill: var(--ap-band); }
-.lk-rings .rg-band-edge { stroke: var(--ap-band-edge); stroke-width: 1; }
+.lk-rings .rg-band-edge { fill: none; stroke: var(--ap-band-edge); stroke-width: 1; }
 .lk-rings .rg-svg .rg-band-lbl { fill: var(--ap-usual-ink); letter-spacing: .02em; paint-order: stroke; stroke: var(--rg-ground); stroke-width: 3px; stroke-linejoin: round; }
-.lk-rings .rg-axis { stroke: var(--ap-line); stroke-width: 1; }
+.lk-rings .rg-axis { fill: none; stroke: var(--ap-line); stroke-width: 1; }
 .lk-rings .rg-svg .rg-xt.is-today { fill: var(--rg-ink); font-weight: 700; }
 .lk-rings .rg-now-halo { fill: color-mix(in srgb, var(--rg-read) 14%, transparent); stroke: color-mix(in srgb, var(--rg-read) 55%, transparent); stroke-width: 1.2; }
+.lk-rings .rg-now-halo.is-shift { fill: color-mix(in srgb, var(--rg-shift) 18%, transparent); stroke: var(--rg-shift); }
 .lk-rings .rg-now { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 2; }
+.lk-rings .rg-now.is-shift { fill: var(--rg-shift); }
 .lk-rings .rg-svg .rg-now-lbl { font-family: var(--sans); font-size: 12px; font-weight: 500; fill: var(--rg-ink); paint-order: stroke; stroke: var(--rg-ground); stroke-width: 3px; stroke-linejoin: round; }
+.lk-rings .rg-svg .rg-mdial-n { font-family: var(--sans); font-size: 48px; font-weight: 300; letter-spacing: -.045em; fill: var(--rg-ink); font-variant-numeric: tabular-nums; }
+.lk-rings .rg-svg .rg-mdial-n--sm { font-size: 40px; }
+.lk-rings .rg-svg .rg-mdial-s { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; fill: var(--rg-ink2); }
 
 /* ---------- FloraScore ---------- */
 .lk-rings .rg-dial { position: relative; width: 100%; max-width: 272px; margin: 0 auto; }
@@ -126,58 +133,52 @@
 .lk-rings .rg-dial-n { font-size: 84px; line-height: .9; font-weight: 300; letter-spacing: -.055em; font-variant-numeric: tabular-nums; margin-right: 4px; }
 .lk-rings .rg-dial-n--sm { font-size: 40px; letter-spacing: -.03em; margin: 4px 0; }
 .lk-rings .rg-dial-s { font-family: var(--mono); font-size: 10.5px; letter-spacing: .02em; color: var(--rg-uband-ink); }
-.lk-rings .rg-bezel line { stroke: color-mix(in srgb, var(--cream) 14%, transparent); stroke-width: 1; }
-.lk-rings .rg-bezel line.is-major { stroke: color-mix(in srgb, var(--cream) 30%, transparent); }
-.lk-rings .rg-score .rg-utrk { stroke-width: 2; }
+.lk-rings .rg-bezel line { stroke: color-mix(in srgb, var(--cream) 34%, transparent); stroke-width: 1.5; stroke-linecap: round; }
 .lk-rings .rg-score .rg-uband { stroke-width: 7; }
 .lk-rings .rg-uend line { stroke: var(--rg-uband-ink); stroke-width: 1.5; stroke-linecap: round; }
-.lk-rings .rg-svg .rg-ulbl text { font-size: 13px; fill: var(--rg-uband-ink); }
 .lk-rings .rg-end { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 3.5; }
 .lk-rings .rg-end.is-shift { fill: var(--rg-shift); }
 .lk-rings .rg-rel { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: -8px; font-family: var(--serif); font-size: 20px; line-height: 1.3; text-align: center; text-wrap: balance; }
 .lk-rings .rg-rel i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--rg-read); }
 .lk-rings .rg-rel.is-shift i { background: var(--rg-shift); }
 .lk-rings .rg-score .rg-rel:not(:has(i)) { display: block; font-size: 17px; }
-.lk-rings .rg-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--cream) 14%, transparent); }
-.lk-rings .rg-stats div { display: flex; flex-direction: column; gap: 4px; }
-.lk-rings .rg-stats dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--rg-ink2); }
-.lk-rings .rg-stats dd { font-size: 30px; line-height: 1; font-weight: 300; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
-.lk-rings .rg-sign { font-weight: 300; }
 .lk-rings .rg-how { font-size: 12px; line-height: 1.5; color: var(--rg-ink2); }
 
-/* ---------- the four parts ---------- */
-.lk-rings .rg-parts-top { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 20px; align-items: center; }
-.lk-rings .rg-conc { width: 148px; }
-.lk-rings .rg-parts-sum { display: flex; flex-direction: column; gap: 12px; }
-.lk-rings .rg-big--hero { font-size: 56px; }
-.lk-rings .rg-ans--hero { font-size: 15px; line-height: 1.4; }
+/* ---------- the four parts (a standard card) ---------- */
+.lk-rings .rg-parts-top { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 20px; align-items: center; }
+.lk-rings .rg-conc-f { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.lk-rings .rg-conc { width: 136px; }
+.lk-rings .rg-conc-cap { font-family: var(--mono); font-size: 10.5px; line-height: 1.2; color: var(--rg-ink2); text-align: center; }
+.lk-rings .rg-parts-sum { display: flex; flex-direction: column; gap: 8px; }
 .lk-rings .rg-before-halo { stroke: var(--rg-ground); stroke-width: 5; stroke-linecap: round; }
-.lk-rings .rg-before { stroke: var(--rg-ink); stroke-width: 2; stroke-linecap: round; }
-.lk-rings .rg-partlist { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--cream) 14%, transparent); }
+.lk-rings .rg-before { stroke: var(--ap-ink); stroke-width: 2; stroke-linecap: round; }
+.lk-rings .rg-partlist { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; border-top: 1px solid var(--ap-line); }
 .lk-rings .rg-part { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; align-items: start; }
 .lk-rings .rg-picon { width: 24px; height: 24px; display: block; }
-.lk-rings .rg-picon circle { fill: none; stroke: color-mix(in srgb, var(--cream) 18%, transparent); stroke-width: 1.4; }
+.lk-rings .rg-picon circle { fill: none; stroke: var(--rg-empty); stroke-width: 1.4; }
 .lk-rings .rg-picon circle.is-on { stroke: var(--rg-read); stroke-width: 2.2; }
-.lk-rings .rg-part-top { display: flex; align-items: baseline; gap: 8px; font-size: 14px; line-height: 1.3; }
-.lk-rings .rg-part-top b { font-weight: 500; }
+.lk-rings .rg-part-top { display: flex; align-items: baseline; gap: 8px; font-size: 14px; line-height: 1.3; min-width: 0; }
+.lk-rings .rg-part-top b { font-weight: 500; white-space: nowrap; }
 .lk-rings .rg-part-wt { font-family: var(--mono); font-size: 10.5px; color: var(--rg-ink2); }
 .lk-rings .rg-part-top em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--rg-ink2); white-space: nowrap; }
-.lk-rings .rg-part-top em span { font-family: var(--mono); font-size: 11px; margin-left: 8px; color: var(--rg-ink); }
-.lk-rings .rg-part-top em.is-down, .lk-rings .rg-part-top em.is-down span { color: var(--rg-shift); }
-.lk-rings .rg-part-bar { display: grid; grid-template-columns: minmax(0, 1fr) 24px; gap: 12px; align-items: center; margin-top: 8px; }
-.lk-rings .rg-part-bar i { position: relative; display: block; height: 6px; border-radius: 999px; background: var(--rg-trk); }
-.lk-rings .rg-part-bar i b { position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 999px; background: var(--rg-read); transform-origin: left center; }
-.lk-rings .rg-part-bar i u { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--rg-ink); box-shadow: 0 0 0 1.5px var(--rg-ground); }
-.lk-rings .rg-part-bar span { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--rg-ink); }
+.lk-rings .rg-part-bar { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 12px; align-items: center; margin-top: 8px; }
+/* the change as a diverging bar from a zero tick in the middle, in the reading colour both ways */
+.lk-rings .rg-div { position: relative; display: block; height: 12px; }
+.lk-rings .rg-div::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 4px; border-radius: 999px; background: var(--rg-trk); }
+.lk-rings .rg-div u { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--rg-ink2); }
+.lk-rings .rg-div b { position: absolute; top: 4px; height: 4px; width: var(--w); border-radius: 999px; background: var(--rg-read); }
+.lk-rings .rg-div b.is-pos { left: 50%; transform-origin: left center; }
+.lk-rings .rg-div b.is-neg { right: 50%; transform-origin: right center; }
+.lk-rings .rg-div-v { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--rg-ink); white-space: nowrap; }
 
 /* ---------- FloraScore over 30 days ---------- */
-.lk-rings .rg-yt line { stroke: var(--ap-grid); stroke-width: 1; }
+.lk-rings .rg-yt { stroke: var(--ap-grid); stroke-width: 1; }
 .lk-rings .rg-svg .rg-yl.is-usual { fill: var(--ap-usual-ink); font-weight: 700; }
-.lk-rings .rg-ga { stop-color: var(--ap-chart); stop-opacity: .12; }
-.lk-rings .rg-gm { stop-color: var(--ap-chart); stop-opacity: .02; }
+.lk-rings .rg-ga { stop-color: var(--ap-chart); stop-opacity: .1; }
 .lk-rings .rg-gb { stop-color: var(--ap-chart); stop-opacity: 0; }
 .lk-rings .rg-line { fill: none; stroke: var(--rg-read); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.lk-rings .rg-tdot { fill: var(--rg-shift); stroke: var(--rg-ground); stroke-width: 1.5; }
+.lk-rings .rg-tdot { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 1.5; }
+.lk-rings .rg-tdot.is-shift { fill: var(--rg-shift); }
 .lk-rings .rg-empty-plot { display: flex; flex-direction: column; justify-content: space-between; height: 120px; padding: 8px 0; }
 .lk-rings .rg-empty-plot span { display: block; border-top: 1px solid var(--ap-grid); }
 
@@ -195,35 +196,46 @@
 .lk-rings .rg-wd-sym i { width: 6px; height: 6px; border-radius: 50%; background: var(--ap-teal); }
 .lk-rings .rg-day { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
 .lk-rings .rg-day-trk { fill: none; stroke: var(--rg-trk); }
-.lk-rings .rg-day-trk.is-faint { stroke: color-mix(in srgb, var(--ap-ink) 5%, transparent); }
+.lk-rings .rg-day-ring { fill: none; stroke: var(--rg-read); }
+.lk-rings .rg-day-empty { fill: none; stroke: var(--rg-empty); }
+.lk-rings .rg-day-gap { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-rings .rg-day-arc { fill: none; stroke: var(--rg-read); stroke-linecap: round; }
 .lk-rings .rg-day-fill { fill: var(--ap-shift-bg); }
-.lk-rings .rg-day.is-usual .rg-day-arc { stroke: var(--ap-usual-ink); }
-.lk-rings .rg-day.is-shift .rg-day-arc { stroke: var(--rg-shift); }
-.lk-rings .rg-day.is-unsure .rg-day-arc { stroke: var(--ap-ink3); }
-.lk-rings .rg-day.is-logged .rg-day-arc { stroke: var(--rg-read); }
+.lk-rings .rg-day.is-usual .rg-day-ring { stroke: var(--ap-usual-ink); }
+.lk-rings .rg-day.is-shift .rg-day-ring { stroke: var(--rg-shift); }
+.lk-rings .rg-day.is-unsure .rg-day-ring { stroke: var(--ap-ink3); }
 .lk-rings .rg-wd:has(.is-none, .is-pending, .is-nocount) b, .lk-rings .rg-md:has(.is-none, .is-pending, .is-nocount) b { color: var(--rg-ink2); font-weight: 400; }
 
 .lk-rings .rg-cal { display: flex; flex-direction: column; gap: 8px; }
-.lk-rings .rg-cal-h, .lk-rings .rg-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px 4px; justify-items: center; }
+.lk-rings .rg-cal-h, .lk-rings .rg-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px 4px; justify-items: center; }
 .lk-rings .rg-cal-h li { font-family: var(--mono); font-size: 10.5px; color: var(--rg-ink2); }
 .lk-rings .rg-md { position: relative; width: 34px; height: 34px; }
 .lk-rings .rg-md b { font-size: 10.5px; }
 .lk-rings .rg-md.is-today::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--rg-ink); }
 .lk-rings .rg-md.is-today b { font-weight: 700; }
+/* where one month turns into the next: the month's name over the 1st, and a hairline to its left */
+.lk-rings .rg-md.is-first::before { content: attr(data-mon); position: absolute; left: 0; right: 0; top: -12px; font-family: var(--mono); font-size: 10px; line-height: 10px; letter-spacing: .06em; text-transform: uppercase; text-align: center; color: var(--rg-ink); }
+.lk-rings .rg-md.is-first b { font-weight: 700; color: var(--rg-ink); }
 
-/* ---------- timing, how often ---------- */
-.lk-rings .rg-vt { stroke: var(--ap-ink3); stroke-width: 1; opacity: .6; }
+/* ---------- timing: the morning dial ---------- */
+.lk-rings .rg-vt { stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-rings .rg-mdot { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 1; }
 .lk-rings .rg-mdot.is-shift { fill: var(--rg-shift); }
-.lk-rings .rg-bead { fill: var(--rg-read); }
-.lk-rings .rg-bead.is-shift { fill: var(--rg-shift); }
-.lk-rings .rg-bead.is-zero { fill: none; stroke: var(--rg-read); stroke-width: 1.5; }
-.lk-rings .rg-bead.is-zero.is-shift { stroke: var(--rg-shift); }
+.lk-rings .rg-mdial .rg-band { fill: color-mix(in srgb, var(--ap-band) 80%, transparent); }
+
+/* ---------- how often: the 30-day ring ---------- */
+.lk-rings .rg-oseg { fill: none; stroke: var(--rg-empty); }
+.lk-rings .rg-oseg.is-on { stroke: var(--rg-read); }
+.lk-rings .rg-oseg.is-on.is-shift { stroke: var(--rg-shift); }
+.lk-rings .rg-ofuture { fill: none; stroke: var(--ap-line); stroke-width: 1; }
+.lk-rings .rg-ogap { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
+.lk-rings .rg-ozero { fill: var(--rg-ground); stroke: var(--rg-read); stroke-width: 1.5; }
+.lk-rings .rg-ozero.is-shift { stroke: var(--rg-shift); }
 
 /* ---------- form ---------- */
-.lk-rings .rg-forms { position: relative; padding-top: 24px; }
-.lk-rings .rg-fband { position: absolute; top: 0; bottom: 24px; border-radius: 16px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
+.lk-rings .rg-forms { position: relative; }
+.lk-rings .rg-fbox { position: relative; padding-top: 24px; }
+.lk-rings .rg-fband { position: absolute; top: 0; bottom: 0; border-radius: 16px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
 .lk-rings .rg-fband em { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .02em; color: var(--ap-usual-ink); white-space: nowrap; }
 .lk-rings .rg-fcols { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding-bottom: 12px; }
 .lk-rings .rg-fc { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
@@ -233,6 +245,9 @@
 .lk-rings .rg-fc.is-shift .rg-day-arc { stroke: var(--rg-shift); }
 .lk-rings .rg-fc-l { font-size: 10.5px; line-height: 1.2; color: var(--rg-ink2); text-align: center; }
 .lk-rings .rg-fc-l.is-mono { font-family: var(--mono); font-size: 12px; }
+.lk-rings .rg-fpairs { position: relative; height: 24px; }
+.lk-rings .rg-fpair { position: absolute; top: 0; height: 8px; border: 1px solid var(--rg-ink2); border-top: 0; border-radius: 0 0 2px 2px; }
+.lk-rings .rg-fpair em { position: absolute; left: 0; right: 0; top: 8px; font-family: var(--mono); font-style: normal; font-size: 10.5px; line-height: 12px; text-align: center; color: var(--rg-ink2); }
 .lk-rings .rg-fscale { display: flex; justify-content: space-between; margin-top: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--rg-ink2); }
 .lk-rings .rg-fscale span:first-child::before { content: "\2190  "; }
 .lk-rings .rg-fscale span:last-child::after { content: "  \2192"; }
@@ -260,6 +275,7 @@
 /* ---------- weekly check-in ---------- */
 .lk-rings .rg-cks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; }
 .lk-rings .rg-ck { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-width: 0; }
+.lk-rings .rg-ck .rg-chip { min-height: 20px; padding: 4px 8px; line-height: 1.15; white-space: normal; text-align: center; justify-content: center; }
 .lk-rings .rg-ck-g { position: relative; width: 112px; }
 .lk-rings .rg-ck-v { position: absolute; left: 24px; right: 24px; top: 32px; height: 48px; display: grid; place-items: center; font-size: 13px; line-height: 1.15; font-weight: 500; }
 .lk-rings .rg-checkin .rg-uband { stroke-width: 4; }
@@ -270,11 +286,14 @@
 .lk-rings .rg-ck-l { font-size: 14px; font-weight: 500; line-height: 1.25; }
 .lk-rings .rg-hist { display: block; width: 96px; height: 22px; overflow: visible; }
 .lk-rings .rg-hd { fill: var(--ap-ink3); }
-.lk-rings .rg-hd.is-new { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 1; }
-.lk-rings .rg-hd.is-new.is-shift { fill: var(--rg-shift); }
+.lk-rings .rg-hd.is-new { fill: var(--rg-ground); stroke: var(--rg-read); stroke-width: 1.5; }
+.lk-rings .rg-hd.is-new.is-shift { stroke: var(--rg-shift); }
+.lk-rings .rg-ckms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.lk-rings .rg-ckm { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; min-width: 0; }
+.lk-rings .rg-ckm svg { width: 56px; }
+.lk-rings .rg-ckm span { font-size: 11.5px; line-height: 1.25; color: var(--rg-ink2); }
 .lk-rings .rg-cta { display: flex; }
-.lk-rings .rg-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ray); color: var(--forest); font: 500 14px/20px var(--sans); cursor: pointer; transition: transform .2s var(--ap-ease); }
-.lk-rings .rg-btn:active { transform: scale(.98); }
+.lk-rings .rg-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ray); color: var(--forest); font: 500 14px/20px var(--sans); cursor: pointer; }
 .lk-rings .rg-btn:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
 .lk-rings:not([data-theme="dark"]) .rg-btn { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 12%, transparent); }
 
@@ -286,27 +305,28 @@
 .lk-rings .rg-pr-ring > b, .lk-rings .rg-pring > b { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 300; }
 .lk-rings .rg-pr-ring > b > span { font-size: 36px; line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .lk-rings .rg-pr-ring small { font-family: var(--mono); font-size: 11px; color: var(--rg-ink2); font-weight: 400; }
-.lk-rings .rg-pr figcaption { font-size: 12.5px; line-height: 1.3; color: var(--rg-ink2); }
+.lk-rings .rg-pr figcaption { font-size: 12.5px; line-height: 1.3; color: var(--rg-ink2); text-wrap: balance; }
+.lk-rings .rg-pr figcaption .rg-glyph { display: inline-block; vertical-align: -1px; margin-right: 4px; }
 .lk-rings .rg-pr.is-a figcaption { color: var(--rg-ink); font-weight: 500; }
-.lk-rings .rg-pseg { fill: none; stroke: var(--rg-trk); stroke-width: 9; }
-.lk-rings .rg-pr.is-a .rg-pseg.is-on { stroke: var(--ap-shift); }
-.lk-rings .rg-pr.is-b .rg-pseg.is-on { stroke: var(--ap-usual-ink); }
+.lk-rings .rg-pctx { fill: none; stroke: var(--ap-teal); stroke-width: 1; }
+.lk-rings .rg-pseg { fill: none; stroke: var(--rg-empty); stroke-width: 9; }
+.lk-rings .rg-pseg.is-on { stroke: var(--rg-read); }
+.lk-rings .rg-pseg.is-shift { stroke: var(--rg-shift); }
 .lk-rings .rg-sure { display: flex; flex-direction: column; gap: 8px; }
-.lk-rings .rg-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-.lk-rings .rg-tiers span { display: flex; align-items: center; justify-content: center; min-height: 24px; padding: 0 8px; border-radius: 999px; background: var(--ap-card2); color: var(--rg-ink2); font-size: 10.5px; font-weight: 500; text-align: center; white-space: nowrap; }
+.lk-rings .rg-tiers { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.lk-rings .rg-tiers span[aria-hidden] { display: flex; align-items: center; justify-content: center; min-height: 24px; padding: 0 8px; border-radius: 999px; background: var(--ap-card2); color: var(--rg-ink2); font-size: 10.5px; font-weight: 500; text-align: center; white-space: nowrap; }
 .lk-rings .rg-tiers span.is-on { background: var(--rg-read); color: var(--ap-card); }
 .lk-rings .rg-pnote { padding-top: 12px; border-top: 1px solid var(--ap-line); font-size: 12px; line-height: 1.45; color: var(--rg-ink2); }
-.lk-rings .rg-pempty { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 16px; align-items: center; }
-.lk-rings .rg-pempty > div { display: flex; flex-direction: column; gap: 8px; }
-.lk-rings .rg-pempty .rg-ptitle { font-size: 19px; }
-.lk-rings .rg-pempty .rg-ans { font-size: 14.5px; }
-.lk-rings .rg-pring { position: relative; width: 120px; }
-.lk-rings .rg-pct { display: flex; align-items: baseline; font-size: 32px; line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.lk-rings .rg-pct small { font-size: 16px; letter-spacing: 0; }
-.lk-rings .rg-pring em { font-style: normal; font-weight: 400; font-size: 10.5px; line-height: 1.2; color: var(--rg-ink2); text-align: center; max-width: 72px; }
+.lk-rings .rg-pempty { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; }
+.lk-rings .rg-pempty .rg-ptitle { font-size: 20px; }
+.lk-rings .rg-pring { position: relative; width: 96px; }
+.lk-rings .rg-pct { display: flex; align-items: baseline; font-size: 28px; line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.lk-rings .rg-pct small { font-size: 14px; letter-spacing: 0; }
+.lk-rings .rg-pring em { font-style: normal; font-weight: 400; font-size: 10px; line-height: 1.2; color: var(--rg-ink2); text-align: center; max-width: 56px; }
 .lk-rings .rg-learn .rg-seg { fill: none; stroke: var(--rg-trk); stroke-width: 14; }
 .lk-rings .rg-learn .rg-seg.is-on { stroke: var(--rg-read); }
-.lk-rings .rg-learn--light .rg-seg { stroke-width: 10; }
+.lk-rings .rg-learn--light .rg-seg { stroke-width: 8; }
+.lk-rings .rg-learn--light .rg-seg:not(.is-on) { stroke: var(--rg-empty); }
 
 /* ---------- motion: rings draw, bars grow, dots pop, numerals count (in JS) ---------- */
 @media (prefers-reduced-motion: no-preference) {
@@ -314,26 +334,30 @@
   .lk-rings .rg-draw { stroke-dasharray: 1; animation: rgDraw 1s calc(150ms + var(--i, 0) * var(--rg-st)) var(--ap-ease) both; }
   .lk-rings .rg-draw--slow { animation-duration: 1.3s; }
   .lk-rings .rg-draw--fast { animation-duration: .7s; animation-delay: 60ms; }
-  .lk-rings .rg-day .rg-day-arc { animation-duration: .8s; }
-  .lk-rings .rg-week, .lk-rings .rg-month { --rg-st: 16ms; }
+  .lk-rings .rg-day .rg-day-ring, .lk-rings .rg-day .rg-day-arc { animation-duration: .8s; }
+  .lk-rings .rg-month { --rg-st: 16ms; }
   .lk-rings .rg-week { --rg-st: 60ms; }
   .lk-rings .rg-form { --rg-st: 50ms; }
   .lk-rings .rg-symptoms { --rg-st: 90ms; }
+  .lk-rings .rg-oseg.rg-draw { animation-duration: .5s; animation-delay: calc(200ms + var(--i, 0) * 22ms + var(--k, 1) * 70ms); }
   .lk-rings :is(.rg-end, .rg-gend) { transform-box: fill-box; transform-origin: center; animation: rgPop .45s 1s var(--ap-ease) both; }
   .lk-rings .rg-gend { animation-delay: calc(.7s + var(--i, 0) * 70ms); }
-  .lk-rings :is(.rg-band, .rg-band-edge, .rg-uend, .rg-ulbl, .rg-fband, .rg-bezel) { animation: rgFade .5s var(--ap-ease) both; }
+  .lk-rings :is(.rg-band, .rg-band-edge, .rg-uend, .rg-fband, .rg-bezel, .rg-ogap, .rg-band-lbl) { animation: rgFade .5s var(--ap-ease) both; }
   .lk-rings .rg-area { animation: rgFade .9s .45s var(--ap-ease) both; }
-  .lk-rings :is(.rg-tdot, .rg-mdot, .rg-sd, .rg-hd, .rg-pseg, .rg-seg) { transform-box: fill-box; transform-origin: center; animation: rgPop .45s calc(250ms + var(--i, 0) * 18ms) var(--ap-ease) both; }
+  .lk-rings :is(.rg-tdot, .rg-mdot, .rg-sd, .rg-hd, .rg-pseg, .rg-seg, .rg-ozero) { transform-box: fill-box; transform-origin: center; animation: rgPop .45s calc(250ms + var(--i, 0) * 18ms) var(--ap-ease) both; }
+  .lk-rings .rg-mdot { animation-delay: calc(300ms + var(--i, 0) * 24ms); }
+  .lk-rings .rg-ozero { animation-delay: calc(400ms + var(--i, 0) * 22ms); }
   .lk-rings .rg-pseg { animation-delay: calc(200ms + var(--i, 0) * 14ms); }
   .lk-rings .rg-seg { animation-delay: calc(150ms + var(--i, 0) * 50ms); }
   .lk-rings .rg-sd { animation-delay: calc(250ms + var(--i, 0) * 14ms); }
-  .lk-rings .rg-beads circle, .lk-rings .rg-bead.is-zero { transform-box: fill-box; transform-origin: center; animation: rgPop .4s calc(200ms + var(--i, 0) * 18ms + var(--k, 0) * 50ms) var(--ap-ease) both; }
   .lk-rings :is(.rg-now, .rg-now-halo, .rg-now-lbl) { transform-box: fill-box; transform-origin: center; animation: rgPop .5s 1.05s var(--ap-ease) both; }
+  .lk-rings .rg-mdial .rg-now-halo, .lk-rings .rg-mdial .rg-now-lbl { animation-delay: 1.2s; }
   .lk-rings :is(.rg-before, .rg-before-halo) { animation: rgFade .4s calc(1s + var(--i, 0) * 70ms) var(--ap-ease) both; }
-  .lk-rings .rg-part-bar b { animation: rgGrowX .9s calc(300ms + var(--i, 0) * 80ms) var(--ap-ease) both; }
-  .lk-rings .rg-part-bar u { animation: rgFade .4s calc(900ms + var(--i, 0) * 80ms) var(--ap-ease) both; }
+  .lk-rings .rg-div b { animation: rgGrowX .9s calc(400ms + var(--i, 0) * 80ms) var(--ap-ease) both; }
   .lk-rings .rg-wd-sym i { animation: rgPop .4s 900ms var(--ap-ease) both; }
   .lk-rings .rg-dial-c { animation: rgFade .7s .2s var(--ap-ease) both; }
+  .lk-rings .rg-btn { transition: transform .2s var(--ap-ease); }
+  .lk-rings .rg-btn:active { transform: scale(.98); }
 }
 @keyframes rgIn { from { opacity: 0; transform: translateY(12px); } }
 @keyframes rgDraw { 0% { stroke-dashoffset: 1; opacity: 0; } 6% { opacity: 1; } 100% { stroke-dashoffset: 0; } }

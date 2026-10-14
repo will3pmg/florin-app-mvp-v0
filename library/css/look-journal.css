@@ -1,5 +1,5 @@
-/* Look: Field journal (.lk-journal). Editorial science: the answer in Lora, one figure drawn like a science
-   magazine's, a mono caption under a hairline. Cream paper on light, a night edition on dark.
+/* Look: Field journal (.lk-journal). Editorial science: the answer in one Lora sentence, one figure drawn like a
+   science magazine's, a one-line mono caption under a hairline. Cream paper on light, a night edition on dark.
    Every colour is an app token (--ap-*) or derived from the six brand colours. Spacing and radii on the DESIGN.md
    scales. All motion sits inside prefers-reduced-motion: no-preference, and each animation only runs from a start
    state to the state that renders without it. */
@@ -8,7 +8,8 @@
   --jr-paper: oklch(from var(--cream) calc(l + .014) calc(c * 1.2) h);
   --jr-rule: var(--ap-ink);
   --jr-col: color-mix(in srgb, var(--ap-ink) 5%, transparent);
-  --jr-hl-u: color-mix(in srgb, var(--plum) 17%, transparent);
+  /* in the answer, your usual is an underline and a shift is a highlighter band: they differ by shape, not only hue */
+  --jr-ul: color-mix(in srgb, var(--ap-usual-ink) 70%, transparent);
   --jr-hl-s: color-mix(in srgb, var(--gold) 46%, transparent);
   --jr-on-shift: var(--forest);
   --jr-on-read: var(--cream);
@@ -21,15 +22,14 @@
   --jr-paper: var(--ap-card);
   --jr-rule: color-mix(in srgb, var(--cream) 72%, transparent);
   --jr-col: color-mix(in srgb, var(--cream) 6%, transparent);
-  --jr-hl-u: color-mix(in srgb, var(--ray) 20%, transparent);
-  --jr-hl-s: color-mix(in srgb, var(--gold) 26%, transparent);
+  --jr-hl-s: color-mix(in srgb, var(--ap-shift) 42%, transparent);
   --jr-on-read: var(--forest);
   --jr-u-fill: color-mix(in srgb, var(--ray) 24%, transparent);
   --jr-u-edge: color-mix(in srgb, var(--ray) 58%, transparent);
 }
 
 /* ---------- the page of the journal ---------- */
-.lk-journal .jr { display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 24px; background: var(--jr-paper); box-shadow: inset 0 0 0 1px var(--ap-line); color: var(--ap-ink); font-family: var(--sans); }
+.lk-journal .jr { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 24px; background: var(--jr-paper); box-shadow: inset 0 0 0 1px var(--ap-line); color: var(--ap-ink); font-family: var(--sans); }
 .lk-journal .jr-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--jr-rule); font-family: var(--mono); font-size: 11px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; }
 .lk-journal .jr-kick { color: var(--ap-ink); font-weight: 700; }
 .lk-journal .jr-meta { display: inline-flex; align-items: center; gap: 8px; color: var(--ap-ink2); text-align: right; white-space: nowrap; }
@@ -37,52 +37,56 @@
 .lk-journal .jr-lede { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 27px; letter-spacing: -.005em; color: var(--ap-ink); text-wrap: pretty; }
 .lk-journal .jr-deck { margin: 0; font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
 
-/* words in the answer carry the colour of the marks they name, like a highlighter in a field notebook */
-.lk-journal .jr-mk { background-image: linear-gradient(to top, var(--jr-hl) 0, var(--jr-hl) 40%, transparent 40%); background-repeat: no-repeat; background-size: 100% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-.lk-journal .jr-mk--usual { --jr-hl: var(--jr-hl-u); }
-.lk-journal .jr-mk--shift { --jr-hl: var(--jr-hl-s); }
+/* words in the answer carry the role of the marks they name */
+.lk-journal .jr-mk { background-repeat: no-repeat; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.lk-journal .jr-mk--usual { background-image: linear-gradient(var(--jr-ul), var(--jr-ul)); background-size: 100% 2px; background-position: 0 100%; }
+.lk-journal .jr-mk--shift { background-image: linear-gradient(to top, var(--jr-hl-s) 0, var(--jr-hl-s) 40%, transparent 40%); background-size: 100% 100%; }
 
 /* ---------- the figure ---------- */
 .lk-journal .jr-fig { margin: 0; display: flex; flex-direction: column; gap: 12px; }
 .lk-journal .jr-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.lk-journal .jr-cap { padding-top: 8px; border-top: 1px solid var(--ap-line); font-family: var(--mono); font-size: 10.5px; line-height: 17px; color: var(--ap-ink2); }
-.lk-journal .jr-fn { margin-right: 8px; font-weight: 700; color: var(--ap-ink); }
-.lk-journal .jr-sw { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 50%; vertical-align: 0; background: var(--ap-chart); }
+.lk-journal .jr-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-top: 8px; border-top: 1px solid var(--ap-line); font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
+.lk-journal .jr-fn { font-weight: 700; color: var(--ap-ink); white-space: nowrap; }
+.lk-journal .jr-ct { flex: 1 1 160px; min-width: 0; }
+.lk-journal .jr-key { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.lk-journal .jr-sw { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-chart); }
 .lk-journal .jr-sw--usual { background: var(--jr-u-fill); box-shadow: inset 0 0 0 1px var(--jr-u-edge); }
-.lk-journal .jr-key { white-space: nowrap; }
 .lk-journal .jr-sw--shift { background: var(--ap-shift); }
 .lk-journal .jr-sw--either { background: linear-gradient(90deg, var(--jr-u-edge) 50%, var(--ap-shift) 50%); }
 .lk-journal .jr-sw--open { background: none; box-shadow: inset 0 0 0 1px var(--ap-ink2); }
-.lk-journal .jr-sw--nocount { background: none; box-shadow: inset 0 0 0 1.5px var(--ap-ink2); }
-.lk-journal .jr-sw--open-shift { background: none; box-shadow: inset 0 0 0 1.5px var(--ap-shift); }
+.lk-journal .jr-sw--nocount { background: radial-gradient(circle, var(--ap-ink2) 0 1.5px, transparent 1.6px); box-shadow: inset 0 0 0 1px var(--ap-ink2); }
+.lk-journal .jr-sw--nil { width: 8px; height: 1px; border-radius: 0; background: var(--ap-ink2); }
+.lk-journal .jr-sw--band { width: 10px; height: 8px; border-radius: 2px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
+.lk-journal .jr-sw--ring { width: 10px; height: 10px; background: none; box-shadow: inset 0 0 0 1px var(--ap-ink); }
 .lk-journal .jr-sw--ctx { border-radius: 2px; background: var(--jr-ctx); }
 
-/* SVG type: Space Mono for what is measured, DM Sans for names, Lora for the one spoken aside */
-.lk-journal .jr-svg text { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; fill: var(--ap-ink2); }
+/* SVG type: Space Mono for what is measured, DM Sans for names, Lora for the one spoken aside. Sizes are set for a
+   318 viewBox, so that a 375pt phone still draws them at 10px or more */
+.lk-journal .jr-svg text { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; fill: var(--ap-ink2); }
 .lk-journal .jr-svg .t3 { fill: var(--ap-ink3); }
 .lk-journal .jr-svg .tk { fill: var(--ap-ink); }
 .lk-journal .jr-svg .tk-2 { fill: var(--ap-ink2); }
 .lk-journal .jr-svg .tu { fill: var(--ap-usual-ink); }
 .lk-journal .jr-svg .ts { fill: var(--ap-shift-ink); }
-.lk-journal .jr-svg .tm { font-size: 11px; fill: var(--ap-ink); }
-.lk-journal .jr-svg .tm.ts { fill: var(--ap-shift-ink); font-weight: 700; }
+.lk-journal .jr-svg .tm { font-size: 11.5px; fill: var(--ap-ink); }
+.lk-journal .jr-svg .tm.tb { font-weight: 700; }
 .lk-journal .jr-svg .tl { font-family: var(--sans); font-size: 14px; letter-spacing: 0; fill: var(--ap-ink); }
 .lk-journal .jr-svg .tl--sm { font-size: 13px; }
 .lk-journal .jr-svg .tl--b { font-weight: 500; }
 .lk-journal .jr-svg .jr-ital { font-family: var(--serif); font-style: italic; font-size: 15px; letter-spacing: 0; fill: var(--ap-ink); }
 .lk-journal .jr-svg .jr-big { font-family: var(--sans); font-weight: 300; font-size: 96px; letter-spacing: -.045em; fill: var(--ap-ink); font-variant-numeric: tabular-nums; }
+.lk-journal .jr-svg .jr-big--learn { font-size: 56px; letter-spacing: -.03em; }
 .lk-journal .jr-svg .jr-big--none { font-size: 34px; letter-spacing: -.02em; fill: var(--ap-ink2); }
-.lk-journal .jr-svg .jr-mid { font-family: var(--sans); font-weight: 300; font-size: 22px; letter-spacing: -.02em; }
 .lk-journal .jr-svg .jr-date { font-family: var(--sans); font-weight: 300; font-size: 17px; letter-spacing: -.01em; fill: var(--ap-ink); }
-.lk-journal .jr-svg .jr-dnum { font-size: 10.5px; letter-spacing: 0; font-weight: 700; }
+.lk-journal .jr-svg .jr-dnum { font-size: 11px; letter-spacing: 0; font-weight: 700; }
 .lk-journal .jr-svg .on-usual { fill: var(--ap-usual-ink); }
 .lk-journal .jr-svg .on-shift { fill: var(--jr-on-shift); }
 .lk-journal .jr-svg .on-read { fill: var(--jr-on-read); }
 .lk-journal .jr-svg .on-either { fill: var(--ap-ink); }
 .lk-journal .jr-svg .on-open, .lk-journal .jr-svg .on-nocount { fill: var(--ap-ink2); font-weight: 400; }
 .lk-journal .jr-svg .jr-ratio { font-family: var(--sans); font-weight: 300; font-size: 22px; letter-spacing: -.02em; fill: var(--ap-ink); }
-.lk-journal .jr-svg .jr-ratio-of { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; fill: var(--ap-ink2); }
-.lk-journal .jr-svg .jr-halo { paint-order: stroke; stroke: var(--jr-paper); stroke-width: 4px; stroke-linejoin: round; fill: var(--ap-ink); }
+.lk-journal .jr-svg .jr-ratio-of { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; fill: var(--ap-ink2); }
+.lk-journal .jr-svg .jr-halo { paint-order: stroke; stroke: var(--jr-paper); stroke-width: 4px; stroke-linejoin: round; }
 
 /* SVG marks: the reading, your usual, a shift, context, and the hairlines that hold them */
 .lk-journal .jr-grid { stroke: var(--ap-grid); stroke-width: 1; }
@@ -93,32 +97,30 @@
 .lk-journal .jr-arc { fill: none; stroke: var(--ap-chart); stroke-width: 3; stroke-linecap: round; }
 .lk-journal .jr-arc-off { fill: none; stroke: var(--ap-line); stroke-width: 3; stroke-linecap: round; }
 .lk-journal .jr-band { fill: var(--ap-band); }
-.lk-journal .jr-band-arc { fill: none; stroke: var(--ap-band); stroke-width: 16; }
+.lk-journal .jr-band-arc { fill: none; stroke: var(--jr-u-fill); stroke-width: 16; }
 .lk-journal .jr-bandedge { stroke: var(--ap-band-edge); stroke-width: 1; }
-.lk-journal .jr-bracket { fill: none; stroke: var(--ap-usual-ink); stroke-width: 1; }
 .lk-journal .jr-lead { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-journal .jr-lead-end { fill: var(--ap-ink3); }
 .lk-journal .jr-lead.tu-s { stroke: var(--ap-usual-ink); }
 .lk-journal .jr-lead-end.tu-s { fill: var(--ap-usual-ink); }
 .lk-journal .jr-read { fill: var(--ap-chart); }
 .lk-journal .jr-usual { fill: var(--jr-u-fill); stroke: var(--jr-u-edge); stroke-width: 1; }
-.lk-journal .jr-marker { fill: var(--ap-ink); }
-.lk-journal .jr-base { stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-journal .jr-shift { fill: var(--ap-shift); }
+.lk-journal .jr-stem { fill: none; stroke: var(--ap-shift); stroke-width: 1; }
 .lk-journal .jr-ctx { fill: var(--jr-ctx); }
 .lk-journal .jr-open { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-journal .jr-open-ink { fill: var(--jr-paper); stroke: var(--ap-ink2); stroke-width: 1.5; }
 .lk-journal .jr-open-shift { fill: var(--jr-paper); stroke: var(--ap-shift); stroke-width: 1.5; }
+.lk-journal .jr-nc { fill: var(--ap-ink2); }
 .lk-journal .jr-paperfill { fill: var(--jr-paper); }
-.lk-journal .jr-today { fill: none; stroke: var(--ap-ink); stroke-width: 1.25; }
+.lk-journal .jr-today { fill: none; stroke: var(--ap-ink); stroke-width: 1; }
 .lk-journal .jr-vdot { stroke: var(--jr-paper); stroke-width: 2.5; }
 .lk-journal .jr-col { fill: var(--jr-col); }
 .lk-journal .jr-nil { stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-journal .jr-sym { fill: var(--ap-ink2); }
 .lk-journal .jr-symbar { fill: var(--ap-chart); }
 .lk-journal .jr-trace { fill: none; stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; stroke: color-mix(in srgb, var(--ap-chart) 45%, transparent); }
-.lk-journal .jr-db { fill: none; stroke: var(--ap-ink3); stroke-width: 2; stroke-linecap: round; }
-.lk-journal .jr-db--shift { stroke: var(--ap-shift); stroke-width: 3; }
+.lk-journal .jr-db { fill: none; stroke: var(--ap-ink2); stroke-width: 2; stroke-linecap: round; }
 
 /* ---------- what closes a card ---------- */
 .lk-journal .jr-note { margin: 0; font-family: var(--serif); font-style: italic; font-size: 13px; line-height: 19px; color: var(--ap-ink2); }
@@ -133,10 +135,11 @@
 .lk-journal .jr-tag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink2); font-family: var(--mono); font-size: 10px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .lk-journal .jr-tag--usual { background: var(--ap-usual-bg); color: var(--ap-usual-ink); }
 .lk-journal .jr-tag--shift { background: var(--ap-shift-bg); color: var(--ap-shift-ink); }
-.lk-journal .jr-btn { align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--ray); color: var(--forest); font-size: 14px; font-weight: 500; line-height: 20px; cursor: pointer; transition: transform .2s var(--ap-ease); }
+.lk-journal .jr-btn { align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ray); color: var(--forest); font-family: var(--sans); font-size: 14px; font-weight: 500; line-height: 20px; cursor: pointer; }
 .lk-journal .jr-btn:active { transform: scale(.97); }
-.lk-journal .jr-btn:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
-.lk-journal .jr-more { margin: 0; font-family: var(--mono); font-size: 10.5px; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.lk-journal .jr-btn:focus-visible, .lk-journal .jr-link:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+.lk-journal .jr-mic { flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.lk-journal .jr-link { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; border: 0; background: none; font-family: var(--sans); font-size: 14px; font-weight: 500; line-height: 20px; color: var(--ap-ink2); cursor: pointer; }
 .lk-journal .jr-meter { display: block; flex: none; }
 .lk-journal .jr-meter rect { fill: var(--ap-line); }
 .lk-journal .jr-meter rect.on { fill: var(--ap-ink); }
@@ -152,7 +155,7 @@
 .lk-journal .jr-alarm-k { font-family: var(--mono); font-size: 10.5px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-info-ink); }
 .lk-journal .jr-alarm p { margin: 0; font-size: 13px; line-height: 19px; color: var(--ap-ink); }
 
-/* ---------- motion: rings and lines draw, dots set down one by one, bars grow, the highlighter sweeps ---------- */
+/* ---------- motion: rings and lines draw, dots set down one by one, bars grow, the answer's marks sweep in ---------- */
 @media (prefers-reduced-motion: no-preference) {
   .lk-journal .jr-draw { stroke-dasharray: 1 1; animation: jr-draw var(--dur, 1200ms) var(--ap-ease) var(--d, 200ms) both; }
   .lk-journal .jr-pop { transform-box: fill-box; transform-origin: center; animation: jr-pop 560ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * var(--st, 20ms) + var(--d0, 200ms)); }
@@ -160,14 +163,17 @@
   .lk-journal .jr-band-in { transform-box: fill-box; transform-origin: 0 50%; animation: jr-gx 900ms var(--ap-ease) 80ms both; }
   .lk-journal .jr-band-arc { animation: jr-fade 900ms var(--ap-ease) 80ms both; }
   .lk-journal .jr-fade { animation: jr-fade 600ms var(--ap-ease) var(--d, 400ms) both; }
-  .lk-journal .jr-mk { animation: jr-hl 900ms var(--ap-ease) 500ms both; }
+  .lk-journal .jr-mk--usual { animation: jr-ul 900ms var(--ap-ease) 500ms both; }
+  .lk-journal .jr-mk--shift { animation: jr-hl 900ms var(--ap-ease) 500ms both; }
   .lk-journal .jr-head, .lk-journal .jr-text { animation: jr-rise 600ms var(--ap-ease) both; }
   .lk-journal .jr-text { animation-delay: 80ms; }
+  .lk-journal .jr-btn { transition: transform .2s var(--ap-ease); }
   @keyframes jr-draw { from { stroke-dashoffset: 1; opacity: 0; } 8% { opacity: 1; } to { stroke-dashoffset: 0; } }
   @keyframes jr-pop { from { transform: scale(.2); opacity: 0; } }
   @keyframes jr-gy { from { transform: scaleY(0); } }
   @keyframes jr-gx { from { transform: scaleX(0); } }
   @keyframes jr-fade { from { opacity: 0; } }
+  @keyframes jr-ul { from { background-size: 0% 2px; } }
   @keyframes jr-hl { from { background-size: 0% 100%; } }
   @keyframes jr-rise { from { opacity: 0; transform: translateY(4px); } }
 }
