@@ -4,24 +4,22 @@
    DESIGN.md scales; geometry inside the SVG charts isn't spacing. All motion sits in one block at the end. */
 
 .lk-bento {
-  --bt-u: var(--ap-usual-ink);                                   /* a day or a share within your usual */
+  --bt-u: var(--ap-usual-ink);                                   /* a share within your usual: rings, segment bars */
   --bt-on-u: var(--cream);
   --bt-s: var(--ap-shift);                                       /* a shift, either way */
   --bt-on-s: var(--forest);
   --bt-trk: var(--ap-card2);
   --bt-l: color-mix(in srgb, var(--ap-chart) 22%, transparent);  /* logged, before the usual is known */
+  /* a day within your usual (week pills, month squares, stat keys): a quiet Plum tint with its edge on light, a Ray
+     outline on dark, so a month of usual days stays calm and the solid Gold shifts are what the eye finds */
+  --bt-uf: var(--ap-usual-bg); --bt-on-uf: var(--ap-usual-ink); --bt-uf-edge: var(--ap-band-edge);
   /* the hero is a dark glass surface in both themes, so it carries the dark roles itself */
   --bt-h-ink: var(--cream);
   --bt-h-ink2: color-mix(in srgb, var(--cream) 84%, transparent);
   --bt-h-shift: oklch(from var(--gold) calc(l + .022) calc(c * 1.22) h);
   --bt-h-trk: color-mix(in srgb, var(--cream) 14%, transparent);
 }
-.lk-bento {
-  /* a day within your usual: solid Plum on light; on dark a Ray outline (a Ray tint over Forest reads olive), so a
-     month of usual days stays calm and the Gold shifts are what the eye finds */
-  --bt-uf: var(--bt-u); --bt-on-uf: var(--cream); --bt-uf-edge: transparent;
-}
-.lk-bento[data-theme="dark"] { --bt-on-u: var(--forest); --bt-uf: transparent; --bt-on-uf: var(--ap-usual-ink); --bt-uf-edge: var(--ap-usual-ink); }
+.lk-bento[data-theme="dark"] { --bt-on-u: var(--forest); --bt-uf: transparent; --bt-on-uf: var(--ap-usual-ink); --bt-uf-edge: var(--ap-usual-ink); --bt-none: color-mix(in srgb, var(--cream) 9%, transparent); }
 
 /* ---------- the board and its tiles ---------- */
 .lk-bento .bt { display: flex; flex-direction: column; gap: 8px; }
@@ -30,9 +28,13 @@
 .lk-bento .bt-s4 { grid-column: span 4; }
 .lk-bento .bt-s3 { grid-column: span 3; }
 .lk-bento .bt-s2 { grid-column: span 2; }
+.lk-bento .bt-t--n { padding: 12px; }                              /* a narrow tile, two columns */
+.lk-bento .bt-t--r2 { grid-row: span 2; }
 .lk-bento .bt-t--c { padding: 12px 16px; gap: 8px; }
 .lk-bento .bt-t--tall { grid-row: span 3; }
 .lk-bento .bt-t--stat { padding: 12px; gap: 4px; }
+.lk-bento .bt-t--row { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.lk-bento .bt-t--row > div:first-child { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 
 /* ---------- type ---------- */
 .lk-bento .bt-kr { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
@@ -40,21 +42,23 @@
 .lk-bento .bt-k--m { text-align: right; flex: none; }
 .lk-bento .bt-a { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--ap-ink); text-wrap: pretty; }
 .lk-bento .bt-a--md { font-size: 16px; line-height: 1.3; }
+.lk-bento .bt-a--sm { font-size: 14px; line-height: 1.3; }
 .lk-bento .bt-n { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -.04em; color: var(--ap-ink); }
 .lk-bento .bt-n--md { font-size: 34px; }
+.lk-bento .bt-n--sm { font-size: 28px; }
 .lk-bento .bt-n--word { font-size: 28px; letter-spacing: -.02em; }
 .lk-bento .bt-num { font-weight: 300; font-feature-settings: "tnum"; }
 .lk-bento .bt-u { font-size: 12.5px; line-height: 1.2; letter-spacing: 0; font-weight: 400; color: var(--ap-ink2); }
 .lk-bento .bt-sub { margin: 0; font-size: 12px; line-height: 1.4; color: var(--ap-ink2); text-wrap: pretty; }
 .lk-bento .bt-k--gap { margin-top: 4px; }
 .lk-bento .bt-pair { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.lk-bento .bt-pair--row { flex-direction: row; gap: 24px; }
 .lk-bento .bt-pair div { display: flex; flex-direction: column; }
 .lk-bento .bt-pair dt { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--ap-ink2); }
 .lk-bento .bt-pair dd { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink); }
 .lk-bento .bt-sub--xs { font-size: 11px; }
 .lk-bento .bt-fine { margin: 0; padding: 0 8px; font-size: 11.5px; line-height: 1.45; color: var(--ap-ink2); }
 .lk-bento .bt-pname { margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 500; line-height: 1.2; color: var(--ap-ink); }
-.lk-bento .bt-pname span { font-family: var(--mono); font-size: 10.5px; font-weight: 400; color: var(--ap-ink2); }
 .lk-bento .bt-pname--lead { font-size: 16px; }
 .lk-bento .bt-ptitle { margin: 0; font-family: var(--serif); font-size: 20px; line-height: 1.25; color: var(--ap-ink); }
 
@@ -64,15 +68,21 @@
 .lk-bento .bt-chip--usual { background: var(--ap-usual-bg); color: var(--ap-usual-ink); }
 .lk-bento .bt-chip--shift { background: var(--ap-shift-bg); color: var(--ap-shift-ink); }
 .lk-bento .bt-chip--info { background: var(--ap-info-bg); color: var(--ap-info-ink); }
+.lk-bento .bt-chip--hero { background: color-mix(in srgb, var(--cream) 14%, transparent); color: var(--bt-h-ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 16%, transparent); }
+/* a narrow tile lets a chip wrap to two lines instead of running out of its tile */
+.lk-bento .bt-t--n .bt-chip { white-space: normal; padding: 4px 8px; line-height: 1.25; border-radius: 12px; }
 .lk-bento .bt-lg { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 11px; line-height: 1.4; color: var(--ap-ink2); }
 .lk-bento .bt-lg li { display: inline-flex; align-items: center; gap: 4px; }
 .lk-bento .bt-lg--out { padding: 0 8px; }
+.lk-bento .bt-lg--col { flex-direction: column; gap: 4px; }
 .lk-bento .bt-sw { width: 10px; height: 10px; border-radius: 2px; flex: none; background: var(--ap-chart); }
 .lk-bento .bt-sw--u { background: var(--bt-u); }
 .lk-bento .bt-sw--uf { background: var(--bt-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); }
 .lk-bento .bt-sw--s, .lk-bento .bt-sw--sdot { background: var(--bt-s); }
-.lk-bento .bt-sw--sdot, .lk-bento .bt-sw--dot, .lk-bento .bt-sw--zero, .lk-bento .bt-sw--today, .lk-bento .bt-sw--now { border-radius: 50%; }
+.lk-bento .bt-sw--sdot, .lk-bento .bt-sw--dot, .lk-bento .bt-sw--zero, .lk-bento .bt-sw--today, .lk-bento .bt-sw--now, .lk-bento .bt-sw--meal { border-radius: 50%; }
 .lk-bento .bt-sw--e { background: var(--ap-usual-bg); box-shadow: inset 0 0 0 2px var(--bt-s); }
+.lk-bento .bt-sw--eg { background: var(--ap-ink3); }
+.lk-bento .bt-sw--ecap { width: 6px; height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--ap-ink3) 18%, transparent); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .lk-bento .bt-sw--c { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
 .lk-bento .bt-sw--l { background: var(--bt-l); }
 .lk-bento .bt-sw--x, .lk-bento .bt-sw--miss { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
@@ -82,19 +92,23 @@
 .lk-bento .bt-sw--today { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-ink); }
 .lk-bento .bt-sw--now { background: var(--ap-chart); }
 .lk-bento .bt-sw--zero { background: transparent; box-shadow: inset 0 0 0 1.5px var(--bt-s); }
-.lk-bento .bt-sw--gap { height: 2px; width: 12px; background: var(--ap-ink3); }
+.lk-bento .bt-sw--gap { height: 2px; width: 8px; border-radius: 2px; background: var(--ap-ink3); }
 .lk-bento .bt-sw--unit, .lk-bento .bt-sw--bar { width: 6px; height: 12px; border-radius: 999px; }
 .lk-bento .bt-sw--bms { width: 6px; height: 6px; border-radius: 50%; background: var(--ap-ink2); }
-.lk-bento .bt-sw--pct { width: auto; height: auto; background: none; font-family: var(--mono); font-size: 10.5px; color: var(--ap-ink2); }
-.lk-bento .bt-sw--pct::before { content: "%"; }
 .lk-bento .bt-sw--r, .lk-bento .bt-sw--hit { background: var(--ap-chart); }
-.lk-bento .bt-sw--trk { background: var(--bt-trk); }
+.lk-bento .bt-sw--meal { width: 6px; height: 6px; background: var(--ap-teal); }
+.lk-bento .bt-sw--trk { background: var(--bt-trk); box-shadow: inset 0 0 0 1px var(--ap-line); }
+.lk-bento .bt-sw--was { border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2px var(--ap-ink2); }
 .lk-bento .bt-sw--tick { width: 2px; height: 12px; background: var(--ap-ink); }
-.lk-bento .bt-sw--n { background: var(--ap-card2); }
-.lk-bento .bt-sw--z { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
-.lk-bento .bt-sw--l1 { background: color-mix(in srgb, var(--ap-chart) 36%, transparent); }
-.lk-bento .bt-sw--l2 { background: color-mix(in srgb, var(--ap-chart) 62%, transparent); }
-.lk-bento .bt-sw--l3 { background: var(--ap-chart); }
+.lk-bento .bt-sw--n { background: var(--bt-trk); }
+.lk-bento[data-theme="dark"] .bt-sw--n { background: var(--bt-none); }
+/* symptom strength is height, so each swatch is a slot filled from the bottom */
+.lk-bento .bt-sw--l1, .lk-bento .bt-sw--l2, .lk-bento .bt-sw--l3 { width: 8px; height: 12px; background: linear-gradient(to top, var(--ap-chart) var(--f), var(--bt-trk) var(--f)); }
+.lk-bento[data-theme="dark"] :is(.bt-sw--l1, .bt-sw--l2, .bt-sw--l3) { background: linear-gradient(to top, var(--ap-chart) var(--f), var(--bt-none) var(--f)); }
+.lk-bento .bt-sw--l1 { --f: 40%; }
+.lk-bento .bt-sw--l2 { --f: 70%; }
+.lk-bento .bt-sw--l3 { --f: 100%; }
+.lk-bento .bt-sw--z { width: 8px; height: 12px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
 /* a stat tile's colour key, top right */
 .lk-bento .bt-key { position: absolute; top: 12px; right: 12px; width: 12px; height: 12px; border-radius: 4px; }
 .lk-bento .bt-key--u { background: var(--bt-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); }
@@ -113,22 +127,23 @@
 .lk-bento .bt-base { stroke: var(--ap-line); stroke-width: 1; }
 .lk-bento .bt-line { fill: none; stroke: var(--ap-chart); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .lk-bento .bt-dot { fill: var(--ap-chart); }
+/* no halo on an outside point: two Gold neighbours keep the line between them, so it never reads as a gap */
 .lk-bento .bt-dot.is-s, .lk-bento .bt-end.is-s { fill: var(--bt-s); }
-.lk-bento .bt-dot.is-s { stroke: var(--ap-card); stroke-width: 1.5; }
+.lk-bento .bt-dot.is-s { stroke: none; }
 .lk-bento .bt-end { fill: var(--ap-chart); stroke: var(--ap-card); stroke-width: 2.5; }
 .lk-bento .bt-halo { fill: none; stroke: var(--ap-ink); stroke-width: 1.5; }
+.lk-bento .bt-was { fill: var(--ap-card); stroke: var(--ap-ink2); stroke-width: 2; }
 .lk-bento .bt-tick { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink3); }
 .lk-bento .bt-lbl { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
 .lk-bento .bt-lbl--u { fill: var(--ap-usual-ink); }
 .lk-bento .bt-lbl--now { fill: var(--ap-ink); font-weight: 700; }
-.lk-bento .bt-halo-t { paint-order: stroke; stroke: var(--ap-card); stroke-width: 4px; stroke-linejoin: round; }
 .lk-bento .bt-ax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
 /* timing */
 .lk-bento .bt-tdot { fill: var(--ap-chart); }
 .lk-bento .bt-tdot.is-s { fill: var(--bt-s); }
-/* how often */
+/* how often and the week's bars */
 .lk-bento .bt-unit, .lk-bento .bt-mbar { fill: var(--ap-chart); }
-.lk-bento .bt-unit.is-s { fill: var(--bt-s); }
+.lk-bento .bt-unit.is-s, .lk-bento .bt-mbar.is-s { fill: var(--bt-s); }
 .lk-bento .bt-zero { fill: none; stroke: var(--ap-chart); stroke-width: 1.5; }
 .lk-bento .bt-zero.is-s { stroke: var(--bt-s); }
 .lk-bento .bt-gapmark { stroke: var(--ap-ink3); stroke-width: 1.5; stroke-linecap: round; }
@@ -136,25 +151,17 @@
 /* form */
 .lk-bento .bt-fbar { fill: var(--ap-chart); }
 .lk-bento .bt-fbar.is-s { fill: var(--bt-s); }
+.lk-bento .bt-fbar-e { fill: color-mix(in srgb, var(--ap-ink3) 18%, transparent); stroke: var(--ap-ink3); stroke-width: 1.5; }
 .lk-bento .bt-none { fill: var(--ap-ink3); }
 .lk-bento .bt-val { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--ap-ink); }
 .lk-bento .bt-xl { font-family: var(--sans); font-size: 11px; fill: var(--ap-ink2); }
-/* symptoms */
+/* symptoms: every logged day is a slot; strength fills it from the bottom */
 .lk-bento .bt-rowl { font-family: var(--sans); font-size: 12.5px; font-weight: 500; fill: var(--ap-ink); }
 .lk-bento .bt-rowv { font-family: var(--mono); font-size: 10.5px; fill: var(--ap-ink2); }
-.lk-bento .bt-hc--x { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
-.lk-bento .bt-hc--n { fill: var(--ap-card2); }
-.lk-bento .bt-hc--z { fill: none; stroke: var(--ap-chart); stroke-width: 1.5; }
-.lk-bento .bt-hc--l1 { fill: color-mix(in srgb, var(--ap-chart) 36%, transparent); }
-.lk-bento .bt-hc--l2 { fill: color-mix(in srgb, var(--ap-chart) 62%, transparent); }
-.lk-bento .bt-hc--l3 { fill: var(--ap-chart); }
-.lk-bento[data-theme="dark"] { --bt-l1: color-mix(in srgb, var(--ray) 48%, transparent); --bt-l2: color-mix(in srgb, var(--ray) 74%, transparent); --bt-none: color-mix(in srgb, var(--cream) 9%, transparent); }
-.lk-bento[data-theme="dark"] .bt-hc--l1, .lk-bento[data-theme="dark"] .bt-seg--l1 { fill: var(--bt-l1); background: var(--bt-l1); }
-.lk-bento[data-theme="dark"] .bt-hc--l2, .lk-bento[data-theme="dark"] .bt-seg--l2 { fill: var(--bt-l2); background: var(--bt-l2); }
-.lk-bento[data-theme="dark"] .bt-sw--l1 { background: var(--bt-l1); }
-.lk-bento[data-theme="dark"] .bt-sw--l2 { background: var(--bt-l2); }
+.lk-bento .bt-hc--n { fill: var(--bt-trk); }
 .lk-bento[data-theme="dark"] .bt-hc--n { fill: var(--bt-none); }
-.lk-bento[data-theme="dark"] .bt-sw--n { background: var(--bt-none); }
+.lk-bento .bt-hc--l { fill: var(--ap-chart); }
+.lk-bento .bt-hc--z { fill: none; stroke: var(--ap-chart); stroke-width: 1.5; }
 
 /* ---------- mini ring ---------- */
 .lk-bento .bt-ring { position: relative; width: var(--sz); height: var(--sz); flex: none; align-self: center; }
@@ -170,14 +177,14 @@
 .lk-bento .bt-ring-c { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
 .lk-bento .bt-ring-n { font-weight: 300; font-size: 36px; line-height: 1; letter-spacing: -.04em; color: var(--ap-ink); }
 .lk-bento .bt-ring-n--sm { font-size: 28px; }
-.lk-bento .bt-ring-n small { font-size: 14px; letter-spacing: 0; }
+.lk-bento .bt-ring-n--xs { font-size: 24px; }
 .lk-bento .bt-ring-s { font-size: 11px; line-height: 1.3; color: var(--ap-ink2); }
 
 /* ---------- pill rows, strips and segment bars ---------- */
 .lk-bento .bt-steps { display: flex; gap: 4px; }
 .lk-bento .bt-steps i { flex: 1; height: 12px; border-radius: 999px; background: var(--bt-trk); }
 .lk-bento .bt-steps i.is-on { background: var(--ap-chart); }
-.lk-bento .bt-strip { display: block; width: 100%; height: 24px; }
+.lk-bento .bt-strip { display: block; width: 100%; height: auto; }
 .lk-bento .bt-sc { fill: var(--bt-trk); }
 .lk-bento .bt-sc--u { fill: var(--bt-u); }
 .lk-bento .bt-sc--s { fill: var(--bt-s); }
@@ -185,16 +192,14 @@
 .lk-bento .bt-sc--e { fill: var(--ap-usual-bg); stroke: var(--bt-s); stroke-width: 1.5; }
 .lk-bento .bt-sc--n, .lk-bento .bt-sc--c { fill: var(--ap-card2); }
 .lk-bento[data-theme="dark"] .bt-sc--n { fill: var(--bt-none); }
-.lk-bento .bt-sc--x { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-bento .bt-sc.is-today { stroke: var(--ap-ink); stroke-width: 1.5; }
+.lk-bento .bt-mealdot { fill: var(--ap-teal); }
 .lk-bento .bt-seg { display: flex; gap: 4px; height: 12px; }
 .lk-bento .bt-seg i { min-width: 4px; border-radius: 999px; }
 .lk-bento .bt-seg--u { background: var(--bt-u); }
 .lk-bento .bt-seg--s { background: var(--bt-s); }
 .lk-bento .bt-seg--x { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
-.lk-bento .bt-seg--l1 { background: color-mix(in srgb, var(--ap-chart) 36%, transparent); }
-.lk-bento .bt-seg--l2 { background: color-mix(in srgb, var(--ap-chart) 62%, transparent); }
-.lk-bento .bt-seg--l3 { background: var(--ap-chart); }
+.lk-bento .bt-seg--l { background: var(--ap-chart); }
 .lk-bento .bt-seg--z { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
 .lk-bento .bt-seg--sym { height: 8px; }
 .lk-bento .bt-meter { position: relative; height: 8px; border-radius: 999px; background: var(--bt-trk); }
@@ -204,16 +209,16 @@
 .lk-bento .bt-meter3 i { flex: 1; height: 8px; border-radius: 999px; background: var(--bt-trk); }
 .lk-bento .bt-meter3 i.is-on { background: var(--ap-chart); }
 .lk-bento .bt-prow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.lk-bento .bt-delta { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--ap-ink2); }
+.lk-bento .bt-delta { margin: 0; font-family: var(--mono); font-size: 11px; color: var(--ap-ink2); white-space: nowrap; }
 
 /* ---------- the week: seven pills ---------- */
 .lk-bento .bt-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .lk-bento .bt-day { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
-.lk-bento .bt-pill { width: 100%; max-width: 40px; height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 12px 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); color: var(--ap-ink2); }
-.lk-bento .bt-pill b { font-family: var(--mono); font-size: 11px; font-weight: 700; line-height: 1; }
+.lk-bento .bt-pill { width: 100%; max-width: 40px; height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 12px 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); color: var(--ap-ink2); }
 .lk-bento .bt-pdots { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .lk-bento .bt-pdots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .lk-bento .bt-pdots i.is-zero { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
+.lk-bento .bt-pdots em { font-family: var(--mono); font-size: 10px; font-style: normal; font-weight: 700; line-height: 1; }
 .lk-bento .bt-day--u .bt-pill { background: var(--bt-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); color: var(--bt-on-uf); }
 .lk-bento .bt-day--s .bt-pill { background: var(--bt-s); box-shadow: none; color: var(--bt-on-s); }
 .lk-bento .bt-day--e .bt-pill { background: var(--ap-usual-bg); box-shadow: inset 0 0 0 2px var(--bt-s); color: var(--ap-ink); }
@@ -254,28 +259,40 @@
 /* a narrow phone: the latest chip keeps a dot instead of the word, so a long answer stays on one line */
 .lk-bento .bt-stack { container-type: inline-size; }
 @container (max-width: 128px) { .lk-bento .bt-stack em { width: 6px; height: 6px; flex: none; border-radius: 50%; background: currentColor; font-size: 0; } }
-.lk-bento .bt-t--cta { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 16px; }
+.lk-bento .bt-cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
 .lk-bento .bt-cta-l { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--ap-ink); }
 .lk-bento .bt-live { width: 8px; height: 8px; border-radius: 50%; background: var(--ap-live); flex: none; }
 .lk-bento .bt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ray); color: var(--forest); font: 500 14px/20px var(--sans); cursor: pointer; white-space: nowrap; }
-.lk-bento .bt-t--cta .bt-btn:only-child { flex: 1; }
-.lk-bento .bt-btn--sm { min-height: 36px; padding: 0 12px; font-size: 13px; align-self: flex-start; }
 .lk-bento[data-theme="light"] .bt-btn { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 14%, transparent); }
 .lk-bento .bt-btn:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
-.lk-bento .bt-mic { position: relative; width: 64px; height: 64px; display: grid; place-items: center; align-self: flex-start; border: 0; border-radius: 50%; background: var(--ray); color: var(--forest); cursor: pointer; box-shadow: 0 0 0 8px color-mix(in srgb, var(--ray) 28%, transparent); margin: 8px; }
-.lk-bento[data-theme="light"] .bt-mic { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 14%, transparent), 0 0 0 8px color-mix(in srgb, var(--ray) 45%, transparent); }
-.lk-bento .bt-mic svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.lk-bento .bt-mic:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 12px; }
 .lk-bento .bt-t--ghost .bt-pname { color: var(--ap-ink2); }
 
-/* ---------- pattern ---------- */
-.lk-bento .bt-waf { width: 100%; max-width: 140px; height: auto; }
-.lk-bento .bt-wc { fill: transparent; stroke: var(--ap-ink3); stroke-width: 1; }
-.lk-bento .bt-wc.is-hit { fill: var(--ap-chart); stroke: none; }
-.lk-bento .bt-tier { display: inline-flex; gap: 4px; }
-.lk-bento .bt-tier i { width: 4px; height: 8px; border-radius: 999px; background: color-mix(in srgb, currentColor 30%, transparent); }
-.lk-bento .bt-tier i.is-on { background: currentColor; }
-.lk-bento .bt-t--food { gap: 8px; }
+/* ---------- meals: one big voice button, one line to type ---------- */
+.lk-bento .bt-t--food { gap: 12px; }
+.lk-bento .bt-food { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0 4px; text-align: center; }
+.lk-bento .bt-mic { position: relative; width: 80px; height: 80px; display: grid; place-items: center; margin: 12px; border: 0; border-radius: 50%; background: var(--ray); color: var(--forest); cursor: pointer; box-shadow: 0 0 0 12px color-mix(in srgb, var(--ray) 24%, transparent); }
+.lk-bento[data-theme="light"] .bt-mic { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 14%, transparent), 0 0 0 12px color-mix(in srgb, var(--ray) 42%, transparent); }
+.lk-bento .bt-mic svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.lk-bento .bt-mic:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 16px; }
+.lk-bento .bt-food-l { margin: 0; font-size: 16px; font-weight: 500; line-height: 1.3; color: var(--ap-ink); }
+.lk-bento .bt-field { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink2); font: 400 14px/20px var(--sans); text-align: left; cursor: text; box-shadow: inset 0 0 0 1px var(--ap-line); }
+.lk-bento .bt-field svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.lk-bento .bt-field:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+
+/* ---------- pattern: a two-group strip and how sure ---------- */
+.lk-bento .bt-grps { display: flex; flex-direction: column; gap: 12px; }
+.lk-bento .bt-grp { display: flex; flex-direction: column; gap: 4px; }
+.lk-bento .bt-grp-l { margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 500; line-height: 1.25; color: var(--ap-ink); }
+.lk-bento .bt-grp-n { flex: none; font-size: 12px; font-weight: 400; color: var(--ap-ink2); }
+.lk-bento .bt-grp-n b { font-size: 24px; font-weight: 300; letter-spacing: -.03em; color: var(--ap-ink); }
+.lk-bento .bt-grp-bar { height: 12px; border-radius: 999px; background: var(--bt-trk); box-shadow: inset 0 0 0 1px var(--ap-line); overflow: hidden; }
+.lk-bento .bt-grp-bar i { display: block; height: 100%; width: var(--w); border-radius: 999px; background: var(--ap-chart); }
+.lk-bento .bt-t--grp.is-late .bt-grp-bar i { background: var(--bt-s); }
+.lk-bento .bt-t--sure { justify-content: space-between; }
+.lk-bento .bt-sure { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
+.lk-bento .bt-sure i { flex: 1; height: var(--h); border-radius: 4px; background: var(--bt-trk); box-shadow: inset 0 0 0 1px var(--ap-line); }
+.lk-bento .bt-sure i.is-on { background: var(--ap-info-ink); box-shadow: none; }
+.lk-bento .bt-sure-w { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.25; color: var(--ap-info-ink); }
 .lk-bento .bt-care { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); }
 .lk-bento .bt-care .bt-k { color: var(--ap-info-ink); }
 .lk-bento .bt-care p:last-child { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ap-info-ink); }
@@ -285,51 +302,47 @@
 .lk-bento .bt-ico { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--ap-info-bg); color: var(--ap-info-ink); font-family: var(--serif); font-style: italic; font-size: 12px; font-weight: 500; }
 .lk-bento .bt-how { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--ap-ink2); }
 
-/* ---------- FloraScore: the glass hero ---------- */
-.lk-bento .bt-hero { isolation: isolate; gap: 0; color: var(--bt-h-ink);
+/* ---------- FloraScore: the glass widget ---------- */
+.lk-bento .bt-hero { isolation: isolate; gap: 12px; color: var(--bt-h-ink);
   background:
-    radial-gradient(85% 60% at 0% 0%, color-mix(in oklab, var(--teal) 72%, transparent), transparent 72%),
-    radial-gradient(90% 70% at 100% 100%, color-mix(in oklab, var(--plum) 92%, transparent), transparent 74%),
-    linear-gradient(165deg, oklch(from var(--forest) calc(l + .06) c h), var(--forest) 55%, oklch(from var(--forest) calc(l - .04) c h));
+    radial-gradient(70% 60% at 0% 0%, color-mix(in oklab, var(--teal) 62%, transparent), transparent 74%),
+    linear-gradient(160deg, oklch(from var(--forest) calc(l + .05) c h), var(--forest) 50%, oklch(from var(--forest) calc(l - .04) c h));
   box-shadow: 0 1px 0 color-mix(in srgb, var(--forest) 6%, transparent), 0 24px 40px -28px oklch(from var(--forest) calc(l - .1) c h); }
 .lk-bento[data-theme="dark"] .bt-hero { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 10%, transparent), 0 24px 40px -24px oklch(from var(--forest) calc(l - .2) c h); }
-/* soft light behind the glass: three orbs the frosted panel blurs */
+/* soft light behind the glass: Teal at the top left, Plum low at the bottom right, clear of the answer */
 .lk-bento .bt-orb { position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
-.lk-bento .bt-orb--a { width: 176px; height: 176px; left: 0; bottom: 0; transform: translate(-24%, 20%); background: radial-gradient(circle, color-mix(in oklab, oklch(from var(--teal) calc(l + .2) c h) 70%, transparent), transparent 68%); }
-.lk-bento .bt-orb--b { width: 200px; height: 200px; right: 0; bottom: 0; transform: translate(24%, 8%); background: radial-gradient(circle, color-mix(in oklab, var(--teal) 90%, transparent), transparent 70%); }
-.lk-bento .bt-orb--c { width: 144px; height: 144px; right: 0; top: 0; transform: translate(-40%, 96%); background: radial-gradient(circle, color-mix(in oklab, oklch(from var(--plum) calc(l + .22) c h) 80%, transparent), transparent 70%); }
+.lk-bento .bt-orb--a { width: 200px; height: 200px; left: 0; top: 0; transform: translate(-24%, -16%); background: radial-gradient(circle, color-mix(in oklab, oklch(from var(--teal) calc(l + .14) c h) 72%, transparent), transparent 68%); }
+.lk-bento .bt-orb--b { width: 176px; height: 176px; right: 0; bottom: 0; transform: translate(40%, 48%); background: radial-gradient(circle, color-mix(in oklab, oklch(from var(--plum) calc(l + .18) c h) 70%, transparent), transparent 70%); }
 .lk-bento .bt-hero-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .lk-bento .bt-k--ray { color: var(--ray); }
 .lk-bento .bt-k--hm { color: var(--bt-h-ink2); text-align: right; }
-.lk-bento .bt-stage { display: grid; grid-template-rows: 72px 112px auto; margin-top: 12px; }
-.lk-bento .bt-dial { grid-row: 1 / 3; grid-column: 1; justify-self: center; position: relative; z-index: 1; width: 184px; height: 184px; border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in oklab, var(--forest) 82%, transparent) 58%, color-mix(in oklab, var(--forest) 40%, transparent) 72%, transparent 73%);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  box-shadow: 0 20px 40px -24px oklch(from var(--forest) calc(l - .15) c h); }
+.lk-bento .bt-glass { display: grid; grid-template-columns: 136px minmax(0, 1fr); align-items: center; gap: 16px; padding: 12px 16px 12px 12px; border-radius: 24px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cream) 16%, transparent), color-mix(in srgb, var(--cream) 6%, transparent));
+  -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 26%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--cream) 12%, transparent); }
+.lk-bento .bt-dial { position: relative; width: 136px; height: 136px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--forest) 78%, transparent) 62%, transparent 72%); }
 .lk-bento .bt-hr { width: 100%; height: 100%; }
 .lk-bento .bt-hr circle { fill: none; }
 .lk-bento .bt-hr-trk, .lk-bento .bt-hr-seg { stroke: var(--bt-h-trk); }
 .lk-bento .bt-hr-seg.is-on { stroke: var(--ray); }
-.lk-bento .bt-hr-utrk { stroke: color-mix(in srgb, var(--cream) 10%, transparent); stroke-width: 1; }
-.lk-bento .bt-hr-band { stroke: color-mix(in srgb, var(--ray) 60%, transparent); stroke-linecap: round; }
+.lk-bento .bt-hr-band { stroke: var(--ray); stroke-linecap: round; }
 .lk-bento .bt-hr-arc { stroke: var(--ray); stroke-linecap: round; }
-.lk-bento .bt-hr-notch { stroke: var(--forest); stroke-width: 2.5; stroke-linecap: round; }
 .lk-bento .bt-hr .bt-hr-knob { fill: var(--ray); stroke: var(--forest); stroke-width: 3; }
 .lk-bento .bt-hr .bt-hr-knob.is-s { fill: var(--bt-h-shift); }
 .lk-bento .bt-dial-c { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
-.lk-bento .bt-dial-k { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ray); }
-.lk-bento .bt-dial-n { font-weight: 300; font-size: 64px; line-height: 1; letter-spacing: -.045em; color: var(--bt-h-ink); }
-.lk-bento .bt-dial-n--sm { font-size: 32px; letter-spacing: -.02em; padding-block: 4px; }
+.lk-bento .bt-dial-k { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ray); }
+.lk-bento .bt-dial-n { font-weight: 300; font-size: 56px; line-height: 1; letter-spacing: -.045em; color: var(--bt-h-ink); }
+.lk-bento .bt-dial-n--3 { font-size: 44px; }
+.lk-bento .bt-dial-n--sm { font-size: 24px; letter-spacing: -.02em; padding-block: 4px; }
 .lk-bento .bt-dial-s { font-family: var(--mono); font-size: 10.5px; color: var(--bt-h-ink2); }
-.lk-bento .bt-glass { grid-row: 2 / 4; grid-column: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 120px 16px 16px; border-radius: 16px; text-align: center;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--cream) 15%, transparent), color-mix(in srgb, var(--cream) 7%, transparent));
-  -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 26%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--cream) 12%, transparent); }
-.lk-bento .bt-hero-a { margin: 0; font-family: var(--serif); font-size: 21px; line-height: 1.25; color: var(--bt-h-ink); text-wrap: balance; }
-.lk-bento .bt-hero-s { margin: 0; font-size: 13px; line-height: 1.4; color: var(--bt-h-ink2); }
-.lk-bento .bt-lg--hero { justify-content: center; color: var(--bt-h-ink2); }
+.lk-bento .bt-hero-r { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.lk-bento .bt-hero-a { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.25; color: var(--bt-h-ink); text-wrap: balance; }
+.lk-bento .bt-hero-s { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--bt-h-ink2); }
+.lk-bento .bt-hero .bt-chip--hero { white-space: normal; padding: 4px 8px; line-height: 1.25; border-radius: 12px; }
+.lk-bento .bt-lg--hero { color: var(--bt-h-ink2); padding: 0 4px; }
 .lk-bento .bt-sw--hring { border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2.5px var(--ray); }
-.lk-bento .bt-sw--hband { width: 16px; height: 5px; border-radius: 999px; background: color-mix(in srgb, var(--ray) 60%, transparent); }
+.lk-bento .bt-sw--hband { width: 16px; height: 3px; border-radius: 999px; background: var(--ray); }
 .lk-bento .bt-sw--hshift { border-radius: 50%; background: var(--bt-h-shift); }
 .lk-bento .bt-sw--hseg { width: 16px; height: 5px; border-radius: 999px; background: var(--ray); }
 .lk-bento .bt-sw--htrk { width: 16px; height: 5px; border-radius: 999px; background: var(--bt-h-trk); }
@@ -343,26 +356,25 @@
 @keyframes btGrowX { from { transform: scaleX(0); } }
 @keyframes btFade { from { opacity: 0; } }
 @keyframes btDial { from { opacity: 0; transform: scale(.86) rotate(-24deg); } }
-@keyframes btGlass { from { opacity: 0; transform: translateY(24px); } }
 @keyframes btMic { 0% { opacity: 0; transform: scale(.6); box-shadow: 0 0 0 0 transparent; } 60% { opacity: 1; transform: scale(1.04); } }
 @media (prefers-reduced-motion: no-preference) {
   .lk-bento .bt-t { animation: btIn 640ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms); }
-  .lk-bento .bt-draw { stroke-dasharray: 1 1; animation: btDraw 1200ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms); }
+  .lk-bento .bt-draw { stroke-dasharray: 1 1; animation: btDraw 1000ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms); }
   .lk-bento .bt-fade { animation: btFade 700ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 160ms); }
   .lk-bento .bt-pop { transform-box: fill-box; transform-origin: center; animation: btPop 480ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 280ms + var(--j, 0) * 22ms); }
-  .lk-bento .bt-grow { transform-box: fill-box; transform-origin: 50% 100%; animation: btGrowY 800ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 200ms + var(--j, 0) * 60ms); }
-  .lk-bento .bt-ra, .lk-bento .bt-hr-arc, .lk-bento .bt-hr-band { animation: btArc 1200ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--k, 0) * 160ms); }
-  .lk-bento .bt-hr-arc { animation-duration: 1400ms; animation-delay: 320ms; }
-  .lk-bento .bt-hr-seg.is-on { animation: btArc 400ms var(--ap-ease) both; animation-delay: calc(300ms + var(--k, 0) * 70ms); }
-  .lk-bento .bt-hr-knob, .lk-bento .bt-hr-notch { animation: btFade 400ms var(--ap-ease) both; animation-delay: 1200ms; }
+  .lk-bento .bt-grow { transform-box: fill-box; transform-origin: 50% 100%; animation: btGrowY 700ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 200ms + var(--j, 0) * 22ms); }
+  .lk-bento .bt-ra, .lk-bento .bt-hr-arc, .lk-bento .bt-hr-band { animation: btArc 1000ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 200ms + var(--k, 0) * 80ms); }
+  .lk-bento .bt-hr-arc { animation-duration: 1100ms; animation-delay: 300ms; }
+  .lk-bento .bt-hr-band { animation-duration: 900ms; animation-delay: 200ms; }
+  .lk-bento .bt-hr-seg.is-on { animation: btArc 400ms var(--ap-ease) both; animation-delay: calc(300ms + var(--k, 0) * 60ms); }
+  .lk-bento .bt-hr-knob { animation: btFade 400ms var(--ap-ease) both; animation-delay: 1000ms; }
   .lk-bento .bt-dial { animation: btDial 1000ms var(--ap-ease) both; animation-delay: 120ms; }
-  .lk-bento .bt-glass { animation: btGlass 800ms var(--ap-ease) both; animation-delay: 200ms; }
   .lk-bento .bt-orb { animation: btFade 1400ms var(--ap-ease) both; }
   .lk-bento .bt-week .bt-pill { transform-origin: 50% 100%; animation: btGrowY 700ms var(--ap-ease) both; animation-delay: calc(240ms + var(--j, 0) * 60ms); }
-  .lk-bento .bt-sq:not(.bt-sq--pad), .lk-bento .bt-stack li { animation: btPop 460ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--j, 0) * 18ms); }
-  .lk-bento .bt-stack li { animation-name: btIn; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--j, 0) * 60ms); }
-  .lk-bento .bt-steps i, .lk-bento .bt-meter3 i { transform-origin: 50% 100%; animation: btGrowY 500ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--j, 0) * 20ms); }
-  .lk-bento .bt-meter i, .lk-bento .bt-seg i { transform-origin: 0 50%; animation: btGrowX 900ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 260ms + var(--k, 0) * 120ms); }
-  .lk-bento .bt-meter b { animation: btFade 400ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 900ms); }
-  .lk-bento .bt-mic { animation: btMic 1100ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 300ms); }
+  .lk-bento .bt-sq:not(.bt-sq--pad) { animation: btPop 460ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--j, 0) * 24ms); }
+  .lk-bento .bt-stack li { animation: btIn 460ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--j, 0) * 60ms); }
+  .lk-bento .bt-steps i, .lk-bento .bt-meter3 i, .lk-bento .bt-sure i { transform-origin: 50% 100%; animation: btGrowY 500ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 240ms + var(--j, 0) * 20ms); }
+  .lk-bento .bt-meter i, .lk-bento .bt-seg i, .lk-bento .bt-grp-bar i { transform-origin: 0 50%; animation: btGrowX 800ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 260ms + var(--k, 0) * 100ms); }
+  .lk-bento .bt-meter b { animation: btFade 400ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 700ms); }
+  .lk-bento .bt-mic { animation: btMic 900ms var(--ap-ease) both; animation-delay: calc(var(--i, 0) * 80ms + 300ms); }
 }
