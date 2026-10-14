@@ -6,7 +6,7 @@
 /* ---------- page ---------- */
 /* the hidden attribute always wins, so a collapsed section stays collapsed whatever display a class gives it */
 [hidden]:not([hidden="until-found" i]) { display: none !important; }
-.rx { max-width: 1480px; margin: 0 auto; padding-inline: 16px; padding-block: 0 48px; font-family: var(--sans); color: var(--ink); }
+.rx { max-width: 1480px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; font-family: var(--sans); color: var(--ink); }
 .rx .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; /* grid-exempt: the standard visually-hidden pattern, not spacing */ overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .rx :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
@@ -443,7 +443,7 @@
   .rx { padding-inline: 0; padding-block: 0; }
   .rx-head, .rx-side, .rx-foot, .rx-cmpt { display: none !important; }
   .rx-main, .rx-center, .rx-stage, .rx-ph { display: block; }
-  .rx-mbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; gap: 8px; height: calc(48px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) 12px 0; background: var(--bg); box-shadow: 0 1px 0 var(--line); }
+  .rx-mbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; gap: 8px; height: calc(48px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); background: var(--bg); box-shadow: 0 1px 0 var(--line); }
   .rx-mbar-t { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; margin-right: auto; }
   .rx-mbar .rx-seg button { min-height: 32px; padding: 0 8px; font-size: 12.5px; }
   .rx-mbar-b { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 13px/1 var(--sans); cursor: pointer; }
