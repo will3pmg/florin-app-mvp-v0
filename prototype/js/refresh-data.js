@@ -103,11 +103,24 @@
   L.FLAGS = [["blood", "Blood"], ["mucus", "Mucus"], ["black", "Black or tar-like"]];
   L.MEALS = [["breakfast", "Breakfast"], ["lunch", "Lunch"], ["dinner", "Dinner"], ["other", "Other"]];
   L.ALARM = [
-    [/\b(bloody|bleed\w*)\b|\bblood\b(?! (orange|sugar|pressure|test|work|type|donation))/i, "Blood"], [/\b(black|tarry|tar-like) (stool|bm|poo)\w*|\btar-like\b|\btarry\b/i, "A black or tar-like stool"],
-    [/\bfever\w*\b/i, "A fever"], [/\b(vomit\w*|threw up|throwing up)\b/i, "Vomiting"], [/\b(weight loss|lost weight|losing weight)\b/i, "Weight loss"],
-    [/\bw(o|a)k\w* (up )?(at night|in the night) to go\b|\bw(o|a)k\w* (up )?at night\b/i, "Waking at night to go"]
+    [/\b(bloody|bleed\w*)\b|\bblood\b(?! (orange|sugars?|glucose|pressure|tests?|work|panel|draw|counts?|type|donation|bank))/i, "Blood"], [/\b(black|tarry|tar-like) (stool|bm|poo)\w*|\btar-like\b|\btarry\b/i, "A black or tar-like stool"],
+    [/\bfevers?\b|\bfeverish\b/i, "A fever"], [/\b(vomit\w*|threw up|throwing up)\b/i, "Vomiting"], [/\b(weight loss|lost weight|losing weight)\b/i, "Weight loss"],
+    [/\bw(o|a)k(e|en|ing|es)?\b(?:(?![.;]).){0,40}?\bto (go|the bathroom|the toilet|use the bathroom)\b|\bw(o|a)k\w* (up )?(at night|in the night|overnight)\b|\bup in the night to go\b/i, "Waking at night to go"]
   ];
-  L.alarmIn = (text) => { const hit = L.ALARM.find(([rx]) => rx.test(text || "")); return hit ? hit[1] : null; };
+  /* every alarm feature a note names, clause by clause, leaving out the ones it says no to ("no blood", "without a
+     fever", "didn't throw up"). Florin only names the sign; it never reads past that */
+  const NEG = /\b(no|not|without|never|none|zero|didn'?t|don'?t|wasn'?t|haven'?t|hasn'?t)\b[^,;.]*$/i;
+  L.alarmsIn = (text) => {
+    const out = [];
+    String(text || "").split(/[.;!?\n]|,|\bbut\b/i).forEach((c) => L.ALARM.forEach(([rx, name]) => {
+      const m = rx.exec(c);
+      if (m && !NEG.test(c.slice(0, m.index)) && !out.includes(name)) out.push(name);
+    }));
+    return L.ALARM.map(([, n]) => n).filter((n) => out.includes(n));
+  };
+  /* the signs as one line: "Blood and a fever" */
+  L.signText = (ss) => ss.map((x, i) => (i ? x.charAt(0).toLowerCase() + x.slice(1) : x)).reduce((a, x, i, all) => (i === 0 ? x : i === all.length - 1 ? `${a} and ${x}` : `${a}, ${x}`), "");
+  L.alarmIn = (text) => { const ss = L.alarmsIn(text); return ss.length ? L.signText(ss) : null; };
   /* "No BM today" is an end-of-day fact: offered from 5 PM on the day itself, any time for an earlier day */
   L.LATE = 17;
   L.isLate = () => L.NOW >= L.LATE;
@@ -371,7 +384,7 @@
     return null;
   };
   L.bms = (x) => (x && x.logged ? x.entries.filter((e) => e.kind === "bm") : []);
-  L.inWindow = (M, t) => !!M.usual && t >= M.usual.tLo && t <= M.usual.tHi;
+  L.inWindow = (M, t) => { const m = Math.round(t * 60) / 60; return !!M.usual && m >= M.usual.tLo && m <= M.usual.tHi; };
   /* within the person's usual: a word against the usual words (B); a step against the usual steps (A and C). A B word
      whose steps sit on both sides of the usual can't be told apart: null, never a shift */
   L.inForms = (M, x, mode) => {
@@ -444,7 +457,9 @@
        names with any log that had no strength, so a strength word is never claimed for them */
     es.filter((e) => e.kind === "sym").forEach((e) => e.items.forEach((i) => { sym[i.name] = Math.max(sym[i.name] || 0, i.s || 0); if (!i.s) unrated[i.name] = true; }));
     const u = M.usual;
-    const inWin = u && first != null ? first >= u.tLo && first <= u.tHi : null;
+    /* compared at the minute shown, so 7:14.7 (shown 7:15 AM) is inside a window that opens at 7:15 */
+    const fMin = first != null ? Math.round(first * 60) / 60 : null;
+    const inWin = u && first != null ? fMin >= u.tLo && fMin <= u.tHi : null;
     const inCount = u && count != null ? count >= u.nLo && count <= u.nHi : null;
     const fi = u && bms.length ? bms.map((b) => L.inForms(M, b, mode)) : null;
     const formsIn = !fi ? null : fi.includes(false) ? false : fi.includes(null) ? null : true;

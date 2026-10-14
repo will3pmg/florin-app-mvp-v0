@@ -417,8 +417,8 @@
         st.saved = true;
         pop({ instant: true, focusId: e.id });
         renderTab(true);
-        const sign = L.alarmIn(e.note);
-        if (L.FLAGS.some(([k]) => e.flags[k]) || sign) push("flag", { flags: Object.assign({}, e.flags), sign: L.FLAGS.some(([k]) => e.flags[k]) ? null : sign, restore }).okey = { act: "edit", id: e.id };
+        const signs = L.alarmsIn(e.note), sign = signs.length ? L.signText(signs) : null, flagged = L.FLAGS.some(([k]) => e.flags[k]);
+        if (flagged || sign) push("flag", { flags: Object.assign({}, e.flags), sign: flagged ? null : sign, signs: flagged ? [] : signs, restore }).okey = { act: "edit", id: e.id };
         else toast(`${edit ? "Saved" : "BM saved"}. ${L.formName(e, S.form)} at ${T(e.t)}${whenTxt(e)}.${res.replacedNoBm ? ` It replaces No BM ${e.d === L.TODAY ? "today" : "for that day"}.` : ""}`, restore);
       },
       delete() {
@@ -463,8 +463,8 @@
         pop({ instant: true, focusId: e.id });
         renderTab(true);
         /* an alarm feature typed in goes to primary care, the same sheet as a flagged BM */
-        const sign = L.alarmIn(e.items.map((i) => i.name).join(". ") + ". " + e.note);
-        if (sign) push("flag", { sign, restore }).okey = { act: "edit", id: e.id };
+        const signs = L.alarmsIn(e.items.map((i) => i.name).join(". ") + ". " + e.note), sign = signs.length ? L.signText(signs) : null;
+        if (sign) push("flag", { sign, signs, restore }).okey = { act: "edit", id: e.id };
         else toast(`${edit ? "Saved" : "Symptoms saved"}. ${RU.entryText(e, S.form).title} at ${T(e.t)}${whenTxt(e)}.`, restore);
       },
       meal(b) { const st = top().st; st.meal = b.dataset.v; st.mealTouched = true; mealTime(st); rerender(); },

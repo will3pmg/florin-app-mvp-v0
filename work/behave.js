@@ -422,6 +422,14 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(await d.evaluate((y0) => window.scrollY === y0, y0), "Back from a detail on a desktop page leaves the page where it was");
   await d.close();
 
+  /* 31. the alarm-word check: says no to "no blood", leaves out blood glucose, hears waking at night, names every sign */
+  const alarm = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS;
+    return { neg: [L.alarmIn("No blood, all good"), L.alarmIn("blood glucose 160"), L.alarmIn("no fever"), L.alarmIn("felt fine, no vomiting, no blood")], wake: L.alarmIn("Woke up at 3am to go"), two: L.alarmIn("Some blood and a fever") };
+  });
+  ok(alarm.neg.every((x) => x === null), `notes that say no to a sign, or mean blood glucose, open nothing (${alarm.neg.join(", ")})`);
+  ok(alarm.wake === "Waking at night to go" && alarm.two === "Blood and a fever", `waking at night is heard, and two signs are both named (${alarm.wake}; ${alarm.two})`);
+
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();
   console.log(fails.length ? `\n${fails.length} failed` : "\nAll behaviour checks pass.");

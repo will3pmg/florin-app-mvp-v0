@@ -693,7 +693,7 @@
       const SC = scoreOf(M, mode);
       if (!SC) return page(M, V, st, "FloraScore", `
         ${hero("FloraScore", `${L.learnDay(M)}<small>of ${L.LEARN_DAYS} days</small>`, learnChip(M), "")}
-        <p class="ap-sect-p" data-a>Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual. ${esc(SCORE_HOW)}</p>
+        <p class="ap-sect-p" data-a>Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.</p>
         ${sect("How FloraScore works", `<p>${esc(SCORE_HOW)}</p><p class="ap-callout" data-disclaimer>${esc(SCORE_NOT)}</p>`)}`);
       const v = SC.v, su = SC.su, mv = SC.mv;
       const ser = scoreSer(M, n, mode), vals = ser.map((x) => x.value).filter((x) => x != null);
