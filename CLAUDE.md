@@ -47,8 +47,9 @@ person has one dish their seeded logs follow (`PATTERN_DISH`), seeded on its own
 A symptom logged without a strength keeps `s: 0` and reads as "strength not said", never mild.
 
 FloraScore (`L.score`, `L.scoreUsual`, `L.scoreMoved`) is built from four logged parts (timing, how often, form,
-comfort), weighted 30/25/25/20 like the studio's, blended over the last 3 logged days. A day not logged is left out,
-fewer than 2 logged days in 3 means no score, and there's no score before day 14. It doesn't depend on meals.
+comfort), weighted 30/25/25/20 like the studio's, blended over the last 3 logged days. A day with no BM logged is left
+out and has no score of its own (today excepted, as far as it has gone), fewer than 2 logged days in 3 means no score,
+and there's no score before day 14. It doesn't depend on meals.
 
 Meals are occasional (Will, Oct 14). `L.build(persona, data, { meals })` takes "all", "rough" (only days with a
 symptom) or "none". Under 60% of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back

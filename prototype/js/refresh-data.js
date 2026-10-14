@@ -576,6 +576,9 @@
   };
   L.score = (M, d, mode) => {
     if (!M.usual) return null;
+    /* a day with no BM logged has no FloraScore of its own: it would only repeat the days around it. Today counts as far
+       as it has gone */
+    if (d !== TODAY && !L.dayParts(M, L.day(M, d), mode)) return { d, value: null, n: 0 };
     const P = [];
     for (let k = d; k > d - 3 && k >= M.start; k--) { const p = L.dayParts(M, L.day(M, k), mode); if (p) P.push(p); }
     if (P.length < 2) return { d, value: null, n: P.length };

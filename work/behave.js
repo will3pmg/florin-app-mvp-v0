@@ -430,6 +430,17 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(alarm.neg.every((x) => x === null), `notes that say no to a sign, or mean blood glucose, open nothing (${alarm.neg.join(", ")})`);
   ok(alarm.wake === "Waking at night to go" && alarm.two === "Blood and a fever", `waking at night is heard, and two signs are both named (${alarm.wake}; ${alarm.two})`);
 
+  /* 32. a day with no BM logged has no FloraScore of its own, so the 30-day line breaks there and isn't counted */
+  const unscored = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, bad = [];
+    for (const who of ["sarah", "marcus", "alex"]) {
+      const M = L.build(who, "est");
+      L.scoreSeries(M, 90, "C").forEach((s) => { if (s.d !== L.TODAY && s.value != null && !L.dayParts(M, L.day(M, s.d), "C")) bad.push(`${who} day ${s.d}`); });
+    }
+    return bad;
+  });
+  ok(!unscored.length, `no unlogged day carries a FloraScore (${unscored.slice(0, 3).join(", ") || "none"})`);
+
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();
   console.log(fails.length ? `\n${fails.length} failed` : "\nAll behaviour checks pass.");

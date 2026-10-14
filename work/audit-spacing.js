@@ -56,6 +56,11 @@ const PRODUCT = [
   { f: 'css/app.css', scope: (s) => s.split(',').some((x) => /\.ap\b|\.ap-|:where\(\.ap\)/.test(x) && !/\.apx/.test(x)) },
   // the refresh: the new app components and the prototype page around the phone, all of it on the scale
   { f: 'css/refresh.css', scope: () => true },
+  // the data looks: the library page and each look, all of it on the scale
+  { f: '../library/css/library.css', scope: () => true },
+  { f: '../library/css/look-rings.css', scope: () => true },
+  { f: '../library/css/look-journal.css', scope: () => true },
+  { f: '../library/css/look-bento.css', scope: () => true },
 ];
 const REPORT_ONLY = [];
 
