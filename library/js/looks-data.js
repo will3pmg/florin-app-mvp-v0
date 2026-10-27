@@ -12,9 +12,12 @@
   /* the scale each option draws consistency on: A numbers 1 to 7, B five words, C seven words */
   const scaleOf = (mode) => (mode === "B" ? L.WORDS.map((w) => ({ k: w.k, label: w.word })) : L.TYPES.slice(1).map((t) => ({ k: t.k, label: mode === "A" ? String(t.k) : t.short })));
 
+  /* o.mode is the consistency option (A, B or C). o.M, when given, is a model the caller already holds (the prototype
+     passes its own live one, with whatever has been logged on the phone), so the looks draw it instead of a fresh
+     seeded build; the persona, the logs scenario and the meal logs then come from that model */
   function build(persona, o = {}) {
     const mode = o.mode || "C";
-    const M = L.build(persona, o.data || "est", { meals: o.meals || "all" });
+    const M = o.M || L.build(persona, o.data || "est", { meals: o.meals || "all" });
     const u = M.usual;
     const day = (f) => ({
       d: f.d, label: short(f.d), dow: dow(f.d), date: L.dateOf(f.d).getDate(), today: f.today,
@@ -43,9 +46,33 @@
       delta: mv ? Math.round(mv.wk) - Math.round(mv.lw) : null,
       parts: mv ? mv.parts.map((p) => ({ key: p.key, label: NAMES[p.key].label, desc: NAMES[p.key].desc, weight: p.weight, now: p.now, before: p.before, delta: +p.delta.toFixed(1) })) : [],
       series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value }))])),
+      /* today's four parts, each against its own usual range: the middle 70% of that part on the days the score's
+         usual comes from, the same rule as the score's. Empty when today has no FloraScore */
+      partsToday: (() => {
+        if (!sNow || sNow.value == null || !sNow.parts) return [];
+        const base = [];
+        for (let x = Math.max(28, M.start); x <= 83; x++) { const s = L.score(M, x, mode); if (s && s.value != null) base.push(s.parts); }
+        return L.SCORE_PARTS.map(([k, l, d]) => {
+          const v = base.map((p) => p[k]);
+          const usual = v.length >= 7 ? [Math.round(Ut.pct(v, 0.15)), Math.round(Ut.pct(v, 0.85))] : null;
+          return { key: k, label: l, desc: d, weight: L.SCORE_W[k], value: Math.round(sNow.parts[k]), usual };
+        });
+      })(),
       how: "FloraScore blends your last 3 days that have logs and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.",
       learning: null
-    } : { value: null, usual: null, learning: { day: L.learnDay(M), of: L.LEARN_DAYS, line: `Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.` } };
+    } : { value: null, usual: null, partsToday: [], learning: { day: L.learnDay(M), of: L.LEARN_DAYS, line: `Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.` } };
+
+    /* today, entry by entry, for a timeline of the day: BMs (read against the usual forms), No BM, meals and symptoms,
+       each at the time it was logged, and the time it is now in the demo */
+    const tx = L.day(M, L.TODAY);
+    const todayLine = {
+      now: L.NOW, nowText: T(L.NOW),
+      events: (tx && tx.logged ? tx.entries : []).map((e) => e.kind === "bm" ? { kind: "bm", t: e.t, text: T(e.t), name: L.formName(e, mode), within: u ? L.inForms(M, e, mode) : null }
+        : e.kind === "nobm" ? { kind: "nobm", t: e.t, text: T(e.t), name: "No BM" }
+        : e.kind === "meal" ? { kind: "meal", t: e.t, text: T(e.t), name: L.mealLabel(e.meal), detail: e.text || "" }
+        : e.kind === "sym" ? { kind: "sym", t: e.t, text: T(e.t), name: e.items.map((i) => i.name).join(", "), detail: e.items.map((i) => (i.s ? L.STRENGTH[i.s - 1] : "Strength not said")).join(", ") }
+        : null).filter(Boolean).sort((a, b) => a.t - b.t)
+    };
 
     /* the cards' numbers */
     const F7 = span(7), F30 = span(30), F90 = span(90);
@@ -111,7 +138,8 @@
     };
 
     return {
-      persona: { id: M.P.id, name: M.P.name }, mode, modeName: L.MODES[mode], data: o.data || "est", meals: M.meals,
+      persona: { id: M.P.id, name: M.P.name }, mode, modeName: L.MODES[mode], data: o.M ? M.mode : o.data || "est", meals: M.meals,
+      today: todayLine,
       todayLabel: (() => { const t = L.dateOf(L.TODAY); return `${Ut.DOWL[t.getDay()]}, ${Ut.MONL[t.getMonth()]} ${t.getDate()}`; })(),
       highlight: RU && RU.highlight ? RU.highlight(M) : "",
       learning: !u ? { day: L.learnDay(M), of: L.LEARN_DAYS } : null,

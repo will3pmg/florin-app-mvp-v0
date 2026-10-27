@@ -19,8 +19,14 @@
 .lb-note { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
 .lb :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
+/* the look buttons: on a wide screen they jump to a column, on a phone they are tabs */
+.lb-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
 .lb-tabs { align-self: flex-start; }
-.lb-looks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.lb-pick-note { margin: 0; max-width: 60ch; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+
+/* five looks don't fit side by side: each row scrolls sideways, and the rows scroll together (library.js), so a
+   column stays one look all the way down. Every column is one phone-width card wide */
+.lb-x { display: grid; grid-auto-flow: column; grid-auto-columns: 390px; gap: 24px; align-items: start; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 16px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .lb-look { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); min-width: 0; }
 .lb-look h2 { margin: 0; font-weight: 400; font-size: 24px; letter-spacing: -.01em; }
 .lb-look p { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); }
@@ -29,19 +35,21 @@
 .lb-row-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
 .lb-row-h h2 { margin: 0; font-weight: 400; font-size: 22px; letter-spacing: -.01em; }
 .lb-row-h p { margin: 0; font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-2); }
-.lb-cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start; }
-.lb-cell { min-width: 0; display: flex; justify-content: center; }
-.lb-cell > .ap { width: 100%; max-width: 390px; padding: 16px; border-radius: 32px; overflow: hidden; }
+.lb-cell { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+/* the look's name over every card, so a column still says whose it is once its header has scrolled away */
+.lb-cell-name { margin: 0; align-self: stretch; padding-left: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.lb-cell > .ap { box-sizing: border-box; width: 100%; max-width: 390px; padding: 16px; border-radius: 32px; overflow: hidden; }
 .lb-phonecard { width: 100%; max-width: 358px; margin: 0 auto; }
 .lb-missing { margin: 0; padding: 16px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--ap-line); font-size: 13px; color: var(--ap-ink2); }
 .lb-foot { display: flex; flex-direction: column; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
 .lb-foot p { margin: 0; max-width: 72ch; }
 
-/* under three columns' width, one look at a time, picked with the tabs */
-@media (min-width: 1200px) { .lb-tabs { display: none; } }
-@media (max-width: 1199px) {
-  .lb-looks, .lb-cells { grid-template-columns: minmax(0, 1fr); }
+/* a phone: one look at a time, picked with the tabs */
+@media (min-width: 820px) { .lb { max-width: 1400px; } }
+@media (max-width: 819px) {
+  .lb-x { display: flex; flex-direction: column; overflow: visible; padding-bottom: 0; }
   .lb [data-off] { display: none; }
+  .lb-cell-name, .lb-pick-note { display: none; }
   .lb-replay, .lb-motion-off { margin-left: 0; }
 }
 /* on a phone the segmented controls keep to one row where they can; where one wraps, a rounded panel, not a stadium */

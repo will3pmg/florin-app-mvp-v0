@@ -1,9 +1,19 @@
-/* Florin app refresh: the manual logs behind today's app (no hardware, no gas data, no FloraScore).
+/* Florin app refresh: the manual logs behind today's app (no hardware, no gas data; FloraScore from the logs).
    Built on the studio's seeded days (js/data-app.js), so the refresh tells the same story as the studio:
    BM times are the seeded visits, symptoms come from the seeded check-ins, late dinners stay late.
    Week before last was the rougher one; last week, the one that ends tonight, was steadier.
    Meals are seeded on their own pass, and each demo person has one dish their logs tend to follow (Insights has
    to find it). Pure JS, no DOM. Every number a screen states is computed from this, never typed. window.FLORIN_LOGS */
+/* ---------- the extension hooks, before anything else runs ----------
+   Feature modules load after refresh-insights.js and before refresh-app.js and register into this one object; the
+   phone and the page read it when they run. Created here so it exists for every file after this one, and filled in
+   key by key so a test (or a module loaded earlier) that made it first keeps what it put there. CLAUDE.md, Extension
+   hooks, has the shape of each key. window.FLORIN_EXT */
+(function () {
+  const EXT = (window.FLORIN_EXT = window.FLORIN_EXT || {});
+  [["overlays", {}], ["acts", {}], ["opens", {}], ["screens", []], ["notes", {}], ["decisions", {}], ["keys", {}], ["onSet", []]].forEach(([k, d]) => { if (!EXT[k]) EXT[k] = d; });
+})();
+
 (function () {
   const AD = window.FLORIN_APP;
   if (!AD) return;
@@ -186,7 +196,7 @@
   const CRAFT_FORMS = { 84: [4], 85: [4, 6], 86: [5], 88: [3, 4], 89: [4] };
   const CRAFT_GAP = { 87: true };
   const CRAFT_SYM = { 86: { t: 10.33, items: [{ name: "Bloating", s: 1 }], last: 1, note: "" } };
-  const TODAY_ENTRIES = (mode) => (mode === "new" ? [] : [
+  const TODAY_ENTRIES = (mode) => (mode === "new" || mode === "fresh" ? [] : [
     { kind: "bm", t: null /* the seeded first visit */, form: 4, how: {}, dur: null, flags: {}, note: "" },
     { kind: "meal", t: 8.08, meal: "breakfast", text: "Oatmeal with berries, coffee", note: "" },
     { kind: "meal", t: 12.67, meal: "lunch", text: "Chicken salad", note: "" },
@@ -323,7 +333,11 @@
 
   /* ---------- the model one phone works on ----------
      mode "est": twelve weeks of logs, check-ins answered every Sunday but one, tonight's due.
-     mode "new": started five days ago, still learning their usual, nothing logged yet today, first check-in due. */
+     mode "new": started five days ago, still learning their usual, nothing logged yet today, first check-in due.
+     mode "fresh": just joined. Onboarding finished this evening, so today is day 1 of 14: nothing logged anywhere, no
+     usual, no earlier day to catch up on, and, as for "new", the first check-in due tonight. */
+  L.DATA = [["est", "12 weeks"], ["new", "New, day 5"], ["fresh", "Just joined"]];
+  const learning = (mode) => mode === "new" || mode === "fresh";
   /* what a demo person logs for meals. Will (Oct 14): meal logging happens when things feel off, not every day.
      "all" is every day, as seeded; "rough" keeps a day's meals only when that day has a symptom logged (what someone
      writes down when things feel off); "none" logs no meals at all */
@@ -337,7 +351,7 @@
   L.build = (personaId, mode, opts = {}) => {
     const A = AD.get(personaId);
     const P = A.persona, U = A.U;
-    const start = mode === "new" ? TODAY - 4 : 0;
+    const start = mode === "new" ? TODAY - 4 : mode === "fresh" ? TODAY : 0;
     const meals = {};
     for (let d = start; d < TODAY; d++) if (!isGap(P, d)) meals[d] = mealsOf(A, d);
     const days = [];
@@ -348,7 +362,7 @@
     keepMeals(days, opts.meals || "all");
     const M = { A, P, persona: P, mode, start, days, seq: 0, meals: opts.meals || "all", seedMeals };
 
-    if (mode === "new") {
+    if (learning(mode)) {
       M.usual = null;
       M.checkins = [];
     } else {

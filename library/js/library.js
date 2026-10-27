@@ -2,7 +2,10 @@
    A look is a file that registers itself on window.FLOOKS:
      { id, name, idea, components: { score(D, ctx), parts, trend, week, month, timing, often, form, symptoms, checkin, pattern }, after(el, ctx) }
    Each component returns the markup for one phone-width card (358px). The page wraps it in .ap with the theme, so a look
-   uses the app's tokens (--ap-*) and the six brand colours, nothing else. */
+   uses the app's tokens (--ap-*) and the six brand colours, nothing else.
+   Five looks don't fit side by side, so on a wide screen every row scrolls sideways and the rows scroll together: a
+   column stays one look all the way down the page, and the look buttons jump to a column. On a phone the same buttons
+   are tabs, one look at a time. */
 (function () {
   const FL = window.FL, FLD = window.FLD, AD = window.FLORIN_APP;
   const mount = document.getElementById("lb");
@@ -43,7 +46,10 @@
   /* the theme starts as the viewer's; the switch then sets the page and the cards together */
   const root = document.documentElement;
   const viewerTheme = () => root.getAttribute("data-theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  const S = { persona: "sarah", mode: "C", data: "est", meals: "all", theme: viewerTheme(), look: null, uid: 0 };
+  const S = { persona: "sarah", mode: "C", data: "est", meals: "all", theme: viewerTheme(), look: null, uid: 0, x: 0 };
+  /* wide: the rows scroll sideways together. Narrow: one look at a time, picked with the tabs */
+  const WIDE = "(min-width: 820px)";
+  const wide = () => !window.matchMedia || window.matchMedia(WIDE).matches;
   try { const s = JSON.parse(localStorage.getItem("florin-looks") || "{}"); Object.assign(S, s); } catch (e) {}
   const save = () => { try { localStorage.setItem("florin-looks", JSON.stringify({ persona: S.persona, mode: S.mode, data: S.data, meals: S.meals, theme: S.theme, look: S.look })); } catch (e) {} };
 
@@ -67,13 +73,15 @@
     const card = (look, k) => {
       let html = "";
       try { html = look.components && look.components[k] ? look.components[k](D, ctxOf(look)) : `<p class="lb-missing">Not drawn in this look yet.</p>`; } catch (e) { console.error(look.id, k, e); html = `<p class="lb-missing">This card failed to draw: ${esc(e.message)}</p>`; }
-      return `<div class="lb-cell" data-look="${esc(look.id)}"${S.look !== look.id ? " data-off" : ""}><div class="ap lk-${esc(look.id)}" data-theme="${S.theme}"><div class="lb-phonecard" data-k="${k}">${html}</div></div></div>`;
+      return `<div class="lb-cell" data-look="${esc(look.id)}"${S.look !== look.id ? " data-off" : ""}><p class="lb-cell-name" aria-hidden="true">${esc(look.name)}</p><div class="ap lk-${esc(look.id)}" data-theme="${S.theme}"><div class="lb-phonecard" data-k="${k}">${html}</div></div></div>`;
     };
+    const count = ["No looks", "One look", "Two looks", "Three looks", "Four looks", "Five looks", "Six looks", "Seven looks"][looks.length] || `${looks.length} looks`;
+    const ways = ["", "one way", "two ways", "three ways", "four ways", "five ways", "six ways", "seven ways"][looks.length] || `${looks.length} ways`;
     mount.innerHTML = `
       <header class="lb-head">
-        <p class="lb-eyebrow">Florin app refresh · Data looks · Oct 14</p>
-        <h1>Three looks for the data</h1>
-        <p class="lb-lede">The same person, the same numbers, drawn three ways. Each look takes its cue from Oura: one score up front, parts you can see, charts that move. Every card is built from the refresh's manual logs and keeps Florin's rules: everything is read against your own usual, with Plum for your usual on light, Ray on dark, and Gold for a shift. Pick the one to take through the app.</p>
+        <p class="lb-eyebrow">Florin app refresh · Data looks · Oct 27</p>
+        <h1>${esc(count)} for the data</h1>
+        <p class="lb-lede">${esc(`The same person, the same numbers, drawn ${ways}. Each look takes its cue from Oura: one score up front, parts you can see, charts that move. Every card is built from the refresh's manual logs and keeps Florin's rules: everything is read against your own usual, with Plum for your usual on light, Ray on dark, and Gold for a shift. Pick the one to take through the app.`)}</p>
       </header>
       <div class="lb-ctls" role="group" aria-label="What the cards show">
         ${seg("persona", "Person", FLD.PERSONAS)}
@@ -85,13 +93,65 @@
         <p class="lb-motion-off">Motion is off because your system asks for reduced motion.</p>
         ${sameNote(D)}
       </div>
-      <nav class="lb-tabs" aria-label="Looks">${looks.map((l) => `<button type="button" data-k="look" data-v="${esc(l.id)}" aria-pressed="${S.look === l.id}">${esc(l.name)}</button>`).join("")}</nav>
-      <div class="lb-looks">${looks.map((l) => `<section class="lb-look"${S.look !== l.id ? " data-off" : ""} data-look="${esc(l.id)}"><span class="lb-eyebrow">Look ${looks.indexOf(l) + 1}</span><h2>${esc(l.name)}</h2><p>${esc(l.idea || "")}</p></section>`).join("")}</div>
-      ${COMPONENTS.map(([k, t, q]) => `<section class="lb-row" aria-labelledby="lb-h-${k}"><div class="lb-row-h"><h2 id="lb-h-${k}">${esc(t)}</h2><p>${esc(q)}</p></div><div class="lb-cells">${looks.map((l) => card(l, k)).join("")}</div></section>`).join("")}
+      <div class="lb-pick">
+        <nav class="lb-tabs" aria-label="Looks">${looks.map((l) => `<button type="button" data-k="look" data-v="${esc(l.id)}" aria-pressed="${S.look === l.id}">${esc(l.name)}</button>`).join("")}</nav>
+        <p class="lb-pick-note">${esc(`${count}, side by side. Each row scrolls sideways and the rows move together, so a column stays one look all the way down. The buttons jump to a look; the dark ones are on screen.`)}</p>
+      </div>
+      <div class="lb-looks lb-x">${looks.map((l) => `<section class="lb-look"${S.look !== l.id ? " data-off" : ""} data-look="${esc(l.id)}"><span class="lb-eyebrow">Look ${looks.indexOf(l) + 1}</span><h2>${esc(l.name)}</h2><p>${esc(l.idea || "")}</p></section>`).join("")}</div>
+      ${COMPONENTS.map(([k, t, q]) => `<section class="lb-row" aria-labelledby="lb-h-${k}"><div class="lb-row-h"><h2 id="lb-h-${k}">${esc(t)}</h2><p>${esc(q)}</p></div><div class="lb-cells lb-x">${looks.map((l) => card(l, k)).join("")}</div></section>`).join("")}
       <footer class="lb-foot"><p>${esc(D.disclaimer)}</p><p>Every number here is computed from the demo person's logs. Change the person, the option, the logs or the meal logs above, and every look redraws.</p></footer>`;
     countUp(mount);
     looks.forEach((l) => { if (l.after) try { l.after(mount, ctxOf(l)); } catch (e) { console.error(l.id, "after", e); } });
+    wireRows();
   }
+
+  /* ---------- the rows, scrolling together ----------
+     Each row is its own sideways scroller, so its scrollbar sits right under its cards. A scroll in one row moves the
+     others to the same place. A row that was just moved here fires its own scroll event a frame later; it already sits
+     where S.x says, so it's let be, and only the row someone is scrolling ever leads */
+  const rows = () => [...mount.querySelectorAll(".lb-x")];
+  let seenRaf = 0;
+  function markSeen() {
+    seenRaf = 0;
+    const btns = [...mount.querySelectorAll(".lb-tabs button")];
+    if (!wide()) { btns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === S.look))); return; }
+    const r = mount.querySelector(".lb-cells.lb-x");
+    if (!r) return;
+    const box = r.getBoundingClientRect();
+    btns.forEach((b) => {
+      const c = r.querySelector(`.lb-cell[data-look="${CSS.escape(b.dataset.v)}"]`);
+      if (!c) return;
+      const cb = c.getBoundingClientRect();
+      const shown = Math.min(cb.right, box.right) - Math.max(cb.left, box.left);
+      b.setAttribute("aria-pressed", String(shown >= cb.width * 0.6));
+    });
+  }
+  const seenSoon = () => { if (!seenRaf) seenRaf = requestAnimationFrame(markSeen); };
+  function wireRows() {
+    const xs = rows();
+    xs.forEach((r) => { r.scrollLeft = S.x; });
+    xs.forEach((r) => r.addEventListener("scroll", () => {
+      if (Math.abs(r.scrollLeft - S.x) < 1) return;
+      S.x = r.scrollLeft;
+      xs.forEach((o) => { if (o !== r) o.scrollLeft = S.x; });
+      seenSoon();
+    }, { passive: true }));
+    markSeen();
+  }
+  /* a look button on a wide screen brings that look's column to the left edge of every row */
+  function jumpTo(id) {
+    const r = mount.querySelector(".lb-cells.lb-x");
+    const c = r && r.querySelector(`.lb-cell[data-look="${CSS.escape(id)}"]`);
+    if (!c) return;
+    const left = Math.max(0, Math.min(r.scrollWidth - r.clientWidth, c.offsetLeft - r.firstElementChild.offsetLeft));
+    r.scrollTo({ left, behavior: reduced() ? "auto" : "smooth" });
+  }
+  if (window.matchMedia) {
+    const mq = window.matchMedia(WIDE);
+    const onMq = () => markSeen();
+    if (mq.addEventListener) mq.addEventListener("change", onMq); else if (mq.addListener) mq.addListener(onMq);
+  }
+  window.addEventListener("resize", seenSoon, { passive: true });
 
   /* every press redraws the page, controls included, so focus goes back to the same control once it's drawn again */
   const refocus = (sel) => { const nb = mount.querySelector(`.lb-ctls ${sel}, .lb-tabs ${sel}`); if (nb) nb.focus({ preventScroll: true }); };
@@ -99,6 +159,8 @@
     const b = e.target.closest("button");
     if (!b || !mount.contains(b)) return;
     if (b.dataset.act === "replay") { render(); refocus('[data-act="replay"]'); return; }
+    /* on a wide screen every look is drawn already: a look button scrolls to it rather than redrawing */
+    if (b.dataset.k === "look" && wide()) { S.look = b.dataset.v; save(); jumpTo(S.look); return; }
     if (b.dataset.k) {
       const sel = `[data-k="${CSS.escape(b.dataset.k)}"][data-v="${CSS.escape(b.dataset.v)}"]`;
       S[b.dataset.k] = b.dataset.v; if (b.dataset.k === "theme") root.setAttribute("data-theme", S.theme); save(); render();

@@ -1,11 +1,18 @@
-/* Florin app refresh: the prototype page. One phone, or A and B side by side, with the screens to jump to, the demo
-   controls and notes for whatever the phone is showing. Each phone is a full working copy of the app with its own
-   logs, so logging in A never changes B. On a phone the app fills the screen and the notes move into a sheet. */
+/* Florin app refresh: the prototype page. Will, Oct 27: the open decisions are toggles in the demo, not separate demos.
+   The left bar holds the Decisions, the Demo controls and the Screens to jump to; the middle is one phone, live; the
+   right is the notes for whatever the phone shows, or for the decision just changed. On a phone the app fills the
+   screen and a bottom bar opens the Toggles and the Notes as sheets.
+   The phone is one working copy of the app. Every change to it goes through phone.set(key, value), and feature modules
+   (loaded between refresh-insights.js and this file) plug in through window.FLORIN_EXT: see CLAUDE.md, Extension hooks. */
 (function () {
   const FL = window.FL, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, AD = window.FLORIN_APP, B = window.FLORIN || {};
   const mount = document.getElementById("rx");
   if (!FL || !L || !RU || !AD || !mount) return;
   const esc = FL.esc, T = AD.util.fmtTime, ic = RU.icon;
+  const EXT = window.FLORIN_EXT;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
+  /* a module's hook that throws is reported, never allowed to take the page down */
+  const safe = (f, ...a) => { try { return f(...a); } catch (e) { console.error(e); return undefined; } };
   const reduced = () => FL.reduced();
   const store = {
     get(k, d) { try { const v = localStorage.getItem("florin-refresh:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -27,9 +34,21 @@
   let UID = 0;
   const statusIcons = `<span class="apx-status-r"><svg viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg> <svg viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0zM3.2 6.6a6.8 6.8 0 0 1 9.6 0l-1.4 1.4a4.8 4.8 0 0 0-6.8 0zM.8 4.2a10.2 10.2 0 0 1 14.4 0l-1.4 1.4a8.2 8.2 0 0 0-11.6 0z"/></svg> <svg viewBox="0 0 27 12" aria-hidden="true"><rect x=".5" y=".5" width="22" height="11" rx="3.2" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="17" height="8" rx="2"/><rect x="24" y="4" width="2" height="4" rx="1" opacity=".45"/></svg></span>`;
   const KIND = { pay: "sheet", plus: "sheet", earlier: "sheet", guide: "sheet", flag: "sheet", ckday: "sheet", nobm: "sheet", bm: "full", sym: "full", meal: "full", ck: "screen" };
+  /* a module's overlay brings its own kind; it wins over a core one of the same name */
+  const kindOf = (type) => (EXT.overlays[type] && EXT.overlays[type].kind) || KIND[type] || "sheet";
+  /* the decisions the phone carries, each stamped on the app's root as a data attribute (data-bm-ui="full", say) so a
+     module's CSS can follow it */
+  const STAMP = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard", "plan"];
+  const attrOf = (k) => "data-" + k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+  /* the screens that exist only with the weekly check-in on */
+  const CK_SCREENS = ["ck-card", "ck", "ck-last", "ckdone", "ckday", "i-ck"];
 
   function Phone(host, cfg) {
-    const S = { form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member", tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {} };
+    const S = {
+      form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member",
+      bmUI: cfg.bmUI || "quick", home: cfg.home || "score", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short",
+      tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {}
+    };
     S.M = L.build(S.persona, S.data, { meals: S.meals });
     host.innerHTML = `<div class="ap ap-rx" data-theme="${cfg.theme}">
         <div class="apx-status" aria-hidden="true"><span>7:40</span>${statusIcons}</div>
@@ -49,7 +68,10 @@
       </div>`;
     const root = host.querySelector(".ap"), layer = root.querySelector(".ap-layer"), tb = root.querySelector(".ap-tb");
     const ovlEl = root.querySelector(".ap-ovl"), tst = root.querySelector(".ap-tst");
-    const V = () => ({ form: S.form, uid: S.uid, mealUI: S.mealUI, plan: S.plan });
+    /* what every render function is told: the decisions, the plan and who this is */
+    const V = () => ({ form: S.form, uid: S.uid, mealUI: S.mealUI, plan: S.plan, bmUI: S.bmUI, home: S.home, history: S.history, checkin: S.checkin, look: S.look, easy: S.easy, onboard: S.onboard, persona: S.persona, data: S.data, meals: S.meals });
+    const stamp = () => STAMP.forEach((k) => root.setAttribute(attrOf(k), String(S[k])));
+    stamp();
     const top = () => S.ovl[S.ovl.length - 1];
 
     /* ---------- the tab underneath ---------- */
@@ -97,6 +119,7 @@
 
     /* ---------- overlays: the plus menu, the log forms, the check-in ---------- */
     function ovlHTML(o) {
+      if (EXT.overlays[o.type]) return safe(EXT.overlays[o.type].render, S.M, V(), o.st, api) || "";
       switch (o.type) {
         case "pay": return RU.paywall(S.M, V(), o.st);
         case "plus": return RU.plus(S.M, V(), o.st);
@@ -112,7 +135,7 @@
         default: return "";
       }
     }
-    const scroller = (el) => el.querySelector(".ap-fsh-b, .ap-ck-b") || el.querySelector(".ap-psh");
+    const scroller = (el) => el.querySelector("[data-scroll], .ap-fsh-b, .ap-ck-b") || el.querySelector(".ap-psh");
     const keyOf = (el) => (el && el.dataset ? [el.dataset.act || "", el.dataset.v || "", el.dataset.form || "", el.dataset.word || ""].join("|") : "");
     /* focus goes to the thing the screen is for: the question, the answer, the tile, then anything */
     function focusIn(ov) {
@@ -147,9 +170,10 @@
     const say = (t) => { sayEl.textContent = ""; setTimeout(() => (sayEl.textContent = t), 60); };
     function push(type, st = {}, o = {}) {
       const ov = { type, st, el: document.createElement("div"), opener: document.activeElement, okey: keyFor(document.activeElement), t0: performance.now() };
-      ov.el.className = `ap-o ap-o--${KIND[type]}${o.instant || reduced() ? " is-now" : ""}`;
+      const kind = kindOf(type);
+      ov.el.className = `ap-o ap-o--${kind} ap-o--t-${type}${o.instant || reduced() ? " is-now" : ""}`;
       /* a short sheet closes on a tap outside it; a log form doesn't, so a stray tap can't lose what's on it */
-      ov.el.innerHTML = `${KIND[type] === "screen" ? "" : `<div class="ap-o-scrim"${KIND[type] === "sheet" ? ' data-act="close"' : ""} aria-hidden="true"></div>`}<div class="ap-o-p"></div>`;
+      ov.el.innerHTML = `${kind === "screen" ? "" : `<div class="ap-o-scrim"${kind === "sheet" ? ' data-act="close"' : ""} aria-hidden="true"></div>`}<div class="ap-o-p"></div>`;
       ov.el.querySelector(".ap-o-p").innerHTML = ovlHTML(ov);
       tst.classList.remove("is-on");
       clearTimeout(S.tT);
@@ -358,11 +382,12 @@
       pay(b) { push("pay", { from: b.dataset.pay || b.dataset.k || "" }); },
       "pay-start"() {
         closeAll();
-        if (cfg.onPlan) cfg.onPlan("member"); else { S.plan = "member"; renderTab(true); nav(); }
+        if (cfg.onPlan) cfg.onPlan("member"); else set("plan", "member");
         toast("Membership is on in this demo. Insights and Ask Florin are open.");
       },
       irange(b) { S.ins.range = +b.dataset.v; renderTab(true); nav(); focusSel(`[data-act="irange"][data-v="${CSS.escape(b.dataset.v)}"]`); },
       idetail(b) {
+        if (b.dataset.k === "ck" && !S.checkin) return;
         if (S.plan === "free") { push("pay", { from: b.dataset.k || "" }); return; }
         closeAll();
         if (S.tab === "insights" && !S.ins.k) S.ins.y = layer.scrollTop;
@@ -397,7 +422,8 @@
       /* a tile on the plus card logs the BM now; the toast offers Add details and Undo */
       "quick-bm"(b) {
         const d = logDay();
-        if (d !== L.TODAY) return ACT["open-bm"](b);
+        /* BM logging, Full form only: there is no one-tap save, so a tile (from a module, say) opens the form */
+        if (d !== L.TODAY || S.bmUI === "full") return ACT["open-bm"](b);
         const restore = snapshot();
         const e = { kind: "bm", d, t: L.NOW, form: b.dataset.form ? +b.dataset.form : null, word: b.dataset.word ? +b.dataset.word : null, how: {}, dur: null, flags: {}, note: "" };
         const res = L.add(S.M, e);
@@ -494,6 +520,7 @@
         else toast(`${edit ? "Saved" : `${L.mealLabel(e.meal)} saved`}. ${T(e.t)}${whenTxt(e)}.${e.foods.length ? "" : " No foods counted from it."}`, restore);
       },
       "ck-start"() {
+        if (!S.checkin) return;
         const st = S.ckDraft || newCk();
         if (top() && top().type === "plus") swap("ck", st); else push("ck", st);
       },
@@ -525,6 +552,7 @@
         nav();
       },
       "ck-skip"() {
+        if (!S.checkin) return;
         const restore = snapshot();
         S.M.checkin.status = "skipped";
         S.ckDraft = null;
@@ -534,10 +562,11 @@
         requestAnimationFrame(() => { const u = tst.querySelector('[data-act="undo"]'); if (u) u.focus({ preventScroll: true }); });
       },
       "ck-result"() {
+        if (!S.checkin) return;
         const c = S.M.checkin, st = { step: L.CHECKIN.length + 1, answers: c.answers.slice(), tags: (c.tags || []).slice(), note: c.note || "" };
         if (top() && top().type === "plus") swap("ck", st); else push("ck", st);
       },
-      "ck-day"() { push("ckday", Object.assign({}, S.M.ckDay)); },
+      "ck-day"() { if (S.checkin) push("ckday", Object.assign({}, S.M.ckDay)); },
       "ckd-dow"(b) { top().st.dow = +b.dataset.v; rerender(); },
       "ckd-when"(b) { top().st.when = b.dataset.v; rerender(); },
       "ckd-save"() {
@@ -551,12 +580,16 @@
       toast(b) { if (b.dataset.close) closeAll(); toast(b.dataset.msg); },
       hfilter(b) { S.hist.filter = b.dataset.v; renderTab(true); },
       hmore() { S.hist.n = (S.hist.n || 14) + 14; renderTab(true); },
-      undo() { const u = S.undo; S.undo = null; tst.classList.remove("is-on"); if (u) u(); refocus(null); }
+      undo() { const u = S.undo; S.undo = null; tst.classList.remove("is-on"); if (u) u(); refocus(null); },
+      /* the avatar on Today. The profile module registers its own "profile" act, which wins over this one */
+      profile() { toast("Profile and settings are being built in this pass of the prototype."); }
     };
+    /* a module's act wins over a core act of the same name; looked up on every tap, so an act registered late works */
+    const actOf = (name) => (EXT.acts[name] ? (b, e) => EXT.acts[name](b, api, e) : ACT[name]);
     root.addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]");
       if (!b || !root.contains(b)) return;
-      const f = ACT[b.dataset.act];
+      const f = actOf(b.dataset.act);
       if (!f) return;
       if (b.getAttribute("aria-disabled") === "true" && !/^save-/.test(b.dataset.act)) return;
       /* a second tap that lands on a sheet in its first 400ms is the same tap repeated, not a choice */
@@ -624,7 +657,7 @@
     root.addEventListener("pointerdown", (e) => {
       const ov = top();
       const h = e.target.closest(".ap-sheet-grab, .ap-psh-h");
-      if (!ov || KIND[ov.type] !== "sheet" || !h || !ov.el.contains(h) || e.target.closest("button")) return;
+      if (!ov || kindOf(ov.type) !== "sheet" || !h || !ov.el.contains(h) || e.target.closest("button")) return;
       const p = ov.el.querySelector(".ap-o-p");
       drag = { ov, p, id: e.pointerId, y0: e.clientY, dy: 0, k: root.getBoundingClientRect().height / root.offsetHeight || 1 };
       try { h.setPointerCapture(e.pointerId); } catch (err) { /* fine without capture */ }
@@ -649,13 +682,22 @@
     root.addEventListener("pointercancel", endDrag);
 
     /* ---------- what the page needs to know ---------- */
+    /* the screen the phone shows, as an id the page's notes and Screens list know. A module names its own overlay's
+       screen (EXT.keys, or the overlay's key), and can name a tab's state through EXT.keys["tab:<tab>"] */
     function key() {
       const t = top();
-      if (!t && S.tab === "insights" && S.ins.k) return S.ins.k.indexOf("pattern:") === 0 ? "i-pattern" : `i-${S.ins.k}`;
-      if (!t && S.tab === "ask" && S.askCtx) return "ask-about";
-      if (!t) return S.tab;
-      if (t.type === "ck") return t.st.step > L.CHECKIN.length ? "ckdone" : "ck";
-      return t.type;
+      if (t) {
+        if (EXT.keys[t.type]) { const k = safe(EXT.keys[t.type], t); if (k) return k; }
+        const ov = EXT.overlays[t.type];
+        if (ov) return (ov.key && safe(ov.key, t.st)) || t.type;
+        if (t.type === "ck") return t.st.step > L.CHECKIN.length ? "ckdone" : "ck";
+        return t.type;
+      }
+      const tk = EXT.keys["tab:" + S.tab];
+      if (tk) { const k = safe(tk, { type: "tab:" + S.tab, st: S }); if (k) return k; }
+      if (S.tab === "insights" && S.ins.k) return S.ins.k.indexOf("pattern:") === 0 ? "i-pattern" : `i-${S.ins.k}`;
+      if (S.tab === "ask" && S.askCtx) return "ask-about";
+      return S.tab;
     }
     function nav() {
       /* under an overlay, nothing behind it can take focus: the screen, the tab bar, a lower sheet */
@@ -663,7 +705,7 @@
       root.querySelector(".ap-stack").inert = any;
       tb.inert = any;
       S.ovl.forEach((o, i) => { o.el.inert = i < S.ovl.length - 1; });
-      root.classList.toggle("has-full", S.ovl.some((o) => KIND[o.type] !== "sheet"));
+      root.classList.toggle("has-full", S.ovl.some((o) => kindOf(o.type) !== "sheet"));
       root.classList.toggle("has-ovl", S.ovl.length > 0);
       if (cfg.onNav) cfg.onNav(key(), api);
     }
@@ -673,6 +715,8 @@
       closeAll();
       clearTimeout(S.ckT);
       const go = (tab) => { S.tab = tab; renderTab(true); layer.scrollTop = 0; };
+      /* with the check-in off, its screens don't exist: Today (or Insights) instead */
+      if (!S.checkin && CK_SCREENS.includes(id)) id = id === "i-ck" ? "insights" : "today";
       const ins = (k) => { if (S.plan === "free" && k) { S.ins.k = null; go("insights"); push("pay", { from: k.indexOf("pattern:") === 0 ? "pat" : k }, now); return; } S.ins.k = k; go("insights"); };
       const now = { instant: true };
       switch (id) {
@@ -705,25 +749,54 @@
         case "ask": S.askCtx = null; go("ask"); break;
         case "ask-about": S.askCtx = { k: "timing", range: S.ins.range }; go("ask"); break;
         case "ck-card": go("today"); { const c = layer.querySelector(".ap-ckc"); if (c) layer.scrollTop = Math.max(0, c.offsetTop - 64); } break;
-        default: go("today");
+        case "today": go("today"); break;
+        /* a screen a module added: it says how to get there */
+        default: if (EXT.opens[id]) { go("today"); safe(EXT.opens[id], api); } else go("today");
       }
       nav();
     }
     function rebuild() { clearTimeout(S.ckT); S.ovl.forEach((o) => o.el.remove()); S.ovl = []; S.M = L.build(S.persona, S.data, { meals: S.meals }); S.ckDraft = null; S.drafts = {}; S.hist = { filter: "all", n: 14 }; S.ins = { range: 30, k: null, y: 0 }; S.askCtx = null; tst.classList.remove("is-on"); S.undo = null; }
+    /* redraw everything in place: the tab under the overlays, then each overlay */
+    const refresh = () => { renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); };
+    /* the one way to change the phone: a decision, a demo control, the theme or full screen. Modules hear every change
+       through EXT.onSet, after the phone has redrawn */
+    function set(k, v) {
+      switch (k) {
+        case "theme": root.dataset.theme = v; break;
+        case "full": root.classList.toggle("is-full", !!v); break;
+        case "persona": case "data": case "meals": S[k] = v; rebuild(); open("today"); break;
+        case "mealUI": S.mealUI = v; if (top() && top().type === "meal") open("meal"); else refresh(); break;
+        case "checkin":
+          S.checkin = v !== false;
+          if (!S.checkin) {
+            /* off takes the check-in out of the whole app: close it if it's open, and leave its detail */
+            clearTimeout(S.ckT);
+            if (S.ovl.some((o) => o.type === "ck" || o.type === "ckday")) closeAll();
+            if (S.ins.k === "ck") S.ins.k = null;
+            if (S.askCtx && S.askCtx.k === "ck") S.askCtx = null;
+          }
+          refresh();
+          break;
+        default: S[k] = v; refresh();
+      }
+      if (STAMP.includes(k)) root.setAttribute(attrOf(k), String(S[k]));
+      EXT.onSet.forEach((f) => safe(f, k, v, api));
+    }
+    /* go to a tab's top, closing whatever is open */
+    const go = (tab) => { closeAll(); S.tab = tab; if (tab === "insights") S.ins.k = null; if (tab === "ask") S.askCtx = null; renderTab(); nav(); focusSel(); };
+    /* everything a module needs to drive the phone (CLAUDE.md, Extension hooks) */
     const api = {
+      S, V, M: () => S.M,
+      push, pop, swap, rerender, top, closeAll, toast, say, renderTab, go, nav, focusSel, open, rebuild, set, countUp, layer, root,
+      snapshot, commit, key,
+      /* an act by name: a module's if it has one, else the core's. core() always runs the core's, for a module that
+         wraps one */
+      act: (name, b, e) => { const f = actOf(name); return f ? f(b || root, e) : undefined; },
+      core: (name, b, e) => (ACT[name] ? ACT[name](b || root, e) : undefined),
+      /* the page uses these */
       el: root,
-      open,
-      key,
       model: () => S.M,
       form: () => S.form,
-      setForm(f) { S.form = f; renderTab(true); S.ovl.forEach((o) => rerender(o)); },
-      setPersona(p) { S.persona = p; rebuild(); open("today"); },
-      setData(d) { S.data = d; rebuild(); open("today"); },
-      setMeals(m) { S.meals = m; rebuild(); open("today"); },
-      setMealUI(m) { S.mealUI = m; if (top() && top().type === "meal") open("meal"); else { renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); } },
-      setPlan(p) { S.plan = p; renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); },
-      setTheme(t) { root.dataset.theme = t; },
-      setFull(b) { root.classList.toggle("is-full", !!b); },
       reset() { rebuild(); open("today"); }
     };
     renderTab();

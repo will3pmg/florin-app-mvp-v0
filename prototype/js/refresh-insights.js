@@ -588,12 +588,14 @@
       oftenVals = vals;
       oftenChart = bars({ values: vals, yMax: Math.max(3, ...F.map((f) => f.count || 0)), yTicks: [1, 2, 3], band: u ? [u.nLo, u.nHi] : null, labels: n <= 7, h: 80, xTicks: ticks(F), aria: `BMs a day, ${RANGE_NAME[n].toLowerCase()}` });
     }
+    /* nothing logged in the stretch yet (day 1): no empty axis, the sentence says it */
+    const oftenAny = oftenVals.some((v) => v.gap || v.v != null);
     const often = card(V, {
       k: "often", icon: "bars", kicker: "How often",
       head: u ? `Usually ${u.nLo} to ${u.nHi} a day` : "Learning your usual count",
       sum: of.known.length ? (u ? `<b>${of.avg.toFixed(1)} a day</b> on average. ${of.inC} of ${plural(of.known.length, "day")} within your usual.` : `<b>${plural(of.total, "BM")}</b> over ${plural(of.known.length, "day")}.`) : "No BMs logged in this stretch.",
-      chart: oftenChart,
-      legend: barLegend(oftenVals, u, "Outside it")
+      chart: oftenAny ? oftenChart : "",
+      legend: oftenAny ? barLegend(oftenVals, u, "Outside it") : ""
     });
 
     /* form */
@@ -613,18 +615,19 @@
     const symptoms = card(V, {
       k: "sym", icon: "sym", kicker: "Symptoms",
       head: u ? `Usually ${lower1(symUsualText(u))}` : "Symptoms so far",
-      sum: sy.withSym.length ? `<b>${sy.withSym.length} of ${plural(sy.logged.length, "day")}</b> you logged. Mostly ${esc(sy.rows[0].name.toLowerCase())}${sy.how ? `, usually ${esc(sy.how)}` : ""}.` : `None logged on the ${plural(sy.logged.length, "day")} you logged.`,
+      sum: sy.withSym.length ? `<b>${sy.withSym.length} of ${plural(sy.logged.length, "day")}</b> you logged. Mostly ${esc(sy.rows[0].name.toLowerCase())}${sy.how ? `, usually ${esc(sy.how)}` : ""}.` : sy.logged.length ? `None logged on the ${plural(sy.logged.length, "day")} you logged.` : "Nothing logged yet.",
       chart: symRowsTop.length ? symChart(M, mode, F, n, symRowsTop, 318) : "",
       legend: symRowsTop.length ? symLegend(n, live.some((f) => !f.logged)) : ""
     });
 
-    /* the weekly check-in */
+    /* the weekly check-in, unless it's off for the whole app */
+    const ckOn = RU.ckOn(V);
     const K = ckOf(M);
     const ckDue = M.checkin.status === "due";
     const ckFoot = ckDue ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="ck-start">${M.ckDraft && M.ckDraft.step > 0 ? "Continue" : "Check in"}</button>` : "";
     const ckBody = K.b ? `<ul class="ap-ic-ck">${L.CHECKIN.map((q, i) => `<li><div class="ap-ckr-top"><span class="ap-k">${esc(q.label)}</span>${chip(K.cmp[i].text, K.cmp[i].k === "same" ? "usual" : "shift")}</div>${ckMini(M, i, K.cur ? K.cur.answers[i] : null)}</li>`).join("")}</ul>`
       : `<p class="ap-ic-note">${K.done.length ? `${plural(K.done.length, "check-in")} so far. After three, each week is compared with them.` : "Your first three check-ins become the starting point for every week after."}</p>`;
-    const checkin = card(V, {
+    const checkin = !ckOn ? "" : card(V, {
       k: "ck", icon: "ck", kicker: K.b ? `Weekly check-in · ${K.cur ? "this week" : `week of ${short(K.latest.ws)}`}` : "Weekly check-in",
       head: K.b ? ckHead(K) : ckDue ? (K.done.length ? "This week's check-in is due tonight" : "Your first check-in is due tonight") : "Your first check-in is saved",
       sum: K.b ? `Each week next to your first three, ${esc(RU.spanText(K.done[0].ws, K.done[2].ws + 6))}.${ckDue ? " This week's is due tonight." : ""}` : "",
@@ -664,13 +667,15 @@
 
   /* ============================== DETAIL PAGES ============================== */
   const NEXT = { score: ["timing", "Timing"], timing: ["often", "How often"], often: ["form", "Form"], form: ["sym", "Symptoms"], sym: ["ck", "Weekly check-in"], ck: ["pat", "Possible patterns"] };
+  /* with the check-in off, Symptoms goes straight on to Possible patterns */
+  const nextOf = (k, V) => (NEXT[k] && NEXT[k][0] === "ck" && !RU.ckOn(V) ? NEXT.ck : NEXT[k]);
   const nav = (title) => `<header class="ap-nav"><button type="button" class="ap-back" data-act="iback">${RU.icon("back")}<span>Insights</span></button><span class="ap-nav-t" role="heading" aria-level="1" tabindex="-1">${esc(title)}</span><span class="ap-nav-sp"></span></header>`;
   const sect = (h, body, cls = "") => `<section class="ap-sect ${cls}" data-a><h3>${esc(h)}</h3>${body}</section>`;
   const fig = (cap, right, body, legend) => `<figure class="ap-fig" data-a>${cap ? `<figcaption class="ap-figcap"><b>${esc(cap)}</b>${right ? `<span>${esc(right)}</span>` : ""}</figcaption>` : ""}${body}${legend ? `<div class="ap-legend">${legend}</div>` : ""}</figure>`;
   const shaped = (lines) => (lines.filter(Boolean).length ? `<details class="ap-shaped" data-a><summary><span>What shaped this</span>${RU.icon("down")}</summary><div class="ap-shaped-b">${lines.filter(Boolean).map((l) => `<p>${esc(l)}</p>`).join("")}</div></details>` : "");
-  const tableOf = (head, rows) => `<details class="ap-table" data-a><summary>View as table</summary><div class="ap-table-in"><table><thead><tr>${head.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
+  const tableOf = (head, rows) => (!rows.length ? "" : `<details class="ap-table" data-a><summary>View as table</summary><div class="ap-table-in"><table><thead><tr>${head.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`);
   const askBtn = (k) => `<button type="button" class="ap-btn ap-btn--line ap-btn--block ap-idt-ask" data-act="ask-about" data-k="${esc(k)}" data-a>${icon("chat")}Ask about this</button>`;
-  const nextBtn = (k) => (NEXT[k] ? `<button type="button" class="ap-idt-next" data-act="idetail" data-k="${NEXT[k][0]}" data-a><span><em>Next</em><b>${esc(NEXT[k][1])}</b></span>${RU.icon("chev")}</button>` : "");
+  const nextBtn = (k, V) => { const nx = nextOf(k, V); return nx ? `<button type="button" class="ap-idt-next" data-act="idetail" data-k="${nx[0]}" data-a><span><em>Next</em><b>${esc(nx[1])}</b></span>${RU.icon("chev")}</button>` : ""; };
   const hero = (k, big, chips, now) => `<div class="ap-dhero" data-a><span class="ap-k">${esc(k)}</span><b class="ap-big">${big}</b>${chips ? `<div class="ap-chips">${chips}</div>` : ""}${now || ""}</div>`;
   const nowRow = (label, value, tone, text, range) => `<div class="ap-idt-now"><div class="ap-idt-now-h"><span><em>${esc(label)}</em><b>${esc(value)}</b></span>${text ? chip(text, tone) : ""}</div>${range || ""}</div>`;
   const learnChip = (M) => chip(`Learning your usual · day ${L.learnDay(M)} of ${L.LEARN_DAYS}`, "usual");
@@ -681,6 +686,8 @@
     </div>`;
 
   RU.idetail = (M, V, st) => {
+    /* the check-in's detail doesn't exist while the check-in is off: back to the cards */
+    if (st.k === "ck" && !RU.ckOn(V)) return RU.insights(M, V, st);
     const mode = V.form, u = M.usual, learning = !u;
     const n = learning ? 7 : st.range;
     const F = L.span(M, n, mode);
@@ -722,7 +729,7 @@
         ${tryLine ? sect("What you could try", `<p>${esc(tryLine)}</p>`, "ap-sect--try") : ""}
         ${askBtn("score")}
         ${tableOf(["Day", "FloraScore"], ser.slice().reverse().map((x) => [short(x.d), x.value == null ? "Not scored" : String(x.value)]))}
-        ${nextBtn("score")}`);
+        ${nextBtn("score", V)}`);
     }
 
     if (k === "timing") {
@@ -737,7 +744,7 @@
           cls: f.logged ? "" : "is-gap",
           points: f.bms.map((b, j) => ({ t: b.t, dur: 6, first: j === 0, cls: j === 0 && u && !f.inWin ? "is-shift" : "", tip: `${short(f.d)} · ${T(b.t)}${j === 0 ? " · first BM" : ""}` }))
         }));
-        second = fig("Every BM, day by day", "Newest at the top", C.dayRows({ w: 326, left: 52, rowH: n <= 7 ? 28 : 13, t0: 5, t1: 23, window: u ? [u.tLo, u.tHi] : null, durScale: n <= 7 ? 3 : 2.2, rows, aria: "Every BM by day on a time axis" }),
+        second = !rows.length ? "" : fig("Every BM, day by day", "Newest at the top", C.dayRows({ w: 326, left: 52, rowH: n <= 7 ? 28 : 13, t0: 5, t1: 23, window: u ? [u.tLo, u.tHi] : null, durScale: n <= 7 ? 3 : 2.2, rows, aria: "Every BM by day on a time axis" }),
           `${lg("sw--first", "First BM")}${lg("sw--later", "Later BMs")}${u ? lg("sw--band", "Your usual window") : ""}${lg("sw--flag", "After a dinner past 8 PM")}${F.some((f) => !f.logged && !f.pending) ? lg("sw--gapline", "Not logged") : ""}`);
       } else {
         const wks = weeksOf(M, mode);
@@ -759,7 +766,7 @@
         ${shaped(lines)}
         ${askBtn("timing")}
         ${tableOf(["Day", "First BM", "BMs", "In window"], F.slice().reverse().filter((f) => !f.pending).map((f) => [short(f.d), f.first != null ? T(f.first) : f.logged ? (f.nobm ? "No BM" : "None logged") : "Not logged", f.count != null ? String(f.count) : "", f.inWin == null ? "" : f.inWin ? "Yes" : "No"]))}
-        ${nextBtn("timing")}`);
+        ${nextBtn("timing", V)}`);
     }
 
     if (k === "often") {
@@ -789,12 +796,12 @@
       return page(M, V, st, "How often", `
         ${hero("BMs a day, on average", of.avg != null ? `${of.avg.toFixed(1)}<small>a day</small>` : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${u.nLo} to ${u.nHi} a day`, "plain")}${chip(`${of.inC} of ${plural(of.known.length, "day")} within`, "usual")}`, now)}
         ${tabs}
-        ${fig(n >= 90 ? "Average a day, by week" : u ? `${of.inC} of ${of.known.length} days within your usual` : "BMs each day", n >= 90 ? "13 weeks" : RANGE_NAME[n], chart, barLegend(cvals, null, "Outside your usual"))}
-        ${fig("How your days split", plural(splitN, "day"), split)}
+        ${cvals.some((v) => v.gap || v.v != null) ? fig(n >= 90 ? "Average a day, by week" : u ? `${of.inC} of ${of.known.length} days within your usual` : "BMs each day", n >= 90 ? "13 weeks" : RANGE_NAME[n], chart, barLegend(cvals, null, "Outside your usual")) : `<p class="ap-sect-p" data-a>No BMs logged yet. Each day you log shows here.</p>`}
+        ${splitN ? fig("How your days split", plural(splitN, "day"), split) : ""}
         ${shaped(lines)}
         ${askBtn("often")}
         ${tableOf(["Day", "BMs"], F.slice().reverse().filter((f) => !f.pending).map((f) => [short(f.d), f.count != null ? (f.count === 0 ? "No BM" : String(f.count) + (f.today ? " so far" : "")) : f.logged ? "No BMs logged" : "Not logged"]))}
-        ${nextBtn("often")}`);
+        ${nextBtn("often", V)}`);
     }
 
     if (k === "form") {
@@ -817,11 +824,11 @@
         ${hero("Most common form", fm.bms.length ? esc(fm.top.label) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${L.usualFormsText(M, mode)}`, "plain")}${fm.bms.length ? chip(`${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, "usual") : ""}`, now)}
         ${tabs}
         ${fig(u ? `${fm.inF} of ${fm.bms.length - fm.unsure} BMs within your usual forms` : "Forms so far", plural(fm.bms.length, "BM"), fm.bms.length ? hist({ w: 326, bins: fm.bins, h: 100, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${rn}` }) : "", u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "")}
-        ${fig("Each BM, day by day", B ? "Hard at the bottom" : Cw ? "Pellets at the bottom" : "Type 1 at the bottom", formDots({ days: F.filter((f) => !f.pending), mode, usual: u, h: 110, aria: `Each BM's form, ${rn}` }), `${lg("", "Within your usual")}${u ? lg("sw--shift", "Outside it") + lg("sw--band", "Your usual") : ""}${fm.unsure ? lg("sw--maybe", "Could be either") : ""}${lg("sw--ring", "Newest")}`)}
+        ${!fm.bms.length ? "" : fig("Each BM, day by day", B ? "Hard at the bottom" : Cw ? "Pellets at the bottom" : "Type 1 at the bottom", formDots({ days: F.filter((f) => !f.pending), mode, usual: u, h: 110, aria: `Each BM's form, ${rn}` }), `${lg("", "Within your usual")}${u ? lg("sw--shift", "Outside it") + lg("sw--band", "Your usual") : ""}${fm.unsure ? lg("sw--maybe", "Could be either") : ""}${lg("sw--ring", "Newest")}`)}
         ${shaped(lines)}
         ${askBtn("form")}
         ${tableOf(["Day", "Time", "Form", "Within"], F.slice().reverse().flatMap((f) => f.bms.slice().reverse().map((b) => { const s = u ? L.inForms(M, b, mode) : undefined; return [short(f.d), T(b.t), L.formName(b, mode), s === undefined ? "" : s ? "Yes" : s === false ? "No" : "Could be either"]; })))}
-        ${nextBtn("form")}`);
+        ${nextBtn("form", V)}`);
     }
 
     if (k === "sym") {
@@ -851,7 +858,7 @@
         ${shaped(lines)}
         ${askBtn("sym")}
         ${tableOf(["Day", "Symptoms"], F.slice().reverse().filter((f) => f.nsym).map((f) => [short(f.d), Object.entries(f.sym).map(([nm, s]) => `${nm}, ${sWord(s)}`).join("; ")]))}
-        ${nextBtn("sym")}`);
+        ${nextBtn("sym", V)}`);
     }
 
     if (k === "ck") {
@@ -869,7 +876,7 @@
         ${shaped(lines)}
         ${askBtn("ck")}
         ${K.done.length ? tableOf(["Week of", "Belly pain", "In the way", "Bloating", "Habits"], M.checkins.concat(K.cur ? [K.cur] : []).slice().reverse().map((c) => [short(c.ws), ...(c.answers ? c.answers.map((a, i) => L.CHECKIN[i].opts[a]) : ["Skipped", "", "", ""])])) : ""}
-        ${nextBtn("ck")}`);
+        ${nextBtn("ck", V)}`);
     }
 
     if (k === "pat") {
@@ -945,6 +952,7 @@
     if (k === "often") { const of = oftenOf(M, F); return { title: `How often · ${rn}`, facts: u ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `${of.inC} of ${plural(of.known.length, "day")} within`] : [`${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`], qs: ["What made my busier days different?", "Why does a gap not count as zero?", "How is my usual worked out?"] }; }
     if (k === "form") { const fm = formOf(M, F, mode); return { title: `Form · ${rn}`, facts: u ? [`Your usual: ${L.usualFormsText(M, mode)}`, `${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, fm.top ? `Most common: ${fm.top.label}` : "No BMs yet"] : [`${plural(fm.bms.length, "BM")} so far`], qs: ["What do the forms mean?", "Why were some BMs looser?", "When should I mention a change to a clinician?"] }; }
     if (k === "sym") { const sy = symOf(M, F); return { title: `Symptoms · ${rn}`, facts: [u ? `Your usual: ${lower1(symUsualText(u))}` : "Learning your usual", `Symptoms on ${sy.withSym.length} of ${plural(sy.logged.length, "day")}`, sy.rows.length ? `Mostly ${sy.rows[0].name.toLowerCase()}${sy.how ? `, usually ${sy.how}` : ""}` : "None logged"], qs: ["What tends to come before my bloating?", "When should I talk to a clinician?", "How do I log symptoms well?"] }; }
+    if (k === "ck" && !RU.ckOn(V)) return null;
     if (k === "ck") { const K = ckOf(M); return { title: "Weekly check-in", facts: K.b ? [ckHead(K), `Compared with ${RU.spanText(K.done[0].ws, K.done[2].ws + 6)}`, `${plural(K.done.length + (K.cur ? 1 : 0), "check-in")} so far`] : ["Your first check-ins set your starting point"], qs: ["What changed since I started?", "How is my starting point set?", "What should I note this week?"] }; }
     if (k === "pat") { const PR = L.patterns(M, mode); return { title: `Possible patterns · last ${L.PATTERN_DAYS} days`, facts: PR.found.length ? PR.found.slice(0, 3).map((p) => `${patTitle(p)}: ${p.hit} of ${p.n} times`) : ["Nothing stands out yet"], qs: ["How sure are these patterns?", "How do I test one?", "Why does a food need 5 logs?"] }; }
     if (k.indexOf("pattern:") === 0) { const PR = L.patterns(M, mode); const p = PR.tests.find((x) => x.id === k.slice(8)); if (p) return { title: patTitle(p), facts: [`${p.hit} of ${p.n} times`, `${p.oh} of ${p.on} otherwise`, p.show ? p.tier.label : "Below the bar"], qs: ["How sure is this pattern?", "How do I test it?", "What else could be part of it?"] }; }
@@ -986,7 +994,7 @@
         <span class="ap-pay-ring" aria-hidden="true">${C.ring({ value: 72, size: 88, stroke: 8, aria: "" })}</span>
         <span class="ap-k ap-k--ray">Florin membership</span>
         <h2 id="${id}-h" tabindex="-1" data-autofocus>${esc(title)}</h2>
-        <p>Logging, Today, your FloraScore, the weekly check-in and 7 days of Insights stay free. Membership adds the explaining.</p>
+        <p>${RU.ckOn(V) ? "Logging, Today, your FloraScore, the weekly check-in and 7 days of Insights stay free." : "Logging, Today, your FloraScore and 7 days of Insights stay free."} Membership adds the explaining.</p>
       </div>
       <ul class="ap-pay-list">${rows.map(([ic2, b, e], i) => `<li style="--i:${i}"><span class="ap-pay-ic">${icon(ic2)}</span><span><b>${esc(b)}</b><em>${esc(e)}</em></span></li>`).join("")}</ul>
       <p class="ap-pay-price">Membership price set at launch</p>
@@ -998,7 +1006,8 @@
   RU.ask = (M, V, ctx) => {
     if (V.plan === "free") return RU.askFree(M, V);
     const c = RU.askContext(M, V, ctx);
-    const qs = c ? c.qs : ["What changed this week?", "What tends to come before my rougher days?", "How do I bring my logs to a clinician?"];
+    /* before Florin knows the person's usual (day 1 to 13), the starting questions are about getting started */
+    const qs = c ? c.qs : M.usual ? ["What changed this week?", "What tends to come before my rougher days?", "How do I bring my logs to a clinician?"] : ["What should I log, and when?", "How does Florin learn my usual?", "When should I talk to a clinician?"];
     const soon = "Answers come in the next pass, with the coach test bench rules: answer first, one bold question per turn.";
     return `<div class="ap-scr ap-ask">
       <header class="ap-hist-top" data-a><h1 class="ap-h1" tabindex="-1">Ask Florin</h1><p class="ap-hi-sub">Answers from your own logs.</p></header>

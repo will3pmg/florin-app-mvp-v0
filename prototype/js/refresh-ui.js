@@ -110,6 +110,10 @@
       </button></li>`;
   };
 
+  /* one entry as a row, for Today, History and anything that lists entries (a calendar's day, say). Wrap this to change
+     every list at once */
+  RU.entryRow = (e, M, V, o) => RU.row(e, V.form, o);
+
   /* ---------- the week, Monday to Sunday ---------- */
   RU.week = (M, mode) => {
     const ds = L.weekOf(L.TODAY);
@@ -198,7 +202,7 @@
       return [`<i class="ap-wk-sq ap-wk-sq--${s}"></i>`, `${c.syms.flatMap((e) => e.items.map((i) => i.name.toLowerCase())).join(", ")}${s ? `, ${L.STRENGTH[s - 1].toLowerCase()}` : ", strength not given"}`];
     });
     const symWords = (() => {
-      if (!W.symDays.length) return `none on the ${plural(W.loggedDays, "day")} logged`;
+      if (!W.symDays.length) return W.loggedDays ? `none on the ${plural(W.loggedDays, "day")} logged` : "none logged yet";
       /* each symptom counts once per day it came up, the way Insights counts it */
       const names = {}; W.symDays.forEach((c) => [...new Set(c.syms.flatMap((s) => s.items.map((i) => i.name)))].forEach((n) => (names[n] = (names[n] || 0) + 1)));
       const top = Object.entries(names).sort((a, b) => b[1] - a[1] || L.SYMPTOMS.indexOf(a[0]) - L.SYMPTOMS.indexOf(b[0]))[0][0];
@@ -214,8 +218,8 @@
       ["First BM", `<b>${W.inWin} of ${plural(W.mornings.length, "morning")}</b> inside your usual window, ${esc(winText(M))}`, firstStrip],
       ["Symptoms", esc(symWords), symStrip]
     ] : [
-      ["BMs", `<b>${plural(W.bms.length, "BM")}</b> logged${W.topForm && W.topForm[1] > 1 ? `, ${W.topForm[1] > W.bms.length / 2 ? "mostly" : "most often"} ${esc(W.topForm[0])}` : ""}`, bmStrip],
-      ["First BM", `logged on <b>${plural(W.mornings.length, "day")}</b>`, firstStrip],
+      ["BMs", W.bms.length ? `<b>${plural(W.bms.length, "BM")}</b> logged${W.topForm && W.topForm[1] > 1 ? `, ${W.topForm[1] > W.bms.length / 2 ? "mostly" : "most often"} ${esc(W.topForm[0])}` : ""}` : "none logged yet", bmStrip],
+      ["First BM", W.mornings.length ? `logged on <b>${plural(W.mornings.length, "day")}</b>` : "none logged yet", firstStrip],
       ["Symptoms", esc(symWords), symStrip]
     ];
     const body = rows.map(([l, s, st]) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${st}</div>`).join("");
@@ -233,28 +237,39 @@
     return `<section class="ap-card ap-wk" data-a>
         <div class="ap-card-h"><h2>This week so far</h2><span class="ap-k">${esc(spanText(W.ds[0], W.ds[6]))}</span></div>
         ${learn}${head}${body}
-        <p class="ap-wk-meals">${plural(W.meals, "meal")} logged</p>
+        <p class="ap-wk-meals">${W.meals ? `${plural(W.meals, "meal")} logged` : W.loggedDays ? "No meals logged this week" : "No meals logged yet"}</p>
         ${legend ? `<div class="ap-legend ap-wk-legend">${legend}</div>` : ""}
         <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights" data-range="7">See the week on Insights ${ic("chev")}</button>
       </section>`;
   };
 
-  /* ============================== TODAY ============================== */
-  RU.today = (M, V) => {
-    const mode = V.form, u = M.usual;
-    const x = L.day(M, L.TODAY);
-    const es = x ? x.entries : [];
-    const hasBm = es.some((e) => e.kind === "bm"), hasNo = es.some((e) => e.kind === "nobm");
-    const t = dateOf(L.TODAY);
-    const hello = L.NOW < 12 ? "Good morning" : L.NOW < 17 ? "Good afternoon" : "Good evening";
-    const ck = M.checkin;
-
+  /* ============================== TODAY ==============================
+     Today is a list of named parts, so a module can replace one (the data style swaps the hero and the week) or wrap
+     RU.today for a different order (Day first, the Easy version). RU.todayLayout gives the Score-first order; each part
+     is (M, V) -> markup, and a part with nothing to say returns "". V.checkin false takes the check-in card away. */
+  const ckOn = (V) => !V || V.checkin !== false;
+  RU.ckOn = ckOn;
+  const todayOf = (M) => { const x = L.day(M, L.TODAY); return x ? x.entries : []; };
+  RU.todayParts = {
+    /* the date, the greeting and the profile button */
+    top: (M) => {
+      const t = dateOf(L.TODAY), hello = L.NOW < 12 ? "Good morning" : L.NOW < 17 ? "Good afternoon" : "Good evening";
+      return `<header class="ap-top" data-a>
+        <div class="ap-top-l"><p class="ap-date">${esc(Ut.DOWL[t.getDay()])}, ${esc(Ut.MONL[t.getMonth()])} ${t.getDate()}</p><h1 class="ap-hello">${hello}, ${esc(M.P.name)}</h1></div>
+        <button type="button" class="ap-avatar" data-act="profile" aria-label="Profile">${esc(M.P.initial)}</button>
+      </header>`;
+    },
+    /* FloraScore (refresh-insights.js draws it), or the day's one sentence before that file has loaded */
+    hero: (M, V) => (RU.scoreHero ? RU.scoreHero(M, V) : `<section class="ap-hl" data-a aria-label="Today so far"><span class="ap-k ap-k--ray">Today so far</span><p class="ap-hl-line">${esc(RU.highlight(M))}</p></section>`),
     /* the check-in card: only when it's due, and never in the way. Its Start is secondary: Ray stays on logging */
-    const firstCk = M.checkins.filter((c) => c.answers).length === 0;
-    const draft = M.ckDraft;
-    const answered = draft ? draft.answers.filter((v) => v != null).length : 0;
-    const ckLine = answered ? `${answered} of ${L.CHECKIN.length} answered. Pick up where you left off.` : firstCk ? `Four quick questions and an optional note, about a minute. Your first three check-ins become the starting point for every week after.` : `Four quick questions and an optional note, about a minute. Your answers are only ever compared with your own first weeks.`;
-    const ckCard = ck.status === "due" ? `<section class="ap-ckc" data-a aria-label="Weekly check-in">
+    checkin: (M, V) => {
+      if (!ckOn(V)) return "";
+      const ck = M.checkin;
+      const firstCk = M.checkins.filter((c) => c.answers).length === 0;
+      const draft = M.ckDraft;
+      const answered = draft ? draft.answers.filter((v) => v != null).length : 0;
+      const ckLine = answered ? `${answered} of ${L.CHECKIN.length} answered. Pick up where you left off.` : firstCk ? `Four quick questions and an optional note, about a minute. Your first three check-ins become the starting point for every week after.` : `Four quick questions and an optional note, about a minute. Your answers are only ever compared with your own first weeks.`;
+      return ck.status === "due" ? `<section class="ap-ckc" data-a aria-label="Weekly check-in">
         <div class="ap-ckc-top"><span class="ap-k">Weekly check-in</span><span class="ap-due"><i class="ap-pck-dot" aria-hidden="true"></i>${esc(dueText(M))}</span></div>
         <h2>How did this week go?</h2>
         <p>${esc(ckLine)}</p>
@@ -263,55 +278,52 @@
       </section>` : ck.status === "done" ? `<button type="button" class="ap-ckc ap-ckc--done" data-act="ck-result" data-a>
         <span class="ap-ckc-ok">${ic("check")}</span><span class="ap-ckc-m"><b>Check-in saved</b><em>${esc(spanText(ck.ws, ck.ws + 6))} · ${L.baseline(M) ? "See how it compares" : "See your answers"}</em></span>${ic("chev", "ap-tl-go")}
       </button>` : "";
-
+    },
     /* today's entries: the one timeline */
-    const empty = !es.length;
-    const late = L.isLate();
-    const tl = empty ? `<div class="ap-card ap-tl-empty"><p>Today's logs show up here, in time order.</p><div class="ap-tl-empty-act"><button type="button" class="ap-btn" data-act="open-bm">${ic("plus")}Log a BM</button>${late ? `<button type="button" class="ap-btn ap-btn--line" data-act="nobm">No BM today</button>` : ""}</div></div>`
-      : `<ol class="ap-card ap-tl">${es.map((e) => RU.row(e, mode)).join("")}</ol>${!hasBm && !hasNo && late ? `<button type="button" class="ap-tl-nobm" data-act="nobm">${ic("nobm")}<span><b>No BM today?</b><em>Log it, so the day doesn't read as a gap</em></span></button>` : ""}`;
-
-    /* one next step, from what today is missing first: a meal not logged yet, then a food close to its 5 */
-    const next = (() => {
-      /* meals aren't expected every day (Will, Oct 14): no nudge for a missing one. A symptom today invites what you ate */
-      const symE = es.find((e) => e.kind === "sym"), ate = es.some((e) => e.kind === "meal");
-      if (symE && !ate) return { line: `${symE.items.length ? symE.items[0].name : "A symptom"} logged today. If you'd like, say what you ate today: it helps Florin look for what tends to follow.`, act: ["open-meal", "Add what you ate"] };
-      if (!u) return { line: `Keep logging as you go. In ${plural(L.LEARN_DAYS - L.learnDay(M), "more day")}, Florin can start showing your usual.`, act: ["plus", "Log something"] };
-      const fc = L.foodCounts(M, L.PATTERN_DAYS);
-      const cand = L.patterns(M, mode).sparse ? null : Object.entries(fc).filter(([f, n]) => n < 5 && n >= 3 && L.FOOD_NAMES[f]).sort((a, b) => b[1] - a[1])[0];
-      if (!cand) return { line: "Everything so far today is logged. Anything else, plus is one tap away.", act: ["plus", "Add something"] };
-      const [name, pl] = L.FOOD_NAMES[cand[0]];
-      return { line: `${name} ${pl ? "have" : "has"} come up in ${cand[1]} of your meals in the last ${L.PATTERN_DAYS} days. At 5, Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`, act: ["open-meal", "Log a meal"] };
-    })();
-
-    /* symptoms on screen bring the clinician line with them */
-    const W = RU.week(M, mode);
-    const symOn = es.some((e) => e.kind === "sym") || W.symDays.length > 0;
-
-    return `<div class="ap-scr ap-today">
-      <header class="ap-top" data-a>
-        <div class="ap-top-l"><p class="ap-date">${esc(Ut.DOWL[t.getDay()])}, ${esc(Ut.MONL[t.getMonth()])} ${t.getDate()}</p><h1 class="ap-hello">${hello}, ${esc(M.P.name)}</h1></div>
-        <button type="button" class="ap-avatar" data-act="toast" data-msg="Profile and settings come later." aria-label="Profile">${esc(M.P.initial)}</button>
-      </header>
-
-      ${RU.scoreHero ? RU.scoreHero(M, V) : `<section class="ap-hl" data-a aria-label="Today so far"><span class="ap-k ap-k--ray">Today so far</span><p class="ap-hl-line">${esc(RU.highlight(M))}</p></section>`}
-
-      ${ckCard}
-
-      <section class="ap-tlw" data-a>
+    entries: (M, V) => {
+      const es = todayOf(M), empty = !es.length, late = L.isLate();
+      const hasBm = es.some((e) => e.kind === "bm"), hasNo = es.some((e) => e.kind === "nobm");
+      const tl = empty ? `<div class="ap-card ap-tl-empty"><p>Today's logs show up here, in time order.</p><div class="ap-tl-empty-act"><button type="button" class="ap-btn" data-act="open-bm">${ic("plus")}Log a BM</button>${late ? `<button type="button" class="ap-btn ap-btn--line" data-act="nobm">No BM today</button>` : ""}</div></div>`
+        : `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>${!hasBm && !hasNo && late ? `<button type="button" class="ap-tl-nobm" data-act="nobm">${ic("nobm")}<span><b>No BM today?</b><em>Log it, so the day doesn't read as a gap</em></span></button>` : ""}`;
+      return `<section class="ap-tlw" data-a>
         <div class="ap-card-h ap-card-h--pad"><h2>Today</h2><span class="ap-k">${empty ? "Nothing yet" : plural(es.length, "entry", "entries")}</span></div>
         ${tl}
-      </section>
-
-      ${RU.weekCard(M, mode)}
-
-      <section class="ap-card ap-nx" data-a>
+      </section>`;
+    },
+    week: (M, V) => RU.weekCard(M, V.form),
+    /* one next step, from what today is missing first: a meal not logged yet, then a food close to its 5 */
+    next: (M, V) => {
+      const mode = V.form, u = M.usual, es = todayOf(M);
+      const next = (() => {
+        /* meals aren't expected every day (Will, Oct 14): no nudge for a missing one. A symptom today invites what you ate */
+        const symE = es.find((e) => e.kind === "sym"), ate = es.some((e) => e.kind === "meal");
+        if (symE && !ate) return { line: `${symE.items.length ? symE.items[0].name : "A symptom"} logged today. If you'd like, say what you ate today: it helps Florin look for what tends to follow.`, act: ["open-meal", "Add what you ate"] };
+        const left = plural(L.LEARN_DAYS - L.learnDay(M), "more day");
+        /* day 1, nothing logged anywhere yet: the first thing to do */
+        if (!u && !M.days.some((x) => x.entries.length)) return { line: `Log your next BM when it happens, or anything else from plus. In ${left}, Florin can start showing your usual.`, act: ["plus", "Log something"] };
+        if (!u) return { line: `Keep logging as you go. In ${left}, Florin can start showing your usual.`, act: ["plus", "Log something"] };
+        const fc = L.foodCounts(M, L.PATTERN_DAYS);
+        const cand = L.patterns(M, mode).sparse ? null : Object.entries(fc).filter(([f, n]) => n < 5 && n >= 3 && L.FOOD_NAMES[f]).sort((a, b) => b[1] - a[1])[0];
+        if (!cand) return { line: "Everything so far today is logged. Anything else, plus is one tap away.", act: ["plus", "Add something"] };
+        const [name, pl] = L.FOOD_NAMES[cand[0]];
+        return { line: `${name} ${pl ? "have" : "has"} come up in ${cand[1]} of your meals in the last ${L.PATTERN_DAYS} days. At 5, Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`, act: ["open-meal", "Log a meal"] };
+      })();
+      return `<section class="ap-card ap-nx" data-a>
         <span class="ap-k">Next step</span>
         <p>${esc(next.line)}</p>
-        <button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="${next.act[0]}"${next.act[2] ? ` data-meal="${next.act[2]}"` : ""}>${esc(next.act[1])}</button>
-      </section>
-      ${fine(symOn ? `${DISC} If a symptom is new for you or keeps showing up, talk to a clinician.` : DISC)}
-    </div>`;
+        <button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="${next.act[0]}">${esc(next.act[1])}</button>
+      </section>`;
+    },
+    /* symptoms on screen bring the clinician line with them */
+    fine: (M, V) => {
+      const symOn = todayOf(M).some((e) => e.kind === "sym") || RU.week(M, V.form).symDays.length > 0;
+      return fine(symOn ? `${DISC} If a symptom is new for you or keeps showing up, talk to a clinician.` : DISC);
+    }
   };
+  RU.todayLayout = () => ["top", "hero", "checkin", "entries", "week", "next", "fine"];
+  RU.today = (M, V) => `<div class="ap-scr ap-today">
+      ${RU.todayLayout(M, V).map((k) => (RU.todayParts[k] ? RU.todayParts[k](M, V) : "")).join("\n")}
+    </div>`;
 
   /* ============================== PLUS MENU ============================== */
   /* the tiles. Inside Log a BM they're toggles; on the plus card each one opens Log a BM with it picked */
@@ -346,21 +358,28 @@
       : !isToday || L.isLate() ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="nobm">${ic("nobm")}Log no BM ${isToday ? "today" : "that day"}</button>` : "";
     const hid = `plus-h${V.uid}`;
     const quick = isToday && M.days.reduce((s, y) => s + y.entries.filter((e) => e.kind === "bm").length, 0) >= 5;
+    /* BM logging, Full form only: one row into the form, and no tiles to log from */
+    const full = V.bmUI === "full";
+    /* someone who joined today has no earlier day to catch up on */
+    const earlier = M.start < L.TODAY;
+    const bm = full ? `<section class="ap-pbm ap-pbm--row" aria-label="BM">
+        <button type="button" class="ap-pbm-h" data-act="open-bm" data-autofocus><span class="ap-pbm-ic">${RU.glyph(4)}</span><span class="ap-pbm-t"><b>Log a BM</b><em>When, consistency and details, then Save</em></span>${ic("chev")}</button>
+      </section>` : `<section class="ap-pbm" aria-label="BM">
+        <button type="button" class="ap-pbm-h" data-act="open-bm" data-autofocus><span class="ap-pbm-ic">${RU.glyph(4)}</span><span class="ap-pbm-t"><b>BM</b><em>${quick ? "Tap one to log it now. Add details after." : "Tap the closest one, then Save. Details are optional."}</em></span>${ic("chev")}</button>
+        ${RU.formTiles(mode, null, { dark: true, act: quick ? "quick-bm" : "open-bm", actLabel: quick ? "Logs a BM now" : "Opens Log a BM", guide: true, label: quick ? "Log a BM now" : "Start a BM log with this one" })}
+      </section>`;
     return `<div class="ap-psh" role="dialog" aria-modal="true" aria-labelledby="${hid}">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
       <div class="ap-psh-h"><h2 id="${hid}">${isToday ? "Add to today" : `Add to ${esc(dayIn(d))}`}</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
       ${isToday ? "" : `<p class="ap-psh-day">${ic("cal")}<span>Catching up. Everything here is logged for ${esc(dayIn(d))}.</span></p>`}
-      <section class="ap-pbm" aria-label="BM">
-        <button type="button" class="ap-pbm-h" data-act="open-bm" data-autofocus><span class="ap-pbm-ic">${RU.glyph(4)}</span><span class="ap-pbm-t"><b>BM</b><em>${quick ? "Tap one to log it now. Add details after." : "Tap the closest one, then Save. Details are optional."}</em></span>${ic("chev")}</button>
-        ${RU.formTiles(mode, null, { dark: true, act: quick ? "quick-bm" : "open-bm", actLabel: quick ? "Logs a BM now" : "Opens Log a BM", guide: true, label: quick ? "Log a BM now" : "Start a BM log with this one" })}
-      </section>
+      ${bm}
       ${sub ? `<div class="ap-pbm-sub">${sub}</div>` : ""}
       <div class="ap-pgrid">
         <button type="button" class="ap-pt" data-act="open-sym"><span class="ap-read-ic">${ic("sym")}</span><b>Symptoms</b><em>Bloating, pain, cramping and more</em></button>
         ${V.mealUI === "detailed" ? `<button type="button" class="ap-pt" data-act="open-meal"><span class="ap-read-ic">${ic("meal")}</span><b>Meal</b><em>${esc(mealHint)}</em></button>` : `<button type="button" class="ap-pt" data-act="open-meal"><span class="ap-read-ic">${ic("mic")}</span><b>What you ate</b><em>Say it or type it</em></button>`}
       </div>
-      ${isToday ? `<button type="button" class="ap-pck${ck.status === "due" ? " is-due" : ""}" data-act="${ck.status === "done" ? "ck-result" : "ck-start"}"><span class="ap-read-ic">${ic("ck")}</span><span class="ap-pck-m"><b>Weekly check-in</b><em>${esc(ckSub)}</em></span>${ck.status === "due" ? '<i class="ap-pck-dot" aria-hidden="true"></i>' : ""}${ic("chev", "ap-tl-go")}</button>` : ""}
-      ${isToday ? `<button type="button" class="ap-psh-ago" data-act="plus-earlier">${ic("cal")}Log for an earlier day</button>` : `<button type="button" class="ap-psh-ago" data-act="plus-day" data-v="${L.TODAY}">${ic("back")}Back to today</button>`}
+      ${isToday && ckOn(V) ? `<button type="button" class="ap-pck${ck.status === "due" ? " is-due" : ""}" data-act="${ck.status === "done" ? "ck-result" : "ck-start"}"><span class="ap-read-ic">${ic("ck")}</span><span class="ap-pck-m"><b>Weekly check-in</b><em>${esc(ckSub)}</em></span>${ck.status === "due" ? '<i class="ap-pck-dot" aria-hidden="true"></i>' : ""}${ic("chev", "ap-tl-go")}</button>` : ""}
+      ${isToday ? (earlier ? `<button type="button" class="ap-psh-ago" data-act="plus-earlier">${ic("cal")}Log for an earlier day</button>` : "") : `<button type="button" class="ap-psh-ago" data-act="plus-day" data-v="${L.TODAY}">${ic("back")}Back to today</button>`}
     </div>`;
   };
 
@@ -377,8 +396,8 @@
     return `<div class="ap-psh" role="dialog" aria-modal="true" aria-labelledby="${hid}">
       <div class="ap-sheet-grab" aria-hidden="true"></div>
       <div class="ap-psh-h"><h2 id="${hid}">Which day?</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
-      <p class="ap-gd-lede">Pick the day, then log the way you would today. A day with nothing logged stays a gap until you add to it.</p>
-      <ol class="ap-card ap-ea">${rows}</ol>
+      ${ds.length ? `<p class="ap-gd-lede">Pick the day, then log the way you would today. A day with nothing logged stays a gap until you add to it.</p>
+      <ol class="ap-card ap-ea">${rows}</ol>` : `<p class="ap-gd-lede">You started today, so there's no earlier day to add to yet. From tomorrow, the last week shows here.</p>`}
     </div>`;
   };
 
@@ -668,36 +687,49 @@
       <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="ckd-save">Save</button></div>
     </div>`;
 
-  /* ============================== HISTORY (basic) ============================== */
+  /* ============================== HISTORY (basic) ==============================
+     RU.history lists the days, newest first; RU.historyDay draws one day and RU.entryRow one entry, so a calendar can
+     show the same day the same way. The weekly check-in isn't an entry, so History has none to hide when it's off. */
+  const keepFor = (F) => (e) => F === "all" || (F === "bm" && (e.kind === "bm" || e.kind === "nobm")) || (F === "sym" && e.kind === "sym") || (F === "meal" && e.kind === "meal") || (F === "note" && e.note);
+  /* one day: its name, how many entries, then the rows, or the gap with Add to this day. d is a day number or a day;
+     entries defaults to everything logged that day (History passes the filtered ones) */
+  RU.historyDay = (M, V, d, entries) => {
+    const x = typeof d === "number" ? L.day(M, d) : d;
+    if (!x) return "";
+    const es = entries || (x.logged ? x.entries : []);
+    const isToday = x.d === L.TODAY;
+    return `<section class="ap-hd" data-a>
+        <div class="ap-card-h ap-card-h--pad"><h2>${esc(dayName(x.d))}</h2><span class="ap-k">${x.logged ? (es.length ? plural(es.length, "entry", "entries") : isToday ? "Nothing yet" : "Nothing logged") : "Nothing logged"}</span></div>
+        ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">No logs this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
+      </section>`;
+  };
   RU.history = (M, V, st) => {
-    const mode = V.form;
-    const F = st.filter || "all";
-    const keep = (e) => F === "all" || (F === "bm" && (e.kind === "bm" || e.kind === "nobm")) || (F === "sym" && e.kind === "sym") || (F === "meal" && e.kind === "meal") || (F === "note" && e.note);
+    const F = st.filter || "all", keep = keepFor(F);
     const days = M.days.slice().reverse().slice(0, st.n || 14);
     const total = M.days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0);
     const groups = days.map((x) => {
       const es = x.logged ? x.entries.filter(keep) : [];
       if (x.logged && !es.length && F !== "all") return "";
-      return `<section class="ap-hd" data-a>
-          <div class="ap-card-h ap-card-h--pad"><h2>${esc(dayName(x.d))}</h2><span class="ap-k">${x.logged ? plural(es.length, "entry", "entries") : "Nothing logged"}</span></div>
-          ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.row(e, mode)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">No logs this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
-        </section>`;
+      return RU.historyDay(M, V, x, es);
     }).join("");
+    const since = total ? `${plural(total, "entry", "entries")} since ${shortDate(M.start)}` : `Started ${M.start === L.TODAY ? "today" : `on ${shortDate(M.start)}`}. Nothing logged yet.`;
+    const report = `A report of your logs to bring to a clinician: dates, BMs, symptoms, ${ckOn(V) ? "meals and check-ins" : "and meals"}. That comes in the next pass.`;
     return `<div class="ap-scr ap-hist">
-      <header class="ap-hist-top" data-a><h1 class="ap-h1">History</h1><p class="ap-hi-sub">${plural(total, "entry", "entries")} since ${esc(shortDate(M.start))}</p></header>
-      ${V.plan === "free" ? `<button type="button" class="ap-hist-rep" data-a data-act="pay" data-pay="report">${ic("report")}<span><b>Make a report for your clinician</b><em>With Florin membership</em></span>${RU.icon("lock", "ap-tl-go")}</button>` : `<button type="button" class="ap-hist-rep" data-a data-act="toast" data-msg="A report of your logs to bring to a clinician: dates, BMs, symptoms, meals and check-ins. That comes in the next pass.">${ic("report")}<span><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button>`}
+      <header class="ap-hist-top" data-a><h1 class="ap-h1">History</h1><p class="ap-hi-sub">${esc(since)}</p></header>
+      ${V.plan === "free" ? `<button type="button" class="ap-hist-rep" data-a data-act="pay" data-pay="report">${ic("report")}<span><b>Make a report for your clinician</b><em>With Florin membership</em></span>${RU.icon("lock", "ap-tl-go")}</button>` : `<button type="button" class="ap-hist-rep" data-a data-act="toast" data-msg="${esc(report)}">${ic("report")}<span><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button>`}
       <div class="ap-hist-f" role="group" aria-label="Show" data-a>${[["all", "All"], ["bm", "BMs"], ["sym", "Symptoms"], ["meal", "Meals"], ["note", "Notes"]].map(([k, l]) => `<button type="button" class="ap-hi-filter" data-act="hfilter" data-v="${k}" aria-pressed="${F === k}">${l}</button>`).join("")}</div>
       ${groups}
       ${(st.n || 14) < M.days.length ? `<button type="button" class="ap-btn ap-btn--line ap-hi-more" data-act="hmore" data-a>Show earlier days</button>` : ""}
-      ${(() => {
-        /* one next step: the latest gap this past week, or nothing to catch up on */
-        const g = M.days.slice().reverse().find((x) => !x.logged && x.d >= L.TODAY - 7);
-        const line = g ? `${dayName(g.d)} has no logs. If you remember it, add it now.` : "Nothing to catch up on this past week. Keep logging as you go.";
-        const act = g ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${g.d}">Add to ${esc(Ut.DOWL[dateOf(g.d).getDay()])}</button>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus">Log something</button>`;
-        return `<section class="ap-card ap-nx" data-a><span class="ap-k">Next step</span><p>${esc(line)}</p>${act}</section>`;
-      })()}
+      ${RU.historyNext(M, V)}
       ${fine(`${DISC} If a symptom is new for you or keeps showing up, talk to a clinician.`)}
     </div>`;
+  };
+  /* one next step: the latest gap this past week, or nothing to catch up on */
+  RU.historyNext = (M) => {
+    const g = M.days.slice().reverse().find((x) => !x.logged && x.d >= L.TODAY - 7);
+    const line = g ? `${dayName(g.d)} has no logs. If you remember it, add it now.` : M.start === L.TODAY ? "Each day you log shows here, newest first. Start with plus whenever something happens." : "Nothing to catch up on this past week. Keep logging as you go.";
+    const act = g ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${g.d}">Add to ${esc(Ut.DOWL[dateOf(g.d).getDay()])}</button>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus">Log something</button>`;
+    return `<section class="ap-card ap-nx" data-a><span class="ap-k">Next step</span><p>${esc(line)}</p>${act}</section>`;
   };
 
   /* Insights and the Ask tab live in refresh-insights.js */
