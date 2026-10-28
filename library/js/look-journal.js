@@ -133,7 +133,7 @@
         foot: note("FloraScore will compare you with you. It isn't a medical score, and a lower number isn't a diagnosis.", true)
       });
     }
-    const v = S.value, u = S.usual, within = S.relation === "Within your usual range";
+    const v = S.value, u = S.usual, within = S.relation === "In its usual range";
     const lede = v == null
       ? `No FloraScore today: ${e(lower1(S.why))} Your ${mk("usual range", "usual")} is ${u[0]} to ${u[1]}.`
       : S.flag ? `Today's FloraScore is ${v}. ${e(S.relation)}: a log is noted for a clinician. Your ${mk("usual range", "usual")} is ${u[0]} to ${u[1]}.`
@@ -214,7 +214,7 @@
     /* a flagged today keeps its point, read against nothing: in none of the counts, and said */
     const rv = ser.filter((s) => s.value != null && !s.flag).map((s) => s.value), fl = ser.some((s) => s.flag);
     const inN = rv.filter((v) => v >= u[0] && v <= u[1]).length, ab = rv.filter((v) => v > u[1]).length, be = rv.filter((v) => v < u[0]).length;
-    const lede = `Your FloraScore sat ${mk("within your usual range", "usual")} on ${inN === rv.length ? `all ${rv.length} days` : `${inN} of ${rv.length} days`}.${fl && D.flagLine ? ` ${ctx.esc(D.flagLine)}` : ""}`;
+    const lede = `Your FloraScore sat ${mk("in its usual range", "usual")} on ${inN === rv.length ? `all ${rv.length} days` : `${inN} of ${rv.length} days`}.${fl && D.flagLine ? ` ${ctx.esc(D.flagLine)}` : ""}`;
     const dmin = Math.floor((Math.min(...vs, u[0]) - 3) / 5) * 5, dmax = Math.ceil((Math.max(...vs, u[1]) + 3) / 5) * 5;
     const left = 26;
     /* the days above and below the band are counted at its right end, in words: FloraScore is a reading, never Gold */
@@ -263,7 +263,7 @@
     b += dot(X(li), Y(lv), 5.2, "jr-today jr-pop", n);
     b += tx(hl.x, tlY, tl, "tk", "middle") + ln(X(li), tlY + 4, X(li), Y(lv) - 7, "jr-lead");
     const extra = [ab ? `above it on ${ab}` : "", be ? `below it on ${be}` : ""].filter(Boolean);
-    const aria = `FloraScore over ${n} days: within your usual range of ${u[0]} to ${u[1]} on ${inN} of ${rv.length} days${extra.length ? `, ${andList(extra)}` : ""}. ${ser[li].today ? "Today" : ser[li].label} ${lv}${ser[li].flag ? `, ${lower1(S.relation)}` : ""}.${minV < u[0] ? ` Lowest ${minV} on ${ser[mi].label}.` : ""}`;
+    const aria = `FloraScore over ${n} days: in its usual range of ${u[0]} to ${u[1]} on ${inN} of ${rv.length} days${extra.length ? `, ${andList(extra)}` : ""}. ${ser[li].today ? "Today" : ser[li].label} ${lv}${ser[li].flag ? `, ${lower1(S.relation)}` : ""}.${minV < u[0] ? ` Lowest ${minV} on ${ser[mi].label}.` : ""}`;
     return shell("trend", {
       kicker: "FloraScore over time", meta: lastN(ser), lede,
       fig: svg(ctx, bot + 26, aria, b),
@@ -314,7 +314,7 @@
          day that could be either, one with nothing about BMs and a flagged today are named, never counted */
       const T7 = D.tally[7];
       lede = !T7.known ? "This week, no day you logged can be read against your usual yet" : `This week, ${ofAll(T7.within, T7.known, T7.known === 1 ? "day counted" : "days counted")} sat ${mk("within your usual", "usual")}`;
-      if (sh.length) lede += `, and ${andList(sh)} ${sh.length === 1 ? "was" : "were"} ${mk("outside it", "shift")}`;
+      if (sh.length) lede += `, and ${andList(sh)} ${sh.length === 1 ? "was" : "were"} ${mk("outside your usual", "shift")}`;
       if (un.length) lede += `; ${andList(un)} could be either`;
       if (nc.length) lede += `; ${andList(nc)} ${nc.length === 1 ? "was" : "were"} logged without a BM count`;
       lede += ".";
@@ -375,7 +375,7 @@
     else if (!nu && !ns) lede = "No day you logged this month can be read against your usual yet.";
     else {
       /* counted over the days read, within or outside your usual (D.tally); the rest are named after */
-      const read = [`${nu} sat ${mk("within your usual", "usual")}`, ns ? mk(`${ns} sat outside it`, "shift") : ""].filter(Boolean);
+      const read = [`${nu} sat ${mk("within your usual", "usual")}`, ns ? mk(`${ns} sat outside your usual`, "shift") : ""].filter(Boolean);
       const rest = [nE ? `${nE} could be either` : "", nN ? `${nN} ${nN === 1 ? "was" : "were"} logged without a BM count` : "", nF ? "today, noted for a clinician" : ""].filter(Boolean);
       lede = `Of the ${plural(nu + ns, "day")} counted, ${andList(read)}.${rest.length ? ` Not counted: ${andList(rest)}.` : ""}`;
     }
@@ -406,7 +406,7 @@
     });
     const roles = rolesIn(days);
     const byWeek = counts && perWeek.length > 1 ? ` ${learning ? "Logged" : "Within your usual"} by week, Monday to Sunday: ${perWeek.join(", ")}.` : "";
-    const aria = (learning ? (lg.length ? `${lg.length} of ${plural(n, "day")} logged.` : "Nothing logged yet.") : `${nu} of ${plural(nu + ns, "day")} counted within your usual, ${ns} outside it${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} with nothing logged.`) + byWeek;
+    const aria = (learning ? (lg.length ? `${lg.length} of ${plural(n, "day")} logged.` : "Nothing logged yet.") : `${nu} of ${plural(nu + ns, "day")} counted within your usual, ${ns} outside your usual${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} with nothing logged.`) + byWeek;
     return shell("month", {
       kicker: learning ? "Your first days" : "The last month", meta: span(days), lede,
       fig: svg(ctx, H, aria, b),
@@ -495,7 +495,7 @@
     const levels = Math.max(3, maxC, ou ? ou[1] + 1 : 0);
     const left = 20, pr = W - (gut ? gut + 4 : 0), slot = (pr - left) / n, cx = (i) => left + slot * i + slot / 2, pitch = 15, r = Math.min(3.8, slot / 2 - 1.2);
     const ti = days.findIndex((f) => f.today), tf = ti >= 0 ? days[ti] : null;
-    const tS = !tf ? "" : tf.pending ? "TODAY, NOT LOGGED YET" : tf.count == null ? "TODAY, NOT LOGGED" : tf.count === 0 ? "TODAY, NO BM" : `TODAY, ${plural(tf.count, "BM")}`.toUpperCase();
+    const tS = !tf ? "" : tf.pending ? "TODAY, NOTHING LOGGED YET" : tf.count == null ? "TODAY, NO BM COUNT YET" : tf.count === 0 ? "TODAY, NO BM" : `TODAY, ${plural(tf.count, "BM")}`.toUpperCase();
     const uS = ou ? up(`Your usual, ${D.often.usualText}`) : "";
     const hl = tf ? headLabel(cx(ti), tS, ou ? left - 4 + mw(uS) : null) : { row2: false };
     const top = hl.row2 ? 44 : 30, base = top + levels * pitch + 4, yL = (lv) => base - lv * pitch;
@@ -775,7 +775,7 @@
       return shell("pattern", {
         kicker: "A possible pattern", meta: "None yet",
         lede: "Nothing stands out in your logs right now; Florin names a pattern only when it holds often.",
-        fig: rug(D, ctx, [MEALS, SHIFTED]), cap: capT(`Meals and shifted days, last ${n} days`), foot: foot()
+        fig: rug(D, ctx, [MEALS, SHIFTED]), cap: capT(`Meals and days outside your usual, last ${n} days`), foot: foot()
       });
     }
     const food = p.food ? lower1(p.food) : "";

@@ -62,7 +62,7 @@
     if (!S.relation) return ["none", "No score yet today"];
     /* a flag today: the number stays, read against nothing, in Teal as the primary care note is */
     if (S.flag) return ["ctx", S.relation];
-    return [S.relation.indexOf("Within") === 0 ? "usual" : "shift", S.relation.replace(/ range$/, "")];
+    return [S.relation.indexOf("In its") === 0 ? "usual" : "shift", S.relation.replace(/ range$/, "")];
   };
 
   /* the state of a day, as a class and a word */
@@ -209,7 +209,8 @@
   /* ---------- the parts: Contributors rows, each a Vitals track: this week's number, the part's own usual as a band
      and this week as the marker on it, last week as a ring. Each row opens what the part is and how much it weighs ---------- */
   function parts(D, x) {
-    const S = D.score, esc = x.esc, P = S.parts || [];
+    /* the moves in whole FloraScore points (L.scoreMoved's pts, which add up to the change shown), never decimals (fix-viz, Oct 28) */
+    const S = D.score, esc = x.esc, P = (S.parts || []).map((p) => Object.assign({}, p, { delta: p.pts }));
     if (!P.length) {
       const names = ["Timing", "How often", "Form", "Comfort"];
       const rows = names.map((n) => `<li class="ou-ct"><p class="ou-ct-top"><b>${esc(n)}</b>${stateW(x, "learn", D.learning ? "Still learning" : "Not yet", "span")}</p><span class="ou-ct-trk" aria-hidden="true"></span></li>`).join("");
@@ -221,12 +222,12 @@
     }
     const moved = P.slice().sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
     const still = P.every((p) => Math.round(p.delta) === 0); /* the score moves in whole points */
-    const big = still ? "Every part is about the same as last week" : `${moved.label} moved your FloraScore most since last week, ${moved.delta > 0 ? "up" : "down"} ${Math.abs(moved.delta).toFixed(1)} points`;
+    const big = still ? "Every part is about the same as last week" : `${moved.label} moved your FloraScore most since last week, ${moved.delta > 0 ? "up" : "down"} ${plural(Math.abs(moved.delta), "point")}`;
     /* one scale for every row, so the four tracks can be read against each other: from a round ten under the lowest
        value shown, to 100 */
     const lo = Math.max(0, Math.floor((Math.min(...P.flatMap((p) => [p.now, p.before].concat(p.usual || []))) - 5) / 10) * 10);
     const at = (v) => pct(v, lo, 100);
-    const pts = (v) => `${v > 0 ? "+" : "\u2212"}${Math.abs(v).toFixed(1)} pts`;
+    const pts = (v) => (v ? `${v > 0 ? "+" : "\u2212"}${Math.abs(v)} ${Math.abs(v) === 1 ? "pt" : "pts"}` : "0 pts");
     const rows = P.map((p, i) => {
       const st = vs(p.now, p.usual);
       const [kind, w] = st ? VS[st] : ["read", "This week"];
@@ -316,13 +317,13 @@
     const rd = vals.filter((v, i) => v != null && !ser[i].flag);
     const within = rd.filter((v) => !out(v)).length, above = rd.filter((v) => v > u[1]).length, below = rd.filter((v) => v < u[0]).length;
     const noScore = vals.filter((v, i) => v == null && !(byD[ser[i].d] || {}).pending).length;
-    const rel = last.today && lv === S.value && S.relation ? lower1(S.relation) : lv < u[0] ? "below your usual range" : lv > u[1] ? "above your usual range" : "within your usual range";
+    const rel = last.today && lv === S.value && S.relation ? lower1(S.relation) : lv < u[0] ? "below its usual range" : lv > u[1] ? "above its usual range" : "in its usual range";
     const ans = `${last.today ? "Today" : `Latest, ${last.label},`} ${lv}, ${rel}.`;
     const spread = [above && `above it on ${plural(above, "day")}`, below && `below it on ${plural(below, "day")}`].filter(Boolean);
-    const aria = `FloraScore over ${n} days. ${within} of ${rd.length} days within your usual range, ${u[0]} to ${u[1]}${spread.length ? `, ${andList(spread)}` : ""}. ${ans}${noScore ? ` No FloraScore on ${plural(noScore, "day")}, left as breaks in the line.` : ""}`;
+    const aria = `FloraScore over ${n} days. ${within} of ${rd.length} days in its usual range, ${u[0]} to ${u[1]}${spread.length ? `, ${andList(spread)}` : ""}. ${ans}${noScore ? ` No FloraScore on ${plural(noScore, "day")}, left as breaks in the line.` : ""}`;
     /* the points the scrubber can stop on, for after() */
     const pts = vals.map((v, i) => (v == null ? null : [r1(xs(i)), r1(ys(v)), v, ser[i].today ? "Today" : ser[i].label, ser[i].flag ? 2 : out(v) ? 1 : 0])).filter(Boolean);
-    const valText = (p) => `${p[3]}: ${p[2]}, ${p[4] === 2 ? lower1(S.relation) : p[4] ? `${p[2] > u[1] ? "above" : "below"} your usual range` : "within your usual range"}`;
+    const valText = (p) => `${p[3]}: ${p[2]}, ${p[4] === 2 ? lower1(S.relation) : p[4] ? `${p[2] > u[1] ? "above" : "below"} its usual range` : "in its usual range"}`;
     const svg = `<svg class="ou-svg ou-chart" viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>${grad}</defs>
       <rect class="ou-band" x="0" y="${yU1}" width="${PR}" height="${r1(yU0 - yU1)}"/>
@@ -341,7 +342,7 @@
       ${xlab}
     </svg>`;
     return `<div class="ou-pane" data-span="${n}"${hidden ? " hidden" : ""}>
-      ${lead(x, num(within), `of ${rd.length} days within your usual range`, ans)}
+      ${lead(x, num(within), `of ${rd.length} days in its usual range`, ans)}
       <div class="ou-plot" tabindex="0" role="slider" aria-label="${esc(`FloraScore, day by day, last ${n} days`)}" aria-valuemin="0" aria-valuemax="${pts.length - 1}" aria-valuenow="${pts.length - 1}" aria-valuetext="${esc(valText(pts[pts.length - 1]))}" aria-describedby="${id}-d" data-pts="${esc(JSON.stringify(pts))}" data-w="${W}" data-pr="${PR}" data-hi="${u[1]}">${svg}</div>
       <p class="ou-vh" id="${id}-d">${esc(`${aria} The left and right arrow keys move from day to day.`)}</p>
       ${legend(x, [["line", "FloraScore"], ["band", `Your usual, ${u[0]} to ${u[1]}`], (above || below) && ["line-shift", "Outside your usual"], noScore && [null, "A break in the line: no FloraScore that day"]])}
@@ -412,7 +413,7 @@
     let ans;
     if (learning) ans = `${logged.length ? "" : "Nothing logged yet. "}Days show as logged while Florin learns your usual.`;
     else if (!T.logged) ans = "Nothing logged this week yet.";
-    else if (!shifted.length) ans = (!T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged shifted." : "Every day you logged sat within your usual.") + leftT;
+    else if (!shifted.length) ans = (!T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged was outside your usual." : "Every day you logged sat within your usual.") + leftT;
     else ans = (shifted.length <= 2 ? shifted.map((d) => `${d.today ? "Today" : `On ${dayName(d)}`}, ${andList(whyShift(D, d))}.`).join(" ") : `Outside your usual on ${andList(shifted.map(dayName))}.`) + leftT;
     const gaps = days.filter((d) => !d.logged && !d.pending);
     const aria = `This week, one block per BM. ${ans}${gaps.length ? ` Nothing logged on ${andList(gaps.map(dayName))}.` : ""} ${days.map((d) => `${d.dow}: ${dayState(d)[1]}${d.count != null && !d.pending ? `, ${d.count === 0 ? "no BM" : plural(d.count, "BM")}` : ""}`).join(". ")}.`;
@@ -617,7 +618,7 @@
     const wkF = D.days[7].filter((d) => !d.flag).flatMap((d) => d.forms), moF = D.days[30].filter((d) => !d.flag).flatMap((d) => d.forms);
     const bar = (label, forms) => {
       const c = count(forms);
-      if (!c.n) return { label, value: "No BMs logged", segs: [] };
+      if (!c.n) return { label, value: "None logged", segs: [] };
       if (!u) return { label, value: plural(c.n, "BM"), segs: [{ k: "read", w: 100 }] };
       const order = [["shift", c.fi], ["either", c.el], ["usual", c.in], ["either", c.eh], ["shift", c.lo]];
       let at = 0;

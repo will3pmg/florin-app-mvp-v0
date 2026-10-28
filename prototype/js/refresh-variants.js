@@ -121,7 +121,9 @@
     if (!s || s.value == null) return `No FloraScore today: ${L.NO_SCORE}.`;
     const dv = y && y.value != null ? s.value - y.value : null;
     const head = dv == null ? `FloraScore is ${s.value}. Yesterday has no FloraScore to compare it with` : !dv ? `FloraScore is ${s.value}, the same as yesterday` : `FloraScore is ${s.value}, ${Math.abs(dv)} ${dv > 0 ? "higher" : "lower"} than yesterday's ${y.value}`;
-    if (V.plan === "free" || !N || !N.e || !NOUN[N.e.kind]) return `${head}.`;
+    /* no counterfactual for a No BM log, as Score first's hero (RU.scoreEffect): pricing an honest log in points reads as
+       a cost for logging (fix-viz, Oct 28) */
+    if (V.plan === "free" || !N || !N.e || !NOUN[N.e.kind] || N.kind === "none" || N.e.kind === "nobm") return `${head}.`;
     const w = scoreWithout(M, N.e, mode), what = `the ${T(N.e.t)} ${NOUN[N.e.kind]}`;
     if (!w || w.value == null) return `${head}.`;
     return w.value === s.value ? `${head}. ${what.charAt(0).toUpperCase()}${what.slice(1)} didn't change it.` : `${head}. Without ${what}, it would be ${w.value}.`;
@@ -146,7 +148,9 @@
     for (const f of fs) { if (!f) continue; try { return f(M, V) || ""; } catch (e) { warn(`Today's ${k} part`, e); } }
     return "";
   };
-  const relOf = (v, su) => (v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below your usual range" : "A little below your usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above your usual range" : "A little above your usual range") : "Within your usual range");
+  /* FloraScore's own words, the core's (RU.scoreRel): "in its usual range", so the chip never reads like a day within
+     your usual beside a week card that marks today outside it (fix-viz, Oct 28) */
+  const relOf = (v, su) => (RU.scoreRel ? RU.scoreRel(v, su) : v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below its usual range" : "A little below its usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above its usual range" : "A little above its usual range") : "In its usual range");
 
   /* 1. the date, and a compact FloraScore chip (the glyph, the number) that opens its detail (the paywall on Free, as the hero does). On Free
      before day 14 there's no score to sell yet, so the chip is plain, as the core's learning card is. On a day with a
@@ -312,7 +316,8 @@
     const bits = [];
     const syms = Object.keys(f.sym);
     if (f.logged) {
-      if (f.bms.length) bits.push(plural(f.bms.length, "BM"));
+      /* the BM count once: a reason that already says it ("3 BMs, more than usual") isn't followed by it again */
+      if (f.bms.length && !new RegExp(`\\b${plural(f.bms.length, "BM")}\\b`).test(what)) bits.push(plural(f.bms.length, "BM"));
       else if (f.nobm) bits.push("no BM");
       /* each symptom with its strongest strength; one logged without a strength says so, never mild */
       if (syms.length) bits.push(andList(syms.map((k) => (f.sym[k] ? `${L.STRENGTH[f.sym[k] - 1].toLowerCase()} ${k.toLowerCase()}` : `${k.toLowerCase()} with no strength said`))));

@@ -1,9 +1,10 @@
 # Florin data viz
 
-October 28, 2026, revised the same day after a review. The one list of what the Florin app draws, and how. It comes
-from two audits of the prototype: one of every chart's design (both themes, all six data styles, 390 and 1440 wide) and
-one of every number against the model. It sits under DESIGN.md's Data Visualization rules. Where it asks DESIGN.md to
-change, it says so and leaves the change to the studio.
+October 28, 2026, revised the same day after a review, and again after the fix pass (fix-viz): this file now says what
+is built. The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
+chart's design (both themes, all six data styles, 390 and 1440 wide) and one of every number against the model. It sits
+under DESIGN.md's Data Visualization rules. Where it asks DESIGN.md to change, it says so and leaves the change to the
+studio.
 
 **What was off in Will's screenshot** (Today's week card, As built, Marcus at 12 weeks):
 
@@ -32,10 +33,10 @@ everywhere, so the same day always looks the same.
 |---|---|---|
 | Within your usual | A filled Plum circle (Ray on dark), the date inside in Cream (the card colour on dark) | Within your usual |
 | Outside your usual | A filled Gold circle with a 1.5px Shift Ink edge in light (no edge on dark), the date inside in Forest (the card colour on dark), and always a line naming what was different | Outside your usual |
-| Logged but not counted: a BM word that could be either, only symptoms or meals, or any logged day before day 14 | A filled Ink 3 circle, the date in Cream (the card colour on dark), and a line saying why | Not counted (before day 14: Logged) |
+| Logged but not counted: a BM word that could be either, only symptoms or meals, or any logged day before day 14 | A filled Ink 3 circle, the date in Cream (the card colour on dark), and a line saying why. Before day 14 every logged day is Logged, symptoms-only days too (one rule for the week card, History, the calendar, Insights and Easy) | Not counted (before day 14: Logged) |
 | Nothing logged | No circle. The date stays, in Ink 3. Never a hatch, a strike-through, a grey column or a zero | Nothing logged |
 | Today | A 2px Ink ring, 2px out from today's circle, and the word Today under it. No ring when nothing is logged yet, or when today is flagged | Today |
-| Today, flagged for a clinician | A 2px Teal ring with the info glyph inside and no fill. In no count | Noted for a clinician |
+| Today, flagged for a clinician | A 2px Teal ring with the info glyph inside and no fill, before day 14 as after it, with the flag line. In no count | Noted for a clinician |
 | A symptom that day | One 8px Teal square under the day, whatever the strength. Strength is said in words | Symptoms |
 | Before you started | The date only, in Ink 3, at the left of the row. Never named | none |
 
@@ -45,12 +46,13 @@ everywhere, so the same day always looks the same.
 |---|---|
 | Your usual | The band, named in words on or right under the chart |
 | A reading within your usual | The reading colour, inside the band. Position says within |
-| A reading outside your usual | Gold with the Shift Ink edge, and a word or direct label saying which way ("later", "firmer", "fewer") |
+| A reading outside your usual | Gold with an edge (Shift Ink in light, a deeper Gold on dark), and a word or direct label saying which way ("later", "firmer", "fewer") |
+| A count of days (the summary bar, Your days, the 90-day weekly bars) | Plum within your usual (Ray on dark), Gold outside it: the colour of a day, since each unit is a day. The reading colour is only for a measured value (a time, a count of BMs, a form) |
 | FloraScore | Always the reading colour, inside the band or not. The words say "in its usual range", "a little above" or "a little below". Never Gold |
-| Could be either, or logged before day 14 | Ink 3 |
+| Could be either, or logged before day 14 | Ink 3. A word that covers two forms is an Ink 3 span over both steps on the Today bar, never a dot between them; it sits in no form bar, and a line under the bars says so, so they add up to the count |
 | No BM | A reading of 0: a dot on the 0 line, Gold when 0 is outside your usual count, labelled No BM. Never a dash or a ring |
 | Nothing logged | Nothing drawn: no dot, no bar, the line breaks, the date label stays in Ink 3 |
-| Today | The newest point ringed in Ink and labelled Today; the x axis ends on Today |
+| Today | Today's point ringed in Ink and labelled Today, only when today has a reading: no other point is ever ringed or labelled. The x axis ends on Today, with nothing drawn above it when today has no reading yet |
 | Today, flagged | A Teal ring at its place with nothing inside, labelled Noted for a clinician, in no count |
 | A symptom | One Teal square on each day it came up, at 7 and 30 days; at 90 days, Teal bars of days a week. Strength in words and in the table, never in the mark's size |
 | A meal or a late dinner | A Teal tick in its own labelled row or column, never a dot that could be read as a BM |
@@ -60,7 +62,7 @@ everywhere, so the same day always looks the same.
 | Role | Token | Light | Dark |
 |---|---|---|---|
 | A day within your usual | `--ap-signal` | Plum `#4F2641` | Ray `#EEFFA3` |
-| A day or a reading outside your usual | `--ap-shift`, edge `--ap-shift-ink` | `#C2A64B`, edge `#695612` | `#DCC374`, no edge |
+| A day or a reading outside your usual | `--ap-shift`; a day's edge `--ap-day-edge`, a chart mark's `--ap-chart-edge` | `#C2A64B`, edge `#695612` (both) | `#DCC374`; a day circle has no edge, a chart mark a 1.5px edge of Gold mixed 45% into the card (refresh.css) |
 | Not counted, axes and ticks | `--ap-ink3` | `#5D766F` (refresh.css's darker Ink 3) | `#8EA7A0` |
 | Context, symptoms and the flag | `--ap-teal` | Teal `#396E7C` | `#8EC0CD` |
 | Your usual band | `--ap-band`, edge `--ap-band-edge` | Plum at 14%, edge 32% | Ray at 17%, edge 40% |
@@ -79,8 +81,9 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
 - **A ring around a day or a data point means today (Ink) or a flagged today (Teal), nothing else.** Not a change, not
   No BM, not a day with nothing logged, not last week. The FloraScore glyph (a small plain circle beside the word
   FloraScore) is a name, not a mark: it never holds a value and never fills toward 100.
-- **Plum is your usual, only:** the band, a day within it, the "about the same" chip. Not a pattern that held, not an
-  average line, not a picked tier.
+- **Plum is your usual, only:** the band, a day within it, a count of days within it (the weekly bars too), the "about
+  the same" chip on the check-in. Not a pattern that held, not an average line, not a picked tier, not a comparison with
+  the stretch before (the Symptoms detail's trend chips are plain).
 - **Gold is outside your usual, only**, either way, always with its word: a day's state, or one measure's reading
   (a time, a count, a form). Not a week-on-week change, not "down", and never FloraScore.
 - **FloraScore is a reading, never a day's state.** It blends the last 3 logged days, so it can sit a little above
@@ -92,10 +95,12 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
   Forest 13.3 apart for full colour vision and 4.5 for red-weak vision, too close to tell apart without a cue.
 - **One meaning for "within your usual":** a day whose first BM came in your window, with a usual count and usual
   forms. Each measure has its own words: in your usual window, a usual count, in your usual forms, and for FloraScore,
-  in its usual range.
+  in its usual range ("In its usual range", "A little above its usual range", "Above its usual range" from 6 points
+  out), one helper (`RU.scoreRel`) for the hero, Insights, Day first, Easy, Ask Florin and the data looks.
 - **Words, the same everywhere:** Within your usual, Outside your usual, Not counted, Logged, Nothing logged, No BM,
   Today, Noted for a clinician, Mild, Moderate, Strong, Strength not said. Retire Outside it, Outside them, Shifted,
-  Something shifted, Not logged, No logs and No BMs logged (as a mark's word). The sweep checks for them.
+  Something shifted, Not logged, No logs and No BMs logged (as a mark's word). The sweep checks for them (K1: on every
+  screen it opens, and in a pass of its own over every data style, person, range and Ask Florin answer).
 - **Legends:** only for a mark the chart doesn't name itself, only for marks drawn, three lines at most. The best
   legend is a line of text that starts with the mark it explains.
 - **A number only when it is the point:** counts a person logged ("5 of 6 days"), not percents of them, not decimals
@@ -111,12 +116,18 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
   with 44px hit areas.
 - **Sizes:** day circles 28px (32px in Easy, 40px with the today ring, which fits Easy's 43px columns at 390); chart
   marks 8px at least; Gold edge 1.5px; rings 2px; marks round at 2px (radius xs). Spacing on the DESIGN.md scale.
+- **Crowding:** past 7 days, each dot on the count line and the form plot sits on a card-colour disc 1.5px wider, so
+  neighbours stay apart instead of running into bars. A label sits above the band and every stack, never on an edge.
+- **Steps are steps:** a range bar over a scale of steps (BMs a day, forms) pads the band and the axis half a step
+  either side, as the count line does, so a reading of 1 sits inside a usual of 1 to 2, never on its edge.
+- **No count-up** on any number, in any data style: a number that counts up sits beside a reading it doesn't have.
 
 **Checked with the dataviz validator.** The filled day marks (Plum, Gold, Ink 3) pass separation in light (worst
 19.6 for colour blindness, 22.1 for full colour vision) and in dark (Ray, Gold, Ink 3: 13.3 and 15.5). Dark Gold and
 Ray are 15.4 apart for full colour vision, just over the floor, so every Gold day is also named in a line, in both
-themes. Teal and Ink 3 are too close to share a shape (5.6 in light, 7.9 in dark), so the flag is a ring and "not
-counted" is a fill. Light Gold is 2.37:1 on the card; the Shift Ink edge (7.13:1) makes every Gold mark visible. The
+themes; in a chart, where points aren't named one by one, a dark Gold mark also carries a deeper Gold edge, so it reads
+apart from the Ray marks beside it. Teal and Ink 3 are too close to share a shape (5.6 in light, 7.9 in dark), so the flag
+is a ring and "not counted" is a fill. Light Gold is 2.37:1 on the card; the Shift Ink edge (7.13:1) makes every Gold mark visible. The
 brand colours fail the validator's lightness and chroma bands for a categorical palette; that's expected, since these
 are fixed roles, not series.
 
@@ -128,43 +139,43 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 
 | # | Screen | Question | Form | Call | What was wrong, and why |
 |---|---|---|---|---|---|
-| 1 | Today, FloraScore (Score first) | How is FloraScore today against its usual range? | The big number; a range bar with your usual range labelled with its two numbers and today's dot; one sentence (section 4) | Change | A ring filling toward 100 reads as a grade. At 124px Marcus's 76 to 82 is a 22-degree arc, so a score one point above it sits on the label. Your usual was drawn twice, once unlabelled. The "+1 vs last week" pill compared averages beside today's number. The 30-day line was the fourth copy of the trend, so it moves to Insights |
+| 1 | Today, FloraScore (Score first) | How is FloraScore today against its usual range? | The big number; a range bar with your usual range labelled with its two numbers and today's dot, no numbers at the bar's ends; one sentence (section 4) | Change | A ring filling toward 100 reads as a grade. At 124px Marcus's 76 to 82 is a 22-degree arc, so a score one point above it sits on the label. Your usual was drawn twice, once unlabelled. The "+1 vs last week" pill compared averages beside today's number. The 30-day line was the fourth copy of the trend, so it moves to Insights |
 | 2 | Today, FloraScore while learning | When does my FloraScore start? | "Day 5 of 14" in words over 14 small steps | Change | The day number sat where the score sits, so 5 read as a score. Learning was drawn three times on Today and Insights |
 | 3 | Today, the last 7 days (Score first and Day first) | How many of my last 7 days sat within my usual? | One answer, a row of seven days, a line for each day not within | Change | Section 3 |
 | 4 | Today, check-in card | Is my check-in due? | Text and the calendar icon | Keep | Its due dot was the same mark as a logged BM |
 | 5 | Today, Day first's chip and marked log | How is today, and which log stood out? | The FloraScore glyph and number in a chip; a chip on the log that stood out | Change | The chip's ring was a gauge at 24px, too small to show your usual: it becomes the glyph, and the chip's word carries the reading. A symptom's edge was Ink here and Teal elsewhere: make it Teal |
-| 6 | Insights, FloraScore | Has FloraScore stayed in its usual range? | A line on the band, today ringed and labelled; one sentence on the part that moved most | Change | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
+| 6 | Insights, FloraScore | Has FloraScore stayed in its usual range? | A line on the band, today ringed and labelled; one sentence on the part that moved most (every part named on a tie: "Timing and Form moved it most this week, adding 2 points each") | Change | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
 | 7 | Insights, the summary | How many days sat within my usual? | The count over a segment bar of the days read (within, outside); not counted and nothing logged in words under it | Change | The bar showed 4 of 7 under "4 of 6": it added a nothing-logged segment (1.16:1, invisible) and dropped the days that could be either. Gold had no edge. Its words differed from every other card |
-| 8 | Insights, Timing | Did my first BM come in my usual window? | Dots on a straight time axis, your window as a band | Keep | Gold under 3:1. The flag ring and the today ring differed only by hue |
+| 8 | Insights, Timing | Did my first BM come in my usual window? | Dots on a straight time axis, your window as a band; today's label above the band, with a lead down to its dot | Keep | Gold under 3:1. The flag ring and the today ring differed only by hue |
 | 9 | Insights, How often | Did I go my usual number of times? | One dot per day on a count line from 0, your usual count as a band | Change | Thin bars at 1 or 2 read as a barcode. No BM was a ring. Today wasn't marked. The average counted the flagged day. A fixed 0 to 3 axis would clip the first person with 4 |
 | 10 | Insights, Form | Were my BMs my usual forms? | Bars by form with their counts, your usual forms bracketed | Change | Outside your usual was grey here and Gold everywhere else, under the same words. Percents added up to 102 |
-| 11 | Insights, Symptoms | How often did symptoms come up? | One row per symptom, a Teal square on each day it came up; an Any symptom row with your usual written at its end; strength in the sentence | Change | Square size meant strength at 7 days and frequency at 90, so one chart asked two questions. Mild failed contrast. Strength not said drew as mild. Four colours for one fact |
+| 11 | Insights, Symptoms | How often did symptoms come up? | One row per symptom, a Teal square on each day it came up (four rows on the card, the rest named under it: "Also logged: cramping on 1 day"); an Any symptom row with your usual written at its end; strength in the sentence | Change | Square size meant strength at 7 days and frequency at 90, so one chart asked two questions. Mild failed contrast. Strength not said drew as mild. Four colours for one fact |
 | 12 | Insights, Weekly check-in | Are my answers like my first weeks? | Each question with this week's answer and one chip; the trends stay on the detail | Change | Strips with no scale words and 5px dots. See "The weekly check-in" under this table |
 | 13 | Insights, Possible patterns | Does something tend to come before a change? | Title, tier, "20 of 22 times" | Change | Plum dots meant "it held", and repeated the count beside them |
-| 14 | FloraScore detail, today | Where is today against its usual range? | The hero's block: the number, the sentence, the range bar with Lowest and Highest named; the week as a neutral chip of averages | Change | Today was drawn twice, as a ring and as a range bar. The usual arc was unlabelled. The week chip was Gold, which means outside your usual |
+| 14 | FloraScore detail, today | Where is today against its usual range? | The hero's block: the number, the sentence, the range bar with the last 90 days' Lowest and Highest named (the hero's bar names only the band); the week as a neutral chip of averages | Change | Today was drawn twice, as a ring and as a range bar. The usual arc was unlabelled. The week chip was Gold, which means outside your usual |
 | 15 | FloraScore detail, 30 days | Has FloraScore stayed in its usual range? | "In its usual range on N of 30 days"; a line on the band, today ringed and labelled, the y axis from the data | Change | Four layers where DESIGN allows two. The average line looked like a second usual, and its label hit the line at 390 |
 | 16 | FloraScore detail, what moved it | Which part moved my score this week? | Four rows, a bar each from a centre line in the reading colour, in whole points that add up to the change, with words ("Timing added 2 points", "How often didn't move") | Change | Teal meant up and Gold meant down. "+0.0". A part showed two different changes on one page with no unit. Rounded parts could fail to add up |
 | 17 | Timing detail, today and the window | Did today's first BM come in my window? | Range bar, then the card's dots | Keep | Gold under 3:1. Every detail page opens on this block, FloraScore's too |
-| 18 | Timing detail, every BM by day | When in the day did each BM come? | A row of dots per day on a time axis; first BM in the reading colour or Gold, later BMs Ink 3; dinners after 8 PM as Teal ticks in their own column | Change | Teal meant a later BM and a dinner in one chart. Fixed-length pills. Struck dates for gaps |
-| 19 | Timing detail, 90 days | Week by week, how many mornings came in my window? | A bar a week: in your window at the base, outside it in Gold above, the bar's top at the mornings read; the latest labelled "5 of 6" | Change | A percent of 4 to 7 mornings isn't a number anyone logged |
-| 20 | How often detail | As 9 | As 9; today's range bar on the same count axis; at 90 days the weekly bars of 19, for a usual count | Change | As 9. The today bar's axis was fixed at 0 to 4. A dot a week at its average put decimals on the scale |
-| 21 | Form detail | Which forms, and when was one outside my usual? | The card's bars, then a dot per BM by day with your usual forms as a band; at 90 days the weekly bars of 19, for usual forms | Change | Grey above, Gold below, same words. Three of seven forms labelled. A dot a day at 90 days ran into dashes (90 days at 8px is 720px on a 300px plot) |
-| 22 | Symptoms detail | As 11, and has it changed? | As 11; at 90 days, Teal bars of days a week with any symptom; each symptom against the weeks before, in words | Change | As 11 |
-| 23 | Check-in detail and Saved | How does each answer compare with my first weeks? | A strip per question with its steps written, the first weeks as a band, this week ringed | Keep | 6px dots: make them 8px |
+| 18 | Timing detail, every BM by day | When in the day did each BM come? | A row of dots per day on a time axis, every row labelled, at most 14 days (the table lists all 30); first BM in the reading colour or Gold, later BMs Ink 3, the legend "First BM, in your usual window", "First BM, outside your usual window", "Later BMs"; dinners after 8 PM as Teal ticks in their own column, only when meals are logged on enough days to read | Change | Teal meant a later BM and a dinner in one chart. Fixed-length pills. Struck dates for gaps |
+| 19 | Timing detail, 90 days | Week by week, how many mornings came in my window? | A bar a week: in your window at the base in Plum (it counts days), outside it in Gold above, the bar's top at the mornings read; the latest labelled "5 of 6" | Change | A percent of 4 to 7 mornings isn't a number anyone logged |
+| 20 | How often detail | As 9 | As 9; today's range bar on the same count axis, padded half a step; at 90 days the weekly bars of 19, for a usual count. "How your days split" is cut: a fourth picture of the same counts, with no usual marked | Change | As 9. The today bar's axis was fixed at 0 to 4. A dot a week at its average put decimals on the scale |
+| 21 | Form detail | Which forms, and when was one outside my usual? | The card's bars (a line under them names a word that covers two steps), then a dot per BM by day with your usual forms as a band; today's bar draws a two-step word as an Ink 3 span; at 90 days the weekly bars of 19, for usual forms ("Every BM in your usual forms", "A BM outside your usual forms") | Change | Grey above, Gold below, same words. Three of seven forms labelled. A dot a day at 90 days ran into dashes (90 days at 8px is 720px on a 300px plot) |
+| 22 | Symptoms detail | As 11, and has it changed? | As 11; at 90 days, Teal bars of days a week with any symptom; each symptom against the weeks before, in words, its chip plain (it compares with the stretch before, not with your usual) | Change | As 11 |
+| 23 | Check-in detail and Saved | How does each answer compare with my first weeks? | A strip per question with its steps written in the answers' own words ("Mostly settled"), the first weeks as a band, this week ringed | Keep | 6px dots: make them 8px |
 | 24 | One pattern | How often did the change follow, against other days? | Two bars whose length is the share (from none to every time), "20 of 22" and "26 of 52" written on them, in the reading colour; for late dinners, the two-group strip of first BM times after each kind of dinner | Change | Plum for "held", and 52 dots to say 26 of 52. A bar as long as its count would draw 26 of 52 longer than 20 of 22. The 90-day day-by-day rows for foods couldn't fit their marks; the table lists the days instead |
 | 25 | Patterns with few meals | Why no patterns yet? | Text, no chart | Keep | The picked tier was outlined in Plum: use Ink |
 | 26 | Your days | Which days sat within my usual, and why? | As 7, then each day with its mark and its line | Change | The same bar and words as 7 |
-| 27 | History, List | What did I log, and how did each day sit? | Each day's header carries its day mark and its one line; the logs under it | Change | Nothing said how a day sat. A chip on BM rows would have doubled Day first's chip and read a flagged today against the usual, so the day header carries it once |
+| 27 | History, List | What did I log, and how did each day sit? | Each day's header carries its day mark and its one line; the logs under it. On Free, days before the last 7 are Ink 3 Logged with no line, as the calendar draws them, and one line says why | Change | Nothing said how a day sat. A chip on BM rows would have doubled Day first's chip and read a flagged today against the usual, so the day header carries it once |
 | 28 | History, Calendar | How did each day this month sit? | One day mark per day; one Teal square under it for symptoms | Change | Hollow Gold rings, struck dates, up to three tiny marks a day, grey symptoms, Teal dots for meals, and two hollow Teal marks meaning two things |
 | 29 | Profile, your usual | What is my usual? | Four rows of words | Keep | Nothing |
 | 30 | Easy, Today | How is today, and my last 7 days? | The big number; the last 7 days as section 3, at 32px | Change | Seven day states drawn seven ways; days grouped by state instead of named with their reason; 40px circles didn't fit at 390 |
 | 31 | Easy, Your weeks | The Insights questions, one answer a card | The same marks, one picture a card | Change | "15 of 29 days within your usual range" beside "19 of 29 days within your usual": the same words for two measures. Parts as four 0 to 100 bars |
-| 32 | Ask Florin, FloraScore | Why did my score move? | The FloraScore card's line, today labelled | Change | Area fill, no today label |
-| 33 | Ask Florin, timing | Did my first BM come in my window? | The Timing card's chart for the answer's range | Add to the set, change | It drew the median as a range bar, a different picture from the card the question came from |
-| 34 | Ask Florin, how often | Did I go my usual number of times? | The How often card's count line | Add to the set, change | It drew the average as a range bar, with a decimal |
-| 35 | Ask Florin, form | Were my BMs my usual forms? | The Form card's bars | Add to the set, change | A segment bar with the legend "Outside it" |
-| 36 | Ask Florin, the week | How many days sat within my usual? | The summary's bar (7) | Add to the set, change | "Something shifted" and "Not logged", and the same 4 of 7 bar under 4 of 6 |
-| 37 | Ask Florin, one pattern | How often did it hold? | The pattern's two share bars (24) | Add to the set, change | "Held" in Gold, which means outside your usual |
+| 32 | Ask Florin, FloraScore | Why did my score move? | The FloraScore card's line, today labelled (`RU.cardChart`), 30 days or the card's range; the part that moved most in whole points | Built | Area fill, no today label |
+| 33 | Ask Florin, timing | Did my first BM come in my window? | The Timing card's chart for the answer's range | Built | It drew the median as a range bar, a different picture from the card the question came from |
+| 34 | Ask Florin, how often | Did I go my usual number of times? | The How often card's count line | Built | It drew the average as a range bar, with a decimal |
+| 35 | Ask Florin, form | Were my BMs my usual forms? | The Form card's bars | Built | A segment bar with the legend "Outside it" |
+| 36 | Ask Florin, the week | How many days sat within my usual? | The summary's bar (7), its whole the days read | Built | "Something shifted" and "Not logged", and the same 4 of 7 bar under 4 of 6 |
+| 37 | Ask Florin, one pattern | How often did it hold? | The pattern's two share bars (24) | Built | "Held" in Gold, which means outside your usual |
 | 38 | Free teasers | What does membership add? | The member card, the person's own values blurred | Keep | Follows the member cards (the parts teaser blurs the sentence, since the bars go) |
 | 39 | Membership page | What is FloraScore? | The FloraScore glyph | Change | A ring filled to 72 for every person: a typed number |
 | 40 | Data style: As built | All of the above | Repaired into these marks | Change | It is what every style's detail pages draw, and it disagreed with itself. It becomes the base, not an option |
@@ -223,8 +234,9 @@ Marcus, 12 weeks, Consistency C. Every figure comes from the model: Wednesday's 
 
 **The parts, top to bottom.**
 
-1. **Title and dates:** "Your last 7 days" and "Oct 5 to 11". No learning bar (the FloraScore card carries day 5 of
-   14).
+1. **Title and dates:** "Your last 7 days" and "Oct 5 to 11", from the day the person started when that's inside the
+   seven ("Oct 7 to 11" on day 5, "Oct 11" on day 1), as Easy and the data looks say it. No learning bar (the FloraScore
+   card carries day 5 of 14).
 2. **The answer**, at heading size (not hero size, so Today carries one big number): a small Plum circle, then within
    out of the days read, counted exactly as Insights' 7 days count them, through `L.tally` over `L.span(M, 7)`. The
    days read are within plus outside.
@@ -269,7 +281,8 @@ the same thing:
 - Say "both days" or "each day" when it came up every symptom day, else "on 2 days".
 - Give its strength only when every log of it gave one: "mild", or "mild to moderate". Drop it when any was left
   unsaid.
-- When another symptom was logged stronger, add it: "Symptoms on 2 days: bloating both days, and strong cramping today."
+- When another symptom was logged stronger, add it, with only the days it came up that strong: "Symptoms on 2 days:
+  bloating both days, and strong cramping today"; mild one day and moderate another is "moderate cramping on 1 day".
 - "Mostly" only for more than half. Never "most often".
 
 **Every state.**
@@ -283,8 +296,9 @@ the same thing:
 | Flagged today | 3 of 5 days within your usual | Today a Teal ring with the info glyph; the flag line. FloraScore and Day first carry the Teal note to primary care |
 | No BM today | 3 of 6 days within your usual | Today Gold; "Today: No BM, fewer than your usual 1 to 2 a day." |
 | 3 BMs today | 3 of 6 days within your usual | Today Gold; "Today: 3 BMs, more than your usual 1 to 2 a day." |
-| Learning, day 5 | 3 days logged | The two days before the person started as dates only at the left; logged days filled Ink 3; "Days show as logged until Florin knows your usual, on day 14." "4 BMs over 3 days." "Nothing logged on Thursday." The symptom line |
-| Just joined, nothing logged | Nothing logged yet. | No row. "Your days show here as you log them." |
+| Learning, day 5 | 3 days logged | The two days before the person started as dates only at the left; logged days filled Ink 3 (a day with only symptoms too); "Days show as logged until Florin knows your usual, on day 14." "4 BMs over 3 days." "Nothing logged on Thursday." The symptom line |
+| Learning, flagged today | 4 days logged | Today the Teal ring with the info glyph, and the flag line, as after day 14 |
+| Just joined, nothing logged | No days logged yet. (Not "Nothing logged yet": Day first and Easy say that for today on the same screen) | No row. "Your days show here as you log them." |
 | Just joined, No BM logged | 1 day logged | Only today drawn, filled Ink 3, ringed, Today; "No BM logged today." |
 | Mid-week (any day but Sunday) | The same count as Insights' 7 days | Today at the right end; no future days are ever drawn |
 | Consistency A, B, C | The same rule, through `L.facts` with the mode | Form names through `L.formName`. "Could be either" only reading a B word in A or C |
@@ -306,9 +320,10 @@ reading, a range bar.
 
 83
 
-   60 ─────────[███ 76 ████ 82 ███]─●──────────── 95
+              Your usual 76 to 82
+   ────────────[███████████████]─●────────────────
 
-A little above your usual range. Mild bloating at 3:10 PM.
+A little above its usual range. Mild bloating at 3:10 PM.
 Without it, FloraScore would be 84.
 ```
 
@@ -320,7 +335,10 @@ Without it, FloraScore would be 84.
 3. **The range bar.** Your usual range as a Ray band at 16%, labelled with its two numbers. Today a Cream dot with a
    2px Forest ring (the hero's surface), so it never sits Ray on Ray. The bar runs from the lowest FloraScore in the
    last 90 days to the highest, widened to at least 10 points past each end of the usual range and rounded out to 5,
-   so one point above the range is a visible step (Marcus: 60 to 95). The FloraScore detail uses the same bar.
+   so one point above the range is a visible step (Marcus: 60 to 95). Its ends carry no numbers: 60 and 95 read as the
+   lowest and highest scores, which they aren't. The FloraScore detail uses the same bar and names the last 90 days'
+   Lowest and Highest on it. The studio's 190px decorative circle behind the hero is off on the phone (a ring means
+   today).
 4. **The sentence**, as now, with what stood out (above: Marcus, Member). With membership it goes on to say what the
    log that stood out did to FloraScore, except for an alarm, on Free, or for a No BM log.
 
@@ -328,7 +346,7 @@ The dot is never Gold: FloraScore is a reading, and the words say "a little abov
 
 | State | The number | The bar | The sentence |
 |---|---|---|---|
-| Scored | 83 | The band and today's dot | "A little above your usual range." Then what stood out |
+| Scored | 83 | The band and today's dot | "A little above its usual range." Then what stood out ("Three BMs today" names the one taken out: "Without the 4:00 PM BM, FloraScore would be 83.") |
 | Flagged today | The number stays | The band, no dot | "Not read against your usual today", and the Teal note to primary care |
 | No score, after day 14 | No score | The band, no dot | `L.NO_SCORE`: "it needs a BM, or No BM, logged on 2 of your last 3 days" |
 | Learning, day 5 | Day 5 of 14 | 14 small steps, 5 filled in Cream | "FloraScore starts on day 14, once Florin knows your usual." |

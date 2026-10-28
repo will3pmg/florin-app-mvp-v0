@@ -345,9 +345,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* before a usual, a No BM day is a plain ring, not Gold */
     M = L.build("sarah", "new");
     L.add(M, { kind: "nobm", d: 87, t: 21 });
-    /* build-core: a dot on the No BM line in the reading colour, never Gold */
+    /* build-core: a dot on the No BM line, never Gold; fix-viz: before day 14 every reading is Ink 3 (is-learn), as the
+       week card draws those days */
     const insN = RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 });
-    out.plain = /<circle class="dv-dot" [^>]*><title>Oct 8 · No BM/.test(insN) && !/dv-dot is-shift/.test(insN);
+    out.plain = /<circle class="dv-dot is-learn" [^>]*><title>Oct 8 · No BM/.test(insN) && !/dv-dot is-shift/.test(insN);
     /* 90 days: the weekly cells start with the span, not on Jul 13 */
     M = L.build("sarah", "est");
     const sym = RU.idetail(M, { form: "C", uid: 1 }, { range: 90, k: "sym", y: 0 });
@@ -995,10 +996,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       await lpick("plan", "member");
       ok(!bad.length, `data style: the claims check passes on Insights and Today in every look, Member and Free (${bad.join("; ") || "20 screens"})`);
     }
-    /* numerals with decimals count up to their own value, never rounded */
-    await lpick("look", "rings"); await lopen("today"); await lopen("look-insights"); await lw(1600);
-    const dec = await q.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx [data-rlk-count][data-dec]")].map((n) => [n.textContent.trim(), (+n.dataset.rlkCount).toFixed(+n.dataset.dec)]));
-    ok(dec.length > 0 && dec.every(([a, b2]) => a === b2), `data style: decimals count up to their own value (${dec.map(([a]) => a).join(", ")})`);
+    /* fix-viz (Oct 28): no count-up in the app (a number counting up sits beside a reading it doesn't have), and a
+       numeral with decimals reads its own value as written */
+    await lpick("look", "rings"); await lopen("today"); await lopen("look-insights"); await lw(300);
+    const dec = await q.evaluate(() => ({ counts: document.querySelectorAll(".rx-stage .ap-rx [data-rlk-count], .rx-stage .ap-rx .rlk-look [data-count]").length, dec: [...document.querySelectorAll(".rx-stage .ap-rx .rlk-look [data-dec]")].map((n) => n.textContent.trim()) }));
+    ok(!dec.counts && dec.dec.length > 0 && dec.dec.every((t) => /^\d+\.\d$/.test(t)), `data style: no count-up, decimals as written (${dec.dec.join(", ")})`);
     /* Free: the score, the week and the check-in, then one membership card that opens the paywall */
     await lpick("plan", "free");
     for (const id of LOOKS) {
@@ -3120,7 +3122,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         return { t, flag: RU.FLAG_DAY, read: W.cols.filter((c) => c.flag).length, cnt: W.rbms.length + W.flagged.flatMap((c) => c.bms).length === W.bms.length, dstate: D ? D.days[7][D.days[7].length - 1].state : null, sflag: D ? D.score.flag : null };
       });
       const looksOk = r.dstate === "flag" && r.sflag === true;
-      const scoreRead = !/not read against your usual today/i.test(r.t) || /(Within|A little above|A little below|Above|Below) your usual range/.test(r.t);
+      const scoreRead = !/not read against your usual today/i.test(r.t) || /(Within|In|A little above|A little below|Above|Below) (your|its) usual range/.test(r.t);
       if (!r.t.includes(r.flag) || scoreRead || !r.cnt || !looksOk) flagBad.push(`${k}=${v}${!r.t.includes(r.flag) ? " (no week line)" : ""}${scoreRead ? " (score read)" : ""}${looksOk ? "" : ` (data ${r.dstate}, ${r.sflag})`}`);
       await xset(k, k === "easy" ? false : "built");
     }
@@ -3218,7 +3220,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await fflag(); await fgo("insights"); await fw(400);
     await fp.evaluate(() => document.querySelector('.rx-stage .ap-rx [data-act="idetail"][data-k="score"]').click()); await fw(700);
     const dt = await ftext();
-    ok(/Not read against your usual today\./.test(dt) && dt.includes(SIGN) && !/(Within|A little above|A little below|Above|Below) your usual range/.test(dt.split("Where today sits")[0]) && !/Steadier|bumpier/i.test(dt), `final-fix: FloraScore's detail reads a flagged today against nothing and names the sign (${dt.split("\n").slice(2, 5).join(" | ")})`);
+    ok(/Not read against your usual today\./.test(dt) && dt.includes(SIGN) && !/(Within|In|A little above|A little below|Above|Below) (your|its) usual range/.test(dt.split("Where today sits")[0]) && !/Steadier|bumpier/i.test(dt), `final-fix: FloraScore's detail reads a flagged today against nothing and names the sign (${dt.split("\n").slice(2, 5).join(" | ")})`);
     /* 7. the week, in points */
     const wk = await fp.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api; return L.scoreMoved(api.M(), api.V().form); });
     const wkWant = wk.delta === 0 ? "The same as last week, on average." : `${Math.abs(wk.delta)} ${Math.abs(wk.delta) === 1 ? "point" : "points"} ${wk.delta > 0 ? "above" : "below"} last week, on average.`;
@@ -3242,7 +3244,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         return { t: document.querySelector(".rx-stage .ap-rx .ap-layer").innerText.replace(/’/g, "'"), rd, all: ser.filter((s) => s.value != null).length, mor: D.timing.mornings30, flagLine: D.flagLine };
       });
       const bad = [];
-      if (new RegExp(`\\d+\\s*of ${r.all} days(\\.| within your usual range| with FloraScore in its usual range)`).test(r.t) && r.all !== r.rd) bad.push("trend counts today");
+      if (new RegExp(`\\d+\\s*of ${r.all} days(\\.| within your usual range| in its usual range| with FloraScore in its usual range)`).test(r.t) && r.all !== r.rd) bad.push("trend counts today");
       if (/In your usual window|Inside your usual window|first BM today came in your usual window|Today[^.\n]*inside your window/.test(r.t)) bad.push("today's timing read");
       if (!r.t.includes(r.flagLine)) bad.push("no flag line");
       if (bad.length) lookBad.push(`${look}: ${bad.join(", ")}`);
@@ -3255,7 +3257,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const a = (q) => AK.textOf(AK.answer(M, V, q, null));
       return { week: a("How was this week?"), score: a("Why did my FloraScore go up this week?"), facts: AK.read(M, V, null).text, flag: RU.FLAG_DAY };
     });
-    const akOk = (t) => t.includes(ak.flag) && /primary care is the right first stop/.test(t) && !/(Within|a little above|a little below|above|below) your usual range/i.test(t.replace(/last week/g, ""));
+    const akOk = (t) => t.includes(ak.flag) && /primary care is the right first stop/.test(t) && !/(Within|in|a little above|a little below|above|below) (your|its) usual range/i.test(t.replace(/last week/g, ""));
     ok(akOk(ak.week) && akOk(ak.score) && /noted for a clinician/.test(ak.facts), `final-fix: Ask's week and score answers leave a flagged today unread, say why and point to primary care (${ak.week.slice(0, 120)}...)`);
     /* 12 and 18. the week card names each symptom with its own strength, and its flag line sits under the BM rows */
     const wc = await fp.evaluate(() => {
@@ -3677,6 +3679,132 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await kc.close();
   }
   /* ===== end build-core ===== */
+
+  /* ===== fix-viz: the chart critic's and the truth recheck's findings, kept as checks (claude/Florin data viz.md,
+     revised after the fix pass). A ring means today only; one reading of a day before day 14 and on Free; the stronger
+     symptom's own days; ties named; Ask Florin draws the card's own chart; the weekly bars count days in Plum ===== */
+  {
+    const xc = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const x = await xc.newPage();
+    const xe = [];
+    x.on("pageerror", (e) => xe.push(e.message));
+    x.on("console", (m) => { if (m.type() === "error") xe.push(m.text()); });
+    await x.goto(PAGE); await x.waitForSelector(".ap-rx"); await x.waitForTimeout(500);
+    const r = await x.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, AK = window.FLORIN_ASK, VR = window.FLORIN_VARIANTS, out = {};
+      const V = (o = {}) => Object.assign({ form: "C", uid: 1, plan: "member", mealUI: "quick", bmUI: "quick", home: "score", history: "list", checkin: true, look: "built", easy: false, onboard: "short", persona: "sarah", data: "est", meals: "all" }, o);
+      const txt = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent.replace(/\s+/g, " "); };
+      const bm = (d, t, o = {}) => Object.assign({ kind: "bm", d, t, form: 4, how: {}, dur: null, flags: {}, note: "" }, o);
+      /* 1. the stronger symptom names only its own days */
+      let M = L.build("sarah", "est");
+      out.sym30 = L.symLine(L.span(M, 30, "C"), { named: false });
+      L.add(M, { kind: "sym", d: L.TODAY, t: 15, items: [{ name: "Cramping", s: 3 }], last: 1, note: "" });
+      out.sym7 = L.symLine(L.span(M, 7, "C"));
+      out.sym30b = L.symLine(L.span(M, 30, "C"), { named: false });
+      /* 2. before day 14: a day with only symptoms is logged, a flagged today is flagged, everywhere */
+      M = L.build("sarah", "new"); L.day(M, L.TODAY).entries = []; L.add(M, { kind: "sym", d: L.TODAY, t: 15, items: [{ name: "Cramping", s: 3 }], last: 1, note: "" });
+      const ft = L.facts(M, L.day(M, L.TODAY), "C");
+      out.learnSym = ft.state === "logged" && !/Not counted/.test(txt(RU.historyDay(M, V({ data: "new" }), L.TODAY))) && /\b\d+ days logged\b/.test(txt(RU.weekCard(M, "C"))) && !/not counted/i.test(VR ? VR.cellOf(M, V({ data: "new" }), L.TODAY, VR.firstLog(M), "all").label : "");
+      M = L.build("sarah", "new"); L.add(M, bm(L.TODAY, 16.5, { flags: { blood: true } }));
+      const wkF = RU.weekCard(M, "C");
+      out.learnFlag = L.facts(M, L.day(M, L.TODAY), "C").state === "flag" && /ap-day--flag/.test(wkF) && txt(wkF).includes(L.FLAG_DAY) && /ap-day--flag/.test(RU.historyDay(M, V({ data: "new" }), L.TODAY));
+      out.learnSpan = (RU.weekCard(L.build("sarah", "new"), "C").match(/<h2>Your last 7 days<\/h2><span class="ap-k">([^<]*)</) || [])[1];
+      /* 3. on Free, History's list reads the days the calendar reads, and holds the rest as logged */
+      M = L.build("marcus", "est");
+      const mis = [];
+      const K = { usual: "usual", shifted: "shift", unsure: "quiet", nocount: "quiet", logged: "quiet", flag: "flag", gap: "none", pending: "none", plain: "before" };
+      for (let d = L.TODAY - 13; d <= L.TODAY; d++) {
+        const h = RU.historyDay(M, V({ plan: "free" }), d), k = (h.match(/ap-day ap-day--(\w+)/) || [])[1], c = VR.cellOf(M, V({ plan: "free" }), d, VR.firstLog(M), "all");
+        if (k !== K[c.shown]) mis.push(`${d}: list ${k}, calendar ${c.shown}`);
+      }
+      out.free = mis;
+      out.freeSay = /On Free, days are read against your usual for the last 7 days/.test(txt(RU.history(M, V({ plan: "free" }), { filter: "all", n: 14 })));
+      /* 4. a ring means today: with nothing logged today, no chart rings or labels another day, and the axis ends on Today */
+      M = L.build("marcus", "est"); L.day(M, L.TODAY).entries = [];
+      /* (FloraScore keeps a score today, from the days before, so its line may ring today: the other charts have no reading today) */
+      const ins = RU.insights(M, V({ persona: "marcus" }), { range: 7 }), det = ["timing", "often", "form", "score"].map((k) => RU.idetail(M, V({ persona: "marcus" }), { k, range: 7 })).join("");
+      out.rings = ["timing", "often", "form"].map((k) => RU.cardChart(M, V({ persona: "marcus" }), k, 7).chart + RU.idetail(M, V({ persona: "marcus" }), { k, range: 7 })).join("").match(/class="dv-ring"/g) || [];
+      out.lbls = ((ins + det).match(/class="dv-newlbl"[^>]*>([^<]*)</g) || []).filter((t) => /(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d/.test(t));
+      out.axisToday = /BMs a day[\s\S]*?>Today<\/text><\/svg>/.test(ins);
+      /* 5. a tie names every part that moved most (Marcus: Timing and Form, 2 points each), on the card and in Ask */
+      M = L.build("marcus", "est");
+      out.tie = (RU.insights(M, V({ persona: "marcus" }), { range: 7 }).match(/ap-ic-moved">([^<]*)</) || [])[1] || "";
+      out.tieAsk = AK ? AK.answer(M, V({ persona: "marcus" }), "What moved my FloraScore this week?", { k: "score", range: 7 }).lines.join(" ") : "";
+      /* 6. the symptom trend chips compare with the stretch before: plain, never Plum or Gold */
+      const sd = RU.idetail(M, V({ persona: "marcus" }), { k: "sym", range: 30 });
+      out.trend = !/ap-trow[\s\S]*?ap-chip--(usual|shift)/.test(sd) && !/ap-chip--(usual|shift)">[^<]*(than|as) (the week|the 30 days|your first 30)/.test(sd);
+      /* 7. Ask Florin draws the card's own chart, never a Gold "Held", a spark with an area, or a retired word */
+      const asks = [["How was my timing this week?", "timing", 7], ["How often do I go?", "often", 30], ["What do the forms mean?", "form", 30], ["What do my logs show this week?", "week", 7], ["Why did my FloraScore go down this week?", "score", 30]];
+      out.askCharts = asks.filter(([q, k, n]) => { const a = AK.answer(M, V({ persona: "marcus" }), q, { k: k === "week" ? "score" : k, range: n }); const c = RU.cardChart(M, V({ persona: "marcus" }), k, n); return !a.chart || a.chart !== c.chart; }).map(([q]) => q);
+      const pat = L.patterns(M, "C").found[0];
+      const pa = pat ? AK.answer(M, V({ persona: "marcus" }), "How do I test it?", { k: `pattern:${pat.id}`, range: 30 }) : null;
+      out.askPat = !pat || (pa.chart === RU.cardChart(M, V({ persona: "marcus" }), `pattern:${pat.id}`).chart && /ap-share/.test(pa.chart) && !/Held|is-shift|c-seg/.test(pa.chart + pa.legend));
+      M = L.build("marcus", "est"); L.add(M, { kind: "sym", d: L.TODAY, t: 15, items: [{ name: "Cramping", s: 3 }], last: 1, note: "" });
+      out.askWeek = AK.answer(M, V({ persona: "marcus" }), "What do my logs show this week?", null).lines.join(" ");
+      /* 8. Ask's timing adds up at the minute shown: in the window, later and earlier are every first BM read */
+      out.askAdd = [];
+      for (const p of ["sarah", "marcus", "alex"]) for (const n of [7, 30, 90]) { const R = AK.read(L.build(p, "est"), V({ persona: p }), { k: "timing", range: n }), s = R.cs; if (s.inW + s.later + s.earlier !== s.mornings) out.askAdd.push(`${p} ${n}: ${s.inW}+${s.later}+${s.earlier} of ${s.mornings}`); }
+      /* 9. a word that covers two forms: a span on today's bar, never a dot; the bars and the count add up */
+      M = L.build("alex", "est"); L.add(M, bm(L.TODAY, 13.5, { form: null, word: 3 }));
+      const fd = RU.idetail(M, V({ persona: "alex", form: "A" }), { k: "form", range: 7 });
+      out.span = /c-range-span/.test(fd.split("ap-det-range")[0]) && !/c-range-dot/.test(fd.split("ap-det-range")[0]) && /covers two steps, so it isn't in the bars/.test(txt(fd));
+      /* 10. the hero's bar names only the band; the detail names Lowest and Highest; FloraScore says "its usual range" */
+      M = L.build("marcus", "est");
+      const hero = RU.scoreHero(M, V({ persona: "marcus" }));
+      out.hero = !/ap-sbar-ax/.test(hero) && /its usual range/.test(txt(hero)) && !/(Within|above|below) your usual range/i.test(txt(hero)) && /Lowest \d+/.test(txt(RU.idetail(M, V({ persona: "marcus" }), { k: "score", range: 7 })));
+      out.rel = RU.scoreRel(90, [76, 82]) === "Above its usual range" && RU.scoreRel(84, [76, 82]) === "A little above its usual range" && RU.scoreRel(80, [76, 82]) === "In its usual range";
+      /* 11. Score first's hero names the BM it takes out on a 3 BM day */
+      M = L.build("sarah", "est"); [12, 15].forEach((t) => L.add(M, bm(L.TODAY, t)));
+      out.three = txt(RU.scoreHero(M, V())).match(/(Without the \d+:\d\d [AP]M BM, FloraScore would be \d+|The \d+:\d\d [AP]M BM didn't change FloraScore)/) ? true : txt(RU.scoreHero(M, V()));
+      /* 12. before day 14, chart readings are Ink 3 (is-learn), as the week card draws those days */
+      const li = RU.insights(L.build("sarah", "new"), V({ data: "new" }), { range: 7 });
+      out.learnInk = /dv-dot is-learn/.test(li) && !/class="dv-dot"/.test(li) && !/dv-bar"/.test(li);
+      /* 13. How your days split is cut; dinners aren't read with meals on few days */
+      out.split = !/How your days split/.test(RU.idetail(L.build("marcus", "est"), V({ persona: "marcus" }), { k: "often", range: 30 }));
+      M = L.build("marcus", "est", { meals: "rough" });
+      out.sparse = L.patterns(M, "C").sparse && !/after a dinner past 8 PM/.test(txt(RU.insights(M, V({ persona: "marcus", meals: "rough" }), { range: 30 }))) && !/dv-tick-ctx/.test(RU.idetail(M, V({ persona: "marcus", meals: "rough" }), { k: "timing", range: 30 }));
+      /* 14. the Symptoms card names the rows past four */
+      M = L.build("alex", "est"); L.add(M, { kind: "sym", d: L.TODAY, t: 15, items: [{ name: "Nausea", s: 0 }], last: 1, note: "" });
+      out.more = /Also logged: /.test(txt(RU.insights(M, V({ persona: "alex" }), { range: 30 })));
+      /* 15. the calendar says a day's BM count once */
+      M = L.build("sarah", "est"); [12, 15].forEach((t) => L.add(M, bm(L.TODAY, t)));
+      const cl = VR.cellOf(M, V(), L.TODAY, VR.firstLog(M), "all").label;
+      out.cal = (cl.match(/3 BMs/g) || []).length === 1 ? true : cl;
+      /* 16. Day first prices no No BM log */
+      M = L.build("sarah", "est"); L.day(M, L.TODAY).entries = L.day(M, L.TODAY).entries.filter((e) => e.kind !== "bm"); L.add(M, { kind: "nobm", d: L.TODAY, t: 19.5 });
+      out.nobm = !/Without the/.test(txt(RU.today(M, V({ home: "day" }))));
+      return out;
+    });
+    ok(!/(moderate|strong) cramping on [2-9] days/.test(r.sym30) && /strong cramping today/.test(r.sym7) && /strong cramping on 1 day/.test(r.sym30b), `fix-viz: the stronger symptom names only the days it came up that strong (${r.sym30} | ${r.sym7} | ${r.sym30b})`);
+    ok(r.learnSym && r.learnFlag && r.learnSpan === "Oct 7 to 11", `fix-viz: before day 14 a day with only symptoms is logged and a flagged today is flagged, on the week card, History and the calendar alike; the card's dates start on the day the person did (${r.learnSpan})`);
+    ok(!r.free.length && r.freeSay, `fix-viz: on Free, History's list reads the same days the calendar reads and holds the rest as logged, and says why${r.free.length ? ": " + r.free.join("; ") : ""}`);
+    ok(!r.rings.length && !r.lbls.length && r.axisToday, `fix-viz: with nothing logged today no chart rings or labels another day, and the count line still ends on Today (${r.rings.length} rings, ${r.lbls.join(" ")})`);
+    ok(/^Timing and form moved it most this week, adding 2 points each\.$/.test(r.tie) && /Timing and form moved it most, adding 2 points each\./.test(r.tieAsk), `fix-viz: a tie names every part (${r.tie} | ${r.tieAsk})`);
+    ok(r.trend, "fix-viz: the Symptoms detail's trend chips are plain, never Plum or Gold");
+    ok(!r.askCharts.length && r.askPat && /strong cramping today/.test(r.askWeek) && !/mostly bloating/.test(r.askWeek), `fix-viz: Ask Florin draws the card's own chart for each answer, a pattern as its share bars, and says the symptoms as the card does${r.askCharts.length ? ": " + r.askCharts.join(", ") : ""} (${r.askWeek.slice(0, 160)})`);
+    ok(!r.askAdd.length, `fix-viz: Ask's timing adds up at the minute shown, every person, 7, 30 and 90 days${r.askAdd.length ? ": " + r.askAdd.join("; ") : ""}`);
+    ok(r.span, "fix-viz: a word that covers two forms is an Ink 3 span on today's bar, and a line under the bars says it isn't in them");
+    ok(r.hero && r.rel, "fix-viz: the hero's bar names only the band, the detail names Lowest and Highest, and FloraScore reads in its usual range (Above from 6 points out)");
+    ok(r.three === true, `fix-viz: on a 3 BM day the hero names the BM it takes out (${r.three === true ? "" : r.three})`);
+    ok(r.learnInk, "fix-viz: before day 14 chart readings are Ink 3, as the week card draws those days");
+    ok(r.split && r.sparse, "fix-viz: How your days split is gone, and with meals on few days no dinner count or dinner tick is drawn");
+    ok(r.more && r.cal === true && r.nobm, `fix-viz: the Symptoms card names its rows past four; the calendar says a day's BM count once; Day first prices no No BM log${r.cal === true ? "" : ` (${r.cal})`}`);
+    /* the weekly bars count days: within in Plum (Ray on dark), the colour of a day within your usual */
+    for (const theme of ["light", "dark"]) {
+      await x.evaluate((t) => { window.FLORIN_EXT.api.set("persona", "marcus"); window.FLORIN_EXT.api.set("theme", t); window.FLORIN_EXT.api.open("i-timing"); }, theme); await x.waitForTimeout(500);
+      await x.evaluate(() => { const bs = [...document.querySelectorAll('.ap-rx .ap-o:not(.is-out) [data-v="90"], .ap-rx .ap-layer .ap-seg--range [data-v="90"]')]; if (bs.length) bs[bs.length - 1].click(); }); await x.waitForTimeout(500);
+      const wb = await x.evaluate(() => {
+        const ph = document.querySelector(".rx-stage .ap-rx") || document.querySelector(".ap-rx"), bar = ph.querySelector(".dv-wbar:not(.is-shift):not(.is-ctx)");
+        const probe = document.createElement("i"); probe.style.color = "var(--ap-signal)"; ph.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
+        return { got: bar ? getComputedStyle(bar).fill : "none", want, gold: [...ph.querySelectorAll(".dv-wbar.is-shift")].every((n) => getComputedStyle(n).strokeWidth === "1.5px") };
+      });
+      ok(wb.got === wb.want && wb.gold, `fix-viz, ${theme}: the 90-day weekly bars count days in Plum (Ray on dark), their Gold edged (${wb.got} against ${wb.want})`);
+    }
+    await x.evaluate(() => { window.FLORIN_EXT.api.set("theme", "light"); window.FLORIN_EXT.api.set("persona", "sarah"); window.FLORIN_EXT.api.reset(); });
+    ok(!xe.length, `fix-viz: no console or page errors${xe.length ? ": " + xe.slice(0, 3).join(" | ") : ""}`);
+    await xc.close();
+  }
+  /* ===== end fix-viz ===== */
 
   /* ===== fix-notes: the notes critic's findings, kept as checks (Will, Oct 28: "Make it simple"). Every decision's
      top label numbers it and says what we recommend; the check-in note answers first; a new note opens at its top; the

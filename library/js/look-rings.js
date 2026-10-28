@@ -156,7 +156,8 @@
 
   /* ---------- the four parts: a standard card, so the hero stays the one dark card ---------- */
   function parts(D, x) {
-    const S = D.score, esc = x.esc, P = S.parts || [];
+    /* the moves in whole FloraScore points (L.scoreMoved's pts, which add up to the change shown), never decimals (fix-viz, Oct 28) */
+    const S = D.score, esc = x.esc, P = (S.parts || []).map((p) => Object.assign({}, p, { delta: p.pts }));
     const RADII = [86, 68, 50, 32], SW = 10, C = 100;
     const caption = `<p class="rg-conc-cap">Each part, out of 100</p>`;
     if (!P.length) {
@@ -179,7 +180,7 @@
     const rows = P.map((p, i) => {
       const [wc, w] = wordOf(p);
       const wPct = r1((Math.abs(p.delta) / maxA) * 50);
-      const pts = `${sign(p.delta, 1)} pts`;
+      const pts = `${sign(p.delta)} ${Math.abs(p.delta) === 1 ? "pt" : "pts"}`;
       return `<li class="rg-part" style="--i:${i}">
         ${icon(i)}
         <div class="rg-part-main">
@@ -196,7 +197,7 @@
       <div class="rg-parts-top">
         <figure class="rg-conc-f"><svg class="rg-svg rg-conc" viewBox="0 0 200 200" role="img" aria-label="${esc(aria)}">${rings}${befores}</svg>${caption}</figure>
         <div class="rg-parts-sum">
-          ${still ? `<p class="rg-ans">${esc("Every part is about the same as last week.")}</p>` : `<p class="rg-big">${esc(sign(moved.delta, 1))}<span class="rg-of">pts</span></p>
+          ${still ? `<p class="rg-ans">${esc("Every part is about the same as last week.")}</p>` : `<p class="rg-big">${esc(sign(moved.delta))}<span class="rg-of">${Math.abs(moved.delta) === 1 ? "pt" : "pts"}</span></p>
           <p class="rg-ans">${esc(`${moved.label} moved your FloraScore most since last week.`)}</p>`}
         </div>
       </div>
@@ -249,10 +250,10 @@
     /* a dot for every point outside your usual, and for a lone point between two gaps, which has no line */
     const dots = vals.map((v, i) => (v == null || i === li || (!out(v) && !solo.has(i)) ? "" : `<circle class="rg-tdot${out(v) ? " is-shift" : ""}" style="--i:${i}" cx="${r1(xs(i))}" cy="${r1(ys(v))}" r="3.6"><title>${esc(`${ser[i].label}: ${v}${out(v) ? `, ${v > u[1] ? "above" : "below"} your usual range` : ""}`)}</title></circle>`)).join("");
     const lx = xs(li), ly = ys(lv);
-    const rel = last.today && lv === S.value && S.relation ? lower1(S.relation) : lv < u[0] ? "below your usual range" : lv > u[1] ? "above your usual range" : "within your usual range";
+    const rel = last.today && lv === S.value && S.relation ? lower1(S.relation) : lv < u[0] ? "below its usual range" : lv > u[1] ? "above its usual range" : "in its usual range";
     const ans = `${last.today ? "Today" : `Latest, ${last.label},`} ${lv}, ${rel}.`;
     const spread = [above && `above it on ${plural(above, "day")}`, below && `below it on ${plural(below, "day")}`].filter(Boolean);
-    const aria = `FloraScore over 30 days. ${within} of ${rd.length} days within your usual range, ${u[0]} to ${u[1]}${spread.length ? `, ${andList(spread)}` : ""}. ${ans}${noScore ? ` No FloraScore on ${plural(noScore, "day")}, left as ${noScore === 1 ? "a break" : "breaks"} in the line.` : ""}`;
+    const aria = `FloraScore over 30 days. ${within} of ${rd.length} days in its usual range, ${u[0]} to ${u[1]}${spread.length ? `, ${andList(spread)}` : ""}. ${ans}${noScore ? ` No FloraScore on ${plural(noScore, "day")}, left as ${noScore === 1 ? "a break" : "breaks"} in the line.` : ""}`;
     /* the area fades out by the top of your usual band, so it never greys the band */
     const svg = `<svg class="rg-svg rg-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
       <defs><linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="${top}" y2="${r1(ys(u[1]))}"><stop offset="0" class="rg-ga"/><stop offset="1" class="rg-gb"/></linearGradient></defs>
@@ -271,7 +272,7 @@
     </svg>`;
     return card(x, "rg-trend", "FloraScore over 30 days", `
       ${head(x, "FloraScore · 30 days", chip(x, "usual", `Usual ${u[0]} to ${u[1]}`))}
-      ${lead(x, num(within), `of ${rd.length} days within your usual range`, ans)}
+      ${lead(x, num(within), `of ${rd.length} days in its usual range`, ans)}
       ${svg}
       ${legend(x, [["line", "FloraScore"], ["band", `Your usual, ${u[0]} to ${u[1]}`], (above || below) && ["shift", "Outside your usual"], noScore && [null, "A break in the line: no FloraScore that day"], [lOut ? "now-shift" : "now", last.today ? "Today" : "Latest"]])}`);
   }
@@ -522,10 +523,10 @@
     const zeroOut = known.some((d) => d.count === 0 && outOf(0)), zeroIn = known.some((d) => d.count === 0 && !outOf(0));
     const outPos = known.some((d) => d.count > 0 && outOf(d.count));
     const avgWord = !u || o.avg30 == null ? "" : o.avg30 < u[0] ? "below your usual" : o.avg30 > u[1] ? "above your usual" : "within your usual";
-    const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} not logged`].filter(Boolean);
-    const ans = u ? `${inRange} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.${fl && D.flagLine ? ` ${D.flagLine}` : ""}`
+    const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} with nothing logged`].filter(Boolean);
+    const ans = u ? `${inRange} of ${known.length} days with a usual count${extra.length ? `, ${andList(extra)}` : ""}.${fl && D.flagLine ? ` ${D.flagLine}` : ""}`
       : `${known.length ? `${plural(known.length, "day")} logged so far.` : "Nothing logged yet."} Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
-    const aria = `BMs a day${learning ? ` so far, one ring segment for each of your first ${N} days` : ", last 30 days, one ring segment per day"}.${o.avg30 != null ? ` Average ${o.avg30} a day${avgWord ? `, ${avgWord}` : ""}${u ? ` of ${o.usualText}` : ""}.` : ""} ${ans}${gaps ? ` Days not logged are left as ${gaps === 1 ? "a gap" : "gaps"}.` : ""}`;
+    const aria = `BMs a day${learning ? ` so far, one ring segment for each of your first ${N} days` : ", last 30 days, one ring segment per day"}.${o.avg30 != null ? ` Average ${o.avg30} a day${avgWord ? `, ${avgWord}` : ""}${u ? ` of ${o.usualText}` : ""}.` : ""} ${ans}${gaps ? ` Days with nothing logged are left as ${gaps === 1 ? "a gap" : "gaps"}.` : ""}`;
     const svg = `<svg class="rg-svg rg-chart rg-oring" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
       ${band}${before}${after}${marks}${laneLbl}${now}
       ${startLbl}

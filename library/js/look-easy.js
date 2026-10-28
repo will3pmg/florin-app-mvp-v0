@@ -28,8 +28,9 @@
   const andList = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
   const DOWS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const DOWL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
-  /* the dates a card covers, ending on today: a one-day stretch (day 1) is just today */
-  const spanOf = (days) => { const a = days[0], z = days[days.length - 1]; return days.length === 1 ? (a.today ? "Today" : a.label) : `${a.label} to ${z.today ? "today" : z.label}`; };
+  /* the dates a card covers, in the app's one wording (RU.spanText: "Oct 5 to 11", as Today's card, Insights and Your
+     days say them); a one-day stretch (day 1) is just today */
+  const spanOf = (days) => { const a = days[0], z = days[days.length - 1], RU = window.FLORIN_RUI; return days.length === 1 ? (a.today ? "Today" : a.label) : RU && RU.spanText && a.d != null ? RU.spanText(a.d, z.d) : `${a.label} to ${z.label}`; };
 
   /* ---------- the parts every card is made of ---------- */
   /* the card: a short title (a heading, so a screen reader can jump card to card) and, when it helps, when it covers */
@@ -127,7 +128,7 @@
        from it, against last week's. The four add up to the change in the score, so each is said as a move, never as a
        part's own 0 to 100 */
     const pts = (p) => Math.abs(p.pts);
-    const word = (p) => (!p.pts ? "Didn't move" : p.pts > 0 ? `Added ${plural(pts(p), "point")}` : `Took ${plural(pts(p), "point")}`);
+    const word = (p) => (!p.pts ? "Didn't move" : p.pts > 0 ? `Added ${plural(pts(p), "point")}` : `Took off ${plural(pts(p), "point")}`);
     const most = Math.max(...P.map(pts)), tops = P.filter((p) => most && pts(p) === most), moved = tops[0] || P[0];
     const still = !most;
     /* a tie names every part that moved most, when they moved the same way */
@@ -135,11 +136,17 @@
     const top = Math.max(1, ...P.map(pts));
     const rows = P.map((p) => ({ label: p.label, tag: ["plain", word(p)], count: pts(p), of: top, kind: "read", text: p.pts ? `${p.pts > 0 ? "+" : "−"}${pts(p)}` : "0" }));
     const d = S.delta;
+    /* the big number is the week's change, the number that matters (fix-viz, Oct 28: it was the largest part's 2 beside a
+       change of 5 in small type); the part that moved most is said under it, every part named on a tie */
+    const topSay = still ? "No part moved it."
+      : same ? `${andList(tops.map((p) => p.label))} ${moved.pts > 0 ? "added" : "took off"} ${plural(pts(moved), "point")} each, the most of the four.`
+      : tops.length > 1 ? `${andList(tops.map((p) => `${p.label} ${p.pts > 0 ? "added" : "took off"} ${plural(pts(p), "point")}`))}, the most of the four.`
+      : `${moved.label} ${moved.pts > 0 ? "added" : "took off"} ${plural(pts(moved), "point")}, the most of the four.`;
     return card(x, "ez-parts", "What moved FloraScore this week, part by part", "What moved the score", "This week", `
-      ${still ? lead(x, null, null, "No part moved the score since last week.")
-        : lead(x, pts(moved), pts(moved) === 1 ? "point, the most any part moved" : "points, the most any part moved", same ? `${andList(tops.map((p) => p.label))} ${moved.pts > 0 ? "added" : "took"} ${plural(pts(moved), "point")} each ${moved.pts > 0 ? "to" : "from"} your score this week.` : `${moved.label} ${moved.pts > 0 ? "added" : "took"} ${plural(pts(moved), "point")} ${moved.pts > 0 ? "to" : "from"} your score this week.`)}
+      ${d ? lead(x, Math.abs(d), `${Math.abs(d) === 1 ? "point" : "points"} ${d > 0 ? "up" : "down"} on average this week`, topSay)
+        : lead(x, null, null, d === 0 ? `FloraScore is where it was last week, on average. ${topSay}` : topSay)}
       ${bars(x, rows)}
-      ${d != null ? body(x, d ? `Together they moved FloraScore ${d > 0 ? "up" : "down"} ${plural(Math.abs(d), "point")}: ${S.weekAvg} on average this week, ${S.lastWeekAvg} last week.` : `Together they left FloraScore where it was: ${S.weekAvg} on average this week and last.`) : ""}
+      ${d != null ? body(x, `${S.weekAvg} on average this week, ${S.lastWeekAvg} last week.`) : ""}
       ${note(x, DISC, true)}`);
   }
 
@@ -299,7 +306,7 @@
     const known = days.filter((d) => d.count != null && !d.flag), fl = days.some((d) => d.flag && d.count != null);
     const gaps = days.filter((d) => d.count == null && !d.pending).length;
     if (!known.length) {
-      return card(x, "ez-often", "How often", "How often", null, `${lead(x, null, null, "No days logged yet.")}${body(x, "How many BMs you have each day will show here.")}`);
+      return card(x, "ez-often", "How often", "How often", null, `${lead(x, null, null, "Nothing logged yet.")}${body(x, "How many BMs you have each day will show here.")}`);
     }
     /* one bar per count up to one past the top of your usual, then "or more": the last bar is always outside your
        usual, and the days within it come from the model's own reading of each day (inCount), never a rule of ours */
@@ -313,7 +320,7 @@
     const inRange = u ? known.filter((d) => d.inCount).length : null;
     const outN = u ? known.length - inRange : 0;
     return card(x, "ez-often", "How often", "How often", D.learning ? "So far" : "Last 30 days", `
-      ${u ? lead(x, inRange, `of ${plural(known.length, "day")} within your usual`, outN ? `Outside your usual on ${plural(outN, "day")}.` : "Every day you logged was within your usual.", outN ? "shift" : null)
+      ${u ? lead(x, inRange, `of ${plural(known.length, "day")} with a usual count`, outN ? `A count outside your usual on ${plural(outN, "day")}.` : "Every day you logged had a usual count.", outN ? "shift" : null)
         : lead(x, known.length, known.length === 1 ? "day logged so far" : "days logged so far", `Florin learns your usual count by day ${D.learning ? D.learning.of : 14}.`)}
       ${bars(x, rows)}
       ${u ? body(x, `Your usual is ${o.usualText}.`) : ""}

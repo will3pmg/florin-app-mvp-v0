@@ -11,7 +11,12 @@
    - a screen that renders blank, or a sheet that doesn't open
    - a decision note out of the decision sheet's shape (a block per option with What it is, Why do it and Why not, a
      recommendation), with a badge, or without Easy's line on Home and Data style while Easy is on
-   NODE_PATH=$(npm root -g) node work/sweep.js [out.json] [--workers 4] [--only form,look] [--limit 20] [--plan free] [--width 390]
+   - K1 (claude/Florin data viz.md): a retired word on the phone, its labels for the screen reader included: Something
+     shifted, No logs, Not logged, Outside them, Outside it (never Outside its), shifted in any form, and No BMs logged as a
+     whole legend item, chart label, table cell or value. Then a K1 pass of its own: every data style and the Easy
+     version, the three people, 12 weeks and day 5, Today, History, Insights and every detail page at 7, 30 and 90 days,
+     and every answer Ask Florin computes, asked from each card (--k1 runs that pass alone)
+   NODE_PATH=$(npm root -g) node work/sweep.js [out.json] [--workers 4] [--only form,look] [--limit 20] [--plan free] [--width 390] [--k1]
    Pairs that set the same decisions are run once (95 settings, 380 runs with the themes and logs). */
 const { chromium } = require("playwright");
 const path = require("path");
@@ -28,6 +33,11 @@ const LIMIT = +flag("--limit", 0);
    plan, or with the app full screen on a phone */
 const PLAN = flag("--plan", "member");
 const WIDTH = +flag("--width", 1440);
+const K1_ONLY = args.includes("--k1");
+/* K1: the retired words (claude/Florin data viz.md, section 1 and K1). Anywhere in the phone's text, case-insensitive */
+const K1 = /something shifted|\bno logs\b|\bnot logged\b|\boutside them\b|\boutside it\b(?!s)|\bshifted\b/i;
+/* and as a whole legend item, chart label, table cell or value (a sentence like "No BMs logged yet." stays) */
+const K1_ITEM = /^\s*(no bms logged|shifted)\s*$/i;
 
 /* the decisions on the left bar, default first, as the toggles carry them (data-v) */
 const DECS = {
@@ -112,7 +122,8 @@ async function worker(browser, runs, wi, problems, counts) {
       const opened = await p.evaluate((id) => { const b = document.querySelector(`[data-rx="screen"][data-v="${id}"]`); if (!b || b.disabled) return false; b.click(); return true; }, id);
       if (!opened) { problems.push({ where, kind: "screen", what: "no row in the Screens list, or it's disabled" }); continue; }
       await p.waitForTimeout(320);
-      const o = await p.evaluate(([sheet, ckOff]) => {
+      const o = await p.evaluate(([sheet, ckOff, k1s, k1is]) => {
+        const k1 = new RegExp(k1s, "i"), k1i = new RegExp(k1is, "i");
         const ph = document.querySelector(".rx-stage .ap-rx");
         const ovs = [...ph.querySelectorAll(".ap-o:not(.is-out)")];
         const top = ovs[ovs.length - 1] || null;
@@ -130,6 +141,10 @@ async function worker(browser, runs, wi, problems, counts) {
         if (junk.test(phoneText)) bad("junk text", `phone: ...${snip(phoneText, junk)}...`);
         if (junk.test(notes + " " + timeLine + " " + sumLine)) bad("junk text", `notes: ...${snip(notes + " " + timeLine + " " + sumLine, junk)}...`);
         if (/[—–]/.test(phoneText)) bad("dash", `phone: ...${snip(phoneText, /[—–]/)}...`);
+        /* K1: a retired word, anywhere the phone shows or says it, or as a whole legend item, chart label or cell */
+        if (k1.test(phoneText)) bad("retired word", `phone: ...${snip(phoneText, k1)}...`);
+        const item = [...live.querySelectorAll(".ap-legend span, svg text, td, th, .ap-k, b, strong, em")].find((el) => k1i.test(el.textContent));
+        if (item) bad("retired word", `as an item: "${item.textContent.trim()}"`);
         if (/[—–]/.test(notes + timeLine)) bad("dash", `notes: ...${snip(notes + timeLine, /[—–]/)}...`);
         /* the claims check, on what the phone shows minus the disclaimers (as the notes' check reads it) */
         const clone = live.cloneNode(true);
@@ -179,7 +194,7 @@ async function worker(browser, runs, wi, problems, counts) {
         if (live.textContent.trim().length < 40 || vis.length < 3) bad("blank", `the screen draws ${vis.length} things and ${live.textContent.trim().length} characters`);
         out.len = live.textContent.trim().length;
         return out;
-      }, [SHEET[s] || null, r.checkin === "false"]);
+      }, [SHEET[s] || null, r.checkin === "false", K1.source, K1_ITEM.source]);
       counts.screens++;
       o.issues.forEach((x) => problems.push(Object.assign({ where }, x)));
     }
@@ -189,13 +204,75 @@ async function worker(browser, runs, wi, problems, counts) {
   await ctx.close();
 }
 
+/* the K1 pass: every data style and the Easy version, three people, 12 weeks and day 5, each screen drawn from the
+   phone's own render functions (Today, History, Insights and every detail page at 7, 30 and 90 days), and every answer
+   Ask Florin computes for its questions, asked from each card at each range. Text, labels for the screen reader and
+   chart titles are all read */
+async function k1Pass(browser, problems) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const p = await ctx.newPage();
+  p.on("pageerror", (e) => problems.push({ where: "K1 pass", kind: "page error", what: String(e.message).slice(0, 300) }));
+  await p.goto(PAGE);
+  await p.waitForSelector(".rx-stage .ap-rx");
+  const found = await p.evaluate(([k1s, k1is]) => {
+    const k1 = new RegExp(k1s, "i"), k1i = new RegExp(k1is, "i");
+    const api = window.FLORIN_EXT.api, RU = window.FLORIN_RUI, AK = window.FLORIN_ASK;
+    const out = [], dp = new DOMParser();
+    const read = (html) => {
+      const doc = dp.parseFromString(`<div>${html}</div>`, "text/html");
+      const labels = [...doc.querySelectorAll("[aria-label], [data-msg], [data-tip], title")].map((x) => x.getAttribute("aria-label") || x.getAttribute("data-msg") || x.getAttribute("data-tip") || x.textContent).join(" ");
+      return { text: `${doc.body.textContent} ${labels}`, items: [...doc.querySelectorAll(".ap-legend span, svg text, td, th, .ap-k, b, strong, em, span")].map((x) => x.textContent) };
+    };
+    const look = (where, html) => {
+      const r = read(html), m = r.text.match(k1), it = r.items.find((t) => k1i.test(t));
+      if (m) out.push({ where, what: `"${m[0]}": ...${r.text.slice(Math.max(0, m.index - 50), m.index + 50).replace(/\s+/g, " ")}...` });
+      if (it) out.push({ where, what: `as an item: "${it.trim()}"` });
+    };
+    const STYLES = [["built", false], ["rings", false], ["journal", false], ["bento", false], ["oura", false], ["easy", false], ["built", true]];
+    const KEYS = ["score", "timing", "often", "form", "sym", "ck", "pat"];
+    for (const [lk, easy] of STYLES) for (const who of ["sarah", "marcus", "alex"]) for (const data of ["est", "new"]) {
+      api.set("persona", who); api.set("data", data); api.set("look", lk); api.set("easy", easy);
+      const M = api.M(), V = api.V(), tag = `${lk}${easy ? " + Easy" : ""} / ${who} / ${data === "est" ? "12 weeks" : "day 5"}`;
+      try { look(`${tag} Today`, RU.today(M, V)); } catch (e) { out.push({ where: `${tag} Today`, what: `threw ${e.message}` }); }
+      try { look(`${tag} History`, RU.history(M, V, { filter: "all", n: 14 })); } catch (e) { out.push({ where: `${tag} History`, what: `threw ${e.message}` }); }
+      for (const n of [7, 30, 90]) {
+        try { look(`${tag} Insights ${n}`, RU.insights(M, V, { range: n })); } catch (e) { out.push({ where: `${tag} Insights ${n}`, what: `threw ${e.message}` }); }
+        for (const k of KEYS.concat(["days"])) { try { look(`${tag} ${k} detail ${n}`, RU.idetail(M, V, { k, range: n })); } catch (e) { out.push({ where: `${tag} ${k} detail ${n}`, what: `threw ${e.message}` }); } }
+        if (!AK || lk !== "built" || easy) continue;
+        for (const k of KEYS) for (const q of AK.QUESTIONS) {
+          try {
+            const a = AK.answer(M, V, q, { k, range: n });
+            look(`${tag} Ask from ${k} ${n}: ${q}`, `<p>${(a.lines || []).join(" ")} ${a.try || ""}</p>${a.chart || ""}${a.legend ? `<div class="ap-legend">${a.legend}</div>` : ""}<ul>${(a.used || []).map((u) => `<li>${u[0]}: ${u[1]}</li>`).join("")}</ul>`);
+          } catch (e) { out.push({ where: `${tag} Ask from ${k} ${n}: ${q}`, what: `threw ${e.message}` }); }
+        }
+      }
+    }
+    api.set("look", "built"); api.set("easy", false); api.set("persona", "sarah"); api.set("data", "est");
+    return out;
+  }, [K1.source, K1_ITEM.source]);
+  found.forEach((f) => problems.push({ where: `K1 pass, ${f.where}`, kind: "retired word", what: f.what }));
+  await ctx.close();
+}
+
 (async () => {
   const t0 = Date.now();
+  if (K1_ONLY) {
+    const browser = await chromium.launch(), problems = [];
+    await k1Pass(browser, problems);
+    await browser.close();
+    const groups = {};
+    problems.forEach((x) => { const k = `${x.kind}: ${x.what.replace(/\d+(\.\d+)?/g, "#").slice(0, 120)}`; (groups[k] = groups[k] || { kind: x.kind, what: x.what, n: 0, where: [] }).n++; if (groups[k].where.length < 3) groups[k].where.push(x.where); });
+    Object.values(groups).sort((a, b) => b.n - a.n).forEach((g) => { console.log(`  ✗ [${g.kind}] ${g.what}  (${g.n}x)`); g.where.forEach((w) => console.log(`      at ${w}`)); });
+    console.log(problems.length ? `\nK1: ${problems.length} retired words` : "\nK1 clean: no retired word on any screen, data style or Ask answer.");
+    process.exitCode = problems.length ? 1 : 0;
+    return;
+  }
   console.log(`${pairs.length} settings from every pair of ${KEYS.length} decisions, ${RUNS.length} runs, ${SCREENS.length} screens each, ${WORKERS} at a time (${PLAN}, ${WIDTH} wide)`);
   const browser = await chromium.launch();
   const problems = [], counts = { runs: 0, screens: 0 };
   const slices = Array.from({ length: WORKERS }, (_, i) => RUNS.filter((_, j) => j % WORKERS === i));
   await Promise.all(slices.map((s, i) => worker(browser, s, i, problems, counts)));
+  await k1Pass(browser, problems);
   await browser.close();
   /* group what was found: one line per kind and message, with how many places and the first few */
   const groups = {};

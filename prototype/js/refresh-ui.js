@@ -73,6 +73,7 @@
     return `${Ut.DOWL[x.getDay()]}, ${Ut.MON[x.getMonth()]} ${x.getDate()}`;
   };
   const spanText = (d0, d1) => {
+    if (d0 === d1) return shortDate(d0);
     const a = dateOf(d0), b = dateOf(d1);
     return a.getMonth() === b.getMonth() ? `${Ut.MON[a.getMonth()]} ${a.getDate()} to ${b.getDate()}` : `${shortDate(d0)} to ${shortDate(d1)}`;
   };
@@ -90,10 +91,30 @@
   const cap1 = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const andJoin = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
   const NUMW = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  /* FloraScore against its usual range, in its own words (fix-viz, Oct 28): "in its usual range", "a little above its
+     usual range", "above its usual range" from 6 points out, so a score never reads like a day "within your usual". The
+     hero, Insights, Day first, Easy, Ask Florin and the data looks all say it this one way */
+  RU.scoreRel = (v, su) => (v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below its usual range" : "A little below its usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above its usual range" : "A little above its usual range") : "In its usual range");
   /* the one wording for a flagged today, everywhere (RU.FLAG_DAY is the same string) */
   L.FLAG_DAY = L.FLAG_DAY || "Today has a log noted for a clinician, so it isn't read against your usual.";
   /* a day's name in a sentence about the last 7 days: Today, never its weekday; any other day its weekday */
   L.dayName = (d) => (d === L.TODAY ? "Today" : Ut.DOWL[dateOf(d).getDay()]);
+  /* fix-viz (Oct 28): before Florin knows the usual, a day reads one way everywhere. Any logged day is "logged" (the
+     week card, Insights, Easy and the calendar all said "4 days logged" while History and the calendar called a day
+     with only symptoms "not counted"), and a flagged today is "flag" (the calendar drew its Teal ring while the week
+     card drew it as logged). L.facts only did both once there was a usual. raw keeps the reading it would have had.
+     Belongs in L.facts itself (refresh-data.js), as it is */
+  if (!L.facts.learnRead) {
+    const facts0 = L.facts;
+    L.facts = (M, x, mode) => {
+      const f = facts0(M, x, mode);
+      if (M.usual || !f.logged) return f;
+      if (f.today && L.flagToday(M)) return Object.assign(f, { flag: true, state: "flag" });
+      if (f.state === "nocount") f.state = "logged";
+      return f;
+    };
+    L.facts.learnRead = true;
+  }
   /* L.span with an optional last day (today by default), so a card can be drawn to any day and count what Insights
      would have counted then */
   if (!L.span.withEnd) {
@@ -207,7 +228,9 @@
     else lead = c === k ? `${named1(tops[0])} ${k === 2 ? "both days" : "each day"}` : `${named1(tops[0])} on ${plural(c, "day")}`;
     const top = Math.max(0, ...tops.flatMap((n) => by[n].map((f) => f.sym[n] || 0)));
     const strong = names.filter((n) => !tops.includes(n)).map((n) => ({ n, s: Math.max(0, ...by[n].map((f) => f.sym[n] || 0)) })).filter((x) => x.s > top).sort((a, b) => b.s - a.s)[0];
-    return `${head}: ${lead}${strong ? `, and ${low(L.STRENGTH[strong.s - 1])} ${low(strong.n)} ${when(by[strong.n])}` : ""}.`;
+    /* the stronger symptom's days are only the days it came up that strong: mild one day and moderate the next is
+       "moderate cramping on 1 day", never "on 2 days" */
+    return `${head}: ${lead}${strong ? `, and ${low(L.STRENGTH[strong.s - 1])} ${low(strong.n)} ${when(by[strong.n].filter((f) => f.sym[strong.n] === strong.s))}` : ""}.`;
   };
   /* what moved FloraScore, in whole points: each part's change rounded by largest remainder so the four add up to the
      change shown (delta), a part that didn't move staying 0. Added to L.scoreMoved's parts as pts */
@@ -421,7 +444,9 @@
     if (!s || s.value == null) return "";
     const w = RU.scoreWithout(M, N.e, mode);
     if (!w || w.value == null) return "";
-    return w.value === s.value ? "It didn't change FloraScore." : `Without it, FloraScore would be ${w.value}.`;
+    /* "Three BMs today" names no one BM, so the one taken out is named ("Without the 4:00 PM BM"), as Day first does */
+    const it = N.kind === "more" ? `the ${T(N.e.t)} BM` : "it";
+    return w.value === s.value ? `${it === "it" ? "It" : `The ${T(N.e.t)} BM`} didn't change FloraScore.` : `Without ${it}, FloraScore would be ${w.value}.`;
   };
   const timingLine = (M) => {
     const x = L.day(M, L.TODAY);
@@ -472,8 +497,11 @@
       if (nBm) lines.push(line("none", `${plural(nBm, "BM")} over ${plural(F.filter((f) => f.bms.length).length, "day")}${noBm.length ? `, and No BM ${onDays(noBm)}` : ""}.`));
       else if (noBm.length) lines.push(line("none", `No BM logged ${onDays(noBm)}.`));
       if (none.length) lines.push(line("none", `Nothing logged on ${andJoin(none.map((f) => L.dayName(f.d)))}.`));
+      /* a flagged today is marked before day 14 too (L.facts), so its line comes with it */
+      if (F.some((f) => f.state === "flag")) lines.push(line("flag", L.FLAG_DAY));
     } else {
-      /* (Day first and Easy say "Nothing logged yet" for today; the card counts days) */
+      /* the card counts days; Day first and Easy say "Nothing logged yet" for today on the same screen, so the card
+         says it its own way rather than twice */
       answer = "<span>No days logged yet.</span>";
       row = false;
       lines.push(line(null, "Your days show here as you log them."));
@@ -482,9 +510,12 @@
     if (sl) lines.push(line("sym", sl));
     const pre = [];
     for (let d = d0; d < Math.max(d0, M.start); d++) pre.push(`<li>${RU.dayMark({ d, today: false }, { before: true, dow: true })}</li>`);
-    const days = row ? `<ol class="ap-days" aria-label="${esc(`Your last 7 days, ${spanText(d0, end)}`)}">${pre.join("")}${F.map((f) => `<li>${RU.dayMark(f, { M, mode, dow: true })}</li>`).join("")}</ol>` : "";
+    /* the dates the card counts: from the day the person started, when that's inside the 7 (Easy and the data looks
+       say the same); the days before it sit at the left as dates only */
+    const span = spanText(Math.min(end, Math.max(d0, M.start)), end);
+    const days = row ? `<ol class="ap-days" aria-label="${esc(`Your last 7 days, ${span}`)}">${pre.join("")}${F.map((f) => `<li>${RU.dayMark(f, { M, mode, dow: true })}</li>`).join("")}</ol>` : "";
     return `<section class="ap-card ap-wk" data-a>
-        <div class="ap-card-h"><h2>Your last 7 days</h2><span class="ap-k">${esc(spanText(d0, end))}</span></div>
+        <div class="ap-card-h"><h2>Your last 7 days</h2><span class="ap-k">${esc(span)}</span></div>
         <p class="ap-wk-a">${answer}</p>
         ${days}
         ${lines.length ? `<ul class="ap-wk-ls">${lines.join("")}</ul>` : ""}
@@ -877,11 +908,13 @@
     const q = L.CHECKIN[qi];
     const weeks = M.checkins.concat(cur != null ? [{ w: 12, answers: Object.assign([], { [qi]: cur }) }] : []);
     const b = L.baseline(M);
-    const W = 318, H = 100, left = 76, right = 12, top = 8, bot = 80;
+    /* the steps are the answers' own words ("Mostly settled", never a cut-down "Mostly"), with room for the longest
+       before the band starts */
+    const W = 318, H = 100, left = 104, right = 12, top = 8, bot = 80;
     const X = (i) => +(left + (i / 12) * (W - left - right)).toFixed(1);
     const Y = (v) => +(bot - (v / 3) * (bot - top)).toFixed(1);
     const band = b ? `<rect class="c-band" x="${left - 8}" y="${(Y(b[qi].hi) - 8).toFixed(1)}" width="${W - left - right + 16}" height="${(Y(b[qi].lo) - Y(b[qi].hi) + 16).toFixed(1)}" rx="4"/>` : "";
-    const grid = [0, 1, 2, 3].map((v) => `<line class="ap-ckt-grid" x1="${left - 8}" x2="${W - right + 4}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ap-ckt-y" x="0" y="${Y(v) + 3.5}">${esc(q.ticks[v])}</text>`).join("");
+    const grid = [0, 1, 2, 3].map((v) => `<line class="ap-ckt-grid" x1="${left - 8}" x2="${W - right + 4}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ap-ckt-y" x="0" y="${Y(v) + 3.5}">${esc(q.opts[v])}</text>`).join("");
     const xs = `<text class="ap-ckt-x" x="${X(0)}" y="${H - 4}" text-anchor="start">${esc(shortDate(0))}</text><text class="ap-ckt-x" x="${X(12)}" y="${H - 4}" text-anchor="end">This week</text>`;
     /* the newest answered week is ringed: this week once it's in, the last one before that */
     const answered = weeks.filter((c) => c.answers && c.answers[qi] != null), last = answered[answered.length - 1];
@@ -968,7 +1001,10 @@
     if (!x) return "";
     const es = entries || (x.logged ? x.entries : []);
     const isToday = x.d === L.TODAY;
-    const f = L.facts(M, x, V.form), why = L.dayWhy(M, f, V.form, { name: dayName(x.d) });
+    /* on Free, a day before the last 7 is only logged, never read against the usual, as Insights and the calendar
+       hold it (fix-viz, Oct 28: the list read those days while the calendar drew them as logged) */
+    const f0 = L.facts(M, x, V.form), held = RU.heldOnFree(M, V, f0);
+    const f = held ? Object.assign({}, f0, { state: "logged" }) : f0, why = L.dayWhy(M, f, V.form, { name: dayName(x.d) });
     /* the line under the name: what was different, or within; a gap says so in its body; a learning day has none */
     const say = f.state === "none" || f.pending || f.state === "logged" ? "" : why.say;
     return `<section class="ap-hd" data-a>
@@ -976,14 +1012,22 @@
         ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">Nothing logged this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
       </section>`;
   };
+  /* the one rule for a day on Free: read against the usual for the last 7 days (Insights' 7 days), only logged before
+     that. The calendar (refresh-variants.js) holds the same days */
+  RU.FREE_DAYS = L.RANGES[0];
+  RU.heldOnFree = (M, V, f) => !!(V && V.plan === "free" && M.usual && ["usual", "shifted", "unsure"].includes(f.state) && f.d <= L.TODAY - RU.FREE_DAYS);
   RU.history = (M, V, st) => {
     const F = st.filter || "all", keep = keepFor(F);
     const days = M.days.slice().reverse().slice(0, st.n || 14);
     const total = M.days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0);
+    /* on Free, the first day shown only as logged says why, once, with what membership adds (the calendar's words) */
+    let heldSaid = false;
     const groups = days.map((x) => {
       const es = x.logged ? x.entries.filter(keep) : [];
       if (x.logged && !es.length && F !== "all") return "";
-      return RU.historyDay(M, V, x, es);
+      const say = !heldSaid && x.d <= L.TODAY - RU.FREE_DAYS && V.plan === "free" && M.usual;
+      if (say) heldSaid = true;
+      return (say ? `<div class="ap-hist-held" data-a><p>On Free, days are read against your usual for the last ${RU.FREE_DAYS} days. Earlier days show as logged.</p><button type="button" class="ap-link" data-act="pay" data-pay="range">${ic("lock")}Every day against your usual, with Florin membership</button></div>` : "") + RU.historyDay(M, V, x, es);
     }).join("");
     const since = total ? `${plural(total, "entry", "entries")} since ${shortDate(M.start)}` : `Started ${M.start === L.TODAY ? "today" : `on ${shortDate(M.start)}`}. Nothing logged yet.`;
     const report = `A report of your logs to bring to a clinician: dates, BMs, symptoms${ckOn(V) ? ", meals and check-ins" : " and meals"}. That comes in the next pass.`;
@@ -1000,7 +1044,7 @@
   /* one next step: the latest gap this past week, or nothing to catch up on */
   RU.historyNext = (M) => {
     const g = M.days.slice().reverse().find((x) => !x.logged && x.d >= L.TODAY - 7);
-    const line = g ? `${dayName(g.d)} has no logs. If you remember it, add it now.` : M.start === L.TODAY ? "Each day you log shows here, newest first. Start with plus whenever something happens." : "Nothing to catch up on this past week. Keep logging as you go.";
+    const line = g ? `${dayName(g.d)} has nothing logged. If you remember it, add it now.` : M.start === L.TODAY ? "Each day you log shows here, newest first. Start with plus whenever something happens." : "Nothing to catch up on this past week. Keep logging as you go.";
     const act = g ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${g.d}">Add to ${esc(Ut.DOWL[dateOf(g.d).getDay()])}</button>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus">Log something</button>`;
     return `<section class="ap-card ap-nx" data-a><span class="ap-k">Next step</span><p>${esc(line)}</p>${act}</section>`;
   };

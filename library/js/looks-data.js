@@ -65,7 +65,8 @@
       value: sNow ? sNow.value : null,
       usual: sU,
       flag: flagS,
-      relation: flagS ? "Not read against your usual today" : !sNow || sNow.value == null || !sU ? null : sNow.value < sU[0] ? (sU[0] - sNow.value >= 6 ? "Below your usual range" : "A little below your usual range") : sNow.value > sU[1] ? "A little above your usual range" : "Within your usual range",
+      /* FloraScore's own words, the app's (RU.scoreRel): "in its usual range", "above its usual range" from 6 points out */
+      relation: flagS ? "Not read against your usual today" : !sNow || sNow.value == null || !sU ? null : RU && RU.scoreRel ? RU.scoreRel(sNow.value, sU) : sNow.value < sU[0] ? (sU[0] - sNow.value >= 6 ? "Below its usual range" : "A little below its usual range") : sNow.value > sU[1] ? (sNow.value - sU[1] >= 6 ? "Above its usual range" : "A little above its usual range") : "In its usual range",
       /* the change is the difference of the two averages as shown, so "84, up 8 on 76" always adds up */
       weekAvg: mv ? Math.round(mv.wk) : null, lastWeekAvg: mv ? Math.round(mv.lw) : null,
       delta: mv ? Math.round(mv.wk) - Math.round(mv.lw) : null,

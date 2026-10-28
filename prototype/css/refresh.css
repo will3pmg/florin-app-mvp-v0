@@ -439,6 +439,9 @@
    your usual range as a bar with today's dot, the sentence. Learning: Day 5 of 14 over 14 steps. The glyph is a plain
    circle that names FloraScore and holds no value */
 .ap-rx .ap-hero-top, .ap-rx .ap-hero-n, .ap-rx .ap-sbar, .ap-rx .ap-hero-copy, .ap-rx .ap-hero-go { position: relative; z-index: 1; }
+/* fix-viz: the studio's 190px decorative circle (app.css .ap-hero::after) crossed the range bar and the sentence, and a
+   ring means today and nothing else. Off on the phone; for the studio to take back */
+.ap-rx .ap-hero::after { display: none; }
 .ap-rx .ap-hero-name { display: inline-flex; align-items: center; gap: 8px; }
 .ap-rx .c-ring.c-ring--glyph { display: block; width: auto; height: auto; flex: none; overflow: visible; }
 .ap-rx .c-ring-glyph { fill: none; stroke: currentColor; }
@@ -579,6 +582,9 @@
 .ap-hd-t h2 { font-size: 17px; font-weight: 500 !important; line-height: 1.2; letter-spacing: -.01em; }
 .ap-hd-why { font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
 .ap-hd-h > .ap-k { padding-top: 12px; white-space: nowrap; }
+/* fix-viz: on Free, the first day shown only as logged says why, once (the calendar's words) */
+.ap-hist-held { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 4px 0; border-top: 1px solid var(--ap-line); }
+.ap-hist-held p { font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
 
 /* ---------- Insights ---------- */
 .ap-top--ins .ap-chip { align-self: flex-end; }
@@ -693,10 +699,22 @@
 .ap-rx .dv-dot.is-hit { fill: transparent; stroke: none; }
 .ap-rx .dv-dot.is-dim { opacity: .45; }
 .ap-rx .dv-dot.is-maybe, .ap-rx .dv-dot.is-later { fill: var(--ap-ink3); }
-.ap-rx :is(.dv-dot, .dv-bar, .dv-wbar).is-shift { fill: var(--ap-shift); stroke: var(--ap-day-edge); stroke-width: 1.5; }
+/* fix-viz: before day 14 there's no usual, so a reading is Ink 3, as the week card draws those days */
+.ap-rx :is(.dv-dot, .dv-bar).is-learn { fill: var(--ap-ink3); }
+/* a card-colour disc under each dot at 30 days, so neighbours stay apart */
+.ap-rx .dv-sp { fill: var(--ap-card); }
+/* Gold marks in a chart carry an edge in both themes: Shift Ink in light (light Gold is 2.37:1 on the card); on dark a
+   deeper Gold, so an 8px Gold dot reads apart from the Ray dots beside it (dark Gold and Ray are 15.4 apart, just over
+   the floor). The day circles on dark keep no edge; every Gold day there is named in a line */
+.ap-rx { --ap-chart-edge: var(--ap-shift-ink); }
+.ap-rx[data-theme="dark"] { --ap-chart-edge: color-mix(in oklab, var(--ap-shift) 45%, var(--ap-card)); }
+.ap-rx :is(.dv-dot, .dv-bar, .dv-wbar).is-shift { fill: var(--ap-shift); stroke: var(--ap-chart-edge); stroke-width: 1.5; }
 /* a flagged today: noted for a clinician, a Teal ring with nothing inside, read against nothing */
 .ap-rx .dv-dot.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 2; }
-.ap-rx .dv-bar, .ap-rx .dv-wbar { fill: var(--ap-chart); }
+.ap-rx .dv-bar { fill: var(--ap-chart); }
+/* fix-viz: a weekly bar counts days, so within is Plum (Ray on dark), the colour of a day within your usual, as the
+   summary bar and Your days are; the reading colour is for measured values (a time, a count, a form) */
+.ap-rx .dv-wbar { fill: var(--ap-signal); }
 .ap-rx .dv-wbar.is-ctx, .ap-rx .dv-sq, .ap-rx .dv-tick-ctx, .ap-rx .dv-ctx { fill: var(--ap-teal); }
 .ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink2); }
 .ap-rx .dv-chart .dv-val { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
@@ -715,12 +733,18 @@
 .ap-rx .c-avg { stroke: color-mix(in srgb, var(--ap-plum) 62%, transparent); stroke-width: 1; stroke-dasharray: none; }
 .ap-rx .c-wf-conn { stroke: var(--ap-ink3); stroke-width: 1; stroke-dasharray: none; opacity: .6; }
 /* the range bar: a Gold dot gets its Shift Ink edge in light, as every Gold mark does */
-.ap-rx .c-range.is-shift .c-range-dot { box-shadow: inset 0 0 0 1.5px var(--ap-day-edge), 0 0 0 2.5px var(--ap-card); }
-.ap-rx .c-seg-part.is-shift { box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-rx .c-range.is-shift .c-range-dot { box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge), 0 0 0 2.5px var(--ap-card); }
+.ap-rx .c-seg-part.is-shift { box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
+/* a word that covers two forms: a span over both steps, Ink 3 when it could be either side of the usual */
+.ap-rx .c-range-span { position: absolute; top: -4px; bottom: -4px; border-radius: 2px; background: var(--ap-ink3); box-shadow: 0 0 0 2px var(--ap-card); }
+.ap-rx .c-range.is-usual .c-range-span { background: var(--ap-chart); }
+.ap-rx .c-range.is-shift .c-range-span { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge), 0 0 0 2px var(--ap-card); }
 /* legend swatches for those marks */
-.ap-rx .ap-legend .sw--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-rx .ap-legend .sw--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
 .ap-rx .ap-legend .sw--clin { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-teal); }
-.ap-rx .ap-legend .sw--maybe, .ap-rx .ap-legend .sw--later { background: var(--ap-ink3); box-shadow: none; opacity: 1; }
+.ap-rx .ap-legend .sw--maybe, .ap-rx .ap-legend .sw--later, .ap-rx .ap-legend .sw--learn { background: var(--ap-ink3); box-shadow: none; opacity: 1; }
+/* a day within your usual, in a legend: Plum (Ray on dark), as the day circles and the bars that count days */
+.ap-rx .ap-legend .sw--usual { background: var(--ap-signal); }
 .ap-rx .ap-legend .sw--tick { width: 2px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
 .ap-rx .ap-legend .sw--avg { height: 1px; border-radius: 0; background: color-mix(in srgb, var(--ap-plum) 62%, transparent); }
 .ap-rx .ap-legend .sw--ctxbar { width: 10px; height: 10px; border-radius: 2px; background: var(--ap-teal); }

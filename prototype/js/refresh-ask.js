@@ -60,7 +60,9 @@
   const FOOD_ADJ = "spicy|fried|fatty|greasy|sugary|processed|fizzy|sweet|rich|red|junk|fast|late|big|heavy";
 
   /* the same words the Insights cards use, so the chat reads like the screens it sits next to */
-  const relOf = (v, su) => (v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below your usual range" : "A little below your usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above your usual range" : "A little above your usual range") : "Within your usual range");
+  /* FloraScore's own words, "in its usual range" (the core's RU.scoreRel), so a score never reads like a day within
+     your usual */
+  const relOf = (v, su) => (RU.scoreRel ? RU.scoreRel(v, su) : v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below its usual range" : "A little below its usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above its usual range" : "A little above its usual range") : "In its usual range");
   const symUsual = (u) => (!u || !u.sym ? "" : u.sym.every == null ? "rarely" : u.sym.every <= 1 ? "on most days" : `about 1 day in ${u.sym.every}`);
   const foodName = (f) => (L.FOOD_NAMES[f] || [upper1(f), false])[0];
   const patTitle = (p) => (p.kind === "late" ? "Later dinners, later first BMs" : p.kind === "loose" ? `${foodName(p.food)}, then a looser first BM` : `${foodName(p.food)}, then bloating the next day`);
@@ -97,7 +99,10 @@
     const within = F.filter((f) => f.state === "usual").length, shifted = F.filter((f) => f.state === "shifted").length;
     const R0 = F.filter((f) => !f.flag), flag = F.some((f) => f.flag);
     const morn = R0.filter((f) => f.first != null), firsts = morn.map((f) => f.first);
-    const later = u ? morn.filter((f) => f.first > u.tHi) : [], earlier = u ? morn.filter((f) => f.first < u.tLo) : [];
+    /* compared at the minute shown, as L.facts reads the window: a first BM at 7:14:53 shows as 7:15 AM, inside a window
+       that opens at 7:15, so later and earlier add up with the ones in it (fix-viz, Oct 28) */
+    const mins = (h) => Math.round(h * 60) / 60;
+    const later = u ? morn.filter((f) => mins(f.first) > u.tHi) : [], earlier = u ? morn.filter((f) => mins(f.first) < u.tLo) : [];
     const known = R0.filter((f) => f.count != null), total = known.reduce((s, f) => s + f.count, 0);
     const bms = R0.flatMap((f) => f.bms);
     const st = u ? bms.map((b) => L.inForms(M, b, mode)) : [];
@@ -105,7 +110,7 @@
     const firmer = outB.filter((b) => (mode === "B" ? L.wordKey(b) < u.wLo : Math.max(...L.stepsOf(b)) < u.fLo)).length;
     const tally = {};
     bms.forEach((b) => { const k = L.formKey(b, mode); tally[k] = (tally[k] || 0) + 1; });
-    const tt = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
+    const ranked = Object.entries(tally).sort((a, b) => b[1] - a[1]), tt = ranked[0];
     const withSym = logged.filter((f) => f.nsym), names = {};
     withSym.forEach((f) => Object.keys(f.sym).forEach((k) => (names[k] = (names[k] || 0) + 1)));
     const symRows = Object.entries(names).sort((a, b) => b[1] - a[1] || L.SYMPTOMS.indexOf(a[0]) - L.SYMPTOMS.indexOf(b[0])).map(([name, k]) => ({ name, n: k }));
@@ -118,7 +123,7 @@
       countDays: known.length, total, avg: known.length ? total / known.length : null, inC: u ? known.filter((f) => f.inCount).length : null,
       zero: known.filter((f) => f.count === 0).length, busy: u ? known.filter((f) => f.count > u.nHi).length : 0, gaps: F.filter((f) => f.count == null && !f.pending).length,
       bms: bms.length, inF: st.filter((s) => s === true).length, out: outB.length, unsure: st.filter((s) => s === null).length, firmer, looser: outB.length - firmer,
-      top: tt ? { label: tt[0], count: tt[1] } : null, withSym: withSym.length, symRows,
+      top: tt ? { label: tt[0], count: tt[1] } : null, ranked, withSym: withSym.length, symRows, F,
       meals: F.reduce((s, f) => s + f.meals.length, 0), mealDays: logged.filter((f) => f.meals.length).length
     };
   }
@@ -156,6 +161,9 @@
     }
     /* the last 7 days and the last 30, and the last 90 when the card they asked from reads 90; while Florin is learning
        they're the same days, said once. R.cs is the stretch the card they tapped reads, so its answer reads it too */
+    /* meals logged on few days (L.patterns' sparse): dinners are too few to read, so no count of late dinners is stated,
+       as Insights holds it back (fix-viz, Oct 28) */
+    const sparse = !!u && L.patterns(M, mode).sparse;
     R.w = spanRead(M, mode, 7, "w");
     const m = spanRead(M, mode, 30, "m");
     R.m = m.d0 === R.w.d0 ? R.w : m;
@@ -171,13 +179,13 @@
       if (u && s.flag) f(`${k}.flag`, "Today", "a log is noted for a clinician, so today isn't read against their usual or counted in these lines");
       if (s.mornings) f(`${k}.morn`, u ? "First BMs in their usual window" : "Days with a first BM logged", u ? `${s.inW} of ${s.mornings}` : s.mornings);
       if (u && s.later) f(`${k}.later`, "First BMs later than the window", s.later);
-      if (u && s.laterAfterLate) f(`${k}.lateafter`, `Of those, after a dinner past ${LATE_H - 12} PM`, `${s.laterAfterLate} of ${s.later}`);
+      if (u && s.laterAfterLate && !sparse) f(`${k}.lateafter`, `Of those, after a dinner past ${LATE_H - 12} PM`, `${s.laterAfterLate} of ${s.later}`);
       if (u && s.earlier) f(`${k}.earlier`, "First BMs earlier than the window", s.earlier);
       if (s.mornings) f(`${k}.med`, "Typical first BM", T(s.med));
       if (s.mornings > 1) f(`${k}.span`, "First BMs logged", `from ${T(s.lo)} to ${T(s.hi)}`);
       f(`${k}.bms`, "BMs logged", s.bms);
       if (s.countDays) f(`${k}.cd`, "Days with BMs, or No BM, logged", s.countDays);
-      if (s.countDays) f(`${k}.avg`, "BMs a day, on average", one(s.avg));
+      if (s.countDays && s.bms) f(`${k}.avg`, "BMs a day, on average", one(s.avg));
       if (u && s.countDays) f(`${k}.inc`, "Days with a usual count", `${s.inC} of ${s.countDays}`);
       if (u && s.busy) f(`${k}.busy`, `Days with more than ${u.nHi}`, s.busy);
       if (s.zero) f(`${k}.zero`, "Days logged as No BM", s.zero);
@@ -191,6 +199,7 @@
       if (s.symRows.length) f(`${k}.symtop`, "Symptoms logged most", join(s.symRows.slice(0, 3).map((r) => `${r.name.toLowerCase()} on ${plural(r.n, "day")}`)));
       if (s.logged) f(`${k}.meals`, "Meals logged", s.meals ? `${s.meals}, on ${s.mealDays} of ${s.logged} days` : "none");
     });
+    scope = null;
     const fc = L.foodCounts(M, 30);
     R.foods = Object.entries(fc).filter(([k]) => L.FOOD_NAMES[k]).sort((a, b) => b[1] - a[1]).slice(0, 4);
     if (R.foods.length) f("foods", R.m === R.w ? "Foods logged most so far" : "Foods logged most, last 30 days", join(R.foods.map(([k, c]) => `${foodName(k).toLowerCase()} ${c}`)));
@@ -209,9 +218,16 @@
         f("s.avg", "Weekly averages", `${Math.round(mv.wk)} this week, ${Math.round(mv.lw)} last week`);
         f("s.delta", "This week against last", mv.delta === 0 ? "the same, on average" : `${plural(Math.abs(mv.delta), "point")} ${mv.delta > 0 ? "above" : "below"}, on average`);
         mv.parts.forEach((p) => f(`s.p.${p.key}`, `${PARTN[p.key]}, ${Math.round(p.weight * 100)}% of the score`, `${p.now} this week, ${p.before} last week`));
-        R.top = mv.parts.slice().sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
+        /* in whole points (L.scoreMoved's pts, which add up to the change shown), every part tied for the most named, as
+           the Insights card says it (fix-viz, Oct 28: "adding 2.0 points", and one part named on a tie) */
+        const mx = Math.max(0, ...mv.parts.map((p) => Math.abs(p.pts)));
+        R.tops = mx ? mv.parts.filter((p) => Math.abs(p.pts) === mx) : [];
+        R.top = R.tops[0] || null;
         R.room = mv.parts.slice().sort((a, b) => a.now - b.now)[0];
-        f("s.most", "Moved it most", `${PARTN[R.top.key].toLowerCase()}, ${R.top.delta >= 0 ? "adding" : "taking"} ${Math.abs(R.top.delta).toFixed(1)} points ${R.top.delta >= 0 ? "to" : "off"} the score`);
+        R.mostText = !R.top ? "" : R.tops.length > 1 && !R.tops.every((p) => Math.sign(p.pts) === Math.sign(R.top.pts))
+          ? join(R.tops.map((p) => `${PARTN[p.key].toLowerCase()} ${p.pts > 0 ? "added" : "took off"} ${plural(mx, "point")}`))
+          : `${join(R.tops.map((p) => PARTN[p.key].toLowerCase()))}, ${R.top.pts > 0 ? "adding" : "taking off"} ${plural(mx, "point")}${R.tops.length > 1 ? " each" : ""}`;
+        f("s.most", "Moved it most", R.top ? R.mostText : "no one part moved it");
         f("s.room", "Most room this week", `${PARTN[R.room.key].toLowerCase()}, at ${R.room.now}`);
       }
     } else { R.score = null; f("s.start", "Starts on", `day ${L.LEARN_DAYS}`); }
@@ -390,23 +406,24 @@
     if (k === "form") { const s = R.w; return { text: `add a note on what you ate the day before ${s.looser && !s.firmer ? "a looser BM" : s.firmer && !s.looser ? "a firmer BM" : "a BM outside your usual forms"}` }; }
     return { text: `log ${ORD} as well as rough ones` };
   };
-  const scoreChart = (R) => {
-    const ser = L.scoreSeries(R.M, 30, R.mode).map((x) => x.value), vs = ser.filter((x) => x != null);
-    if (vs.length < 2 || !R.su) return {};
-    return { chart: C.spark(ser, { w: 300, h: 48, band: R.su, min: Math.min(50, ...vs) - 2, max: 100, area: true, aria: `FloraScore, last 30 days, against your usual range ${R.su[0]} to ${R.su[1]}` }), legend: `${lg("sw--line", "FloraScore, 30 days")}${lg("sw--band", `Your usual ${R.su[0]} to ${R.su[1]}`)}` };
+  /* fix-viz (Oct 28): every chart here is the card's own (RU.cardChart), for the stretch the answer reads, so the chat
+     never draws a different picture from the card the question came from: the FloraScore line on its band with today
+     labelled, the Timing dots, the How often count line, the Form bars, the summary bar of the days read, and a
+     pattern's two share bars (never a Gold "Held"). Without the core's helper, no chart */
+  const cardChart = (R, key, n) => {
+    if (typeof RU.cardChart !== "function") return {};
+    try { const c = RU.cardChart(R.M, R.V, key, n); return c && c.chart ? { chart: c.chart, legend: c.legend || "" } : {}; } catch (e) { warn(`the ${key} chart`, e); return {}; }
   };
-  const timeChart = (R, s) => {
-    const u = R.u, lo = Math.max(0, Math.min(6, Math.floor(Math.min(s.lo, u.tLo)))), hi = Math.min(24, Math.max(10, Math.ceil(Math.max(s.hi, u.tHi) + 0.01)));
-    const inW = s.med >= u.tLo && s.med <= u.tHi;
-    return { chart: C.range({ min: lo, max: hi, lo: u.tLo, hi: u.tHi, value: s.med, fmt: hm, state: inW ? "usual" : "shift", aria: `Typical first BM ${T(s.med)}, against your usual window ${R.win}` }), legend: `${lg(inW ? "" : "sw--shift", `Typical first BM, ${T(s.med)}`)}${lg("sw--band", "Your usual window")}` };
-  };
-  const countChart = (R, s) => {
-    const u = R.u, inC = s.avg >= u.nLo && s.avg <= u.nHi;
-    return { chart: C.range({ min: 0, max: Math.max(4, u.nHi + 1), lo: u.nLo, hi: u.nHi, value: s.avg, unit: "a day", state: inC ? "usual" : "shift", aria: `${one(s.avg)} a day on average, your usual ${u.nLo} to ${u.nHi}` }), legend: `${lg(inC ? "" : "sw--shift", `Average, ${one(s.avg)} a day`)}${lg("sw--band", "Your usual")}` };
-  };
-  const formChart = (s) => ({ chart: C.seg([{ v: s.inF, label: "Within your usual forms", cls: "is-usual" }, { v: s.out, label: "Outside them", cls: "is-shift" }, { v: s.unsure, label: "Could be either", cls: "is-none" }]), legend: `${lg("sw--usual", "Within your usual")}${s.out ? lg("sw--shift", "Outside it") : ""}${s.unsure ? lg("sw--none", "Could be either") : ""}` });
-  const weekChart = (s) => (s.days ? { chart: C.seg([{ v: s.within, label: "Within your usual", cls: "is-usual" }, { v: s.shifted, label: "Something shifted", cls: "is-shift" }, { v: s.days - s.logged, label: "Not logged", cls: "is-none" }]), legend: `${lg("sw--usual", "Within your usual")}${s.shifted ? lg("sw--shift", "Something shifted") : ""}${s.days - s.logged ? lg("sw--none", "Not logged") : ""}` } : {});
-  const patChart = (p) => ({ chart: C.seg([{ v: p.hit, label: "Held", cls: "is-shift" }, { v: p.n - p.hit, label: "Didn't", cls: "is-none" }]), legend: `${lg("sw--shift", "Held")}${p.n - p.hit ? lg("sw--none", "Didn't") : ""}` });
+  const scoreChart = (R) => cardChart(R, "score", R.cs ? R.cs.n : 30);
+  const timeChart = (R, s) => cardChart(R, "timing", s.n);
+  const countChart = (R, s) => cardChart(R, "often", s.n);
+  const formChart = (R, s) => cardChart(R, "form", s.n);
+  const weekChart = (R, s) => cardChart(R, "week", s.n);
+  const patChart = (R, p) => cardChart(R, `pattern:${p.id}`);
+  /* the forms logged so far, in words: "mostly" only for more than half, else the counts, as Insights says them */
+  const formsSaid = (s) => (!s.top ? "" : s.top.count * 2 > s.bms ? (s.top.count === s.bms ? `all ${s.top.label}` : `mostly ${s.top.label}`) : join(s.ranked.map(([k, c]) => `${c} ${k}`)));
+  /* the symptoms of a stretch, in the one sentence the week card and Insights use (L.symLine) */
+  const symSaid = (s) => `${upper1(s.lbl)}, ${lower1(L.symLine(s.F, { named: s.n <= 7, of: s.logged }))}`;
 
   const A = {
     score(R) {
@@ -423,8 +440,9 @@
       const lines = [R.flag ? `Your FloraScore today is ${R.score}. ${RU.FLAG_DAY}` : `Your FloraScore today is ${R.score}${R.rel ? `, ${lower1(R.rel)} of ${R.su[0]} to ${R.su[1]}` : ""}.`], used = ["s.today", "u.score"];
       if (R.mv) {
         lines.push(R.mv.delta === 0 ? "On average it's the same as last week." : `On average it's ${plural(Math.abs(R.mv.delta), "point")} ${R.mv.delta > 0 ? "above" : "below"} last week.`);
-        lines.push(R.top.now === R.top.before ? `${PARTN[R.top.key]} moved it most, though it sits at ${R.top.now} both weeks.` : `${PARTN[R.top.key]} moved it most, ${R.top.now > R.top.before ? "up" : "down"} from ${R.top.before} to ${R.top.now}.`);
-        used.push("s.delta", `s.p.${R.top.key}`, "s.most", "s.room");
+        /* in points of FloraScore, as the Insights card says it; a part's own value out of 100 stays in the four-parts list */
+        lines.push(!R.top ? "No one part moved it." : R.tops.length > 1 && /added|took off/.test(R.mostText) ? `${upper1(R.mostText)}, the most any part moved.` : R.tops.length > 1 ? `${upper1(R.mostText.replace(/, (adding|taking off)/, " moved it most, $1"))}.` : `${PARTN[R.top.key]} moved it most, ${R.top.pts > 0 ? "adding" : "taking off"} ${plural(Math.abs(R.top.pts), "point")}.`);
+        used.push("s.delta", "s.most", "s.room");
       }
       const ra = roomAct(R);
       if (ra && ra.id) used.push(ra.id);
@@ -443,7 +461,7 @@
       else {
         const ex = join([s.later ? `${s.later} later` : "", s.earlier ? `${s.earlier} earlier` : ""].filter(Boolean));
         lines.push(`${upper1(s.lbl)}, ${s.inW} of ${plural(s.mornings, "first BM")} came in it${ex ? `, ${ex}` : ""}.`);
-        if (s.laterAfterLate) lines.push(`${s.laterAfterLate === s.later ? (s.later === 1 ? "The later one" : `All ${s.later} later ones`) : `${s.laterAfterLate} of the ${s.later} later ones`} came after a dinner past ${LATE_H - 12} PM.`);
+        if (s.laterAfterLate && !R.PR.sparse) lines.push(`${s.laterAfterLate === s.later ? (s.later === 1 ? "The later one" : `All ${s.later} later ones`) : `${s.laterAfterLate} of the ${s.later} later ones`} came after a dinner past ${LATE_H - 12} PM.`);
       }
       return Object.assign({ used: ["u.win", `${k}.morn`, `${k}.later`, `${k}.earlier`, `${k}.lateafter`, `${k}.med`], lines, try: s.later ? "Note your dinner times this week, and compare the mornings after." : "Keep logging your first BM when it happens, so the window stays yours." }, s.mornings ? timeChart(R, s) : {});
     },
@@ -453,7 +471,8 @@
       const lines = [`Your usual is ${u.nLo} to ${u.nHi} BMs a day.`];
       if (!s.countDays) lines.push(`No BMs are logged ${s.lbl}.`);
       else {
-        lines.push(`${upper1(s.lbl)} you averaged ${one(s.avg)} a day, and ${s.inC} of ${plural(s.countDays, "day")} had a usual count.`);
+        /* an average of nothing is no number at all: with only No BM logged, the days say so */
+        lines.push(s.bms ? `${upper1(s.lbl)} you averaged ${one(s.avg)} a day, and ${s.inC} of ${plural(s.countDays, "day")} had a usual count.` : `${upper1(s.lbl)} you logged No BM on ${plural(s.zero, "day")}, and ${s.inC} of ${plural(s.countDays, "day")} had a usual count.`);
         if (/\b(busier|busy|more than|lots|many)\b/i.test(q) && s.busy) lines.push(`${plural(s.busy, "day")} had more than ${u.nHi}.`);
         else if (s.gaps) lines.push(`${plural(s.gaps, "day")} with no BMs logged ${s.gaps === 1 ? "stays a gap, never a zero" : "stay gaps, never zeros"}.`);
       }
@@ -466,7 +485,7 @@
     form(R, q) {
       const s = spanFor(R, "form", q, R.w), k = s.k, u = R.u, mean = /\b(mean|what are|what do)\b/i.test(q), w = pickWord(R);
       const scale = R.mode === "B" ? `Five words, hardest to loosest: ${join(L.WORDS.map((x) => x.word))}.` : R.mode === "C" ? `Seven words, from ${L.TYPES[1].short}, the hardest, to ${L.TYPES[7].short}, the loosest.` : "Types run from 1, the hardest, to 7, the loosest.";
-      if (!u) return { used: ["learn", "words", `${k}.bms`, `${k}.top`], lines: [s.bms ? `${plural(s.bms, "BM")} logged so far${s.top ? `, mostly ${s.top.label}` : ""}.` : "No BMs are logged yet.", mean ? scale : `Florin learns your usual forms by day ${L.LEARN_DAYS}.`], try: `Pick the closest ${w} each time, and Florin reads it against your own usual once it knows it.` };
+      if (!u) return { used: ["learn", "words", `${k}.bms`, `${k}.top`], lines: [s.bms ? `${plural(s.bms, "BM")} logged so far${s.top ? `: ${formsSaid(s)}` : ""}.` : "No BMs are logged yet.", mean ? scale : `Florin learns your usual forms by day ${L.LEARN_DAYS}.`], try: `Pick the closest ${w} each time, and Florin reads it against your own usual once it knows it.` };
       const lines = [`Your usual forms are ${R.formText}.`];
       if (mean) lines.push(scale);
       if (!s.bms) lines.push(`No BMs are logged ${s.lbl}.`);
@@ -476,20 +495,20 @@
         if (!mean && s.unsure) lines.push(`${plural(s.unsure, "BM")} logged as a word that could sit either side ${s.unsure === 1 ? "isn't" : "aren't"} counted either way.`);
       }
       const tip = s.looser ? "After a looser BM, a note on what you ate the day before helps Florin look for what tends to follow." : s.firmer ? "After a firmer BM, a note on the day before helps you see it later." : `Pick the closest ${w} each time; Florin reads it against your own usual.`;
-      return Object.assign({ used: ["u.form", "words", `${k}.forms`, `${k}.firmer`, `${k}.looser`, `${k}.unsure`, `${k}.top`], lines, try: tip }, s.bms ? formChart(s) : {});
+      return Object.assign({ used: ["u.form", "words", `${k}.forms`, `${k}.firmer`, `${k}.looser`, `${k}.unsure`, `${k}.top`], lines, try: tip }, s.bms ? formChart(R, s) : {});
     },
     symptoms(R, q) {
       const s = spanFor(R, "sym", q, R.m), lines = [];
       if (!s.logged) lines.push("Nothing is logged yet.");
       else if (!s.withSym) lines.push(`No symptoms are logged ${s.lbl}.`);
-      else lines.push(`${upper1(s.lbl)} you logged symptoms on ${s.withSym} of ${plural(s.logged, "day")}, mostly ${s.symRows[0].name.toLowerCase()}, on ${plural(s.symRows[0].n, "day")}.`);
+      else lines.push(symSaid(s));
       if (R.u) lines.push(`Usually you log symptoms ${symUsual(R.u)}.`);
       return { used: [`${s.k}.sym`, `${s.k}.symtop`, "u.sym"], lines, try: `Logging ${ORD} as well as rough ones lets Florin compare them.`, fine: FINE_SYM };
     },
     rough(R, q) {
       if (!R.u) return A.patterns(R, "");
       const s = spanFor(R, "sym", q, R.m), PR = R.PR, used = [`${s.k}.sym`, `${s.k}.symtop`];
-      const lines = [s.withSym ? `${upper1(s.lbl)} you logged symptoms on ${s.withSym} of ${plural(s.logged, "day")}, mostly ${s.symRows[0].name.toLowerCase()}.` : `No symptoms are logged ${s.lbl}.`];
+      const lines = [s.withSym ? symSaid(s) : `No symptoms are logged ${s.lbl}.`];
       if (PR.sparse && !R.cp) {
         lines.push(PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${COVER(PR)}, so there are few ordinary days to compare with.` : "No meals are logged, so Florin can't look at what comes before a rougher day yet.");
         used.push("p.held", "p.check");
@@ -506,7 +525,7 @@
         lines.push(`In your last ${L.PATTERN_DAYS} days Florin ${p.below ? "checked" : "found"} ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", which is below the bar, so it isn't shown as a pattern" : ""}.`);
         lines.push("Patterns show what tends to happen together; they don't prove cause.");
         used.push(pid(R, p), "p.bar");
-        return Object.assign({ used, lines, try: patTry(p), fine: FINE_SYM }, patChart(p));
+        return Object.assign({ used, lines, try: patTry(p), fine: FINE_SYM }, patChart(R, p));
       }
       lines.push(kind && PR.found.length ? `Nothing before ${KIND_WORD[kind]} clears the bar yet in your last ${L.PATTERN_DAYS} days.` : `Nothing stands out yet in your last ${L.PATTERN_DAYS} days: ${plural(PR.checked.length, "food")} checked, and none cleared the bar.`);
       used.push(kind && PR.found.length ? "p.bar" : "p.none", "p.bar");
@@ -517,27 +536,27 @@
       if (!R.u) return { used: ["learn", "p.wait", "p.bar"], lines: [`Florin starts checking a food once you've logged it ${n} times.`, `You're on day ${R.day} of ${L.LEARN_DAYS}, so there isn't enough to compare yet.`], try: `Log what you ate when you can, on ${ORD} as well as rough ones.` };
       const bar = `A pattern shows only when it holds ${n} or more times, most of the time, and far more often than on other days.`;
       if (/\bsure\b/i.test(q)) {
-        if (p && p.below) return Object.assign({ used: ["p.bar", "p.c"], lines: [bar, `${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise, so it's below that bar for now.`], try: "Keep logging as you usually would, and Florin checks it again as the days add up." }, patChart(p));
+        if (p && p.below) return Object.assign({ used: ["p.bar", "p.c"], lines: [bar, `${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise, so it's below that bar for now.`], try: "Keep logging as you usually would, and Florin checks it again as the days add up." }, patChart(R, p));
         return { used: ["p.bar", p ? pid(R, p) : ""], lines: [bar, `Showing up often is ${n} or more; Consistent is ${CONSISTENT} or more, nearly every time.`, p ? `${p === R.cp ? "This one" : "Your clearest"} is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times, ${p.tier.label.toLowerCase()}.` : ""], try: "Try one change at a time and compare, since a pattern shows what happens together, not cause." };
       }
       if (/\b\d+ logs\b|\bwhy does a food\b/i.test(q)) return { used: ["p.bar"], lines: [`Florin checks every food you log against the mornings after, so it waits for ${n} logs of a food before it looks.`, "With fewer, chance alone would name a food now and then."], try: "Keep logging meals as you usually would." };
       if (/\b(what else|part of it)\b/i.test(q)) return { used: p ? [pid(R, p)] : [], lines: ["Patterns only see what you logged, so sleep, a busy week, travel or how much you ate could be part of it too.", "That's why Florin calls it a possible pattern, never a cause."], try: "A short note on the day helps you see it later." };
-      if (R.cp) return Object.assign({ used: ["p.c", "p.bar"], lines: [`${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.`, "Patterns show what tends to happen together; they don't prove cause."], try: patTry(p) }, patChart(p));
+      if (R.cp) return Object.assign({ used: ["p.c", "p.bar"], lines: [`${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.`, "Patterns show what tends to happen together; they don't prove cause."], try: patTry(p) }, patChart(R, p));
       if (PR.sparse) return { used: ["p.held", "p.check"], lines: [PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${COVER(PR)}, so there are few ordinary days to compare with.` : "No meals are logged yet, so there's nothing to compare."], try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there." };
       if (!PR.found.length) return { used: ["p.none", "p.bar"], lines: [`Nothing stands out yet in your last ${L.PATTERN_DAYS} days: ${plural(PR.checked.length, "food")} checked, and none cleared the bar.`, "A pattern has to hold most of the time, and far more often than on other days."], try: `Keep logging meals on ${ORD} too, so there's something to compare with.` };
       const two = PR.found.slice(0, 2);
-      return Object.assign({ used: two.map((x, i) => `p.${i}`).concat(["p.bar"]), lines: two.map((x) => `${patTitle(x)}: ${x.hit} of ${x.n} times, against ${x.oh} of ${x.on} otherwise.`).concat(["Patterns show what tends to happen together; they don't prove cause."]), try: patTry(two[0]) }, patChart(two[0]));
+      return Object.assign({ used: two.map((x, i) => `p.${i}`).concat(["p.bar"]), lines: two.map((x) => `${patTitle(x)}: ${x.hit} of ${x.n} times, against ${x.oh} of ${x.on} otherwise.`).concat(["Patterns show what tends to happen together; they don't prove cause."]), try: patTry(two[0]) }, patChart(R, two[0]));
     },
     test(R, q) {
       const PR = R.PR, p = pickPat(R, q);
-      if (p) return Object.assign({ used: [pid(R, p)], lines: [p === R.cp ? `${patTitle(p)}: ${p.hit} of ${p.n} times${p.below ? `, against ${p.oh} of ${p.on} otherwise, below the bar for now` : ""}.` : `Your clearest pattern is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times.`, "One change at a time shows what matters."], try: patTry(p) }, patChart(p));
+      if (p) return Object.assign({ used: [pid(R, p)], lines: [p === R.cp ? `${patTitle(p)}: ${p.hit} of ${p.n} times${p.below ? `, against ${p.oh} of ${p.on} otherwise, below the bar for now` : ""}.` : `Your clearest pattern is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times.`, "One change at a time shows what matters."], try: patTry(p) }, patChart(R, p));
       if (R.u && PR.sparse && PR.withMeal) return { used: ["p.held", "p.check"], lines: [`Meals are logged on ${COVER(PR)}, so there are few ordinary days to test against.`], try: `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` };
       return { used: R.u ? ["p.none"] : ["p.wait"], lines: ["There's no pattern to test yet: none clears the bar."], try: `Keep logging meals on ${ORD} too, so there's something to compare with.` };
     },
     try(R, q) {
       if (!R.u) return { used: ["learn"], lines: [`You're on day ${R.day} of ${L.LEARN_DAYS}, so the most useful thing now is plenty of logs.`], try: "Log each BM when it happens, symptoms when they come up, and what you ate when you can." };
       const PR = R.PR, p = pickPat(R, q);
-      if (p) return Object.assign({ used: [pid(R, p), "p.bar"], lines: [p === R.cp ? `${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.` : `Your clearest pattern is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise.`], try: patTry(p) }, patChart(p));
+      if (p) return Object.assign({ used: [pid(R, p), "p.bar"], lines: [p === R.cp ? `${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.` : `Your clearest pattern is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise.`], try: patTry(p) }, patChart(R, p));
       if (PR.sparse && PR.withMeal) return { used: ["p.held", "p.check"], lines: [`Meals are logged on ${COVER(PR)}, so Florin can't compare them with ordinary days yet.`], try: `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` };
       const ra = roomAct(R);
       if (!ra) return { used: [], lines: ["Your logs are steady enough that there's nothing in particular to change."], try: "Keep logging as things happen." };
@@ -582,9 +601,9 @@
       const s = R.w, lead = off ? "Ask Florin answers from your own logs, so here's what they show." : "";
       if (!R.u) return { used: ["learn", "w.logged", "w.bms", "w.sym"], lines: [lead, `You're on day ${R.day} of ${L.LEARN_DAYS}, so Florin is still learning your usual.`, s.logged ? `So far: ${plural(s.logged, "day")} logged, ${plural(s.bms, "BM")} and ${plural(s.withSym, "day")} with symptoms.` : "Nothing is logged yet."], try: "Start from the plus button whenever something happens." };
       /* a flagged today: left out of the count and said, the score read against nothing, and the clinician path offered */
-      const lines = [lead, s.known ? `${upper1(s.lbl)}, ${s.within} of ${plural(s.known, "day")} sat within your usual: first BM in your window, a usual count and usual forms.` : `Nothing is logged ${s.lbl}.`, s.flag ? RU.FLAG_DAY : "", R.score != null ? `Your FloraScore today is ${R.score}${R.rel ? `, ${lower1(R.rel)}` : ""}.` : "", s.withSym ? `You logged symptoms on ${plural(s.withSym, "day")}, mostly ${s.symRows[0].name.toLowerCase()}.` : `No symptoms are logged ${s.lbl}.`];
+      const lines = [lead, s.known ? `${upper1(s.lbl)}, ${s.within} of ${plural(s.known, "day")} sat within your usual: first BM in your window, a usual count and usual forms.` : `Nothing is logged ${s.lbl}.`, s.flag ? RU.FLAG_DAY : "", R.score != null ? `Your FloraScore today is ${R.score}${R.rel ? `, ${lower1(R.rel)}` : ""}.` : "", s.withSym ? L.symLine(s.F) : `No symptoms are logged ${s.lbl}.`];
       const ra = roomAct(R);
-      return Object.assign({ used: ["w.within", s.flag && "w.flag", "s.today", "w.sym", "w.symtop", ra && ra.id].filter(Boolean), lines, try: s.flag ? FLAG_TRY : ra ? `${upper1(ra.text)}.` : "Keep logging as things happen." }, weekChart(s));
+      return Object.assign({ used: ["w.within", s.flag && "w.flag", "s.today", "w.sym", "w.symtop", ra && ra.id].filter(Boolean), lines, try: s.flag ? FLAG_TRY : ra ? `${upper1(ra.text)}.` : "Keep logging as things happen." }, weekChart(R, s));
     }
   };
 

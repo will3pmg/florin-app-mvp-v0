@@ -71,12 +71,17 @@
   };
 
   /* ---------- Range bar (HTML): where a value sits against a usual range ----------
-     A null value draws the band with no dot (no score today, or a flagged today read against nothing) */
+     A null value draws the band with no dot (no score today, or a flagged today read against nothing). For the studio
+     to take back (the refresh, Oct 28): o.pad widens a scale of steps (counts, forms) by that much either side, band
+     and axis, so a reading of 1 sits inside a band of 1 to 2, not on its edge; o.span [a, b] draws a span over two
+     steps in place of the dot (a word that covers two forms) */
   C.range = (o) => {
-    const p = (v) => Math.max(0, Math.min(100, ((v - o.min) / (o.max - o.min)) * 100));
-    const lo = p(o.lo), hi = p(o.hi), has = o.value != null, v = has ? p(o.value) : 0;
+    const pd = o.pad || 0, mn = o.min - pd, mx = o.max + pd;
+    const p = (v) => Math.max(0, Math.min(100, ((v - mn) / (mx - mn)) * 100));
+    const lo = p(o.lo - pd), hi = p(o.hi + pd), has = o.value != null, v = has ? p(o.value) : 0;
+    const sp = o.span ? [p(o.span[0]), p(o.span[1])] : null;
     return `<div class="c-range ${o.state ? "is-" + o.state : ""}" role="img" aria-label="${esc(o.aria || "")}">
-      <div class="c-range-trk"><i class="c-range-band" style="left:${n1(lo)}%;width:${n1(hi - lo)}%"></i>${has ? `<i class="c-range-dot" style="left:${n1(v)}%"></i>` : ""}</div>
+      <div class="c-range-trk"><i class="c-range-band" style="left:${n1(lo)}%;width:${n1(hi - lo)}%"></i>${has ? `<i class="c-range-dot" style="left:${n1(v)}%"></i>` : ""}${sp ? `<i class="c-range-span" style="left:${n1(sp[0])}%;width:${n1(sp[1] - sp[0])}%"></i>` : ""}</div>
       ${o.ticks === false ? "" : `<div class="c-range-lbl"><span class="c-range-mid" style="left:${n1(Math.max(28, Math.min(72, (lo + hi) / 2)))}%">${esc(o.fmt ? o.fmt(o.lo) : o.lo)} to ${esc(o.fmt ? o.fmt(o.hi) : o.hi)}${o.unit ? " " + esc(o.unit) : ""}</span></div>`}
     </div>`;
   };

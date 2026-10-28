@@ -125,7 +125,10 @@
   function fit(html, o) {
     tpl.innerHTML = html;
     const r = tpl.content;
-    r.querySelectorAll("[data-count]").forEach((n) => { n.setAttribute("data-rlk-count", n.getAttribute("data-count")); n.removeAttribute("data-count"); });
+    /* fix-viz (Oct 28): no count-up in the app. A number that counts up sits for a moment beside a reading it doesn't
+       have (FloraScore at 9, 35, 71 beside "a little above its usual range"), so each numeral is simply there, as the
+       core's hero and Easy are */
+    r.querySelectorAll("[data-count]").forEach((n) => n.removeAttribute("data-count"));
     r.querySelectorAll("h3").forEach((h) => promote(h, "h2"));
     r.querySelectorAll("h4").forEach((h) => promote(h, "h3"));
     /* the Oura week's tag card asks about a shifted day with the check-in's tags: only while there's a check-in to keep
