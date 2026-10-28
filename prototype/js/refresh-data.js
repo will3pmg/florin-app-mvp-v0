@@ -120,12 +120,29 @@
   /* every alarm feature a note names, clause by clause, leaving out the ones it says no to ("no blood", "without a
      fever", "didn't throw up"). Florin only names the sign; it never reads past that */
   const NEG = /\b(no|not|without|never|none|zero|didn'?t|don'?t|wasn'?t|haven'?t|hasn'?t)\b[^,;.]*$/i;
+  /* the wider net, for the ways people write a sign that the words above miss (moved here from Ask Florin so a log's
+     note catches them too): a stool next to black, very dark, tar or red; red in the toilet or on the paper; a
+     temperature; weight lost by the kilo or pound; being sick; up or awake in the night (1 to 4 AM) to go. A hedge
+     ("not sure if that was blood") isn't read as a no */
+  const STOOL = "(?:stools?|poo\\w*|bms?|bowel movements?|motions?|faeces|feces)", STOOLW = STOOL.slice(3, -1);
+  L.ALARM_WIDE = [
+    [new RegExp(`\\b${STOOL}\\b(?:(?![.;]).){0,30}?\\b(black|jet black|tarry|tar|very dark|almost black|nearly black)\\b|\\b(black|tarry|very dark|almost black)\\b(?:(?![.;]).){0,20}?\\b${STOOL}\\b`, "i"), "A black or tar-like stool"],
+    [new RegExp(`\\bred\\b(?! (meat|wine|peppers?|onions?|beans?|lentils?|cabbage|apples?|grapes?|curry|sauce|velvet|food|dye))(?:(?![.;]).){0,30}?\\b(toilet|bowl|paper|tissue|wip\\w*|${STOOLW}|underwear)\\b|\\b(toilet|bowl|paper|tissue|${STOOLW})\\b(?:(?![.;]).){0,30}?\\b(red|bright red|maroon)\\b`, "i"), "Blood"],
+    [/\b(have|had|has|got|running|ran|with|developed|getting) (a |an )?(high |slight |bit of a |raised |real )?temperature\b|\bhigh temperature\b|\btemp(erature)? (of|is|was|at) \d/i, "A fever"],
+    [/(?<!to )\b(lost|losing|lose|dropped|dropping|shed)\b(?:(?![.;]).){0,25}?\b(weight|kgs?|kilos?|kilograms?|lbs?|pounds?|stone)\b|\bweight (has |have |keeps )?(dropped|dropping|gone down|going down|fallen|falling)\b/i, "Weight loss"],
+    [/\b(being|been|was|were|keep being|kept being|keeps being) sick\b(?! of| and tired| with)|\bpuk\w*/i, "Vomiting"]
+  ];
+  const WAKE = /\b(wak\w*|woke|woken|awake|up)\b(?! late)/i, GOING = /\bto go\b|\bpoo\w*|\bbms?\b|\bbathroom\b|\btoilet\b|\bloo\b|\bbowels?\b|\burge\b/i;
+  const NIGHT = /\b(at night|in the night|overnight|night-?time|middle of the night|[1-4] ?(am|a\.m\.)|[1-4] in the morning|small hours)\b/i;
+  const HEDGE = /\b(not sure|not certain|unsure|don'?t know|do not know|can'?t tell|cannot tell|not clear|no idea)\b/gi;
   L.alarmsIn = (text) => {
-    const out = [];
-    String(text || "").split(/[.;!?\n]|,|\bbut\b/i).forEach((c) => L.ALARM.forEach(([rx, name]) => {
-      const m = rx.exec(c);
-      if (m && !NEG.test(c.slice(0, m.index)) && !out.includes(name)) out.push(name);
-    }));
+    const out = [], add = (name) => { if (!out.includes(name)) out.push(name); };
+    String(text || "").split(/[.;!?\n]|,|\bbut\b/i).forEach((c0) => {
+      const c = c0.replace(HEDGE, " ");
+      L.ALARM.concat(L.ALARM_WIDE).forEach(([rx, name]) => { const m = rx.exec(c); if (m && !NEG.test(c.slice(0, m.index))) add(name); });
+      const w = WAKE.exec(c);
+      if (w && NIGHT.test(c) && GOING.test(c) && !NEG.test(c.slice(0, w.index))) add("Waking at night to go");
+    });
     return L.ALARM.map(([, n]) => n).filter((n) => out.includes(n));
   };
   /* the signs as one line: "Blood and a fever" */
