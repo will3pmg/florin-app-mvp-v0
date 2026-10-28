@@ -62,12 +62,18 @@ one-line summary (folded by default, remembered per viewer as `florin-refresh:de
 bar scrolls on its own and is sized from where it sits, so its end is always in reach. The right bar is the notes for
 the screen, or for the decision just changed (until the phone moves to another screen); each decision's info button
 shows its note. Between 760 and 1019px the notes sit under the phone: an info button scrolls to them, and a changed
-decision shows a "Read the note" button. Every option of every decision is drawn, by the core or a module, so each
+decision shows a "Read the note" button at the foot of the toggles column, never over the phone. Every option of every decision is drawn, by the core or a module, so each
 reads **On the phone** (an option no module claimed would read **Picked**). A screen in the list that belongs to a
 decision sets that decision, and it stays: Home: Day first, History: Calendar, the onboarding screens and the Easy
 version's, as the Membership screens set Plan to Free. So the phone and the left bar always agree, and a check that
 sweeps the list puts the decisions back after. Decisions are stored (`florin-refresh:<key>`); the demo controls
-aren't. The arrow keys step through Screens from the list or with nothing focused. Under 760px the app is full screen
+aren't. The arrow keys step through Screens from the list or with nothing focused, from the row the page opened while
+the phone is still on it (so a row that draws another row's screen, such as Log a BM, details filled in, never loops),
+and focus comes back to the lit row if a screen took it into the phone. A row picked from the list always shows that
+screen's note. The first Tab stop is Skip to the phone. The header links the decisions deck and the data looks
+library. A decision whose option shows on another screen (Home, History, BM logging, Meal sheet) has Show it on the
+phone in its note, which opens that screen and keeps the note up. With the Easy version on, Home and Data style read
+"Picked; Easy draws its own", with a line under each row saying so (`SHADOWED` in refresh-app.js). Under 760px the app is full screen
 and a bottom bar opens Toggles (Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled.
 Weekly check-in Off takes the check-in out of the whole app (`RU.ckOn(V)`), and its screens are disabled in the list.
 BM logging Full form only shows one Log a BM row on plus and no one-tap save. Home Day first, History Calendar, Data
@@ -90,14 +96,19 @@ which reads as "could be either", never a shift). Foods are counted only through
 typed ones alike.
 
 Insights reads days through `L.facts` (a gap stays a gap, No BM is a zero, a day is usual, shifted, unsure or none)
-and patterns through `L.patterns` (90 days, a food needs 5 logs, a one-sided binomial test at 1 in 100). Each demo
+and patterns through `L.patterns` (90 days, a food needs 5 logs, a one-sided binomial test at 1 in 100). Meal
+coverage is counted once, over the days logged in the 90-day window (`mealDays` of `loggedDays` in `window`, also
+under the old names `withMeal` and `logged`), never over the pairs of days the tests use, so the gate and every
+sentence about it agree with the data looks: "Meals are logged on 36 of the 85 days you logged in the last 90 days". Each demo
 person has one dish their seeded logs follow (`PATTERN_DISH`), seeded on its own meal pass so Insights has to find it.
 A symptom logged without a strength keeps `s: 0` and reads as "strength not said", never mild.
 
 FloraScore (`L.score`, `L.scoreUsual`, `L.scoreMoved`) is built from four logged parts (timing, how often, form,
 comfort), weighted 30/25/25/20 like the studio's, blended over the last 3 logged days. A day with no BM logged is left
 out and has no score of its own (today excepted, as far as it has gone), fewer than 2 logged days in 3 means no score,
-and there's no score before day 14. It doesn't depend on meals.
+and there's no score before day 14. It doesn't depend on meals. `L.scoreMoved` gives this week's and last week's
+averages raw (`wk`, `lw`, for the waterfall's geometry) and as shown (`wkR`, `lwR`); `delta` is `wkR - lwR`, so "+8"
+always sits beside 76 and 84.
 
 Meals are occasional (Will, Oct 14). `L.build(persona, data, { meals })` takes "all", "rough" (only days with a
 symptom) or "none". Under 60% of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back
@@ -159,12 +170,25 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
   toasts that the profile comes in this pass; the profile module's act opens Profile.
 - **History** is `RU.history(M, V, st)` over `RU.historyDay(M, V, d, entries)`, `RU.entryRow(e, M, V)` and
   `RU.historyNext(M, V)`, so a calendar shows a day the same way.
+- **What stood out today** is `RU.standouts(M, mode)`, ranked one way for Score first and Day first: a BM flag or an
+  alarm feature (`RU.alarmOf(e)`, a BM's note read with the BM net) first, then a shift from the person's own usual (a
+  form outside the usual forms, a first BM outside the window, more BMs than the usual count, No BM), then symptoms by
+  strength (one without a strength reads "strength not said", never mild); ties to the earlier entry; before day 14
+  only flags and symptoms. `RU.leadText(M, mode, item)` is its one sentence; `RU.highlightOf(M, mode)` gives
+  `{ text, alarm }` (the timing sentence when nothing stood out) and `RU.highlight(M, mode)` the text alone (without a
+  mode it reads with the phone's). Score first draws an alarm as the Teal note on the Forest card, and the score's line
+  then reads "Not read against your usual today", as Day first's chip does.
 - Helpers: `RU.ckOn(V)` (the check-in is on), `RU.bmCount(M)`, `RU.QUICK_AFTER` (5 BMs before a tile saves at once).
   The looks module adds `RU.lookOf(V)`, `RU.lookCards(M, V, keys, o)` and `RU.lookAfter(el)`, so another module draws
   cards in a look (Easy draws Your weeks with them).
 - **Alarm words** have one net, `L.alarmsIn(text)` (L.ALARM, then L.ALARM_WIDE for how people write a sign: a stool
-  next to black or red, a temperature, weight lost by the kilo, up most nights to go, being sick; a hedge isn't a no).
-  A log's note, Day first's highlight and Ask Florin's questions all run it; never add a second one in a module.
+  and black, very or really dark, tar or red anywhere in the sentence, with the no read in the colour's own clause; a
+  temperature had, run or worried about, "a temp" (never "a temp job"), or a reading of 38 to 41 C or 100 to 104 F
+  (not the weather); weight lost by the kilo, pound or stone, the digit against its unit or not; up most nights to go;
+  being sick; a hedge isn't a no). A BM's own note is `L.alarmsIn(note, { bm: true })`, which adds L.ALARM_BM: the BM
+  is the stool, so a colour on its own is a sign there ("It looked like tar", "some red in it"), unless a food follows
+  it ("after black coffee"). A log's note, both Home sentences and Ask Florin's questions all run it; never add a
+  second one in a module.
 - **Make a report** on the flag note is `data-act="flag-report"` with the question in `data-q`. The core toasts that
   the report comes later; the Ask module opens Ask on the clinician path with it (Member), or the paywall (Free).
 
@@ -199,6 +223,10 @@ refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idet
 - **App colours:** Plum is "your usual", Gold is a shift, Teal is context, Ray is "your usual" on dark. No Ray Deep in
   the app, no red, no green. Derive colours from the six brand tokens; never hardcode a hex.
 - **Spacing:** every padding, margin, gap, inset and radius on the DESIGN.md scale. Fixed control heights.
+- **Charts never use dashed lines** (DESIGN.md). The studio's kit dashes the average and the waterfall's connectors;
+  refresh.css draws them as solid hairlines on the phone, and a day not logged is its struck date, as on the week card.
+  Light `--ap-ink3` is overridden in refresh.css (4.89:1 on the card; the studio's token is 4.07:1), and the page's
+  light `--ink-3` is darker in both shells. Both changes are for the studio to take back.
 - **Alarm features** (blood, black or tar-like stools, fever, vomiting that won't stop, weight loss, waking at night
   to go) route to primary care with a Teal banner. Never interpreted, never red.
 

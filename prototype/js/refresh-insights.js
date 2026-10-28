@@ -459,24 +459,31 @@
   const SCORE_NOT = "It isn't a medical score, and a lower number isn't a diagnosis. It's a way to see your week at a glance.";
 
   /* Today's hero: the studio's Forest card with the Ray ring and the usual range on it. Learning: the ring fills by day */
+  /* the day's one sentence under the score: what stood out today (RU.highlightOf). An alarm is the Teal note, with
+     the info mark, and reads nothing */
+  const heroSub = (H, tag) => (H.alarm
+    ? `<${tag} class="ap-hero-sub ap-hero-flag">${icon("info")}<span>${esc(H.text)}</span></${tag}>`
+    : `<${tag} class="ap-hero-sub">${esc(H.text)}</${tag}>`);
   RU.scoreHero = (M, V) => {
-    const mode = V.form, S = scoreOf(M, mode);
+    const mode = V.form, S = scoreOf(M, mode), H = Object.assign({}, RU.highlightOf(M, mode));
     if (!S) {
       const d = L.learnDay(M);
       return `<section class="ap-hero ap-hero--learn" data-a aria-label="FloraScore">
           <div class="ap-hero-top"><span class="ap-k ap-k--ray">FloraScore</span><span class="ap-pill">Day ${d} of ${L.LEARN_DAYS}</span></div>
           <div class="ap-hero-mid"><div class="ap-hero-ring">${C.ring({ value: Math.round((d / L.LEARN_DAYS) * 100), size: 124, stroke: 10, aria: `Learning your usual, day ${d} of ${L.LEARN_DAYS}` })}<b class="ap-hero-learn"><span>${d}</span><small>of ${L.LEARN_DAYS}</small></b></div>
-          <div class="ap-hero-copy"><p class="ap-hero-line">Your FloraScore starts on day ${L.LEARN_DAYS}.</p><p class="ap-hero-sub">${esc(RU.highlight(M))}</p></div></div>
+          <div class="ap-hero-copy"><p class="ap-hero-line">Your FloraScore starts on day ${L.LEARN_DAYS}.</p>${heroSub(H, "p")}</div></div>
         </section>`;
     }
     const v = S.v, ser = L.scoreSeries(M, 30, mode).map((x) => x.value);
     const vs = ser.filter((x) => x != null);
-    const line = v == null ? "Not enough logged to score today." : `${S.rel}.`;
-    const sub = v == null ? `FloraScore needs 2 of your last 3 days logged. ${RU.highlight(M)}` : RU.highlight(M);
-    return `<button type="button" class="ap-hero" ${V.plan === "free" ? 'data-act="pay" data-pay="score"' : 'data-act="idetail"'} data-k="score" data-a aria-label="${esc(`FloraScore ${v == null ? "not scored today" : v}. ${line} Your usual range ${S.su[0]} to ${S.su[1]}. Open the detail`)}">
+    /* a day with a flag or an alarm feature: the score keeps its number but is read against nothing, and the Teal
+       note under it names the sign (Day first's chip says the same) */
+    const line = v == null ? "Not enough logged to score today." : H.alarm ? "Not read against your usual today." : `${S.rel}.`;
+    if (v == null && !H.alarm) H.text = `FloraScore needs 2 of your last 3 days logged. ${H.text}`;
+    return `<button type="button" class="ap-hero" ${V.plan === "free" ? 'data-act="pay" data-pay="score"' : 'data-act="idetail"'} data-k="score" data-a aria-label="${esc(`FloraScore ${v == null ? "not scored today" : v}. ${line} ${H.alarm ? "" : `Your usual range ${S.su[0]} to ${S.su[1]}. `}${H.text} Open the detail`)}">
         <span class="ap-hero-top"><span class="ap-k ap-k--ray">FloraScore</span><span class="ap-pill">${esc(v == null ? "Not scored today" : deltaTxt(S.mv))}</span></span>
         <span class="ap-hero-mid"><span class="ap-hero-ring">${C.ring({ value: v == null ? 0 : v, size: 124, stroke: 10, band: S.su, aria: `FloraScore ${v == null ? "not scored today" : v} out of 100` })}<b${v == null ? ' class="ap-hero-none"' : ` data-count="${v}"`}>${v == null ? "No score" : v}</b></span>
-        <span class="ap-hero-copy"><span class="ap-hero-line">${esc(line)}</span><span class="ap-hero-sub">${esc(sub)}</span></span></span>
+        <span class="ap-hero-copy"><span class="ap-hero-line">${esc(line)}</span>${heroSub(H, "span")}</span></span>
         <span class="ap-hero-spark">${C.spark(ser, { w: 320, h: 46, band: S.su, min: Math.min(50, ...vs) - 2, max: 100, area: true, aria: `FloraScore, last 30 days, against your usual range ${S.su[0]} to ${S.su[1]}` })}</span>
         <span class="ap-hero-legend"><span>30 days</span><span><i class="sw sw--band"></i>Your usual ${S.su[0]} to ${S.su[1]}</span><span class="ap-hero-go">${V.plan === "free" ? `${icon("lock")}With membership` : `Why ${RU.icon("chev")}`}</span></span>
       </button>`;
@@ -488,7 +495,7 @@
   /* meals logged on few days: what the patterns card says instead, and the food check it offers */
   const sparseHead = (PR) => (PR.withMeal ? "Not enough ordinary days yet" : "No meals logged");
   const sparseLine = (PR) => (PR.withMeal
-    ? `Meals are logged on ${PR.withMeal} of your last ${PR.logged} days${PR.roughShare >= 0.6 ? ", most of them days with symptoms" : ""}, so there are few ordinary days to compare with. A ${L.FOOD_CHECK_DAYS}-day food check, good days too, lets Florin look.`
+    ? `Meals are logged on ${PR.mealDays} of the ${PR.loggedDays === 1 ? "1 day" : `${PR.loggedDays} days`} you logged in the last ${PR.window} days${PR.roughShare >= 0.6 ? ", most of them days with symptoms" : ""}, so there are few ordinary days to compare with. A ${L.FOOD_CHECK_DAYS}-day food check, good days too, lets Florin look.`
     : `Florin looks for what tends to follow a food once meals are logged on most days. When a day feels off, say what you ate, and Florin starts from there.`);
   const foodCheckBtn = (free) => free ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="pay" data-pay="food">${icon("lock")}Start a ${L.FOOD_CHECK_DAYS}-day food check</button>` : `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="toast" data-msg="${esc(`A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, good days too, then shows what tends to follow. It comes with the next pass.`)}">Start a ${L.FOOD_CHECK_DAYS}-day food check</button>`;
 
@@ -726,7 +733,7 @@
           <div class="ap-scale">${C.range({ min: yMin, max: 100, lo: su[0], hi: su[1], value: v, state: SC.rel === "Within your usual range" ? "usual" : "shift", aria: `Today ${v}, your usual range ${su[0]} to ${su[1]}` })}<div class="ap-scale-lbl"><span>Lowest ${lo}</span><span>Your usual ${su[0]} to ${su[1]}</span><span>Highest ${hi}</span></div></div>
         </figure>`}
         ${tabs}
-        ${fig(`FloraScore, ${RANGE_NAME[n].toLowerCase()}`, `${vals.length} of ${ser.length} days scored`, C.line({ w: 326, h: 150, left: 28, points: ser.map((x) => ({ y: x.value, tip: `${short(x.d)} · ${x.value == null ? "not scored" : x.value}` })), yMin, yMax: 100, yTicks: [yMin, Math.round((yMin + 100) / 2), 100], band: su, avg: vals.length ? Ut.mean(vals) : null, area: true, xTicks: ticks(ser), aria: `FloraScore over ${RANGE_NAME[n].toLowerCase()}, against your usual range ${su[0]} to ${su[1]}` }),
+        ${fig(`FloraScore, ${RANGE_NAME[n].toLowerCase()}`, `${vals.length} of ${ser.length} days scored`, C.line({ w: 326, h: 150, left: 28, points: ser.map((x) => ({ y: x.value, tip: `${short(x.d)} · ${x.value == null ? "not scored" : x.value}` })), yMin, yMax: 100, yTicks: [yMin, Math.round((yMin + 100) / 2), 100], band: su, avg: vals.length ? Ut.mean(vals) : null, area: true, xTicks: ticks(ser), aria: `FloraScore over ${RANGE_NAME[n].toLowerCase()}, against your usual range ${su[0]} to ${su[1]}` }).replace(/<line class="c-avg" x1="([\d.]+)"[^>]*y1="([\d.]+)"[^>]*\/>/, (m, x, y) => `${m}<text class="c-avg-lbl" x="${+x + 4}" y="${+y - 4}">Average ${Math.round(Ut.mean(vals))}</text>`),
           `${lg("sw--line", "FloraScore")}${lg("sw--band", "Your usual range")}${lg("sw--avg", `${n}-day average`)}`)}
         ${mv ? `<figure class="ap-fig" data-a><figcaption class="ap-figcap"><b>What moved it this week</b><span>Weekly averages, in points</span></figcaption>
           ${C.waterfall({ w: 326, h: 120, start: mv.lw, end: mv.wk, startLabel: "Last week", endLabel: "This week", items: mv.parts.map((p) => ({ label: PARTN[p.key][0], delta: p.delta })), aria: `FloraScore went from ${Math.round(mv.lw)} last week to ${Math.round(mv.wk)} this week, on average` })}
@@ -746,13 +753,14 @@
       let second;
       if (n <= 30) {
         const rows = F.slice().reverse().filter((f) => !f.pending).map((f, i) => ({
-          label: n <= 7 || i % 2 === 0 ? dayShort(f.d) : "",
+          /* a day not logged always shows its date, struck, so the gap is marked on the day itself */
+          label: n <= 7 || i % 2 === 0 || !f.logged ? dayShort(f.d) : "",
           flag: L.lateDinner(M, f.d - 1) ? "After a dinner past 8 PM" : "",
           cls: f.logged ? "" : "is-gap",
           points: f.bms.map((b, j) => ({ t: b.t, dur: 6, first: j === 0, cls: j === 0 && u && !f.inWin ? "is-shift" : "", tip: `${short(f.d)} · ${T(b.t)}${j === 0 ? " · first BM" : ""}` }))
         }));
         second = !rows.length ? "" : fig("Every BM, day by day", "Newest at the top", C.dayRows({ w: 326, left: 52, rowH: n <= 7 ? 28 : 13, t0: 5, t1: 23, window: u ? [u.tLo, u.tHi] : null, durScale: n <= 7 ? 3 : 2.2, rows, aria: "Every BM by day on a time axis" }),
-          `${lg("sw--first", "First BM")}${lg("sw--later", "Later BMs")}${u ? lg("sw--band", "Your usual window") : ""}${lg("sw--flag", "After a dinner past 8 PM")}${F.some((f) => !f.logged && !f.pending) ? lg("sw--gapline", "Not logged") : ""}`);
+          `${lg("sw--first", "First BM")}${lg("sw--later", "Later BMs")}${u ? lg("sw--band", "Your usual window") : ""}${lg("sw--flag", "After a dinner past 8 PM")}${(() => { const g = F.slice().reverse().find((f) => !f.logged && !f.pending); return g ? `<span><i class="ap-lg-gap">${esc(dayShort(g.d))}</i>Not logged</span>` : ""; })()}`);
       } else {
         const wks = weeksOf(M, mode);
         const vals = wks.map((wk) => { const w = wk.filter((f) => f.first != null), kk = w.filter((f) => f.inWin).length; return w.length ? { v: pctOf(kk, w.length), label: wk[0].d >= 84 ? `This week ${pctOf(kk, w.length)}%` : `${pctOf(kk, w.length)}%`, tip: `Week of ${short(wk[0].d)}: ${kk} of ${w.length} mornings in your window` } : { gap: true }; });

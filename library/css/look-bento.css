@@ -11,9 +11,11 @@
   --bt-trk: var(--ap-card2);
   --bt-l: color-mix(in srgb, var(--ap-chart) 22%, transparent);  /* logged, before the usual is known */
   --bt-e: color-mix(in srgb, var(--ap-ink3) 18%, transparent);   /* could be either: neither usual nor a shift */
-  /* a day within your usual (week pills, month squares, stat keys): a quiet Plum tint with its edge on light, a Ray
-     outline on dark, so a month of usual days stays calm and the solid Gold shifts are what the eye finds */
-  --bt-uf: var(--ap-usual-bg); --bt-on-uf: var(--ap-usual-ink); --bt-uf-edge: var(--ap-band-edge);
+  /* a day within your usual (week pills, month squares, stat keys, legend): a quiet Plum tint with a Plum edge on
+     light, a Ray outline on dark, so a month of usual days stays calm and the solid Gold shifts are what the eye finds.
+     The edge is Plum at 60%, which keeps it at 3:1 or more against the card (a day with no logs has a stronger edge
+     otherwise); the tint stays at 11% */
+  --bt-uf: var(--ap-usual-bg); --bt-on-uf: var(--ap-usual-ink); --bt-uf-edge: color-mix(in srgb, var(--plum) 60%, transparent);
   /* the hero is a dark glass surface in both themes, so it carries the dark roles itself */
   --bt-h-ink: var(--cream);
   --bt-h-ink2: color-mix(in srgb, var(--cream) 84%, transparent);
@@ -38,8 +40,10 @@
 .lk-bento .bt-t--row > div:first-child { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 
 /* ---------- type ---------- */
+/* a board's heading where no tile shows its title: read, not shown */
+.lk-bento .bt-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .lk-bento .bt-kr { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
-.lk-bento .bt-k { margin: 0; font-family: var(--mono); font-size: 10.5px; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.lk-bento .bt-k { margin: 0; font-family: var(--mono); font-size: 10.5px; font-weight: 400; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
 .lk-bento .bt-k--m { text-align: right; flex: none; }
 .lk-bento .bt-a { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--ap-ink); text-wrap: pretty; }
 .lk-bento .bt-a--md { font-size: 16px; line-height: 1.3; }

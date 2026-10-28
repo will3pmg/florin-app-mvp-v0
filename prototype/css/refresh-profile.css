@@ -83,6 +83,9 @@
 .pf-fo-t em { font-style: normal; font-weight: 400; font-size: .85em; line-height: 1.35; }
 .pf-fo-b .ic { flex: none; }
 .pf-fo-guide { align-self: flex-start; }
+/* a word picked in B, seen in A or C, covers this step: outlined and named, never filled (as Easy's Log a BM) */
+.pf-fo-b.is-maybe { box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+.pf-fo-maybe { align-self: flex-start; padding: 0 8px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-ink); color: var(--ap-ink); font-size: .85em; line-height: 1.5; font-weight: 500; }
 
 /* ---------- the Easy version: its type sizes, on the parts this file adds ---------- */
 .ap-rx[data-easy="true"] .pf-sec .ap-card-h h3 { font-size: 22px; }

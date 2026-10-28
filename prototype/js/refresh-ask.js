@@ -5,7 +5,9 @@
    new chat. Each question goes through four steps, in this order:
    1. Alarm words (L.alarmsIn): the Teal When to see a clinician answer. Primary care first, the urgent-care line, the
       sign named and never interpreted. The question is never sent to Claude.
-   2. A request to diagnose, prescribe, dose or predict: a fixed, kind redirect to what the logs show and to a clinician.
+   2. A request to diagnose, prescribe, dose or predict, to name a condition or to say what to cut out or still eat: a
+      fixed, kind redirect to what the logs show and to a clinician. A question that names mucus gets the clinician
+      answer, led by the flag note's own line, and isn't sent either.
    3. Claude, through the sample capability, on the viewer's own Claude account: a rules turn with a facts packet worked
       out from the model, then the conversation. The answer streams into its bubble, Stop aborts it, and once it's in,
       the claims check (window.FLORIN_REFRESH_CHECK) and a numbers check (every number must be one the facts state) run
@@ -21,9 +23,10 @@
   const warn = (what, e) => { try { console.warn(`Florin module ${MOD}: ${what}`, e); } catch (x) { /* no console */ } };
   const esc = FL.esc, Ut = AD.util, T = Ut.fmtTime, TODAY = L.TODAY;
 
-  /* rules of the model that the facts state as numbers: L.score blends the last 3 days that have logs, a dinner from
-     8 PM is a late one (L.lateDinner), and a pattern reads Consistent from 8 times (L.patterns) */
-  const BLEND = 3, LATE_H = 20, CONSISTENT = 8;
+  /* rules of the model that the facts state as numbers: L.score blends the days among the last 3 that have a BM, or No
+     BM, logged, and needs 2 of them; a dinner from 8 PM is a late one (L.lateDinner), and a pattern reads Consistent
+     from 8 times (L.patterns) */
+  const BLEND = 3, BLEND_MIN = 2, LATE_H = 20, CONSISTENT = 8;
   const MAXQ = 400;
 
   /* ---------- small helpers ---------- */
@@ -44,6 +47,14 @@
   const FINE_CLAUDE = "Written by Claude from the numbers above, and checked against Florin's rules. Ask Florin isn't a clinician.";
   const CHECKED = "Checked against Florin's rules";
   const PARTN = Object.fromEntries(L.SCORE_PARTS.map(([k, l]) => [k, l]));
+  /* the days Florin needs to compare with, in Florin's own word: never good days, a word DESIGN.md keeps out of the data */
+  const ORD = "ordinary days";
+  /* foods by name (the ones Florin reads, L.FOOD_NAMES) and the words people use for what they eat or drink, for the
+     food redirect and the check on Claude's answers. A food word has to follow the verb, so "Can I skip a day of
+     logging?" and "Should I quit logging dinner?" stay questions about the app */
+  const FOODW = Object.keys(L.FOOD_NAMES).concat(Object.values(L.FOOD_NAMES).map((n) => n[0].toLowerCase()), ["food", "meal", "dinner", "lunch", "breakfast", "snack", "drink", "dairy", "gluten", "wheat", "sugar", "alcohol", "caffeine", "meat", "coffee", "bread", "cheese", "chocolate", "beer", "wine", "soda", "fruit", "vegetable", "veg", "fibre", "fiber", "lactose", "carbs", "takeaway", "takeout"])
+    .filter((w, i, all) => all.indexOf(w) === i).sort((a, b) => b.length - a.length).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const FOOD_ADJ = "spicy|fried|fatty|greasy|sugary|processed|fizzy|sweet|rich|red|junk|fast|late|big|heavy";
 
   /* the same words the Insights cards use, so the chat reads like the screens it sits next to */
   const relOf = (v, su) => (v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below your usual range" : "A little below your usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above your usual range" : "A little above your usual range") : "Within your usual range");
@@ -182,7 +193,10 @@
     if (u) {
       const s = L.score(M, TODAY, mode), mv = L.scoreMoved(M, mode);
       R.score = s && s.value != null ? s.value : null; R.mv = mv; R.rel = relOf(R.score, R.su);
-      f("s.today", "Today", R.score == null ? `not scored: fewer than 2 of the last ${BLEND} days have logs` : `${R.score}${R.rel ? `, ${lower1(R.rel)}` : ""}`);
+      /* L.score counts the days among the last 3 with a BM, or No BM, logged (a day with only meals or symptoms isn't
+         one), and today counts once it has one */
+      R.sN = s ? s.n : 0; R.todayIn = !!L.dayParts(M, L.day(M, TODAY), mode);
+      f("s.today", "Today", R.score == null ? `not scored: a BM, or No BM, is logged on ${R.sN} of the last ${BLEND} days, and it needs ${BLEND_MIN}` : `${R.score}${R.rel ? `, ${lower1(R.rel)}` : ""}`);
       if (mv) {
         f("s.avg", "Weekly averages", `${Math.round(mv.wk)} this week, ${Math.round(mv.lw)} last week`);
         f("s.delta", "This week against last", mv.delta === 0 ? "the same, on average" : `${plural(Math.abs(mv.delta), "point")} ${mv.delta > 0 ? "above" : "below"}, on average`);
@@ -193,7 +207,7 @@
         f("s.room", "Most room this week", `${PARTN[R.room.key].toLowerCase()}, at ${R.room.now}`);
       }
     } else { R.score = null; f("s.start", "Starts on", `day ${L.LEARN_DAYS}`); }
-    f("s.how", "How it works", `it blends the last ${BLEND} days that have logs, from four parts: ${join(L.SCORE_PARTS.map(([k, l]) => `${l.toLowerCase()} ${Math.round(L.SCORE_W[k] * 100)}%`))}`);
+    f("s.how", "How it works", `it blends the days among the last ${BLEND} that have a BM, or No BM, logged, and needs ${BLEND_MIN} of them; from four parts: ${join(L.SCORE_PARTS.map(([k, l]) => `${l.toLowerCase()} ${Math.round(L.SCORE_W[k] * 100)}%`))}`);
 
     const PR = L.patterns(M, mode);
     R.PR = PR;
@@ -206,7 +220,7 @@
     const cp = u && ctx && ctx.k && ctx.k.indexOf("pattern:") === 0 ? PR.tests.find((x) => x.id === ctx.k.slice(8)) : null;
     R.cp = cp ? Object.assign({}, cp, { below: !cp.show || PR.sparse }) : null;
     if (R.cp) { f("p.c", `The one they asked about: ${lower1(patTitle(R.cp))}`, `${R.cp.hit} of ${R.cp.n} times, against ${R.cp.oh} of ${R.cp.on} otherwise (${R.cp.below ? "below the bar, so not shown as a pattern" : R.cp.tier.label.toLowerCase()})`); }
-    if (u && PR.sparse && PR.withMeal) f("p.check", "A food check", `one line a day for ${L.FOOD_CHECK_DAYS} days, good days too`);
+    if (u && PR.sparse && PR.withMeal) f("p.check", "A food check", `one line a day for ${L.FOOD_CHECK_DAYS} days, on ${ORD} too`);
     f("p.bar", "A pattern shows when", `it holds ${L.PATTERN_BAR.n} or more times, most of the time, and far more often than on other days (showing up often; consistent from ${CONSISTENT} times, nearly every time). Patterns show what tends to happen together, not what causes it.`);
 
     /* the latest check-in against the first weeks: left out entirely while the check-in is off */
@@ -284,17 +298,26 @@
   const sentencesIn = (text) => (String(text || "").replace(/(\d)\.(\d)/g, "$1,$2").replace(/\b(e\.g|i\.e|a\.m|p\.m|vs|etc)\./gi, "$1").match(/[^.?!]*[^.?!\s][^.?!]*(?:[.?!]+|$)/g) || []).length;
   /* what the 22 claims rules don't cover on their own, for an answer Claude writes. Each is [rule, pattern]: words
      Florin never uses, a forecast, a cause or a condition named, a medicine or what to cut out, reassurance, a
-     judgement of their gut or score, a share worked out ("half"), and an emoji, a list or markdown */
+     judgement of their gut or score, a share worked out ("half"), humour, a comparison with other people, and an
+     emoji, a list or markdown. None blocks Florin's own disclaimers: "they don't prove cause", "not what causes it",
+     "What's behind your FloraScore", "a gap stays a gap due to how Florin reads logs", "If you skip a day" and "If you
+     keep logging meals" all pass */
   const ASK_RULES = [
-    ["words", /\b(normal(ly)?|healthy|unhealthy|improv(e|es|ed|ing|ement)|worsen(s|ed|ing)?|bowel movements?|IBS-SSS|Bristol)\b|[\u2013\u2014]/i],
+    ["words", /\b(normal(ly)?|healthy|unhealthy|improv(e|es|ed|ing|ement)|worsen(s|ed|ing)?|resolv(e|es|ed|ing)|(ir)?regular(ity)?|good|bad|bowel movements?|IBS-SSS|Bristol)\b|[\u2013\u2014]/i],
     ["forecast", /\b(will|going to|gonna|likely|expect\w*|should)\b[^.?!]{0,40}\b(tomorrow|tonight|next (week|days?|time|few days|month)|soon|later this week|this weekend|coming days)\b|\b(tomorrow|tonight|next (week|day|time))\b[^.?!]{0,40}\b(will|going to|likely|probably|expect\w*)\b/i],
     ["forecast", /\b(will|is going to|are going to|should|would)\b[^.?!]{0,30}\b(rise|drop|fall|go up|go down|get better|get worse|settle|clear up|go away|come back|return to)\b|\b(likely|unlikely|probably|bound to)\b/i],
+    ["forecast", /\b(should|will|would|could)\b[^.?!]{0,30}\b(climb|ease|calm down|pick up|level out|even out)\b|\bexpect(ed)? (a|an|the) (\w+ )?(week|day|morning|evening|night)\b|\bif you keep (this|it|that) up\b/i],
     ["cause", /\btrigger(s|ed|ing)?\b|\b(intoleran\w*|sensitivit\w*|sensitive to|allerg\w*)\b/i],
+    ["cause", new RegExp(`\\bupset(s|ting)? (your|my|the) (stomach|gut|belly|tummy)\\b|\\b(culprit|to blame)\\b|\\b((may|might|could|seems? to|appears? to) be|is|are|was|were) (likely )?behind (your|the|those|these) (\\w+ )?(looser|firmer|later|earlier|bloat\\w*|symptoms?|rough\\w*|pain|cramp\\w*|BMs?|mornings?)\\b|\\b(because of|due to) (the |your |eating |having |drinking |all the |too much )?(${FOODW})|\\b(${FOODW})(s|es)? (is|are|was|were|may be|might be|could be|seems? to be) (causing|the cause|behind)\\b|\\binflam\\w*`, "i")],
     ["condition", /\b(IBS|SIBO|celiac|coeliac|gastritis|reflux|GERD|cancer|infections?|diseases?|disorders?|syndromes?)\b/i],
     ["medicine", /\b(probiotics?|prebiotics?|laxatives?|medicines?|medications?|meds|supplements?|pills?|tablets?|antibiotics?|antacids?|imodium|loperamide|doses?|dosage)\b/i],
     ["advice", /\bcut(ting)? (it|them|that|this|\w+) out\b|\bcut(ting)? (out|back on|down on)\b|\b(avoid|avoiding|eliminate|eliminating|give up|giving up|stop eating|stop drinking)\b|\b(should|will|would) help\b|\bhelps? (ease|reduce|relieve|settle|calm|fix)\b/i],
+    ["advice", new RegExp(`\\b(try|trying) (skipping|going without|dropping|cutting|a week without|a few days without|without|less)\\b|\\bskip(s|ping)? (the |your |any )?(${FOODW})|\\bgo(ing)? without (the |your |any )?(${FOODW})|\\bcut(ting)? down\\b|\\bhelps? (your|the) (gut|stomach|belly|tummy|digestion|bowels?) (settle|calm|ease|recover)\\b`, "i")],
     ["reassure", /\b(nothing|no need|not something) to (worry|be concerned)\b|\bdon'?t (need to )?worry\b|\bno (cause|reason|need) for concern\b|\bnot (a )?(concern|concerning|serious)\b|\bnothing serious\b|\breassur\w*|\b(you'?re|you are|it'?s|that'?s|this is|all) (fine|ok|okay|alright|good)\b/i],
     ["judgement", /\b(better|worse|great|good|bad|poor|excellent|best|worst|ideal|optimal|perfect|strong|weak)\b[^.?!]{0,25}\b(gut|score|florascore|health|digestion|shape|sign)\b|\b(gut|digestion|health|score|florascore)\b[^.?!]{0,25}\b(better|worse|great|good|bad|poor|excellent|ideal|optimal|perfect)\b|\bgetting (better|worse)\b|\b(good|great) news\b|\bwell done\b|\bgreat (job|work)\b/i],
+    ["judgement", /\bon (the right )?track\b|\bpositive sign\b|\bsettling down\b|\b(better|worse) than (last|the|before|usual|yesterday)\b|\btextbook\b|\bhealthier\b/i],
+    ["humour", /\b(haha|hah|lol|lmao|joke|jokes|joking|funny|kidding)\b/i],
+    ["a comparison with other people", /\bmost (people|adults|folks)\b|\b(the )?average (person|adult|people)\b|\btypical (people|person|adults?)\b|\bthan (others|average|most)\b|\b(other|many) (people|adults) (go|have|get|are|do|tend|find|see|feel|log)\b|\beveryone else\b/i],
     ["a share worked out", /\b(half|a quarter|a third|two thirds)\b/i],
     ["emoji", /\p{Extended_Pictographic}/u],
     ["a list or markdown", /^\s*([-*\u2022]|\d+[.)])\s|\*\*|__|^#{1,6}\s|`/m]
@@ -353,7 +376,7 @@
     if (k === "timing") return late ? { id: `p.${R.PR.found.indexOf(late)}`, text: `try an earlier dinner, since your first BM came later after ${late.hit} of ${late.n} dinners past ${LATE_H - 12} PM` } : { text: "log your first BM when it happens" };
     if (k === "often") return { text: "log No BM on a day without one" };
     if (k === "form") { const s = R.w; return { text: `add a note on what you ate the day before ${s.looser && !s.firmer ? "a looser BM" : s.firmer && !s.looser ? "a firmer BM" : "a BM outside your usual forms"}` }; }
-    return { text: "log good days as well as rough ones" };
+    return { text: `log ${ORD} as well as rough ones` };
   };
   const scoreChart = (R) => {
     const ser = L.scoreSeries(R.M, 30, R.mode).map((x) => x.value), vs = ser.filter((x) => x != null);
@@ -376,7 +399,15 @@
   const A = {
     score(R) {
       if (!R.u) return { used: ["learn", "s.start", "s.how"], lines: [`Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.`, `You're on day ${R.day} of ${L.LEARN_DAYS}.`], try: "Log each BM when it happens, and No BM on a day without one, so it's ready on time." };
-      if (R.score == null) return { used: ["s.today", "u.score", "s.how"], lines: [`There's no FloraScore today: it needs 2 of your last ${BLEND} days logged.`, R.su ? `Your usual range is ${R.su[0]} to ${R.su[1]}.` : ""], try: "Log today's BMs, or No BM if there wasn't one, and it comes back." };
+      if (R.score == null) {
+        /* what brings it back: today, when today doesn't count yet and one other day does; else the days before, from
+           History. A day with only meals or symptoms logged doesn't count */
+        const need = BLEND_MIN - R.sN;
+        const tr = !R.todayIn && need === 1 ? "Log today's BMs, or No BM if there wasn't one, and it comes back."
+          : R.todayIn ? "Add a BM, or No BM, for yesterday from History, and it comes back."
+          : "Log today's BMs, or No BM, and add yesterday's from History, and it comes back.";
+        return { used: ["s.today", "u.score", "s.how"], lines: [`There's no FloraScore today: it needs a BM, or No BM, logged on ${BLEND_MIN} of your last ${BLEND} days, and ${R.sN ? `only ${R.sN} of them has one` : "none of them has one"}.`, R.su ? `Your usual range is ${R.su[0]} to ${R.su[1]}.` : ""], try: tr };
+      }
       const lines = [`Your FloraScore today is ${R.score}${R.rel ? `, ${lower1(R.rel)} of ${R.su[0]} to ${R.su[1]}` : ""}.`], used = ["s.today", "u.score"];
       if (R.mv) {
         lines.push(R.mv.delta === 0 ? "On average it's the same as last week." : `On average it's ${plural(Math.abs(R.mv.delta), "point")} ${R.mv.delta > 0 ? "above" : "below"} last week.`);
@@ -388,7 +419,7 @@
       return Object.assign({ used, lines, try: ra ? `${PARTN[R.room.key]} has the most room this week, so ${ra.text}.` : "Log as things happen, so each part reads true." }, scoreChart(R));
     },
     scoreHow(R) {
-      return { used: ["s.how", "u.score"], lines: [`FloraScore blends your last ${BLEND} days that have logs, so one odd morning doesn't swing it.`, `It's built from four things you log: ${join(L.SCORE_PARTS.map(([k, l]) => `${l.toLowerCase()} (${Math.round(L.SCORE_W[k] * 100)}%)`))}.`, "It compares you with you, never with anyone else."], try: "Log as things happen: a day you miss is left out rather than scored as zero." };
+      return { used: ["s.how", "u.score"], lines: [`FloraScore blends the days among your last ${BLEND} that have a BM, or No BM, logged, so one odd morning doesn't swing it.`, `It's built from four things you log: ${join(L.SCORE_PARTS.map(([k, l]) => `${l.toLowerCase()} (${Math.round(L.SCORE_W[k] * 100)}%)`))}.`, "It compares you with you, never with anyone else."], try: "Log as things happen: a day you miss is left out rather than scored as zero." };
     },
     timing(R, q) {
       const s = spanFor(R, "timing", q, R.w), k = s.k;
@@ -441,7 +472,7 @@
       else if (!s.withSym) lines.push(`No symptoms are logged ${s.lbl}.`);
       else lines.push(`${upper1(s.lbl)} you logged symptoms on ${s.withSym} of ${plural(s.logged, "day")}, mostly ${s.symRows[0].name.toLowerCase()}, on ${plural(s.symRows[0].n, "day")}.`);
       if (R.u) lines.push(`Usually you log symptoms ${symUsual(R.u)}.`);
-      return { used: [`${s.k}.sym`, `${s.k}.symtop`, "u.sym"], lines, try: "Logging good days as well as rough ones lets Florin compare them.", fine: FINE_SYM };
+      return { used: [`${s.k}.sym`, `${s.k}.symtop`, "u.sym"], lines, try: `Logging ${ORD} as well as rough ones lets Florin compare them.`, fine: FINE_SYM };
     },
     rough(R, q) {
       if (!R.u) return A.patterns(R, "");
@@ -450,7 +481,7 @@
       if (PR.sparse && !R.cp) {
         lines.push(PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so there are few ordinary days to compare with.` : "No meals are logged, so Florin can't look at what comes before a rougher day yet.");
         used.push("p.held", "p.check");
-        return { used, lines, try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day on good days too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there.", fine: FINE_SYM };
+        return { used, lines, try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there.", fine: FINE_SYM };
       }
       /* a symptom the patterns don't look at on its own is said plainly, never answered with another symptom's pattern */
       const named = R.cp ? null : symNamed(q);
@@ -467,11 +498,11 @@
       }
       lines.push(kind && PR.found.length ? `Nothing before ${KIND_WORD[kind]} clears the bar yet in your last ${L.PATTERN_DAYS} days.` : `Nothing stands out yet in your last ${L.PATTERN_DAYS} days: ${plural(PR.checked.length, "food")} checked, and none cleared the bar.`);
       used.push(kind && PR.found.length ? "p.bar" : "p.none", "p.bar");
-      return { used, lines, try: "Keep logging meals on good days too, so there's something to compare with.", fine: FINE_SYM };
+      return { used, lines, try: `Keep logging meals on ${ORD} too, so there's something to compare with.`, fine: FINE_SYM };
     },
     patterns(R, q) {
       const PR = R.PR, n = L.PATTERN_BAR.n, p = pickPat(R, q);
-      if (!R.u) return { used: ["learn", "p.wait", "p.bar"], lines: [`Florin starts checking a food once you've logged it ${n} times.`, `You're on day ${R.day} of ${L.LEARN_DAYS}, so there isn't enough to compare yet.`], try: "Log what you ate when you can, on good days as well as rough ones." };
+      if (!R.u) return { used: ["learn", "p.wait", "p.bar"], lines: [`Florin starts checking a food once you've logged it ${n} times.`, `You're on day ${R.day} of ${L.LEARN_DAYS}, so there isn't enough to compare yet.`], try: `Log what you ate when you can, on ${ORD} as well as rough ones.` };
       const bar = `A pattern shows only when it holds ${n} or more times, most of the time, and far more often than on other days.`;
       if (/\bsure\b/i.test(q)) {
         if (p && p.below) return Object.assign({ used: ["p.bar", "p.c"], lines: [bar, `${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise, so it's below that bar for now.`], try: "Keep logging as you usually would, and Florin checks it again as the days add up." }, patChart(p));
@@ -480,22 +511,22 @@
       if (/\b\d+ logs\b|\bwhy does a food\b/i.test(q)) return { used: ["p.bar"], lines: [`Florin checks every food you log against the mornings after, so it waits for ${n} logs of a food before it looks.`, "With fewer, chance alone would name a food now and then."], try: "Keep logging meals as you usually would." };
       if (/\b(what else|part of it)\b/i.test(q)) return { used: p ? [pid(R, p)] : [], lines: ["Patterns only see what you logged, so sleep, a busy week, travel or how much you ate could be part of it too.", "That's why Florin calls it a possible pattern, never a cause."], try: "A short note on the day helps you see it later." };
       if (R.cp) return Object.assign({ used: ["p.c", "p.bar"], lines: [`${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.`, "Patterns show what tends to happen together; they don't prove cause."], try: patTry(p) }, patChart(p));
-      if (PR.sparse) return { used: ["p.held", "p.check"], lines: [PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so there are few ordinary days to compare with.` : "No meals are logged yet, so there's nothing to compare."], try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day on good days too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there." };
-      if (!PR.found.length) return { used: ["p.none", "p.bar"], lines: [`Nothing stands out yet in your last ${L.PATTERN_DAYS} days: ${plural(PR.checked.length, "food")} checked, and none cleared the bar.`, "A pattern has to hold most of the time, and far more often than on other days."], try: "Keep logging meals on good days too, so there's something to compare with." };
+      if (PR.sparse) return { used: ["p.held", "p.check"], lines: [PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so there are few ordinary days to compare with.` : "No meals are logged yet, so there's nothing to compare."], try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there." };
+      if (!PR.found.length) return { used: ["p.none", "p.bar"], lines: [`Nothing stands out yet in your last ${L.PATTERN_DAYS} days: ${plural(PR.checked.length, "food")} checked, and none cleared the bar.`, "A pattern has to hold most of the time, and far more often than on other days."], try: `Keep logging meals on ${ORD} too, so there's something to compare with.` };
       const two = PR.found.slice(0, 2);
       return Object.assign({ used: two.map((x, i) => `p.${i}`).concat(["p.bar"]), lines: two.map((x) => `${patTitle(x)}: ${x.hit} of ${x.n} times, against ${x.oh} of ${x.on} otherwise.`).concat(["Patterns show what tends to happen together; they don't prove cause."]), try: patTry(two[0]) }, patChart(two[0]));
     },
     test(R, q) {
       const PR = R.PR, p = pickPat(R, q);
       if (p) return Object.assign({ used: [pid(R, p)], lines: [p === R.cp ? `${patTitle(p)}: ${p.hit} of ${p.n} times${p.below ? `, against ${p.oh} of ${p.on} otherwise, below the bar for now` : ""}.` : `Your clearest pattern is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times.`, "One change at a time shows what matters."], try: patTry(p) }, patChart(p));
-      if (R.u && PR.sparse && PR.withMeal) return { used: ["p.held", "p.check"], lines: [`Meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so there are few ordinary days to test against.`], try: `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day on good days too, lets Florin look.` };
-      return { used: R.u ? ["p.none"] : ["p.wait"], lines: ["There's no pattern to test yet: none clears the bar."], try: "Keep logging meals on good days too, so there's something to compare with." };
+      if (R.u && PR.sparse && PR.withMeal) return { used: ["p.held", "p.check"], lines: [`Meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so there are few ordinary days to test against.`], try: `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` };
+      return { used: R.u ? ["p.none"] : ["p.wait"], lines: ["There's no pattern to test yet: none clears the bar."], try: `Keep logging meals on ${ORD} too, so there's something to compare with.` };
     },
     try(R, q) {
       if (!R.u) return { used: ["learn"], lines: [`You're on day ${R.day} of ${L.LEARN_DAYS}, so the most useful thing now is plenty of logs.`], try: "Log each BM when it happens, symptoms when they come up, and what you ate when you can." };
       const PR = R.PR, p = pickPat(R, q);
       if (p) return Object.assign({ used: [pid(R, p), "p.bar"], lines: [p === R.cp ? `${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.` : `Your clearest pattern is ${lower1(patTitle(p))}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise.`], try: patTry(p) }, patChart(p));
-      if (PR.sparse && PR.withMeal) return { used: ["p.held", "p.check"], lines: [`Meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so Florin can't compare them with ordinary days yet.`], try: `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day on good days too, lets Florin look.` };
+      if (PR.sparse && PR.withMeal) return { used: ["p.held", "p.check"], lines: [`Meals are logged on ${PR.withMeal} of your last ${PR.logged} days, so Florin can't compare them with ordinary days yet.`], try: `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` };
       const ra = roomAct(R);
       if (!ra) return { used: [], lines: ["Your logs are steady enough that there's nothing in particular to change."], try: "Keep logging as things happen." };
       return { used: ["s.room", `s.p.${R.room.key}`, ra.id].filter(Boolean), lines: [`${PARTN[R.room.key]} has the most room in your FloraScore this week, at ${R.room.now}.`], try: `${upper1(ra.text)}.` };
@@ -520,6 +551,8 @@
     },
     clinician(R, q) {
       const urgent = URGENTQ.test(q || "") || URGENTQ_CASE.test(q || "");
+      /* mucus leads with the flag note's own line, then primary care, never a reading of it */
+      if (MUCUS.test(q || "")) return { used: [], lines: [MUCUS_LINE, ALARM_PRIMARY, urgent ? URGENT_LINE : ""], try: "Your logs can go with you as a report, so you don't have to remember dates." };
       return { used: [], lines: ["Some changes need a person, not an app.", "Blood, a black or tar-like stool, a fever, vomiting that won't stop, weight loss you can't explain or waking at night to go: start with primary care soon.", urgent ? URGENT_LINE : ""], try: "If a symptom is new for you or keeps showing up, bring your logs to your GP or a nurse practitioner." };
     },
     learn(R) {
@@ -528,9 +561,9 @@
       return { used: ["u.win", "u.n", "u.form", "u.sym", "k.learn"], lines: [`Your usual comes from your logs from ${R.uFrom} to ${R.uTo}: a first BM from ${R.win}, ${R.u.nLo} to ${R.u.nHi} a day, and ${R.formText}.`, "It updates as you log, and it's only ever compared with you."], try: t };
     },
     logHow(R, q) {
-      if (/symptom/i.test(q)) return { used: [], lines: ["Log a symptom when it comes up, with a strength if you can, and how long it lasted.", "A short note on what was going on that day helps you remember it later."], try: "Log good days as well as rough ones, so Florin can compare them.", fine: FINE_SYM };
+      if (/symptom/i.test(q)) return { used: [], lines: ["Log a symptom when it comes up, with a strength if you can, and how long it lasted.", "A short note on what was going on that day helps you remember it later."], try: `Log ${ORD} as well as rough ones, so Florin can compare them.`, fine: FINE_SYM };
       if (/\bnote\b/i.test(q)) return { used: [], lines: ["Anything that shaped your week is worth a line: a late dinner, travel, a short night or a busy day.", "Notes stay with the day, for you and a clinician to read later."], try: "Add it to the day it happened, from History." };
-      return { used: ["k.gap"], lines: ["Log each BM when it happens, with the closest form, and symptoms when they come up.", "Meals help most when they're logged on good days too, and a day with no BM can be logged as No BM, so it isn't read as a gap."], try: "Start from the plus button whenever something happens." };
+      return { used: ["k.gap"], lines: ["Log each BM when it happens, with the closest form, and symptoms when they come up.", `Meals help most when they're logged on ${ORD} too, and a day with no BM can be logged as No BM, so it isn't read as a gap.`], try: "Start from the plus button whenever something happens." };
     },
     week(R, q, off) {
       const s = R.w, lead = off ? "Ask Florin answers from your own logs, so here's what they show." : "";
@@ -545,9 +578,14 @@
   /* a question about the emergency room, A&E or urgent care gets the clinician answer with the urgent-care line */
   const URGENTQ = /\b(emergency|hospital|urgent care|urgent|walk-in|999|911|112)\b|\b(the|an) (er|a ?& ?e)\b/i, URGENTQ_CASE = /\bER\b|\bA ?& ?E\b/;
   const URGENT_LINE = "If it's severe, or you feel very unwell, get urgent care now.";
+  /* mucus isn't an alarm feature, but Florin never reads it either: the flag note's line, the clinician answer, and
+     the question stays on the phone */
+  const MUCUS = /\bmucus\b|\bmucous\b/i;
+  const MUCUS_LINE = "If mucus is new for you, keeps showing up, or comes with pain or blood, check in with a clinician.";
   const INTENTS = [
     ["report", /\breports?\b|\bbring (my |these |the )?logs\b|\bshare (my |these |the )?logs\b|\bexport\b/i],
-    ["clinician", /\bclinicians?\b|\bdoctors?\b|\bgp\b|\bnurse|\bappointment|\bprimary care\b|\bprovider\b|\bsee (someone|a person)\b/i],
+    ["clinician", /\bclinicians?\b|\bdoctors?\b|\bgp\b|\bnurse|\bappointment|\bprimary care\b|\bprovider\b|\bsee (someone|a person)\b|\bgastroenterologists?\b|\bgastro\b|\bspecialists?\b|\bconsultants?\b/i],
+    ["clinician", MUCUS],
     ["clinician", URGENTQ],
     ["clinician", URGENTQ_CASE],
     ["logHow", /\bhow (do|should|can) i log\b|\blog \w+ well\b|\bwhat (should|do) i (need to )?log\b|\bwhat to log\b|\bwhen (should|do) i log\b|\bwhat should i note\b/i],
@@ -571,6 +609,7 @@
   const CTX_INTENT = { score: "score", timing: "timing", often: "often", form: "form", sym: "symptoms", ck: "checkin", pat: "patterns" };
   const LOGWORDS = /\b(bms?|logs?|logged|gut|score|florascore|symptoms?|meals?|food|usual|bloat\w*|pain|form|timing|morning|days?|week)\b/i;
   function intentOf(q, R) {
+    q = plainQ(q);
     const hit = INTENTS.find(([, rx, ok]) => rx.test(q) && (!ok || ok(R)));
     if (hit) return { it: hit[0], off: false };
     const k = R.ctxK ? (R.ctxK.indexOf("pattern:") === 0 ? "patterns" : CTX_INTENT[R.ctxK]) : null;
@@ -589,6 +628,8 @@
     return { intent: it, lines: (o.lines || []).filter(Boolean).slice(0, 3), try: o.try || "", chart: o.chart || "", legend: o.legend || "", used: used.map((u) => [u.l, u.v]), usedIds: used.map((u) => u.id), fine: o.fine || FINE };
   }
   const textOf = (a) => [...(a.lines || []), a.try].filter(Boolean).join(" ");
+  /* an answer that stays on the phone even where Claude is there: the clinician answer to a question about mucus */
+  const stays = (comp, q) => comp.intent === "clinician" && MUCUS.test(q || "");
 
   /* ---------- steps 1 and 2: alarm words, then a request Florin never answers itself ---------- */
   /* Step 1 is L.alarmsIn, the check a log's note uses, with the wider net for how people write a sign (L.ALARM_WIDE):
@@ -599,11 +640,19 @@
   const signsIn = (q) => L.alarmsIn(q);
 
   /* Step 2: a request to diagnose, prescribe, dose or predict, or to say what to cut out, gets a fixed, kind redirect. A
-     question about what will happen is one only when it isn't about the app ("will my logs be in the report") */
+     question about what will happen is one only when it isn't about the app ("will my logs be in the report"). A
+     question that names a condition always needs a condition word, so "Could it be a gap in my logs?" and "Does this
+     mean I have a pattern?" stay questions about the logs */
+  const COND = "ibs|ibd|sibo|celiac|coeliac|cancer|crohn'?s|colitis|gastritis|ulcers?|inflammation|an? (\\w+ ){0,2}(intolerance|allergy|infection|disease|condition|syndrome|ulcer)";
+  const MEDS = "probiotics?|prebiotics?|supplements?|medicines?|medications?|meds|pills?|tablets?|drugs?|laxatives?|antibiotics?|enzymes?";
   const REDIRECT = [
     /\bdiagnos\w*/i,
     /\bwhat('?s| is) wrong with me\b/i,
-    /\b(do|might|could) i have (ibs|ibd|sibo|celiac|coeliac|cancer|crohn'?s|colitis|an? (\w+ ){0,2}(intolerance|allergy|infection|disease|condition|syndrome|ulcer))\b/i,
+    new RegExp(`\\b(do|might|could) i have (${COND})\\b`, "i"),
+    new RegExp(`\\b(is|could|might) (it|this|that) (be )?(${COND}|inflamed)\\b`, "i"),
+    new RegExp(`\\b(does|could|might|would) (this|that|it) mean (that )?i('ve got|'ve| have| might have| could have| got) (${COND})\\b`, "i"),
+    /\b(what|which) (conditions?|illness(es)?|diseases?|disorders?)\b/i,
+    /\binflam\w*/i,
     /\b(tell me|let me know|know|find out|check|see|work out) (if|whether) i('ve| have| might have| could have| got)\b/i,
     /\bam i (\w+ )?(intolerant|allergic|sick|ill)\b/i,
     /\bis (it|this|that) (ibs|ibd|sibo|cancer|celiac|coeliac|serious|something serious|an? (\w+ ){0,2}(intolerance|allergy|infection|disease|condition))\b/i,
@@ -612,7 +661,8 @@
     /\bprescri\w*/i,
     /\bdos(e|es|age|ing)\b/i,
     /\b(should|can|could|do) i (take|use|start|stop|need|try) (a |an |some |any |the |more |less |my )?(\w+ ){0,2}(medications?|medicines?|meds|pills?|tablets?|drugs?|supplements?|probiotics?|laxatives?|antibiotics?|imodium|loperamide|painkillers?|ibuprofen|paracetamol|enzymes?)\b/i,
-    /\bwhat (medications?|medicines?|meds|pills?|drugs?|supplements?|probiotics?) (should|can|could|do|would)\b/i,
+    new RegExp(`\\b(what|which) (\\w+ )?(${MEDS}) (is|are|would|should|can|could|do|might|will)\\b|\\b(best|recommend\\w*) (an? |any |some )?(\\w+ )?(${MEDS})\\b`, "i"),
+    new RegExp(`\\b(would|could|will|does|do|might|can) (an? |some |any |the |more |less |taking |trying )?(\\w+ )?(${MEDS}) help\\b`, "i"),
     /\bhow (much|many) (\w+ ){0,3}(should|can|do) i take\b/i,
     /\b(treat|treats|treatment|cure|cures)\b/i,
     /\bpredict\w*|\bforecast\w*/i,
@@ -626,10 +676,15 @@
   ];
   const APPQ = /\b(log|logs|logged|logging|report|app|florin|chat|reminders?|history|screen|notes?|check-?ins?)\b/i;
   const FOODQ = /(\b(should|can|could|do|must) i\b|\bwould it help to\b|\bis it (better|best) to\b)(?:(?![.?]).){0,24}?\b(cut (out|back on|down on)|stop (eating|drinking|having)|avoid|give up|eliminate|go (gluten|dairy|lactose|sugar|meat|wheat)[- ]free)\b/i, FOODQ2 = /\b(is|are) (\w+ ){1,3}(bad|good|ok|okay|safe) for (me|my)\b/i;
+  /* quitting, skipping or still having a food, and whether going without one would help */
+  const FOODQ3 = new RegExp(`\\b(should|can|could|do|must) i\\b(?:(?![.?]).){0,24}?\\b(quit|skip|stop|cut|go without|still (eat|have|drink))\\b (the |my |any |a |eating |having |drinking )?((${FOOD_ADJ}) )?(${FOODW})(s|es)?\\b`, "i");
+  const FOODQ4 = new RegExp(`\\b(would|does|will|could|might|do) (going|cutting|stopping|giving up|dropping|quitting|skipping|avoiding|eating less|drinking less|having less)( out| down on| back on)? ((${FOOD_ADJ}) )?(${FOODW})(s|es)?([- ]free)? (out )?help\\b`, "i");
+  /* curly apostrophes, as a phone types them, read as straight ones */
+  const plainQ = (q) => String(q || "").replace(/[‘’]/g, "'");
   const redirectOf = (q) => {
-    q = String(q || "");
+    q = plainQ(q);
     if (REDIRECT.some((rx) => rx.test(q))) return "clinic";
-    if (FOODQ.test(q) || (FOODQ2.test(q) && !APPQ.test(q))) return "food";
+    if (FOODQ.test(q) || FOODQ3.test(q) || FOODQ4.test(q) || (FOODQ2.test(q) && !APPQ.test(q))) return "food";
     if (!APPQ.test(q) && FORECAST.some((rx) => rx.test(q))) return "ahead";
     return null;
   };
@@ -675,17 +730,20 @@
     "Rules:",
     "- Wellness only. Read everything against the person's own usual, never against other people.",
     "- Never diagnose, predict, treat or prescribe, and never suggest a dose, a medicine, a supplement or a probiotic, or cutting out a food. Never say what a change means for their health.",
-    "- Never say what will happen tomorrow, next week or soon, and never use likely or probably.",
-    "- Never name a trigger, an intolerance, a sensitivity, an allergy or a condition. Patterns show what tends to happen together, never a cause.",
-    "- Never reassure and never judge: no nothing to worry about, and no good, bad, better or worse about their gut, their health or their FloraScore.",
-    "- Never use the words normal, healthy, improving or worsening. Use neutral words: within your usual, outside your usual, more often, less often, about the same, seen together.",
-    "- No em dashes, no exclamation points, no humour, no emoji, no markdown, no lists.",
+    "- Never say what will happen tomorrow, next week or soon, or what a change would lead to, and never use likely or probably.",
+    "- Never name a trigger, an intolerance, a sensitivity, an allergy, inflammation or a condition, and never say a food is behind, causing or to blame for anything. Patterns show what tends to happen together, never a cause.",
+    "- Never suggest skipping, cutting down on or going without a food, even to test it.",
+    "- Never reassure and never judge: no nothing to worry about, no on track, and no good, bad, better or worse about their gut, their health or their FloraScore.",
+    "- Never use the words normal, healthy, good, bad, regular, improving, worsening or resolved. Use neutral words: within your usual, outside your usual, more often, less often, about the same, seen together.",
+    "- Never compare them with other people or say what most people do.",
+    "- No em dashes, no exclamation points, no humour, no jokes, no emoji, no markdown, no lists.",
     "- Use a number only if it appears in the facts, written in digits exactly as it appears there, and say \"5 of 6\" only for a pair the facts state. Never work out a new number, a share or a percentage, and never say half.",
     "- Write 2 to 4 short sentences in plain words, to the person as you.",
     "- End on one thing to log or try.",
     "- Never name IBD, the Bristol scale or IBS-SSS. Say BM, never bowel movement.",
     "- Answer only about the person's own logs. If the question is about anything else, say briefly what their logs can show instead.",
-    "- If the person mentions blood, a black or tar-like stool, a fever, vomiting that won't stop, weight loss or waking at night to go, tell them to contact primary care soon, and don't interpret it."
+    "- If the person mentions blood, a black or tar-like stool, a fever, vomiting that won't stop, weight loss or waking at night to go, tell them to contact primary care soon, and don't interpret it.",
+    "- If the person mentions mucus, say that if it's new for them, keeps showing up, or comes with pain or blood, they should check in with a clinician, and don't interpret it."
   ].join("\n");
   /* the rules and the facts lead, then the last few exchanges the page kept, then the new question */
   function turnsFor(ch, R, q, pendingId) {
@@ -816,7 +874,8 @@
     if (r.kind === "redirect") return settle(api, ch, Object.assign(a, redirectAnswer(r.which)));
     const comp = answerOf(R, q);
     a.intent = comp.intent;
-    if (o.computedOnly || ASK.off || ASK.state === "none") return settle(api, ch, Object.assign(a, fromComputed(comp)));
+    /* a question that names mucus gets the clinician answer on the phone, like a sign: never sent for a reading */
+    if (o.computedOnly || ASK.off || ASK.state === "none" || stays(comp, q)) return settle(api, ch, Object.assign(a, fromComputed(comp)));
     const ctl = new AbortController();
     ch.busy = { id: a.id, ctl };
     /* an answer still coming when the chat ends (Reset, another person, other logs, a new chat) is stopped, so it
@@ -1030,6 +1089,10 @@
   });
   EXT.opens["ask-chat"] = (api) => seed(api, "chat");
   EXT.opens["ask-alarm"] = (api) => seed(api, "alarm");
+  /* Screens > Ask Florin: the plain tab, with no chat left over from a seeded screen (the tab bar keeps the chat). The
+     core's open("ask") doesn't consult EXT.opens yet, as "ask" is an id it knows: this waits on a one-line change in
+     refresh-app.js (case "ask": S.askCtx = null; if (EXT.opens.ask) safe(EXT.opens.ask, api); else go("ask")) */
+  EXT.opens.ask = (api) => { stopChat(api.S); api.S.askx = null; api.S.askCtx = null; api.go("ask"); };
   EXT.screens.push(["Ask Florin", [["ask-chat", "Ask Florin, a conversation"], ["ask-alarm", "Ask Florin, a sign that needs a clinician"]], { before: "Membership" }]);
 
   /* which screen the Ask tab is on, for the notes and the Screens list: a conversation, or one whose last answer is
@@ -1086,7 +1149,7 @@
 
   /* ---------- notes for Will ---------- */
   const engineNow = () => (ASK.off ? "In this view Claude was turned down or isn't on the account, so every answer is computed from the logs." : ASK.state === "ready" ? "In this view Claude is available, so answers come from Claude on the viewer's own Claude account, checked on the phone, with the computed answer as the fallback." : "In this view there's no Claude (a local file, a test page, or a host that doesn't offer it), so every answer is computed from the logs.");
-  const GUARD = "Four steps, in order: alarm words get the clinician answer and are never sent; a request to diagnose, prescribe, dose, predict or say what to cut out gets a fixed redirect; then Claude, given a rules turn and a facts packet from the model; then a check on the answer: the 22 claims rules, Ask's own (no forecast, trigger, condition, medicine, reassurance or judgement of the gut or score, no emoji or list, 2 to 4 sentences) and a numbers check (every number, and every \"5 of 6\", has to be one the facts state). A failed check swaps in the computed answer, marked Checked against Florin's rules, or the clinician answer when Claude had pointed to primary care.";
+  const GUARD = "Four steps, in order: alarm words get the clinician answer and are never sent, and so does mucus, led by the flag note's own line; a request to diagnose, name a condition, prescribe, dose, predict, or say what to cut out or still eat gets a fixed redirect; then Claude, given a rules turn and a facts packet from the model; then a check on the answer: the 22 claims rules, Ask's own (no forecast, trigger or food behind a change, condition, medicine, food to skip, reassurance, judgement of the gut or score, comparison with other people or humour, none of normal, good, bad, regular or resolved, no emoji or list, 2 to 4 sentences) and a numbers check (every number, and every \"5 of 6\", has to be one the facts state). A failed check swaps in the computed answer, marked Checked against Florin's rules, or the clinician answer when Claude had pointed to primary care.";
   const RES = ["Oura Advisor: answers from the person's own data, small charts in answers, memories the person can see and delete.", "Oura admits Advisor's numbers may not always match the app. Here every number in an answer is checked against the model the screens draw from."];
   const OPEN = [
     "One free question a week on the Free plan, so people see an answer from their own numbers before paying? Still your call; Free keeps the lock for now.",

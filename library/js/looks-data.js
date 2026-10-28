@@ -8,6 +8,9 @@
   const short = (d) => { const x = L.dateOf(d); return `${Ut.MON[x.getMonth()]} ${x.getDate()}`; };
   const dow = (d) => Ut.DOW[L.dateOf(d).getDay()];
   const lower1 = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
+  const andList = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
   /* the weeks every usual is learned from, days 28 to 83 (refresh-data.js, the studio's rule) */
   const BASE = [28, 83];
 
@@ -76,6 +79,23 @@
 
     /* the cards' numbers */
     const F7 = span(7), F30 = span(30), F90 = span(90);
+    /* a stretch's days, counted the way Insights and Your days count them: the days within your usual out of the days
+       read either way (within or shifted). A day that could be either, or one logged with nothing about BMs, is counted
+       neither way, never as a shift: left says which, by name for a week and by count for a month */
+    const tally = (F, named) => {
+      const lg = F.filter((f) => f.logged), by = (s) => lg.filter((f) => f.state === s);
+      const within = by("usual"), shifted = by("shifted"), unsure = by("unsure"), noc = by("nocount");
+      const nm = (f) => (f.today ? "today" : Ut.DOWL[L.dateOf(f.d).getDay()]);
+      const who = (a) => cap(named ? andList(a.map(nm)) : plural(a.length, "day"));
+      const notC = (a) => `so ${a.length === 1 ? "it isn't" : "they aren't"} counted`;
+      const past = noc.filter((f) => !f.today), now = noc.some((f) => f.today);
+      const left = [
+        unsure.length && `${who(unsure)} could be either, ${notC(unsure)}.`,
+        past.length && `${who(past)} had nothing about BMs, ${notC(past)}.`,
+        now && "Today has nothing about BMs yet, so it isn't counted."
+      ].filter(Boolean).join(" ");
+      return { logged: lg.length, within: within.length, shifted: shifted.length, unsure: unsure.length, nocount: noc.length, none: F.filter((f) => !f.logged && !f.pending).length, known: within.length + shifted.length, left };
+    };
     const scale = scaleOf(mode);
     const formUsual = !u ? null : mode === "B" ? [u.wLo, u.wHi] : [u.fLo, u.fHi];
     const allForms = F30.flatMap((f) => f.forms);
@@ -98,15 +118,21 @@
     const symRows = Object.entries(symNames).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, days: n, cells: F30.map((f) => (!f.logged ? null : (f.sym.find((s) => s.name === name) || { strength: false }).strength)) }));
     const symUsual = u && u.sym ? (u.sym.every == null ? "Rarely" : u.sym.every <= 1 ? "Most days" : `About 1 day in ${u.sym.every}`) : null;
 
-    /* the weekly check-in */
+    /* the weekly check-in. This week's, once saved, is the latest week, the way Insights reads it (refresh-insights.js
+       ckOf); the starting point stays the first three weeks before it (L.baseline reads M.checkins only). saved and
+       count let a look tell a first check-in saved, with nothing to compare it with yet, from none at all */
     const b = L.baseline(M);
-    const ckWeeks = M.checkins;
+    const cur = M.checkin.status === "done" && M.checkin.answers ? Object.assign({ w: 12, ws: 84 }, M.checkin) : null;
+    const ckWeeks = cur ? M.checkins.concat([cur]) : M.checkins;
     const checkin = {
       due: M.checkin.status === "due",
+      saved: !!cur,
+      count: ckWeeks.filter((c) => c.answers).length, baseWeeks: L.BASE_WEEKS,
       /* the check-in's own tag words, so a look that asks about a day saves the same tags the check-in does */
       tags: L.CHECKIN_TAGS.slice(),
       questions: L.CHECKIN.map((q, i) => {
-        const weeks = ckWeeks.map((c) => ({ w: c.w, label: c.w === 12 ? "This week" : `Week of ${short(c.ws)}`, v: c.answers ? c.answers[i] : null }));
+        /* label is a week's name as a title, when the same in a sentence ("this week", "the week of Sep 28") */
+        const weeks = ckWeeks.map((c) => ({ w: c.w, label: c === cur ? "This week" : `Week of ${short(c.ws)}`, when: c === cur ? "this week" : `the week of ${short(c.ws)}`, v: c.answers ? c.answers[i] : null }));
         const latest = weeks.filter((w) => w.v != null).slice(-1)[0] || null;
         const cmp = b && latest ? L.compare(b, i, latest.v) : null;
         return { label: q.label, opts: q.opts, ticks: q.ticks, weeks, band: b ? { lo: b[i].lo, hi: b[i].hi } : null, latest, cmp };
@@ -147,6 +173,7 @@
       learning: !u ? { day: L.learnDay(M), of: L.LEARN_DAYS } : null,
       score,
       days: { 7: F7, 30: F30, 90: F90 },
+      tally: { 7: tally(F7, true), 30: tally(F30, false) },
       timing: { usual: u ? [u.tLo, u.tHi] : null, usualText: u ? `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}` : null, inWin30: u ? F30.filter((f) => f.inWin).length : null, mornings30: F30.filter((f) => f.first != null).length },
       often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })() },
       /* usualWeeks: the days the usual forms were learned from, so a look can show what share of BMs they held */

@@ -30,6 +30,8 @@
   const DOWL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
   const dayName = (d) => (d.today ? "today" : DOWL[d.dow] || d.dow);
   const dayShort = (d) => (d.today ? "today" : d.dow);
+  /* the dates a card covers, ending on today: a one-day stretch (day 1) is just today */
+  const spanOf = (days) => { const a = days[0], z = days[days.length - 1]; return days.length === 1 ? (a.today ? "Today" : a.label) : `${a.label} to ${z.today ? "today" : z.label}`; };
 
   /* ---------- the parts every card is made of ---------- */
   /* the card: a short title (a heading, so a screen reader can jump card to card) and, when it helps, when it covers */
@@ -201,19 +203,24 @@
     const learning = !!D.learning;
     const slots = Array(Math.max(0, 7 - days.length)).fill(null).concat(days);
     const n = (s) => days.filter((d) => d.logged && d.state === s);
-    const logged = days.filter((d) => d.logged), shifted = n("shifted"), unsure = n("unsure"), within = n("usual").length;
+    const logged = days.filter((d) => d.logged), shifted = n("shifted");
+    /* within your usual out of the days read either way: a day that could be either, or with nothing about BMs, is
+       said by name under the number (D.tally), never counted as not within */
+    const T = D.tally[7];
     const cols = slots.map((d) => {
       if (!d) return `<li class="ez-day is-before" aria-hidden="true"><span class="ez-day-k">&nbsp;</span><span class="ez-c is-blank"></span></li>`;
       const [, word] = stateOf(d);
       return `<li class="ez-day${d.today ? " is-today" : ""}">${vh(x, `${d.today ? "Today" : DOWL[d.dow]}, ${d.label}: ${word}.`)}<span class="ez-day-k" aria-hidden="true">${esc(d.dow)}</span>${circle(x, d)}${d.today ? `<span class="ez-day-now" aria-hidden="true">Today</span>` : ""}</li>`;
     }).join("");
-    const ans = !logged.length ? "No days logged this week yet."
+    const ans = !logged.length ? (learning ? "Nothing logged yet." : "No days logged this week yet.")
       : learning ? "Florin is still learning your usual, so days show as logged."
       : shifted.length ? `Outside your usual on ${andList(shifted.map(dayName))}.`
-      : unsure.length ? `${cap(andList(unsure.map(dayName)))} could be either.`
+      : !T.known ? "No day this week has a BM count logged yet."
+      : T.left ? "No day you logged was outside your usual."
       : "Every day you logged sat within your usual.";
-    return card(x, "ez-week", "This week at a glance", "This week", `${days[0].label} to ${days[days.length - 1].today ? "today" : days[days.length - 1].label}`, `
-      ${learning ? lead(x, logged.length, `of ${plural(days.length, "day")} logged`, ans) : lead(x, within, `of ${plural(logged.length, "day")} within your usual`, ans, shifted.length ? "shift" : null)}
+    return card(x, "ez-week", "This week at a glance", "This week", spanOf(days), `
+      ${!logged.length ? lead(x, null, null, ans) : learning ? lead(x, logged.length, `of ${plural(days.length, "day")} logged`, ans) : T.known ? lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, ans, shifted.length ? "shift" : null) : lead(x, null, null, ans)}
+      ${learning ? "" : body(x, T.left)}
       <div class="ez-fit"><ol class="ez-week-row">${cols}</ol></div>
       ${groups(x, days, true)}`);
   }
@@ -225,17 +232,18 @@
     const off = Math.max(0, DOWS.indexOf(days[0].dow));
     const cells = Array(off).fill(null).concat(days);
     const n = (s) => days.filter((d) => d.logged && d.state === s).length;
-    const logged = days.filter((d) => d.logged).length, within = n("usual"), shifted = n("shifted"), unsure = n("unsure");
+    const logged = days.filter((d) => d.logged).length, shifted = n("shifted"), T = D.tally[30];
     const grid = cells.map((d) => (!d ? `<li class="ez-md is-pad" aria-hidden="true"></li>`
       : `<li class="ez-md${d.today ? " is-today" : ""}">${vh(x, `${d.today ? "Today" : DOWL[d.dow]}, ${d.label}: ${stateOf(d)[1]}.`)}${circle(x, d)}</li>`)).join("");
-    const ans = !logged ? "No days logged yet."
+    const ans = !logged ? (learning ? "Nothing logged yet." : "No days logged yet.")
       : learning ? "Days fill in against your usual once Florin knows it."
       : shifted ? `Outside your usual on ${plural(shifted, "day")}.`
-      : unsure ? `${cap(plural(unsure, "day"))} could be either.`
+      : !T.known ? "No day in the last 30 days has a BM count logged yet."
+      : T.left ? "No day you logged was outside your usual."
       : "Every day you logged sat within your usual.";
-    const last = days[days.length - 1];
-    return card(x, "ez-month", learning ? "Since you started, at a glance" : "The last 30 days at a glance", learning ? "Since you started" : "The last 30 days", `${days[0].label} to ${last.today ? "today" : last.label}`, `
-      ${learning ? lead(x, logged, `of ${plural(days.length, "day")} logged`, ans) : lead(x, within, `of ${plural(logged, "day")} within your usual`, ans, shifted ? "shift" : null)}
+    return card(x, "ez-month", learning ? "Since you started, at a glance" : "The last 30 days at a glance", learning ? "Since you started" : "The last 30 days", spanOf(days), `
+      ${!logged ? lead(x, null, null, ans) : learning ? lead(x, logged, `of ${plural(days.length, "day")} logged`, ans) : T.known ? lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, ans, shifted ? "shift" : null) : lead(x, null, null, ans)}
+      ${learning ? "" : body(x, T.left)}
       <div class="ez-cal ez-fit">
         <ol class="ez-cal-h" aria-hidden="true">${DOWS.map((w) => `<li>${w.slice(0, 2)}</li>`).join("")}</ol>
         <ol class="ez-cal-g">${grid}</ol>
@@ -330,7 +338,7 @@
       : either ? `${either} could be either. The rest sat within your usual.`
       : "Every BM sat within your usual forms.";
     return card(x, "ez-form", "Form", "Form", D.learning ? "So far" : "Last 30 days", `
-      ${u ? lead(x, F.within30, `of ${plural(total, "BM")} within your usual forms`, ans, firmer || looser ? "shift" : null) : lead(x, total, total === 1 ? "BM logged so far" : "BMs logged so far", ans)}
+      ${u && total > either ? lead(x, F.within30, `of ${plural(total - either, "BM")} within your usual forms`, ans, firmer || looser ? "shift" : null) : total ? lead(x, total, total === 1 ? "BM logged so far" : "BMs logged so far", ans) : lead(x, null, null, ans)}
       ${rows.length ? bars(x, rows) : ""}
       ${u ? body(x, `Your usual forms: ${F.usualText}.`) : ""}
       ${u && either && (firmer || looser) ? body(x, `${either} could be either: a word that covers forms on both sides of your usual.`) : ""}`);
@@ -354,10 +362,10 @@
     };
     const shown = rows.slice(0, 5), rest = rows.slice(5);
     const top = rows[0];
-    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
+    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : !S.logged30 ? "Nothing logged yet." : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
     const usual = S.usualText ? lower1(S.usualText) : null;
     return card(x, "ez-symptoms", "Symptoms", "Symptoms", D.learning ? "So far" : "Last 30 days", `
-      ${lead(x, S.withSym30, `of ${plural(S.logged30, "logged day")} with a symptom`, ans)}
+      ${S.logged30 ? lead(x, S.withSym30, `of ${plural(S.logged30, "logged day")} with a symptom`, ans) : lead(x, null, null, ans)}
       ${shown.length ? bars(x, shown.map((r) => ({ label: r.name, aside: most(r), count: r.days, of: S.logged30, kind: "read", text: plural(r.days, "day") }))) : ""}
       ${rest.length ? body(x, `Also logged: ${andList(rest.map((r) => `${lower1(r.name)} on ${plural(r.days, "day")}`))}.`) : ""}
       ${usual ? body(x, `Your usual: symptoms ${usual === "rarely" ? "rarely" : `on ${usual}`}.`) : ""}

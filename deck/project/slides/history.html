@@ -10,7 +10,7 @@
     </div>
     <div style="display:flex; flex-direction:column; gap:8px;">
       <h3 style="font-family:Lora, serif; font-size:40px; font-weight:500; line-height:1.1;">Calendar</h3>
-      <p style="font-size:28px; line-height:1.4; color:#BFD3CC;">A month of days, each marked usual, shift or gap, today ringed. Tap a day for its entries.</p>
+      <p style="font-size:28px; line-height:1.4; color:#BFD3CC;">A month of days, each date over its mark: a dot within your usual, a ring outside it, a gap’s date struck through, today outlined. Tap a day for its entries.</p>
     </div>
     <div style="background:#14443B; border-left:6px solid #EEFFA3; border-radius:20px; padding:20px 28px;">
       <p style="font-size:28px; line-height:1.35;"><b>Recommendation: Calendar,</b> the design critic’s ask, with the list under a tapped day.</p>
@@ -22,65 +22,77 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#F9F7F2}
-.card{height:100%;border-radius:32px;background:#14443B;padding:32px;display:grid;grid-template-columns:560px 1fr;gap:36px}
-.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.hd h1{margin:0;font:400 34px Georgia,"Times New Roman",serif}
-.ar{display:flex;gap:12px}.ar span{width:44px;height:44px;border-radius:22px;border:2px solid #325C53;display:flex;align-items:center;justify-content:center;font-size:24px;color:#BFD3CC}
-.g{display:grid;grid-template-columns:repeat(7,72px);gap:8px}
-.w{font:24px ui-monospace,Menlo,Consolas,monospace;color:#BFD3CC;text-align:center;padding-bottom:4px}
-.c{height:72px;border-radius:18px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:24px}
-.c i{width:12px;height:12px;border-radius:50%}
-.c em{position:absolute;top:8px;right:9px;width:9px;height:9px;border-radius:50%;background:#C8A9BC}
-.u{background:rgba(238,255,163,.1)}.u i{background:#EEFFA3}
-.s{background:rgba(238,255,163,.04);box-shadow:inset 0 0 0 2px #DCC374}.s i{background:#DCC374}
-.n{box-shadow:inset 0 0 0 2px #4A7068;color:#BFD3CC}
-.sel{box-shadow:0 0 0 3px #14443B,0 0 0 6px #F9F7F2}
-.s.sel{box-shadow:inset 0 0 0 2px #DCC374,0 0 0 3px #14443B,0 0 0 6px #F9F7F2}
-.lg{display:flex;gap:24px;margin-top:18px;font-size:24px;color:#BFD3CC;align-items:center}
-.lg b{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px;font-weight:400}
-.pn{border-left:2px solid #325C53;padding-left:32px;display:flex;flex-direction:column;gap:14px}
-.k{font:24px ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#BFD3CC;text-transform:uppercase}
-.pn h2{margin:0;font:400 34px/1.2 Georgia,"Times New Roman",serif}
-.chip{align-self:flex-start;font-size:24px;padding:6px 16px;border-radius:18px;background:rgba(220,195,116,.12);color:#DCC374}
-.e{display:grid;grid-template-columns:118px 1fr;gap:6px 12px;font-size:24px;line-height:1.3}
-.e span:nth-child(odd){color:#BFD3CC}
-.add{margin-top:auto;align-self:flex-start;font-size:24px;padding:10px 22px;border-radius:24px;border:2px solid #EEFFA3;color:#EEFFA3}
+.card{height:100%;border-radius:32px;background:#14443B;padding:26px 32px;display:grid;grid-template-columns:552px 1fr;grid-template-rows:1fr auto;column-gap:32px;row-gap:12px}
+.cal{display:flex;flex-direction:column;gap:10px;min-height:0}
+.hd{display:flex;align-items:center;justify-content:space-between}
+.hd h1{margin:0;font-size:28px;line-height:1.2;font-weight:500}
+.nv{width:44px;height:44px;border-radius:22px;background:#1E5045;display:flex;align-items:center;justify-content:center;font-size:28px;line-height:1;color:#F9F7F2}
+.sum{margin:0;font-size:24px;line-height:1.3;color:#BFD3CC}
+.wk,.gr{display:grid;grid-template-columns:repeat(7,72px);column-gap:8px}
+.wk span{font:24px/28px ui-monospace,Menlo,Consolas,monospace;color:#BFD3CC;text-align:center}
+.gr{row-gap:5px}
+.c{height:58px;border-radius:14px;display:flex;flex-direction:column;align-items:center;padding-top:5px;gap:3px}
+.c b{font-size:24px;line-height:26px;font-weight:500;font-variant-numeric:tabular-nums}
+.mk{width:12px;height:12px;border-radius:50%}
+.u .mk{background:#EEFFA3}
+.s .mk{box-shadow:inset 0 0 0 3px #DCC374}
+.n b{color:#BFD3CC;font-weight:400;text-decoration:line-through;text-decoration-thickness:2px}
+.ts{display:flex;gap:5px;height:9px;align-items:center}
+.t{display:block;width:9px;height:9px;border-radius:2px;background:#BFD3CC}
+.t1{background:rgba(191,211,204,.65)}
+.t2{background:rgba(191,211,204,.82)}
+.ml{border-radius:50%;background:#8EC0CD}
+.sel{background:#1E5045}
+.sel b{font-weight:700}
+.lg{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 28px;font-size:24px;line-height:1.25;color:#BFD3CC;padding-top:10px;border-top:2px solid #325C53}
+.lg span{display:flex;align-items:center;gap:8px}
+.lg .mk{flex:none}
+.lg s{color:#BFD3CC;text-decoration-thickness:2px}
+.pn{border-left:2px solid #325C53;padding-left:28px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ph{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 12px}
+.pn h2{margin:0;font-size:26px;line-height:1.2;font-weight:600}
+.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#BFD3CC;text-transform:uppercase}
+.e{display:grid;grid-template-columns:116px 1fr;gap:8px 12px;font-size:24px;line-height:1.2}
+.e .tm{font-family:ui-monospace,Menlo,Consolas,monospace;color:#BFD3CC}
+.e i{display:block;font-style:normal;color:#BFD3CC}
+.add{margin-top:auto;align-self:flex-start;font-size:24px;line-height:1.2;padding:8px 20px;border-radius:24px;border:2px solid #4A7068}
 .go .c{animation:pop .35s cubic-bezier(.3,1.4,.5,1) both}
-.go .sel{animation:pop .35s cubic-bezier(.3,1.4,.5,1) both,ring .5s 2.2s ease-out both}
-.go .pn{animation:slide .7s 2.5s ease-out both}
+.go .sel{animation:pop .35s cubic-bezier(.3,1.4,.5,1) both,tap .4s 1.6s ease-out both}
+.go .lg{animation:fade .5s 1.3s ease-out both}
+.go .pn{animation:slide .6s 1.9s ease-out both}
 @keyframes pop{from{opacity:0;transform:scale(.6)}}
-@keyframes ring{from{box-shadow:inset 0 0 0 2px #DCC374,0 0 0 3px #14443B,0 0 0 3px rgba(249,247,242,0)}}
+@keyframes tap{from{background:rgba(30,80,69,0)}}
+@keyframes fade{from{opacity:0}}
 @keyframes slide{from{opacity:0;transform:translateX(24px)}}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="History as a month calendar: Sarah's September, 14 days within her usual, 15 shifted and 1 gap; Tuesday September 22 is tapped and its five entries show beside the month">
-  <div>
-    <div class="hd"><h1>September 2026</h1><div class="ar"><span>‹</span><span>›</span></div></div>
-    <div class="g" id="g"></div>
-    <div class="lg"><span><b style="background:#EEFFA3"></b>Usual</span><span><b style="background:#DCC374"></b>Shift</span><span><b style="box-shadow:inset 0 0 0 2px #4A7068;border-radius:4px"></b>Gap</span><span><b style="background:#C8A9BC;width:10px;height:10px"></b>Symptom</span></div>
+<div class="card" role="img" aria-label="History as a month calendar, as built, for Sarah’s September: 14 days within her usual, 15 outside it, 1 with nothing logged. Each date sits over its mark, a filled Ray dot within the usual or a Gold ring outside it; September 6, with nothing logged, has its date struck through. Under the mark, a square for a day with symptoms, milder to stronger, and a Teal dot for a meal logged. Tuesday September 22 is tapped, and its five entries show beside the month">
+  <div class="cal">
+    <div class="hd"><span class="nv">‹</span><h1>September 2026</h1><span class="nv">›</span></div>
+    <p class="sum">In September: 14 days within your usual, 15 outside it, 1 with nothing logged.</p>
+    <div class="wk"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+    <div class="gr" id="g"></div>
   </div>
   <div class="pn">
-    <div class="k">Tapped</div>
-    <h2>Tuesday, Sep 22</h2>
-    <div class="chip">No BM, fewer than your usual 1 to 2</div>
+    <div class="ph"><h2>Tuesday, Sep 22</h2><span class="k">5 entries</span></div>
     <div class="e">
-      <span>9:13 AM</span><span>Low energy, mild</span>
-      <span>9:45 AM</span><span>Bloating, mild</span>
-      <span>12:53 PM</span><span>Lunch: chicken salad</span>
-      <span>6:36 PM</span><span>Dinner: pizza</span>
-      <span>9:45 PM</span><span>No BM today</span>
+      <span class="tm">9:13 AM</span><span>Low energy<i>Mild · A few hours</i></span>
+      <span class="tm">9:45 AM</span><span>Bloating<i>Mild · A few hours</i></span>
+      <span class="tm">12:53 PM</span><span>Lunch<i>Chicken salad</i></span>
+      <span class="tm">6:36 PM</span><span>Dinner<i>Pizza</i></span>
+      <span class="tm">9:45 PM</span><span>No BM that day<i>Logged, so the day doesn’t read as a gap</i></span>
     </div>
-    <div class="add">Add to this day</div>
+    <div class="add">+ Add to this day</div>
   </div>
+  <div class="lg"><span><i class="mk" style="background:#EEFFA3"></i>Within your usual</span><span><i class="mk" style="box-shadow:inset 0 0 0 3px #DCC374"></i>Outside it</span><span><s>6</s>Nothing logged</span><span><i class="t t1"></i><i class="t"></i>Symptoms, milder to stronger</span><span><i class="t ml"></i>Meal logged</span></div>
 </div>
 <script>
-/* Sarah's September from L.facts (C, 12 weeks, every meal): u within her usual, s shifted, n not logged; 1 marks a
-   symptom logged that day. Sep 1 is a Tuesday */
-var D='s0 s0 s0 s0 s1 n0 u0 s0 s0 u1 s1 u0 s0 u0 u0 u0 s1 u0 s0 u0 u0 s1 u0 u0 s0 u1 u1 s1 u1 s0'.split(' '),h='';
-'MTWTFSS'.split('').forEach(function(w){h+='<div class="w">'+w+'</div>'});
-h+='<div></div>';
-D.forEach(function(d,i){h+='<div class="c '+d[0]+(i===21?' sel':'')+'" style="animation-delay:'+(.05+i*.04).toFixed(2)+'s"'+'>'+(i+1)+(d[0]!=='n'?'<i></i>':'')+(d[1]==='1'?'<em></em>':'')+'</div>'});
+/* Sarah's September from L.facts (C, 12 weeks, meals every day), as the built calendar marks it: u within her usual,
+   s outside it, n nothing logged; then the day's strongest symptom (1 mild, 2 moderate, - none) and m for a meal
+   logged. Sep 1 is a Tuesday */
+var D='s-m s-m s-m s-m s1m n-- u-m s-m s-m u1m s1m u-m s-m u-m u-m u-m s1m u-m s-m u-m u-m s1m u-m u-m s-m u2m u1m s1m u1m s-m'.split(' '),h='<span></span>';
+D.forEach(function(d,i){h+='<div class="c '+d[0]+(i===21?' sel':'')+'" style="animation-delay:'+(.05+i*.035).toFixed(2)+'s"><b>'+(i+1)+'</b><i class="mk"></i><span class="ts">'+(d[1]!=='-'?'<i class="t t'+d[1]+'"></i>':'')+(d[2]==='m'?'<i class="t ml"></i>':'')+'</span></div>'});
 document.getElementById('g').innerHTML=h;
 var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
@@ -95,9 +107,9 @@ var on=false;if('IntersectionObserver'in window){new IntersectionObserver(functi
 
 The list is every entry in time order. For Sarah that is 375 entries across her 13 weeks of logs (Jul 13 to Oct 11 in the demo). A day with no logs reads “No logs this day. It stays a gap, never a zero.”, with Add to this day and Log for an earlier day, so a lapsed person can come back without a broken record. The review rated catch-up as churn protection.
 
-The calendar is a month grid with previous and next month. Each day shows its date and a state mark: within the usual (Ray on dark, Plum on light), a shift (Gold), or a gap (an outline), with today ringed and small symptom marks. Tapping a day shows that day’s entries below it, with Add to this day. Every day is a button with a full label for screen readers.
+The calendar is a month grid with previous and next month, and one sentence that counts the month. Each day is its date over a mark, the marks Today’s week card uses: a filled dot within the usual (Plum on light, Ray on dark), a hollow Gold ring outside it, and for a day with nothing logged no mark, its date struck through. Today is outlined. Under the mark, a small square for a day with symptoms, more solid for stronger ones (hollow only when no strength was said), and a Teal dot for a meal logged. Two marks are the calendar’s own: a dash for a day with logs but nothing on BMs, and a Teal ring for a day with a flag, noted for a clinician and never read. On Free, days before the last 7 show only as logged. Tapping a day draws its entries under the month, as the list draws them, with Add to this day. Every day is a button with a full label for screen readers.
 
-The live example on the slide is Sarah’s September, computed from the model at commit 475f259 (L.facts, C, every meal): 14 days within her usual, 15 shifted and 1 gap (Sep 6). The tapped day is Tuesday September 22: mild low energy at 9:13 AM, mild bloating at 9:45 AM, chicken salad at lunch, pizza at dinner, and No BM today logged at 9:45 PM. It reads as a shift because no BM is fewer than her usual 1 to 2 a day. That day’s FloraScore was 70, her lowest of the last 30 days.
+The live example on the slide is Sarah’s September, computed from the model at commit 475f259 (L.facts, C, every meal) and drawn with the built calendar’s marks and words: “In September: 14 days within your usual, 15 outside it, 1 with nothing logged.” Sep 6 is the gap. The tapped day is Tuesday September 22: mild low energy at 9:13 AM, mild bloating at 9:45 AM, chicken salad at lunch, pizza at dinner, and No BM that day logged at 9:45 PM. It reads outside her usual because no BM is fewer than her usual 1 to 2 a day. That day’s FloraScore was 70, her lowest of the last 30 days.
 
 Recommendation: Calendar, which is the design critic’s ask in place of an endless scroll, with the list kept under a tapped day. This is a lean for Will to decide. The review also asks that the clinician report on History be free in a basic 30-day form; that sits on the membership slide.</aside>
 </section>

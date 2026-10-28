@@ -5,7 +5,7 @@
    Registers into window.FLORIN_EXT (CLAUDE.md, Extension hooks) and never edits a core file:
    - overlays: "pf" (Profile, a full screen), "onb" (an onboarding step, a full screen, also one step reopened from
      Profile), and three sheets: "pf-rem" (the BM reminder), "pf-info" (connected apps, help, terms, sign out) and
-     "pf-del" (delete my logs, asked first)
+     "pf-del" (delete my logs, or the account, asked first)
    - acts: "profile" (the Today avatar), the onboarding steps (onb-*), the Profile rows (pf-*), and "ckd-save" chained
      so the check-in day sheet, opened from Profile, redraws Profile when it saves
    - opens, screens, notes, decisions.onboard, built.onboard, onSet, and one RU wrapper (RU.today), which puts the
@@ -168,12 +168,13 @@
   /* ====================================================================== */
   const reportMsg = (V) => `A report of your logs to bring to a clinician: dates, BMs, symptoms${RU.ckOn(V) ? ", meals and check-ins" : " and meals"}. That comes in the next pass.`;
   /* what's logged, by kind: the entries on logged days (BMs, symptom logs, meal logs, No BM days), and the weekly
-     check-ins answered, which aren't entries */
+     check-ins answered, which aren't entries: the past weeks', and this week's once it's finished (as Insights and Ask
+     count them) */
   const tally = (M) => {
     const c = { bm: 0, sym: 0, meal: 0, nobm: 0, other: 0 };
     M.days.forEach((x) => { if (x.logged) x.entries.forEach((e) => { c[e.kind in c ? e.kind : "other"]++; }); });
     c.total = c.bm + c.sym + c.meal + c.nobm + c.other;
-    c.ck = (M.checkins || []).filter((k) => k && k.answers && !k.skipped).length;
+    c.ck = (M.checkins || []).filter((k) => k && k.answers && !k.skipped).length + (M.checkin && M.checkin.status === "done" && M.checkin.answers ? 1 : 0);
     return c;
   };
   const logCount = (M) => tally(M).total;
@@ -182,6 +183,8 @@
   const countText = (c, ck) => andList([c.total ? plural(c.total, "entry", "entries") : "", ck && c.ck ? plural(c.ck, "check-in") : ""].filter(Boolean));
   const kindsText = (c) => andList([[c.bm, "BM"], [c.sym, "symptom log"], [c.meal, "meal log"], [c.nobm, "No BM day"], [c.other, "other entry", "other entries"]].filter(([n]) => n).map(([n, one, many]) => plural(n, one, many)));
   const firstLog = (M) => M.days.find((x) => x.logged && x.entries.length);
+  /* where a count starts: the first log, or the first day when nothing is logged; on day 1 that's today */
+  const sinceOf = (M) => { const fl = firstLog(M), d = fl ? fl.d : M.start; return d >= L.TODAY ? "from today" : `since ${shortDate(d)}`; };
   /* Profile on day 1, from the Screens list: a preview drawn against this person's day-1 model (what onboarding leaves
      them with), as the check-in's preview screens are. The phone's own logs are never touched by a list row */
   const previewOf = (api, st) => {
@@ -262,12 +265,13 @@
     const c = tally(M);
     const data = sec(`${id}-dt`, "Your data", `<ol class="ap-card ap-ea">
         ${free ? `<li><button type="button" class="ap-ea-row" data-act="pay" data-pay="report"><span class="ap-ea-m"><b>Make a report for your clinician</b><em>With Florin membership</em></span>${ic("lock", "ap-tl-go")}</button></li>` : `<li><button type="button" class="ap-ea-row" data-act="toast" data-msg="${esc(reportMsg(V))}"><span class="ap-ea-m"><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button></li>`}
-        ${row("pf-export", null, "Export your logs", countText(c, ck) ? `${countText(c, ck)} since ${shortDate(fl ? fl.d : M.start)}` : "Nothing logged yet")}
+        ${row("pf-export", null, "Export your logs", countText(c, ck) ? `${countText(c, ck)} ${sinceOf(M)}` : "Nothing logged yet")}
         ${sw("pf-research", !!a.research, "Share anonymized logs for research", a.research ? "On. Turn it off any time; sharing stops from then." : "Off. Your name and email never go with them.")}
         ${row("pf-del", null, "Delete my logs", "Asks first. Your answers here stay.")}
+        ${row("pf-delacct", null, "Delete my account", "Asks first. Your logs and answers go with it.")}
       </ol>`);
     /* help */
-    const help = sec(`${id}-hp`, "Help", `<ol class="ap-card ap-ea">${INFO_ROWS.map(([k, n]) => row("pf-info", k, n, "")).join("")}</ol>`);
+    const help = sec(`${id}-hp`, "Help", `<ol class="ap-card ap-ea">${INFO_ROWS.map(([k, n, em]) => row("pf-info", k, n, em || "")).join("")}</ol>`);
     return `<div class="ap-ck pf" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
       <div class="ap-ck-h"><button type="button" class="ap-lg-x" data-act="close" aria-label="Back to Today">${ic("back")}</button><div class="ap-fsh-t"><h2 id="${id}-h" tabindex="-1" data-autofocus>Profile</h2></div><span class="ap-fsh-sp"></span></div>
       <div class="ap-ck-b pf-b" data-scroll>
@@ -277,7 +281,8 @@
     </div>`;
   }
   const APPS = [["apple", "Apple Health"], ["oura", "Oura"], ["cycle", "A cycle app"]];
-  const INFO_ROWS = [["help", "Help and feedback"], ["terms", "Terms of use"], ["privacy", "Privacy"], ["about", "About Florin"], ["signout", "Sign out"]];
+  /* the account's email isn't made up here: its row says what it holds, and the sheet what it does in the app */
+  const INFO_ROWS = [["account", "Email and sign-in", "The email you signed up with"], ["help", "Help and feedback"], ["terms", "Terms of use"], ["privacy", "Privacy"], ["about", "About Florin"], ["signout", "Sign out"]];
 
   /* the sheets over Profile */
   const sheetHead = (id, title) => `<div class="ap-sheet-grab" aria-hidden="true"></div><div class="ap-psh-h"><h2 id="${id}">${esc(title)}</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>`;
@@ -287,6 +292,7 @@
     cycle: "A cycle app could bring cycle days in as context next to your logs, if you have periods."
   };
   const INFO = {
+    account: ["Email and sign-in", "In the app, this shows the email you signed up with, and lets you change it or your password."],
     help: ["Help and feedback", "Answers about logging, Florin membership and your account, and a way to write to the Florin team. In the app this opens the help pages."],
     terms: ["Terms of use", "The terms for using the Florin app open here in the app."],
     privacy: ["Privacy", "How Florin handles your logs: what's kept, who can see it, and how to export or delete it."],
@@ -322,12 +328,22 @@
       <div class="ap-f"><label class="ap-f-l" for="${id}-t">Or pick a time</label><label class="ap-fld">${ic("clock")}<input id="${id}-t" type="time" data-pf-in="remTime" value="${cur == null || cur === "off" ? "" : RU.toInput(cur)}"></label>${!preset && cur != null && cur !== "off" ? `<p class="ap-f-h">Every day at ${esc(T(cur))}</p>` : ""}</div>
       <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="pf-rem-save">Save</button></div></div>`;
   }
-  function delHTML(M, V) {
-    const id = `pfd${V.uid}`, c = tally(M), fl = firstLog(M), ck = RU.ckOn(V) && c.ck > 0, n = c.total + (ck ? c.ck : 0);
-    /* the count names every kind it counts; the check-ins aren't entries, so they're named on their own */
-    const what = `${c.total ? `all ${plural(c.total, "entry", "entries")} since ${shortDate(fl ? fl.d : M.start)} (${kindsText(c)})` : ""}${c.total && ck ? " and " : ""}${ck ? `${c.total ? "" : "all "}${plural(c.ck, "weekly check-in")}` : ""}`;
+  function delHTML(M, V, st) {
+    const id = `pfd${V.uid}`, c = tally(M), ck = RU.ckOn(V) && c.ck > 0, n = c.total + (ck ? c.ck : 0);
+    const from = sinceOf(M);
+    /* the account: everything goes, the sign-in too, asked first and never red */
+    if (st && st.acct) {
+      const has = countText(c, RU.ckOn(V));
+      return `<div class="ap-psh pf-sh" role="dialog" aria-modal="true" aria-labelledby="${id}">${sheetHead(id, "Delete your account?")}
+        <p class="ap-gd-lede">${esc(`This deletes your Florin account and everything in it: ${has ? `${has} ${from}, ` : ""}your answers in Profile and your sign-in. It can't be undone.`)}</p>
+        <p class="ap-f-h">${esc(has ? "To keep a copy first, export your logs." : "Nothing is logged yet, so there's nothing to export first.")}</p>
+        <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--2 ap-btn--block" data-act="pf-delacct-yes">Delete my account</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close" data-autofocus>Keep my account</button></div></div>`;
+    }
+    /* the count names every kind it counts; the check-ins aren't entries, so they're named on their own ("all" only
+       before more than one) */
+    const what = `${c.total ? `all ${plural(c.total, "entry", "entries")} ${from} (${kindsText(c)})` : ""}${c.total && ck ? " and " : ""}${ck ? `${c.total || c.ck === 1 ? "" : "all "}${plural(c.ck, "weekly check-in")}` : ""}`;
     return `<div class="ap-psh pf-sh" role="dialog" aria-modal="true" aria-labelledby="${id}">${sheetHead(id, n ? "Delete your logs?" : "Nothing to delete yet")}
-      <p class="ap-gd-lede">${esc(n ? `This deletes ${what}. Florin starts learning your usual again from today. It can't be undone.` : "Nothing is logged yet. Your logs show up here once there are some.")}</p>
+      <p class="ap-gd-lede">${esc(n ? `This deletes ${what}.${c.total ? " Florin starts learning your usual again from today." : ""} It can't be undone.` : "Nothing is logged yet. Your logs show up here once there are some.")}</p>
       ${n ? `<p class="ap-f-h">Your answers in Profile stay. To keep a copy first, export your logs.</p>` : ""}
       <div class="ap-fl-act">${n ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--block" data-act="pf-del-yes">Delete my logs</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close" data-autofocus>Keep my logs</button>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">OK</button>`}</div></div>`;
   }
@@ -367,6 +383,9 @@
     const S = STEPS[k], a = st.a, ck = RU.ckOn(V);
     const n = FLOWS[st.flow].length;
     const head = (kick, q, sub) => `<div class="ap-ck-q"><span class="ap-k">${esc(kick)}</span><h3 tabindex="-1" data-autofocus>${esc(q)}</h3>${sub ? `<p class="ap-ck-recall">${esc(sub)}</p>` : ""}</div>`;
+    /* Larger text and simpler screens (the Easy version), offered on Welcome, before the first question, and again on
+       Ready; kept in Profile under Display */
+    const easy = `<ol class="ap-card ap-ea pf-onb-easy">${sw("onb-easy", !!V.easy, "Larger text and simpler screens", "Bigger type and buttons, fewer cards. Change it any time in Profile.")}</ol>`;
     if (k === "welcome") {
       const pts = [
         [`${n} short steps, ${st.flow === "short" ? "under two minutes" : "about 3 minutes"}`, "Skip any of them."],
@@ -375,7 +394,8 @@
       ];
       return `${head("Welcome to Florin", "Gut days blur together. Florin keeps the record.", "")}
         <p class="ap-gd-lede">You log what happens: BMs, symptoms, a meal now and then. After ${L.LEARN_DAYS} days, Florin knows your usual, and shows each day next to it, never next to anyone else's.</p>
-        <ul class="pf-pts">${pts.map(([b, e]) => `<li><span class="pf-pt-ic">${ic("check")}</span><span><b>${esc(b)}</b><em>${esc(e)}</em></span></li>`).join("")}</ul>`;
+        <ul class="pf-pts">${pts.map(([b, e]) => `<li><span class="pf-pt-ic">${ic("check")}</span><span><b>${esc(b)}</b><em>${esc(e)}</em></span></li>`).join("")}</ul>
+        ${easy}`;
     }
     if (k === "isnt" || k === "ready") {
       const isnt = `<ul class="pf-pts">
@@ -386,8 +406,6 @@
         <div class="ap-ask-alarm" role="note"><span class="ap-k">When to see a clinician</span><b>Some signs go to primary care first</b><p>Blood, a black or tar-like stool, a fever, vomiting that won't stop, weight loss you can't explain, or waking at night to go. Florin points you to your GP or a nurse practitioner, and won't try to read them.</p></div>`;
       if (k === "isnt") return `${head("Before you start", "What Florin is, and isn't", "")}${isnt}<p class="ap-fine">${esc(DISC)}</p>`;
       const nm = (a.name || "").trim() || accountName(M);
-      /* Larger text and simpler screens, offered once here (the Easy version), and kept in Profile under Display */
-      const easy = `<ol class="ap-card ap-ea pf-onb-easy">${sw("onb-easy", !!V.easy, "Larger text and simpler screens", "Bigger type and buttons, fewer cards. Change it any time in Profile.")}</ol>`;
       return `${head("Ready", nm ? `You're set up, ${nm}` : "You're set up", "")}
         <p class="ap-gd-lede">Today is day 1 of ${L.LEARN_DAYS}. Log your first BM when it happens, and anything else from plus. In ${plural(L.LEARN_DAYS - 1, "more day")}, Florin can start showing your usual.</p>
         ${easy}
@@ -417,7 +435,7 @@
       const sel = st.form != null || st.word != null ? { form: st.form, word: st.word } : null;
       /* the Easy version: the option's words as big rows with their marks, as its own Log a BM draws them (the tiles'
          labels are smaller than its type allows); the core's form act picks either way */
-      ctl = V.easy ? `<div class="ap-f">${formRows(V.form, sel, S.q)}<button type="button" class="ap-gd-b pf-fo-guide" data-act="guide">${ic("info")}How to pick</button></div>`
+      ctl = V.easy ? `<div class="ap-f">${formRows(V.form, sel, S.q, { id: `${id}-fo`, keep: st.edit ? "Save" : "Continue" })}<button type="button" class="ap-gd-b pf-fo-guide" data-act="guide">${ic("info")}How to pick</button></div>`
         : `<div class="ap-f">${RU.formTiles(V.form, sel, { guide: true, label: S.q })}
           <p class="ap-fm-line${sel ? " is-set" : ""}">${sel ? `<b>${esc(L.formName(sel.form != null ? sel.form : sel, V.form))}</b> · ${esc(L.formLine(sel.form != null ? sel.form : sel, V.form))}` : "Tap the closest one. It doesn't need to be exact."}</p></div>`;
       ctl += `
@@ -432,12 +450,22 @@
     }
     return `${head(S.kick, S.q, sub)}${ctl}`;
   }
-  /* the option's words as one-choice rows, hardest first, each with its mark and line */
-  function formRows(mode, sel, label) {
+  /* the option's words as one-choice rows, hardest first, each with its mark and line. A word picked in B, seen in A
+     or C, covers one or two steps and names neither: those rows are marked in words (as Easy's own Log a BM marks
+     them), nothing is checked, and a line says what Continue keeps */
+  const NUM = ["no", "one", "two", "three"];
+  function formRows(mode, sel, label, o = {}) {
+    const wl = mode !== "B" && sel && sel.form == null && sel.word != null ? L.WORDS[sel.word] : null;
+    const tag = wl ? (wl.types.length > 1 ? "Could be this one" : "The same as your word") : "";
     const items = mode === "B"
       ? L.WORDS.map((w) => ({ attr: `data-word="${w.k}"`, on: !!sel && (sel.word === w.k || (sel.form != null && L.wordOf(sel.form) === w.k)), g: w.glyph, name: w.word, line: w.line }))
-      : L.TYPES.slice(1).map((t) => ({ attr: `data-form="${t.k}"`, on: !!sel && sel.form === t.k, g: t.k, name: mode === "A" ? `Type ${t.k}: ${t.short}` : t.short, line: t.line }));
-    return `<div class="ap-ck-opts pf-fo" role="radiogroup" aria-label="${esc(label)}">${items.map((it) => `<button type="button" class="ap-ck-opt pf-fo-b${it.on ? " is-on" : ""}" data-act="form" ${it.attr} role="radio" aria-checked="${it.on}"><span class="pf-fo-g" aria-hidden="true">${RU.glyph(it.g)}</span><span class="pf-fo-t"><b>${esc(it.name)}</b><em>${esc(it.line)}</em></span>${it.on ? ic("check") : ""}</button>`).join("")}</div>`;
+      : L.TYPES.slice(1).map((t) => ({ attr: `data-form="${t.k}"`, on: !!sel && sel.form === t.k, maybe: !!wl && wl.types.includes(t.k), g: t.k, name: mode === "A" ? `Type ${t.k}: ${t.short}` : t.short, line: t.line }));
+    const keep = o.keep || "Continue";
+    const line = !wl ? "" : wl.types.length > 1
+      ? `You picked ${wl.word}, which could be either of the ${NUM[wl.types.length] || wl.types.length} marked "${tag}". Tap one to be exact, or ${keep} to keep ${wl.word}.`
+      : `You picked ${wl.word}, the one marked "${tag}". Tap ${keep} to keep it.`;
+    const lid = line && o.id ? o.id : "";
+    return `${line ? `<p class="ap-info pf-fo-info"${lid ? ` id="${lid}"` : ""}>${ic("info")}<span>${esc(line)}</span></p>` : ""}<div class="ap-ck-opts pf-fo" role="radiogroup" aria-label="${esc(label)}"${lid ? ` aria-describedby="${lid}"` : ""}>${items.map((it) => `<button type="button" class="ap-ck-opt pf-fo-b${it.on ? " is-on" : it.maybe ? " is-maybe" : ""}" data-act="form" ${it.attr} role="radio" aria-checked="${it.on}"><span class="pf-fo-g" aria-hidden="true">${RU.glyph(it.g)}</span><span class="pf-fo-t">${it.maybe ? `<span class="pf-fo-maybe">${esc(tag)}</span>` : ""}<b>${esc(it.name)}</b><em>${esc(it.line)}</em></span>${it.on ? ic("check") : ""}</button>`).join("")}</div>`;
   }
 
   function onbHTML(M, V, st) {
@@ -446,7 +474,9 @@
     const id = `onb${V.uid}`, has = answered(k, st);
     const total = FLOWS[st.flow].length, at = FLOWS[st.flow].indexOf(k) + 1;
     const prog = st.edit ? "" : `<div class="ap-ck-prog pf-prog" style="--n:${n}" role="progressbar" aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="${i + 1}" aria-valuetext="${esc(`Step ${i + 1} of ${n}`)}">${steps.map((_, j) => `<i class="${j < i ? "is-done" : j === i ? "is-on" : ""}"></i>`).join("")}</div>`;
-    const lead = st.edit ? `<button type="button" class="ap-lg-x" data-act="close" aria-label="Cancel">${ic("close")}</button>` : i > 0 ? `<button type="button" class="ap-lg-x" data-act="onb-back" aria-label="Back">${ic("back")}</button>` : `<span class="ap-fsh-sp"></span>`;
+    /* a reopened answer cancels; a later step goes back; Welcome closes, since the page opens every flow (the toggle or
+       a Screens row) and must always be able to leave it. Closing keeps the phone's logs as they were */
+    const lead = st.edit ? `<button type="button" class="ap-lg-x" data-act="close" aria-label="Cancel">${ic("close")}</button>` : i > 0 ? `<button type="button" class="ap-lg-x" data-act="onb-back" aria-label="Back">${ic("back")}</button>` : `<button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button>`;
     const skip = st.edit || S.kind === "ready" ? `<span class="ap-fsh-sp"></span>` : `<button type="button" class="ap-ck-later" data-act="onb-skip">Skip</button>`;
     const title = st.edit ? "Edit your answer" : st.flow === "full" ? "Full survey" : "Getting started";
     const sub = st.edit ? "From Profile" : `Step ${i + 1} of ${n}`;
@@ -488,7 +518,7 @@
     onb: { kind: "screen", render: safeRender((M, V, st) => onbHTML(M, V, st)), key: (st) => (st.edit ? "onb-edit" : st.flow === "full" && keyOf(st) === "sym" && signsOf(st.a.sym).length ? "onb-sign" : `onb-${st.flow}`) },
     "pf-rem": { kind: "sheet", render: safeRender((M, V, st) => remHTML(M, V, st)), key: pfKey },
     "pf-info": { kind: "sheet", render: safeRender((M, V, st, api) => infoHTML(pfModel(api), V, st, api)), key: pfKey },
-    "pf-del": { kind: "sheet", render: safeRender((M, V, st, api) => delHTML(pfModel(api), V)), key: pfKey }
+    "pf-del": { kind: "sheet", render: safeRender((M, V, st, api) => delHTML(pfModel(api), V, st)), key: pfKey }
   });
 
   /* every Profile under the top sheet redraws after a change made on that sheet */
@@ -660,7 +690,7 @@
       if (k === "theme") redrawPf(api);
     }),
     "pf-easy": act((b, api) => { api.set("easy", !api.V().easy); redrawPf(api); }),
-    /* the same switch on onboarding's ready step: the step redraws in the version picked */
+    /* the same switch on onboarding's Welcome and Ready steps: the step redraws in the version picked */
     "onb-easy": act((b, api) => { api.set("easy", !api.V().easy); const ov = onbTop(api); if (ov) api.rerender(ov); api.say(api.V().easy ? "Larger text and simpler screens on." : "Larger text and simpler screens off."); }),
     "pf-research": act((b, api) => {
       const a = answers(api);
@@ -673,10 +703,17 @@
     "pf-info": act((b, api) => { api.push("pf-info", { k: b.dataset.v }); }),
     "pf-signout": act((b, api) => { api.pop({ instant: true }); api.toast("In the app, this goes to the sign-in screen. The prototype stays signed in."); }),
     "pf-export": act((b, api) => {
-      const M = pfModel(api), c = tally(M), fl = firstLog(M), ck = RU.ckOn(api.V()) && c.ck > 0;
-      api.toast(c.total || ck ? `Export makes one file of ${c.total ? `all ${plural(c.total, "entry", "entries")} since ${shortDate(fl ? fl.d : M.start)} (${kindsText(c)})` : ""}${c.total && ck ? " and " : ""}${ck ? plural(c.ck, "weekly check-in") : ""}, to keep or move. That comes in the next pass.` : "Nothing logged yet, so there's nothing to export.");
+      const M = pfModel(api), c = tally(M), ck = RU.ckOn(api.V()) && c.ck > 0;
+      api.toast(c.total || ck ? `Export makes one file of ${c.total ? `all ${plural(c.total, "entry", "entries")} ${sinceOf(M)} (${kindsText(c)})` : ""}${c.total && ck ? " and " : ""}${ck ? plural(c.ck, "weekly check-in") : ""}, to keep or move. That comes in the next pass.` : "Nothing logged yet, so there's nothing to export.");
     }),
     "pf-del": act((b, api) => { api.push("pf-del", {}); }),
+    "pf-delacct": act((b, api) => { api.push("pf-del", { acct: true }); }),
+    /* the prototype never deletes the demo person: it says what the app does, as Sign out does */
+    "pf-delacct-yes": act((b, api) => {
+      api.pop({ instant: true });
+      focusRow(api, '[data-act="pf-delacct"]');
+      api.toast("In the app, this deletes your account and signs you out. The prototype keeps it.");
+    }),
     "pf-del-yes": act((b, api) => {
       api.set("data", "fresh");
       ensurePerson(api.M(), api);
@@ -718,16 +755,16 @@
     try { if (answered(keyOf(ov.st), ov.st)) EXT.acts[ov.st.edit ? "onb-save" : "onb-next"](e.target, api, e); } catch (err) { warn(err); }
   });
 
-  /* Escape on an onboarding step goes back a step (and does nothing on the first): onboarding has no close, and the
-     core's Escape would close it and lose every answer. Ahead of the core's own handlers, and only for the phone (or
-     focus fallen out to the page), so the page's own sheets still close on Escape. A reopened answer still cancels */
+  /* Escape on an onboarding step goes back a step, as Back does, and on Welcome closes it, as its Close does: the
+     core's Escape would close any step and lose every answer. Ahead of the core's own handlers, and only for the phone
+     (or focus fallen out to the page), so the page's own sheets still close on Escape. A reopened answer still cancels */
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     const api = EXT.api, ov = api && onbTop(api);
     if (!ov || ov.st.edit || !(api.root.contains(e.target) || e.target === document.body)) return;
     e.preventDefault();
     e.stopPropagation();
-    try { if (ov.st.step > 0) EXT.acts["onb-back"](e.target, api, e); } catch (err) { warn(err); }
+    try { if (ov.st.step > 0) EXT.acts["onb-back"](e.target, api, e); else api.pop(); } catch (err) { warn(err); }
   }, true);
 
   /* Today's greeting follows the first name from onboarding. The wrapper always draws the screen it wraps */
@@ -809,14 +846,14 @@
   Object.assign(EXT.notes, {
     "onb-short": (M, P) => ({
       t: "Onboarding, short",
-      lede: `${FLOWS.short.length} steps, under two minutes, each with Back, Continue and Skip: ${shortSteps(P)}. Only what changes the app on day 1. Ready offers Larger text and simpler screens once, as a switch. Log your first BM or Go to Today both finish on Today, day 1 of ${L.LEARN_DAYS} (Logs on the left moves to Just joined), and every answer shows in Profile. Escape goes back a step, never out: there's no leaving set-up part way.`,
-      ba: WRONG.slice(0, 3).concat([["Biological sex as a demographic", "Do you have periods?, which feeds cycle context later (the Period tag on the check-in)"]]),
-      open: ["Is a BM reminder worth a step on day 1, or better offered after the third log?", "What should 'what brings you' change on day 1? Ask Florin's first questions are the obvious candidate.", "Ask the rest in context: eating when the first meal is logged, foods to watch with the first food check, medicines and conditions with the first clinician report. Agree?"],
+      lede: `${FLOWS.short.length} steps, under two minutes, each with Continue and Skip, and Back from step 2: ${shortSteps(P)}. Only what changes the app on day 1. Welcome offers Larger text and simpler screens as a switch, before the first question, and Ready offers it again. Log your first BM or Go to Today both finish on Today, day 1 of ${L.LEARN_DAYS} (Logs on the left moves to Just joined), and every answer shows in Profile. Welcome has Close (and Escape there closes it too), which leaves set-up with the logs on the phone as they were; on a later step Escape goes back a step.`,
+      ba: WRONG.slice(0, 3).concat([["Biological sex as a demographic", P.checkin ? "Do you have periods?, which feeds cycle context later (the Period tag on the check-in)" : "Do you have periods?, kept for cycle context later"]]),
+      open: ["Is a BM reminder worth a step on day 1, or better offered after the third log?", "Welcome can be closed, so the page's toggles always have a way back. In the app, should a person be able to leave set-up at Welcome and finish it later?", "What should 'what brings you' change on day 1? Ask Florin's first questions are the obvious candidate.", "Ask the rest in context: eating when the first meal is logged, foods to watch with the first food check, medicines and conditions with the first clinician report. Agree?"],
       res: ["The shipping survey notes (Oct 27): 60% of men want setup under 10 minutes, and 47% of women want cycle context.", "Oura takes up to 2 weeks of learning before it judges anything; Florin's day 14 does the same."]
     }),
     "onb-full": () => ({
       t: "Onboarding, the full survey",
-      lede: `Today's sections, refreshed, in ${FLOWS.full.length} steps: ${fullSteps}. Every step skippable, every answer editable from Profile. Finishing lands on Today, day 1 of ${L.LEARN_DAYS}.`,
+      lede: `Today's sections, refreshed, in ${FLOWS.full.length} steps: ${fullSteps}. Every step skippable, every answer editable from Profile. Welcome and Ready both offer Larger text and simpler screens, and Welcome can be closed. Finishing lands on Today, day 1 of ${L.LEARN_DAYS}.`,
       ba: WRONG.slice(3),
       open: ["Which of these earn a place before Today? The recommendation is none: ask each one where it's used.", "Age range and sex: keep at all, or only for the clinician report?", `Foods to watch: should Florin count them from day 1, or wait for ${L.PATTERN_BAR.n} logs like every other food (as built)?`, "The shipping survey has no reminder step, so after it Profile's BM reminder reads Not set until it's picked there. Add the short flow's reminder step to it?"],
       res: ["Nerva asks a symptom measure at onboarding, weekly and at the end (its licensing is unverified); Florin's questions stay its own.", "Rome questionnaires are diagnostic and licensed: nothing here adapts or scores one."]
@@ -840,8 +877,8 @@
       return {
         t: "Profile",
         lede: `From the avatar on Today, a full screen: ${nameOf(M)}, then their usual, the answers from onboarding (${P.onboard === "full" ? "the full survey's" : "the short one's"}, each reopening its step), reminders${P.checkin ? " with the check-in day" : ""}, logging, display, connected apps, membership, their data, and help. The first name is the one from sign-up unless onboarding changed it. ${u ? `Every usual figure is read from the model, the same weeks Insights uses (${usualSpan()}).` : `Day ${L.learnDay(M)} of ${L.LEARN_DAYS}: Your usual says what arrives on day ${L.LEARN_DAYS}, and that the FloraScore range follows ${rangeWhen()}, instead of a number.`}`,
-        ba: [["Demo Settings, Requires assessment every visit to Insights", "The demo's own switches stay on the page. Profile keeps the few a person might set for themselves: how a BM is logged, the meal sheet, larger text and the theme"], ["Update health survey", "Each answer is a row that reopens its own step"], ["A red Delete Profile", "Delete my logs, asked first, in Forest, never red; the answers stay"], ["Research consent buried in the survey", "Its own switch under Your data, off until turned on"], ["Name and email first", `${u ? "Your usual, set from the logs, near the top" : "What day 14 brings, near the top"}`]],
-        open: [P.checkin ? "Should a person turn the weekly check-in off here, as well as change its day?" : "With the check-in off, Reminders has the BM reminder only. Enough?", "Logging repeats two of the page's decisions, Quick tiles or Full form and the meal sheet, as a person's own setting. Should a person pick these themselves, or should Florin pick one for everyone?", "Connected apps: which ones for this version, Apple Health first?", "Export: a file of logs for the person, the clinician report for a visit, or both?", "Larger text and simpler screens turns on the Easy version, here and once on onboarding's last step. Is once at set-up enough, or should Florin offer it again after a few days?"],
+        ba: [["Demo Settings, Requires assessment every visit to Insights", "The demo's own switches stay on the page. Profile keeps the few a person might set for themselves: how a BM is logged, the meal sheet, larger text and the theme"], ["Update health survey", "Each answer is a row that reopens its own step"], ["A red Delete Profile", "Delete my logs (the answers stay) and Delete my account (everything goes), each asked first, never red"], ["Research consent buried in the survey", "Its own switch under Your data, off until turned on"], ["Name and email first", `${u ? "Your usual, set from the logs, near the top" : "What day 14 brings, near the top"}; the email under Help, Email and sign-in`]],
+        open: [P.checkin ? "Should a person turn the weekly check-in off here, as well as change its day?" : "With the check-in off, Reminders has the BM reminder only. Enough?", "Logging repeats two of the page's decisions, Quick tiles or Full form and the meal sheet, as a person's own setting. Should a person pick these themselves, or should Florin pick one for everyone?", "Connected apps: which ones for this version, Apple Health first?", "Export: a file of logs for the person, the clinician report for a visit, or both?", "Larger text and simpler screens turns on the Easy version, here and on onboarding's first and last steps. Is set-up enough, or should Florin offer it again after a few days?", "Delete my account: membership is billed through the app store, so cancelling it may need its own step. Should the sheet say so for a member?"],
         res: ["Oura Advisor's memories can be seen and deleted by the person: the same idea as Your data.", "Oura explains baselines in plain terms; Your usual says where each one comes from."]
       };
     },

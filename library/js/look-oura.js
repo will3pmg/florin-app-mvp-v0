@@ -34,6 +34,8 @@
   const pct = (v, lo, hi) => r1(((clamp(v, lo, hi) - lo) / (hi - lo || 1)) * 100);
   /* a range in words: one value when its two ends are the same */
   const rng = (r) => (r[0] === r[1] ? String(r[0]) : `${r[0]} to ${r[1]}`);
+  /* the dates a card covers: a one-day stretch (day 1) is that day, never "Oct 11 to Oct 11" */
+  const spanOf = (days) => (days.length === 1 ? (days[0].today ? "Today" : days[0].label) : `${days[0].label} to ${days[days.length - 1].label}`);
 
   /* ---------- shared card parts ---------- */
   const card = (x, cls, label, inner) => `<article class="ou ${cls}" aria-label="${x.esc(label)}">${inner}</article>`;
@@ -392,23 +394,22 @@
       return `<g class="ou-wk-col"><title>${esc(tip)}</title>${lbl}${date}${mark}${sym}</g>`;
     }).join("");
     const logged = days.filter((d) => d.logged);
-    const n = (s) => days.filter((d) => d.logged && d.state === s);
-    const within = n("usual").length, shifted = n("shifted"), unsure = n("unsure");
+    const shifted = days.filter((d) => d.logged && d.state === "shifted");
+    /* within your usual out of the days read either way; a day that could be either, or with nothing about BMs, is said
+       by name (D.tally) and counted neither way, never as not within */
+    const T = D.tally[7], leftT = T.left ? ` ${T.left}` : "";
     let ans;
-    if (learning) ans = "Days show as logged while Florin learns your usual.";
-    else if (!shifted.length) ans = unsure.length ? `${cap(andList(unsure.map(dayName)))} could be either; every other day you logged sat within your usual.` : "Every day you logged sat within your usual.";
-    else {
-      /* a day that could be either is said too, whatever else shifted */
-      const eitherT = unsure.length ? ` ${cap(andList(unsure.map(dayName)))} could be either.` : "";
-      ans = (shifted.length <= 2 ? shifted.map((d) => `${d.today ? "Today" : `On ${dayName(d)}`}, ${andList(whyShift(D, d))}.`).join(" ") : `Shifted on ${andList(shifted.map(dayName))}.`) + eitherT;
-    }
+    if (learning) ans = `${logged.length ? "" : "Nothing logged yet. "}Days show as logged while Florin learns your usual.`;
+    else if (!T.logged) ans = "Nothing logged this week yet.";
+    else if (!shifted.length) ans = (!T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged shifted." : "Every day you logged sat within your usual.") + leftT;
+    else ans = (shifted.length <= 2 ? shifted.map((d) => `${d.today ? "Today" : `On ${dayName(d)}`}, ${andList(whyShift(D, d))}.`).join(" ") : `Shifted on ${andList(shifted.map(dayName))}.`) + leftT;
     const gaps = days.filter((d) => !d.logged && !d.pending);
     const aria = `This week, one block per BM. ${ans}${gaps.length ? ` Not logged on ${andList(gaps.map(dayName))}.` : ""} ${days.map((d) => `${d.dow}: ${dayState(d)[1]}${d.count != null && !d.pending ? `, ${d.count === 0 ? "no BM" : plural(d.count, "BM")}` : ""}`).join(". ")}.`;
     const has = (c) => days.some((d) => dayState(d)[0] === c);
     const zeroK = ["shift", "usual", "read"].find((c) => drawn.has(`zero-${c}`));
     return card(x, "ou-week", "This week at a glance", `
-      ${head(x, "This week", dateK(x, `${days[0].label} to ${days[days.length - 1].label}`))}
-      ${learning ? lead(x, num(logged.length), `of ${days.length} days logged`, ans) : lead(x, num(within), `of ${logged.length} days within your usual`, ans)}
+      ${head(x, "This week", dateK(x, spanOf(days)))}
+      ${learning ? (logged.length ? lead(x, num(logged.length), `of ${plural(days.length, "day")} logged`, ans) : lead(x, "Not yet", "", ans)) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, ans) : lead(x, "Not yet", "", ans)}
       <svg class="ou-svg ou-wk" viewBox="0 0 ${W} ${base + 20}" role="img" aria-label="${esc(aria)}">${band}<line class="ou-axis" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${cols}</svg>
       ${legend(x, [drawn.has("usual") && ["usual", "Within your usual"], drawn.has("shift") && ["shift", "Shifted"], drawn.has("either") && ["either", "Could be either"], drawn.has("read") && ["read", "Logged"], zeroK && [`zero-${zeroK}`, "No BM logged"], has("nocount") && ["nocount", "Logged, no BMs said"], has("gap") && ["gap", "Not logged"], days.some((d) => d.sym.length) && ["sym", "Symptoms"], ou && ["band", bandAt ? "Your usual count" : `Your usual count, ${rng(ou)} a day`]])}
       ${learning ? "" : afterChange(D, x)}`);
@@ -442,13 +443,13 @@
     const present = ROWS.map(([k, t]) => [k, t, cnt(k)]).filter((r) => r[2]);
     const maxN = Math.max(...present.map((r) => r[2]));
     const zones = present.map(([k, t, c], i) => `<li class="ou-zr" style="--i:${i}"><span class="ou-zr-b"><i class="ou-zr-f is-${k}" style="--w:${pct(c, 0, maxN)}%"></i></span><b>${esc(t)}</b><span class="ou-zr-v">${esc(plural(c, "day"))}</span></li>`).join("");
-    const within = cnt("usual");
+    const T = D.tally[30];
     /* a no-BM bar takes its day's colour, and so does its swatch */
     const zeroD = days.find((d) => d.count === 0 && !d.pending), zeroK = zeroD ? dayState(zeroD)[0] : null;
-    const aria = learning ? `Since you started: ${plural(logged, "day")} logged of ${n}.` : `The last 30 days, one bar per day, its height the BMs that day and its colour how the day sat. ${present.map(([, t, c]) => `${t}: ${plural(c, "day")}`).join(". ")}.`;
+    const aria = learning ? (logged ? `Since you started: ${plural(logged, "day")} logged of ${n}.` : "Since you started: nothing logged yet.") : `The last 30 days, one bar per day, its height the BMs that day and its colour how the day sat. ${present.map(([, t, c]) => `${t}: ${plural(c, "day")}`).join(". ")}.`;
     return card(x, "ou-month", learning ? "Since you started" : "The last 30 days", `
-      ${head(x, learning ? "Since you started" : "Last 30 days", dateK(x, `${first.label} to ${lastD.label}`))}
-      ${learning ? lead(x, num(logged), `of ${n} days logged`, "") : lead(x, num(within), `of ${logged} logged days within your usual`, "")}
+      ${head(x, learning ? "Since you started" : "Last 30 days", dateK(x, spanOf(days)))}
+      ${learning ? (logged ? lead(x, num(logged), `of ${plural(n, "day")} logged`, "") : lead(x, "Not yet", "", "Nothing logged yet.")) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, T.left) : lead(x, "Not yet", "", `No day in the last 30 days has a BM count logged yet.${T.left ? ` ${T.left}` : ""}`)}
       <svg class="ou-svg ou-mo" viewBox="0 0 ${W} ${base + 22}" role="img" aria-label="${esc(aria)}"><line class="ou-axis" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${cols}${xl}</svg>
       <ul class="ou-zones" aria-hidden="true">${zones}</ul>
       ${legend(x, [[null, "A bar's height is the BMs that day, up to 4"], zeroK && [`zero-${zeroK}`, "A short bar: no BM logged"], cnt("gap") && ["gap", "Not logged: a gap, never a zero"]])}`);
@@ -564,7 +565,7 @@
     const inR = u ? known.filter((d) => d.count >= u[0] && d.count <= u[1]).length : null;
     const zeros = known.filter((d) => d.count === 0).length, gaps = days.filter((d) => d.count == null && !d.pending).length;
     const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} not logged`].filter(Boolean);
-    const ans = u ? `In the last 30 days, ${inR} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.` : `${plural(known.length, "day")} logged so far. Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
+    const ans = u ? `In the last 30 days, ${inR} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.` : `${known.length ? `${plural(known.length, "day")} logged so far.` : "Nothing logged yet."} Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
     return card(x, "ou-often", "How often", `
       ${head(x, "How often", u ? chip(x, "usual", o.usualText) : chip(x, "learn", "Learning"))}
       ${v1}
@@ -607,7 +608,9 @@
       const order = [["shift", c.fi], ["either", c.el], ["usual", c.in], ["either", c.eh], ["shift", c.lo]];
       let at = 0;
       const segs = order.filter(([, v]) => v).map(([k, v]) => { const s = { k, w: r1((v / c.n) * 100), x: r1((at / c.n) * 100) }; at += v; return s; });
-      return { label, value: `${c.in} of ${c.n} within`, segs, stacked: true };
+      /* within out of the BMs read either way, as Insights counts them; a BM that could be either is said under */
+      const e = c.el + c.eh;
+      return { label, value: c.n === e ? `${plural(e, "BM")}, could be either` : `${c.in} of ${c.n - e} within`, segs, stacked: true, sub: e && c.n > e ? `${e} could be either` : "" };
     };
     /* your usual, as the same bar: the share of BMs your usual forms held in the weeks Florin learned them from */
     const uw = F.usualWeeks, baseF = uw ? D.days[90].filter((d) => d.d >= uw[0] && d.d <= uw[1]).flatMap((d) => d.forms) : [];
@@ -658,12 +661,12 @@
       </li>`;
     }).join("");
     const top = rows[0];
-    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
-    const aria = `Symptoms, ${D.learning ? "so far" : "last 30 days"}. ${S.withSym30} of ${S.logged30} logged days with symptoms.${S.usualText ? ` Your usual: ${lower1(S.usualText)}.` : ""} ${ans} ${rows.map((row) => `${row.name}: ${plural(row.days, "day")}, ${most(row)}`).join(". ")}.`;
+    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : !S.logged30 ? "Nothing logged yet." : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
+    const aria = `Symptoms, ${D.learning ? "so far" : "last 30 days"}. ${S.logged30 ? `${S.withSym30} of ${plural(S.logged30, "logged day")} with symptoms.` : "Nothing logged yet."}${S.usualText ? ` Your usual: ${lower1(S.usualText)}.` : ""} ${ans} ${rows.map((row) => `${row.name}: ${plural(row.days, "day")}, ${most(row)}`).join(". ")}.`;
     const strengths = new Set(rows.flatMap((row) => row.cells.filter((c) => c != null && c !== false)));
     return card(x, "ou-symptoms", "Symptoms", `
       ${head(x, D.learning ? "Symptoms · so far" : "Symptoms · 30 days", S.usualText ? chip(x, "usual", `Usual: ${S.usualText.toLowerCase()}`) : chip(x, "learn", "Learning"))}
-      ${lead(x, num(S.withSym30), `of ${S.logged30} logged days with symptoms`, ans)}
+      ${S.logged30 ? lead(x, num(S.withSym30), `of ${plural(S.logged30, "logged day")} with symptoms`, ans) : lead(x, "Not yet", "", ans)}
       ${rows.length ? `<ul class="ou-cts" role="img" aria-label="${esc(aria)}">${list}</ul>
       <p class="ou-dir is-days" aria-hidden="true"><span>0</span><span>${esc(plural(S.logged30, "logged day"))}</span></p>
       ${legend(x, [strengths.has(1) && ["s1", "Mild"], strengths.has(2) && ["s2", "Moderate"], strengths.has(3) && ["s3", "Strong"], strengths.has(0) && ["s0", "Strength not said"]])}` : ""}
@@ -721,13 +724,15 @@
     const answered = Q.filter((q) => q.cmp).length, same = Q.filter((q) => q.cmp && q.cmp.k === "same").length;
     const diff = Q.filter((q) => q.cmp && q.cmp.k !== "same");
     const latest = (Q.find((q) => q.latest) || {}).latest;
-    const big = !answered ? "Your first weeks set the range" : !diff.length ? "Every answer sits within the range of your first weeks" : diff.length === 1 ? `${diff[0].label}: ${lower1(diff[0].cmp.text)}` : `${cap(word(diff.length))} answers moved from your first weeks`;
+    /* before the first check-ins there is nothing to compare with: say what is saved, and when comparing starts */
+    const big = !answered ? (CK.count === 1 ? "Your first check-in is saved" : `${cap(word(CK.count))} check-ins saved`) : !diff.length ? "Every answer sits within the range of your first weeks" : diff.length === 1 ? `${diff[0].label}: ${lower1(diff[0].cmp.text)}` : `${cap(word(diff.length))} answers moved from your first weeks`;
     return card(x, "ou-checkin", "Weekly check-in", `
       ${head(x, "Weekly check-in", latest ? dateK(x, latest.label) : "")}
       ${answered ? `<p class="ou-big">${num(same)}<span class="ou-of">${esc(`of ${answered} like your first weeks`)}</span></p>` : ""}
       ${hl(x, big)}
+      ${answered ? "" : say(x, `Your first ${word(CK.baseWeeks)} become your starting point. Each week after is compared with them.`)}
       <ul class="ou-kms">${Q.map(track).join("")}</ul>
-      ${legend(x, [["now", "Latest answer"], ["uband", "Your first weeks"], diff.length && ["shift", "Different from your first weeks"]])}
+      ${legend(x, [["now", "Latest answer"], Q.some((q) => q.band) && ["uband", "Your first weeks"], diff.length && ["shift", "Different from your first weeks"]])}
       ${cta}`);
   }
 

@@ -41,6 +41,8 @@
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const lower1 = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   const andList = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
+  /* the dates a card covers: a one-day stretch (day 1) is that day, never "Oct 11 to Oct 11" */
+  const spanOf = (days) => (days.length === 1 ? (days[0].today ? "Today" : days[0].label) : `${days[0].label} to ${days[days.length - 1].label}`);
   /* a direct label that must stay inside the plot: anchor by side, then keep it in [pad, W - pad] */
   const placeLabel = (x0, sinA, text, W, pad = 2) => {
     const w = text.length * 6.6;
@@ -275,8 +277,10 @@
     const esc = x.esc, days = D.days[7];
     const slots = Array(Math.max(0, 7 - days.length)).fill(null).concat(days);
     const logged = days.filter((d) => d.logged);
-    const n = (s) => days.filter((d) => d.logged && d.state === s).length;
-    const within = n("usual"), shifted = n("shifted"), unsure = n("unsure");
+    /* within your usual out of the days read either way; a day that could be either, or with nothing about BMs, is
+       named instead (D.tally), never counted as not within */
+    const T = D.tally[7];
+    const shifted = T.shifted, unsure = T.unsure;
     const learning = !!D.learning;
     const showScore = (d) => !learning && d.logged && d.state !== "nocount" && d.score != null;
     const cols = slots.map((d, i) => {
@@ -291,15 +295,16 @@
       </li>`;
     }).join("");
     const which = (st) => andList(days.filter((d) => d.logged && d.state === st).map((d) => (d.today ? "today" : DOWL[d.dow] || d.dow)));
-    const ans = learning ? "Days show as logged while Florin learns your usual."
-      : shifted ? `Shifted on ${which("shifted")}.` : unsure ? `${cap(which("unsure"))} could be either.` : "Every day you logged sat within your usual.";
+    const ans = learning ? `${logged.length ? "" : "Nothing logged yet. "}Days show as logged while Florin learns your usual.`
+      : !T.logged ? "Nothing logged this week yet."
+      : `${shifted ? `Shifted on ${which("shifted")}.` : !T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged shifted." : "Every day you logged sat within your usual."}${T.left ? ` ${T.left}` : ""}`;
     const gaps = days.filter((d) => !d.logged && !d.pending);
     const symDays = days.filter((d) => d.sym.length).length;
-    const aria = `This week. ${ans}${!learning && unsure && shifted ? ` ${cap(which("unsure"))} could be either.` : ""}${gaps.length ? ` Not logged on ${andList(gaps.map((d) => DOWL[d.dow] || d.dow))}.` : ""}${symDays ? ` Symptoms on ${plural(symDays, "day")}.` : ""} ${days.map((d) => `${d.dow}: ${stateOf(d)[1]}${showScore(d) ? `, FloraScore ${d.score}` : ""}`).join(". ")}.`;
+    const aria = `This week. ${ans}${gaps.length ? ` Not logged on ${andList(gaps.map((d) => DOWL[d.dow] || d.dow))}.` : ""}${symDays ? ` Symptoms on ${plural(symDays, "day")}.` : ""} ${days.map((d) => `${d.dow}: ${stateOf(d)[1]}${showScore(d) ? `, FloraScore ${d.score}` : ""}`).join(". ")}.`;
     const has = (c) => days.some((d) => stateOf(d)[0] === c);
     return card(x, "rg-week", "This week at a glance", `
-      ${head(x, "This week", dateK(x, `${days[0].label} to ${days[days.length - 1].label}`))}
-      ${learning ? lead(x, num(logged.length), `of ${days.length} days logged`, ans) : lead(x, num(within), `of ${logged.length} days within your usual`, ans)}
+      ${head(x, "This week", dateK(x, spanOf(days)))}
+      ${learning ? (logged.length ? lead(x, num(logged.length), `of ${plural(days.length, "day")} logged`, ans) : lead(x, "Not yet", "", ans)) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, ans) : lead(x, "Not yet", "", ans)}
       <ol class="rg-weekrow" role="img" aria-label="${esc(aria)}">${cols}</ol>
       ${legend(x, [...dayLegend(has), days.some((d) => d.sym.length) && ["sym", "Symptoms"], days.some(showScore) && [null, "Number under a ring: that day's FloraScore"]])}`);
   }
@@ -309,9 +314,9 @@
     const esc = x.esc, days = D.days[30];
     const off = DOWI[days[0].dow] || 0;
     const cells = Array(off).fill(null).concat(days);
-    const n = (s) => days.filter((d) => d.logged && d.state === s).length;
     const logged = days.filter((d) => d.logged).length;
-    const within = n("usual"), shifted = n("shifted"), unsure = n("unsure");
+    const T = D.tally[30];
+    const within = T.within, shifted = T.shifted;
     const gaps = days.filter((d) => !d.logged && !d.pending).length;
     const learning = !!D.learning;
     const grid = cells.map((d, i) => {
@@ -321,13 +326,13 @@
       const turn = d.date === 1 && i > off ? ` data-mon="${esc(d.label.split(" ")[0])}"` : "";
       return `<li class="rg-md${d.today ? " is-today" : ""}${turn ? " is-first" : ""}"${turn} style="--i:${i}" title="${esc(`${d.dow} ${d.label}: ${word}`)}">${dayRing(x, d, 34, 3.6)}<b>${d.date}</b></li>`;
     }).join("");
-    const parts2 = [shifted && `${plural(shifted, "day")} shifted`, unsure && `${unsure} could be either`, gaps && `${gaps} not logged, left as ${gaps === 1 ? "a gap" : "gaps"}`].filter(Boolean);
-    const aria = learning ? `Since you started. ${plural(logged, "day")} logged. Days fill in against your usual once Florin knows it.`
-      : `The last 30 days. ${within} of ${logged} days within your usual.${parts2.length ? ` ${cap(andList(parts2))}.` : ""}`;
+    const parts2 = [shifted && `${plural(shifted, "day")} shifted`, gaps && `${gaps} not logged, left as ${gaps === 1 ? "a gap" : "gaps"}`].filter(Boolean);
+    const aria = learning ? `Since you started. ${logged ? `${plural(logged, "day")} logged` : "Nothing logged yet"}. Days fill in against your usual once Florin knows it.`
+      : `The last 30 days. ${within} of ${plural(T.known, "day")} within your usual.${parts2.length ? ` ${cap(andList(parts2))}.` : ""}${T.left ? ` ${T.left}` : ""}`;
     const has = (c) => days.some((d) => stateOf(d)[0] === c);
     return card(x, "rg-month", learning ? "Since you started, at a glance" : "The last 30 days at a glance", `
-      ${head(x, learning ? "Since you started" : "Last 30 days", dateK(x, `${days[0].label} to ${days[days.length - 1].label}`))}
-      ${learning ? lead(x, num(logged), `of ${days.length} days logged`, "") : lead(x, num(within), `of ${logged} days within your usual`, "")}
+      ${head(x, learning ? "Since you started" : "Last 30 days", dateK(x, spanOf(days)))}
+      ${learning ? (logged ? lead(x, num(logged), `of ${plural(days.length, "day")} logged`, "") : lead(x, "Not yet", "", "Nothing logged yet.")) : T.known ? lead(x, num(within), `of ${plural(T.known, "day")} within your usual`, T.left) : lead(x, "Not yet", "", `No day in the last 30 days has a BM count logged yet.${T.left ? ` ${T.left}` : ""}`)}
       <div class="rg-cal" role="img" aria-label="${esc(aria)}">
         <ol class="rg-cal-h" aria-hidden="true"><li>M</li><li>T</li><li>W</li><li>T</li><li>F</li><li>S</li><li>S</li></ol>
         <ol class="rg-cal-g">${grid}</ol>
@@ -514,7 +519,7 @@
     const avgWord = !u || o.avg30 == null ? "" : o.avg30 < u[0] ? "below your usual" : o.avg30 > u[1] ? "above your usual" : "within your usual";
     const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} not logged`].filter(Boolean);
     const ans = u ? `${inRange} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.`
-      : `${plural(known.length, "day")} logged so far. Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
+      : `${known.length ? `${plural(known.length, "day")} logged so far.` : "Nothing logged yet."} Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
     const aria = `BMs a day${learning ? ` so far, one ring segment for each of your first ${N} days` : ", last 30 days, one ring segment per day"}.${o.avg30 != null ? ` Average ${o.avg30} a day${avgWord ? `, ${avgWord}` : ""}${u ? ` of ${o.usualText}` : ""}.` : ""} ${ans}${gaps ? ` Days not logged are left as ${gaps === 1 ? "a gap" : "gaps"}.` : ""}`;
     const svg = `<svg class="rg-svg rg-chart rg-oring" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
       ${band}${before}${after}${marks}${laneLbl}${now}
@@ -536,9 +541,10 @@
     /* a word log in options A and C covers two steps: draw it as a bracket between those two rings */
     const pairs = {};
     if (D.mode !== "B") D.days[30].forEach((d) => d.forms.forEach((f) => { if (f.level != null && Math.abs(f.level - Math.round(f.level)) > 0.01) { const lo = Math.floor(f.level); pairs[lo] = (pairs[lo] || 0) + 1; } }));
-    const firmer = u ? F.bins.filter((b) => b.k < u[0]).reduce((s, b) => s + b.count, 0) : 0;
-    const looser = u ? F.bins.filter((b) => b.k > u[1]).reduce((s, b) => s + b.count, 0) : 0;
-    const either = u ? D.days[30].reduce((s, d) => s + d.forms.filter((f) => f.within == null).length, 0) : 0;
+    /* firmer, looser and could be either as the model counts them (D.form), so a word logged across two forms counts on
+       its side, and a BM that could be either is out of the count, as in Insights: within out of total less either */
+    const firmer = u ? F.firmer : 0, looser = u ? F.looser : 0, either = u ? F.either : 0;
+    const read = total - either;
     const n = F.bins.length;
     const size = 40, swd = 4.2, c = size / 2, r = r1(c - swd / 2 - 1);
     const mono = D.mode === "A";
@@ -555,24 +561,25 @@
     const pairN = pairList.reduce((s, p) => s + p.cnt, 0);
     const usualBand = u && firstU >= 0 ? `<span class="rg-fband" style="left:${r1((firstU / n) * 100)}%;width:${r1(((lastU - firstU + 1) / n) * 100)}%" aria-hidden="true"><em>Your usual</em></span>` : "";
     const was = (k) => (k === 1 ? "was" : "were");
+    const eith = either ? `, and ${either} could be either` : "";
     const ans = !total ? (D.learning ? "No BMs logged so far." : "No BMs logged in the last 30 days.")
       : !u ? `Florin learns your usual forms by day ${D.learning ? D.learning.of : ""}.`
-      : firmer && looser ? `${firmer} ${was(firmer)} firmer and ${looser} looser than your usual forms.`
-      : firmer ? `${firmer} ${was(firmer)} firmer than your usual forms.`
-      : looser ? `${looser} ${was(looser)} looser than your usual forms.`
+      : firmer && looser ? `${firmer} ${was(firmer)} firmer and ${looser} looser than your usual forms${eith}.`
+      : firmer ? `${firmer} ${was(firmer)} firmer than your usual forms${eith}.`
+      : looser ? `${looser} ${was(looser)} looser than your usual forms${eith}.`
       : either ? `${either} could be either, the rest sat within your usual forms.` : "Every BM sat within your usual forms.";
     const topB = F.bins.slice().sort((a, b) => b.count - a.count)[0];
     const nameOf = (b) => (mono ? `Type ${b.label}` : b.label);
-    const aria = `Forms, ${D.learning ? "so far" : "last 30 days"}. ${u ? `${F.within30} of ${total} within your usual forms, ${F.usualText}. ` : ""}${ans}${either && (firmer || looser) ? ` ${either} could be either.` : ""}${topB && topB.count ? ` ${nameOf(topB)} came up most, ${plural(topB.count, "time")}.` : ""} ${F.bins.map((b) => `${b.label}: ${b.count}`).join(", ")}.${pairN ? ` ${plural(pairN, "BM")} logged as a word covering two forms.` : ""}`;
+    const aria = `Forms, ${D.learning ? "so far" : "last 30 days"}. ${u ? `${F.within30} of ${read} within your usual forms, ${F.usualText}. ` : ""}${ans}${topB && topB.count ? ` ${nameOf(topB)} came up most, ${plural(topB.count, "time")}.` : ""} ${F.bins.map((b) => `${b.label}: ${b.count}`).join(", ")}.${pairN ? ` ${plural(pairN, "BM")} logged as a word covering two forms.` : ""}`;
     return card(x, "rg-form", "Form", `
       ${head(x, `Form · ${mono ? "1 to 7" : D.mode === "B" ? "five words" : "seven words"}`, u ? chip(x, "usual", F.usualText) : chip(x, "neutral", "Learning"))}
-      ${u ? lead(x, num(F.within30), `of ${total} within your usual forms`, ans) : lead(x, num(total), "BMs logged", ans)}
+      ${u && read ? lead(x, num(F.within30), `of ${read} within your usual forms`, ans) : total ? lead(x, num(total), total === 1 ? "BM logged" : "BMs logged", ans) : lead(x, "Not yet", "", ans)}
       <div class="rg-forms" role="img" aria-label="${esc(aria)}">
         <div class="rg-fbox">${usualBand}<ol class="rg-fcols" style="--n:${n}">${cols}</ol></div>
         ${pairRow}
         <p class="rg-fscale" aria-hidden="true"><span>Firmer</span><span>Looser</span></p>
       </div>
-      ${legend(x, [[null, "Number in a ring: BMs of that form"], u && ["band", `Your usual, ${F.usualText}`], (firmer || looser) && ["shift", "Outside your usual forms"], ["arcnote", "Ring: share of all BMs"], pairN && ["pair", "Logged as a word covering both"]])}`);
+      ${legend(x, [[null, "Number in a ring: BMs of that form"], u && ["band", `Your usual, ${F.usualText}`], u && F.bins.some((b) => b.count && !b.inUsual) && ["shift", "Outside your usual forms"], ["arcnote", "Ring: share of all BMs"], pairN && ["pair", "Logged as a word covering both"]])}`);
   }
 
   /* ---------- symptoms: which came up, day by day ---------- */
@@ -613,12 +620,12 @@
       </li>`;
     }).join("");
     const top = rows[0];
-    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
-    const aria = `Symptoms, ${D.learning ? "so far" : "last 30 days"}. ${S.withSym30} of ${S.logged30} logged days with symptoms.${S.usualText ? ` Your usual: ${lower1(S.usualText)}.` : ""} ${ans} ${rows.map((row) => `${row.name}: ${plural(row.days, "day")}, ${most(row)}`).join(", ")}.`;
+    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : !S.logged30 ? "Nothing logged yet." : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
+    const aria = `Symptoms, ${D.learning ? "so far" : "last 30 days"}. ${S.logged30 ? `${S.withSym30} of ${plural(S.logged30, "logged day")} with symptoms.` : "Nothing logged yet."}${S.usualText ? ` Your usual: ${lower1(S.usualText)}.` : ""} ${ans} ${rows.map((row) => `${row.name}: ${plural(row.days, "day")}, ${most(row)}`).join(", ")}.`;
     const strengths = new Set(rows.flatMap((row) => row.cells.filter((cl) => cl != null && cl !== false)));
     return card(x, "rg-symptoms", "Symptoms", `
       ${head(x, D.learning ? "Symptoms · so far" : "Symptoms · 30 days", S.usualText ? chip(x, "usual", `Usual: ${S.usualText.toLowerCase()}`) : chip(x, "neutral", "Learning"))}
-      ${lead(x, num(S.withSym30), `of ${S.logged30} logged days with symptoms`, ans)}
+      ${S.logged30 ? lead(x, num(S.withSym30), `of ${plural(S.logged30, "logged day")} with symptoms`, ans) : lead(x, "Not yet", "", ans)}
       ${rows.length ? `<ul class="rg-symlist" role="img" aria-label="${esc(aria)}">${list}</ul>
       <p class="rg-symaxis" aria-hidden="true"><span>${esc(days[0].label)}</span><span${days[days.length - 1].today ? ' class="is-today"' : ""}>${days[days.length - 1].today ? "Today" : esc(days[days.length - 1].label)}</span></p>` : ""}
       ${rows.length ? legend(x, [strengths.has(1) && ["s1", "Mild"], strengths.has(2) && ["s2", "Moderate"], strengths.has(3) && ["s3", "Strong"], strengths.has(0) && ["unsaid", "Strength not said"], ["sdnone", "Logged, none"], ["arcnote", "Ring: share of logged days"]]) : ""}
@@ -650,12 +657,13 @@
       const ticks = [0, 1, 2, 3].map((v) => { const [a1, b1] = pol(c, c, R - sw2 / 2 - 3, f(v)), [a2, b2] = pol(c, c, R - sw2 / 2 - 7, f(v)); return `<line class="rg-gtick" x1="${a1}" y1="${b1}" x2="${a2}" y2="${b2}"/>`; }).join("");
       const read = L ? (L.v > 0 ? `<path class="rg-arc rg-draw${shift ? " is-shift" : ""}" style="--i:${qi}" pathLength="1" stroke-width="${sw2}" d="${arc(c, c, R, A0, f(L.v))}"/>` : "") + (() => { const [ex, ey] = pol(c, c, R, f(L.v)); return `<circle class="rg-gend${shift ? " is-shift" : ""}" style="--i:${qi}" cx="${ex}" cy="${ey}" r="${sw2 / 2 + 1.5}"/>`; })() : "";
       const [l0x, l0y] = pol(c, c, R, A0), [l1x, l1y] = pol(c, c, R, A0 + SWEEP);
-      const hist = q.weeks.length ? (() => {
+      /* the weeks so far, from two on: one week alone is the gauge itself */
+      const hist = q.weeks.length > 1 ? (() => {
         const hw = 96, hh = 22, nn = q.weeks.length, xx = (i) => r1(4 + (i * (hw - 8)) / Math.max(1, nn - 1)), yy = (v) => r1(hh - 3 - (v / 3) * (hh - 6));
         const bandR = b ? `<rect class="rg-band" x="0" y="${r1(yy(b.hi) - 3)}" width="${hw}" height="${r1(yy(b.lo) - yy(b.hi) + 6)}" rx="4"/>` : "";
         return `<svg class="rg-hist" viewBox="0 0 ${hw} ${hh}" aria-hidden="true">${bandR}${q.weeks.map((w, i) => (w.v == null ? "" : `<circle class="rg-hd${w === L ? " is-new" : ""}${w === L && shift ? " is-shift" : ""}" style="--i:${i}" cx="${xx(i)}" cy="${yy(w.v)}" r="${w === L ? 3 : 2}"/>`)).join("")}</svg>`;
       })() : "";
-      const aria = L ? `${q.label}: ${q.opts[L.v]} in the ${lower1(L.label)}. ${q.cmp ? q.cmp.text : ""}${b ? `. Your first weeks: ${q.ticks[b.lo]}${b.hi !== b.lo ? ` to ${q.ticks[b.hi]}` : ""}` : ""}.` : `${q.label}: not answered yet.`;
+      const aria = L ? `${q.label}: ${q.opts[L.v]}, ${L.when}.${q.cmp ? ` ${q.cmp.text}.` : ""}${b ? ` Your first weeks: ${q.ticks[b.lo]}${b.hi !== b.lo ? ` to ${q.ticks[b.hi]}` : ""}.` : ""}` : `${q.label}: not answered yet.`;
       return `<li class="rg-ck">
         <span class="rg-ck-g"><svg class="rg-svg" viewBox="0 0 ${size} ${size - 8}" role="img" aria-label="${esc(aria)}">
           <path class="rg-trk" stroke-width="${sw2}" d="${arc(c, c, R, A0, A0 + SWEEP)}"/>
@@ -665,20 +673,23 @@
           <text class="rg-gl" x="${l1x + 2}" y="${r1(l1y + 18)}" text-anchor="middle">${esc(q.ticks[3])}</text>
         </svg><b class="rg-ck-v" aria-hidden="true">${L ? esc(q.ticks[L.v]) : "Not yet"}</b></span>
         <p class="rg-ck-l">${esc(q.label)}</p>
-        ${q.cmp ? chip(x, shift ? "shift" : "usual", q.cmp.text) : chip(x, "neutral", "No answer yet")}
+        ${q.cmp ? chip(x, shift ? "shift" : "usual", q.cmp.text) : L ? "" : chip(x, "neutral", "No answer yet")}
         ${hist}
       </li>`;
     }).join("");
     const same = Q.filter((q) => q.cmp && q.cmp.k === "same").length, answered = Q.filter((q) => q.cmp).length;
     const latest = (Q.find((q) => q.latest) || {}).latest;
     const diff = Q.filter((q) => q.cmp && q.cmp.k !== "same");
-    const ans = answered && !diff.length ? "Every answer sits within the range of your first weeks."
+    /* before the first three check-ins there is nothing to compare with: the answers are drawn without a chip, and the
+       card says how many are saved, the way Insights does */
+    const ans = !answered ? `Your first ${["one", "two", "three", "four", "five"][CK.baseWeeks - 1] || CK.baseWeeks} become your starting point. Each week after is compared with them.`
+      : !diff.length ? "Every answer sits within the range of your first weeks."
       : diff.length === 1 ? `${diff[0].label}: ${lower1(diff[0].cmp.text)}.` : `${plural(diff.length, "answer")} moved from your first weeks.`;
     return card(x, "rg-checkin", "Weekly check-in", `
       ${head(x, "Weekly check-in", latest ? dateK(x, latest.label) : "")}
-      ${answered ? lead(x, num(same), `of ${answered} like your first weeks`, ans) : lead(x, "Not yet", "", ans)}
+      ${answered ? lead(x, num(same), `of ${answered} like your first weeks`, ans) : lead(x, num(CK.count), `of ${CK.baseWeeks} check-ins saved`, ans)}
       <ul class="rg-cks">${tiles}</ul>
-      ${legend(x, [["arcnote", "Latest answer"], ["uband-l", "Your first weeks"], diff.length && ["shift", "Different from your first weeks"], ["hist", `Last ${nW} weeks, newest ringed`]])}
+      ${legend(x, [["arcnote", "Latest answer"], Q.some((q) => q.band) && ["uband-l", "Your first weeks"], diff.length && ["shift", "Different from your first weeks"], nW > 1 && ["hist", `Last ${nW} weeks, newest ringed`]])}
       ${cta}`);
   }
 

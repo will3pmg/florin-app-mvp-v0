@@ -4,11 +4,12 @@
    - Day first: the date with a small FloraScore ring that opens its detail; today's logs in time order, with the one
      that stood out most marked; a row to log from that follows the BM logging decision; one sentence that leads with
      what stood out, gives FloraScore against yesterday and (with membership) what that log did to it, scored with and
-     without it; then the week and the check-in. A flag leads with the Teal note and no score reading. The Easy version
-     takes precedence over it.
-   - Calendar: a month of days, each marked from L.facts with the week card's marks (Plum filled within the usual, Ray
-     in dark; a Gold ring for a shift; a struck date for a gap; a dash for nothing on BMs; today ringed), a Teal ring for
-     a day with a flag (never read), small symptom and meal ticks. On Free, days before the last 7 show only as logged.
+     without it; then the week and the check-in. A flag leads with the Teal note and no score reading, and the chip keeps
+     its number but reads it against nothing. The Easy version takes precedence over it.
+   - Calendar: a month of days, each marked from L.facts. Shared with As built's week card: Plum filled within the
+     usual (Ray in dark), a Gold ring for a shift, a struck date for a gap. Its own: a dash for logs but nothing on BMs,
+     a Teal ring for a day with a flag (never read); today ringed. Small symptom ticks (filled by strength, hollow only
+     when no strength was said) and meal ticks. On Free, days before the last 7 show only as logged.
      A tapped day is drawn by RU.historyDay, as the list draws it, with Add to this day. The filter chips stay. Arrow
      keys move between days, between the first day and today.
    Every number either one states is computed from the model. A wrapper that throws is reported with console.warn,
@@ -35,13 +36,16 @@
      routed to primary care. Then a shift from the person's own usual: a form outside the usual forms, a first BM
      outside the usual window, a BM past the usual count, or a No BM day. Then symptoms by strength: strong, moderate,
      mild, then one logged without a strength (never read as mild). Ties go to the earlier entry. Shifts need a usual,
-     so before day 14 only flags and symptoms can stand out. The first of the list is the item Day first marks. */
+     so before day 14 only flags and symptoms can stand out. The first of the list is the item Day first marks.
+     The core owns this ranking now (RU.standouts, RU.alarmOf, RU.leadText in refresh-ui.js), so Score first's sentence
+     and Day first's marked row can't disagree: this module calls the core's copy, and keeps its own only for a core
+     that doesn't have one */
   const FLAG_SIGN = { blood: "Blood in your stool", mucus: "Mucus in your stool", black: "A black or tar-like stool" };
-  const alarmOf = (e) => {
+  const ownAlarmOf = (e) => {
     if (e.kind === "bm") {
       const f = L.FLAGS.filter(([k]) => e.flags && e.flags[k]).map(([k]) => k);
       if (f.length) return { flags: f, sign: f.length === 1 ? FLAG_SIGN[f[0]] : f.includes("black") ? "A black stool, and more" : "Blood and mucus in your stool", serious: f.includes("blood") || f.includes("black") };
-      const s = L.alarmsIn(e.note || "");
+      const s = L.alarmsIn(e.note || "", { bm: true });
       return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
     }
     if (e.kind === "sym") {
@@ -50,6 +54,7 @@
     }
     return null;
   };
+  const alarmOf = (e) => (typeof RU.alarmOf === "function" ? RU.alarmOf(e) : ownAlarmOf(e));
   /* every alarm feature a day's logs name, in words for a label: "blood", "a fever". The calendar marks such a day for a
      clinician and never reads it against the usual */
   const SIGN_WORD = { blood: "blood", mucus: "mucus", black: "a black or tar-like stool" };
@@ -63,7 +68,7 @@
     return out;
   };
   const SHIFT_CHIP = { form: "Outside your usual forms", late: "Later than your window", early: "Earlier than your window", more: "More than your usual", none: "Fewer than your usual" };
-  const standouts = (M, mode) => {
+  const ownStandouts = (M, mode) => {
     const u = M.usual, es = todayOf(M), bms = es.filter((e) => e.kind === "bm");
     const out = [];
     es.forEach((e) => {
@@ -82,10 +87,13 @@
     });
     return out.sort((a, b) => b.rank - a.rank || a.e.t - b.e.t);
   };
+  const standouts = (M, mode) => (typeof RU.standouts === "function" ? RU.standouts(M, mode) : ownStandouts(M, mode));
 
-  /* the lead of the day's sentence: the item, in the person's own terms */
+  /* the lead of the day's sentence: the item, in the person's own terms, as Score first's sentence words it. Day first
+     draws a flag as the Teal note, so a flag has no lead here */
   const leadOf = (M, mode, N) => {
     if (!N || N.kind === "alarm") return null;
+    if (typeof RU.leadText === "function") return RU.leadText(M, mode, N);
     const e = N.e, u = M.usual;
     if (N.kind === "form") return `Your ${T(e.t)} BM was ${L.formName(e, mode)}, outside your usual forms, ${L.usualFormsText(M, mode)}.`;
     if (N.kind === "late" || N.kind === "early") return `Your first BM came at ${T(e.t)}, ${N.kind === "late" ? "later" : "earlier"} than your usual ${winText(M)} window.`;
@@ -139,8 +147,12 @@
   const relOf = (v, su) => (v == null || !su ? null : v < su[0] ? (su[0] - v >= 6 ? "Below your usual range" : "A little below your usual range") : v > su[1] ? (v - su[1] >= 6 ? "Above your usual range" : "A little above your usual range") : "Within your usual range");
 
   /* 1. the date, and a compact FloraScore chip that opens its detail (the paywall on Free, as the hero does). On Free
-     before day 14 there's no score to sell yet, so the chip is plain, as the core's learning card is */
-  const scoreChip = (M, V) => {
+     before day 14 there's no score to sell yet, so the chip is plain, as the core's learning card is. On a day with a
+     flag or an alarm feature the chip keeps L.score's number (the detail it opens shows the same one) but reads it
+     against nothing: the card under it routes the flagged log to primary care, and a flagged log is never read through
+     the score */
+  const FLAG_WORD = "Not read against your usual today: a log is noted for a clinician";
+  const scoreChip = (M, V, list) => {
     const free = V.plan === "free";
     const act = free ? 'data-act="pay" data-pay="score"' : 'data-act="idetail" data-k="score"';
     const go = free ? "With Florin membership, see what moves it" : "Open the detail";
@@ -151,9 +163,10 @@
       said = [`FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual`, `Today is day ${d} of ${L.LEARN_DAYS}`];
     } else {
       const s = L.score(M, L.TODAY, V.form), su = L.scoreUsual(M, V.form), v = s ? s.value : null;
+      const flag = (list || standouts(M, V.form)).some((x) => x.kind === "alarm");
       ring = v == null ? 0 : v; num = v == null ? "No score" : String(v);
-      word = v == null ? "Not scored today: it needs a BM logged on 2 of your last 3 days" : relOf(v, su) || "";
-      said = v == null ? [`FloraScore not scored today: it needs a BM logged on 2 of your last 3 days`] : [`FloraScore ${v}`, word && su ? `${word}, ${su[0]} to ${su[1]}` : word];
+      word = v == null ? "Not scored today: it needs a BM logged on 2 of your last 3 days" : flag ? FLAG_WORD : relOf(v, su) || "";
+      said = v == null ? [`FloraScore not scored today: it needs a BM logged on 2 of your last 3 days`] : flag ? [`FloraScore ${v}`, FLAG_WORD] : [`FloraScore ${v}`, word && su ? `${word}, ${su[0]} to ${su[1]}` : word];
     }
     const svg = C && C.ring ? C.ring({ value: ring, size: 24, stroke: 3 }) : "";
     const inner = `<span class="vr-sc-ring" aria-hidden="true">${svg}</span><span class="vr-sc-l">FloraScore</span>${num ? `<b>${esc(num)}</b>` : ""}`;
@@ -165,13 +178,13 @@
         ${word ? `<span class="vr-sc-w">${esc(word)}</span>` : ""}
       </div>`;
   };
-  const topPart = (M, V) => {
+  const topPart = (M, V, list) => {
     const t = dateOf(L.TODAY), hello = L.NOW < 12 ? "Good morning" : L.NOW < 17 ? "Good afternoon" : "Good evening";
     return `<header class="ap-top vr-top" data-a>
         <div class="ap-top-l"><p class="ap-date">${hello}, ${esc(M.P.name)}</p><h1 class="ap-hello">${esc(Ut.DOWL[t.getDay()])}, ${esc(Ut.MONL[t.getMonth()])} ${t.getDate()}</h1></div>
         <button type="button" class="ap-avatar" data-act="profile" aria-label="Profile">${esc(M.P.initial)}</button>
       </header>
-      ${scoreChip(M, V)}`;
+      ${scoreChip(M, V, list)}`;
   };
 
   /* 2. today's logs, in time order, as the lead. The row is RU.entryRow's (so a module that wraps it changes this list
@@ -238,7 +251,7 @@
   const dayFirst = (M, V) => {
     const list = standouts(M, V.form);
     return `<div class="ap-scr ap-today vr-day">
-      ${[topPart(M, V), timelinePart(M, V, list[0]), logPart(M, V), highlightPart(M, V, list), part("week", M, V), part("checkin", M, V), part("next", M, V), part("fine", M, V)].join("\n")}
+      ${[topPart(M, V, list), timelinePart(M, V, list[0]), logPart(M, V), highlightPart(M, V, list), part("week", M, V), part("checkin", M, V), part("next", M, V), part("fine", M, V)].join("\n")}
     </div>`;
   };
   const baseToday = RU.today;
@@ -292,7 +305,8 @@
     if (f.logged) {
       if (f.bms.length) bits.push(plural(f.bms.length, "BM"));
       else if (f.nobm) bits.push("no BM");
-      if (syms.length) bits.push(andList(syms.map((s) => s.toLowerCase())));
+      /* each symptom with its strongest strength, as the tick draws it; one logged without a strength says so, never mild */
+      if (syms.length) bits.push(andList(syms.map((k) => (f.sym[k] ? `${L.STRENGTH[f.sym[k] - 1].toLowerCase()} ${k.toLowerCase()}` : `${k.toLowerCase()} with no strength said`))));
       if (f.meals.length) bits.push(plural(f.meals.length, "meal"));
     }
     const match = F === "all" || (f.logged && x.entries.some(KEEP[F]));
@@ -336,8 +350,10 @@
       mk("flag", "Noted for a clinician"),
       gapDay ? `<span data-shown="gap"><span class="vr-cal-n" aria-hidden="true">${gapDay.dd}</span>Nothing logged</span>` : "",
       cells.some((c) => c.today) ? `<span><i class="vr-lg-today" aria-hidden="true"></i>Today</span>` : "",
-      cells.some((c) => c.sym != null) ? `<span><i class="vr-t vr-t--sym vr-t--s1"></i><i class="vr-t vr-t--sym vr-t--s3"></i>Symptoms, milder to stronger</span>` : "",
-      cells.some((c) => c.meal) ? `<span><i class="vr-t vr-t--meal"></i>Meal logged</span>` : ""
+      cells.some((c) => c.sym > 0) ? `<span><i class="vr-t vr-t--sym vr-t--s1" aria-hidden="true"></i><i class="vr-t vr-t--sym vr-t--s3" aria-hidden="true"></i>Symptoms, milder to stronger</span>` : "",
+      /* a day whose symptoms were all logged without a strength: the only hollow tick, never read as mild */
+      cells.some((c) => c.sym === 0) ? `<span><i class="vr-t vr-t--sym vr-t--s0" aria-hidden="true"></i>Symptoms, strength not said</span>` : "",
+      cells.some((c) => c.meal) ? `<span><i class="vr-t vr-t--meal" aria-hidden="true"></i>Meal logged</span>` : ""
     ].join("");
   };
   const calendar = (M, V, st) => {
@@ -512,32 +528,51 @@
     } catch (e) { return null; }
   };
   const lineQuote = (M, P, list) => { const t = dayLine(M, P, list); return t ? `"${t}"` : "nothing after the Teal note to primary care, which leads the card."; };
-  const MARKS = "the same marks as Today's week card: Plum filled within the usual (Ray in dark), a Gold ring outside it, a struck-through date for a day with nothing logged, a dash for a day with logs but nothing on BMs, a Teal ring for a day with a flag or an alarm feature (noted for a clinician, never read), and today ringed";
+  /* the calendar's marks: what it shares with As built's week card on Today (refresh-ui.js weekCard), and what is its
+     own. The week card's dash is a No BM log; the calendar reads a No BM day as zero BMs and keeps its dash for
+     a day with logs but nothing on BMs. With a data style or the Easy version on, Today's week is drawn in that style */
+  const MARKS = "the marks As built's week card on Today uses: Plum filled within the usual (Ray in dark), a Gold ring outside it, and a struck-through date for a day with nothing logged. Two marks are the calendar's own: a dash for a day with logs but nothing on BMs (on the week card a dash is a No BM log; the calendar reads a No BM day as zero BMs, outside the usual once there is one), and a Teal ring for a day with a flag or an alarm feature, noted for a clinician and never read. Today is ringed";
+  const marksStyle = (P) => {
+    const look = lookName(P);
+    if (!look) return "";
+    const rings = RU.lookOf && RU.lookOf(P) === "rings";
+    return ` With ${P.easy ? "the Easy version" : `the ${look} data style`} on, Today's week is drawn in that style, so its marks differ from the calendar's.${rings ? " In Rings a Teal dot under a day means symptoms; on the calendar a Teal dot means a meal was logged." : ""}`;
+  };
 
+  /* Score first's sentence as the core draws it now, and how far it is from the recommendation: whether it leads with
+     the log Day first marks, and whether it says what that log did to FloraScore */
+  const scoreFirstNow = (M, P, list) => {
+    const H = typeof RU.highlightOf === "function" ? RU.highlightOf(M, P.form) : { text: RU.highlight(M, P.form), N: null };
+    const N = list[0], leads = !!(N && H.N && H.N.e === N.e), said = /FloraScore/.test(H.text);
+    const how = !N ? "Nothing stands out today, so it says how the day's timing sits next to the usual." : !leads ? "The recommendation has it lead with the log Day first marks." : said ? "It leads with the log Day first marks." : "It leads with the log Day first marks; saying what that log did to FloraScore is the change left.";
+    return `Score first's sentence on ${M.P.name}'s logs now reads: "${H.text}" ${how}`;
+  };
   const homeDecision = (M, P) => {
     const list = standouts(M, P.form), ck = P.checkin !== false;
     return {
       t: "Home: score first, or day first",
       lede: `What Today opens on. Score first leads with FloraScore on the Forest card, then ${ck ? "the check-in when it's due, " : ""}today's entries and the week. Day first leads with the day: the date with a small FloraScore ring, today's logs in time order with the one that stood out marked, a row to log from, one sentence on what stood out and what that log did to the score, then the week${ck ? " and the check-in" : ""}. The Easy version has its own Today, so it takes precedence over both. A data style changes Day first's week only; FloraScore stays the small ring by the date.`,
       opts: [
-        ["score", "As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence about the first BM. The day's logs come after the score."],
+        ["score", `As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence ${typeof RU.highlightOf === "function" ? "that leads with what stood out today, ranked as Day first ranks it" : "about the first BM"}. The day's logs come after the score.`],
         ["day", `The day leads. The most notable log is marked: a flag first (routed to primary care, never read, and never read through the score), then a shift from the person's usual, then the strongest symptom. ${P.bmUI === "full" ? "With the full form only, a Log a BM button opens the form" : "BM tiles sit on Today, so once 5 BMs are logged a usual BM is one tap"}. The sentence leads with what stood out, gives FloraScore against yesterday, and, with membership, what that log did to it, scored with and without it.`]
       ],
-      rec: "Day first. It leads with what happened, which is what the review asked Today's highlight to do, and it puts logging on the first screen, where a manual-logging app spends most of its visits. FloraScore stays one tap away as a small ring by the date, the order Oura's Today has used since its October 2025 redesign. It also reads right on days 1 to 13, where Score first opens on a ring with no score in it yet. Keep the Forest FloraScore card as the top of the score's detail page.",
+      rec: "Score first, with the hero's sentence leading on the most notable thing logged today and saying what it did to FloraScore, in the order Day first's sentence uses (a flag first, to primary care, then a shift from the usual, then the strongest symptom). It keeps FloraScore where Oura keeps its main score, the big arc that leads Today, and that's where the Oura data style draws its arc. Day first stays as the option to try with people like Sarah on a rough evening, when the day matters more than the number. It also reads right on days 1 to 13, where Score first opens on a ring with no score yet. Will to confirm.",
       open: [
         `Day first on ${M.P.name}'s logs now ${list.length ? `marks ${markWord(list[0], P.form)}` : "marks nothing, since nothing stands out"}, and its sentence reads: ${lineQuote(M, P, list)}`,
+        /* Score first's sentence as the core draws it now, so the note shows whether the change above is in yet */
+        ...(lookName(P) ? [] : [scoreFirstNow(M, P, list)]),
         "The order is a flag, a shift, then the strongest symptom. Should a strong symptom outrank a shift, since it's what the person felt?",
-        "Will (Oct 14) wanted FloraScore to tie Florin to the score people know from Oura. Is a small ring by the date enough for that, or does the score need the hero?",
+        "Will (Oct 14) wanted FloraScore to tie Florin to the score people know from Oura, which is why the recommendation keeps the hero. If Day first wins, is a small ring by the date enough for that?",
         "Day first puts the BM tiles on Today as well as on plus. Keep both, or only Today's?"
       ],
-      res: ["Oura's Today since October 2025: score shortcuts first, then one daily highlight that changes with the time of day, then a timeline you can add to. Day first keeps that order, in Florin's words."]
+      res: ["Oura's Today since its late-2025 redesign: a row of small score shortcuts, then the main score as a big arc with one headline about the day, then a timeline you can add to. Score first follows that order; Day first moves the score to a small ring by the date."]
     };
   };
   const historyDecision = (M, P) => {
     const Q = cal(M, P);
     return {
       t: "History: a list, or a calendar",
-      lede: `How History shows past days. The list is every day, newest first, 14 at a time, with a gap kept as a gap and Add to this day on it. The calendar is a month at a glance, each day marked from the same reading Insights uses, with ${MARKS}; small ticks for symptoms and meals, and the tapped day's logs under it, drawn the way the list draws them. On Free, days before the last ${FREE_DAYS} show only as logged, as Insights stops at ${FREE_DAYS} days there.`,
+      lede: `How History shows past days. The list is every day, newest first, 14 at a time, with a gap kept as a gap and Add to this day on it. The calendar is a month at a glance, each day marked from the same reading Insights uses, with ${MARKS}. Small ticks show symptoms and meals, and the tapped day's logs sit under it, drawn the way the list draws them. On Free, days before the last ${FREE_DAYS} show only as logged, as Insights stops at ${FREE_DAYS} days there.${marksStyle(P)}`,
       opts: [
         ["list", "As built: newest day first, filters for BMs, symptoms, meals and notes, Show earlier days, and the report for a clinician at the top."],
         ["calendar", "A month at a glance, with Previous and Next month. Within the usual and outside it differ in shape as well as colour (a filled dot, a Gold ring), so they hold in dark, where Ray and Gold are close. The filters dim the days without that kind of log. Every day is a button the arrow keys move through, read out in full, flags included."]
@@ -549,7 +584,7 @@
         `On Free the calendar reads only the last ${FREE_DAYS} days against the usual, like Insights. Or should History, which is free, read every day?`,
         "Keep a List and Calendar switch on History itself, or the calendar only?"
       ],
-      res: ["Throne's guidance: log the days without a BM, so a gap and a day without one read differently. The calendar keeps them apart: a struck-through date for nothing logged, its own mark for a No BM day.", "CareClinic lets people catch up on several entries in one go. Add to this day works on any past day the calendar shows."]
+      res: ["Throne's guidance: log the days without a BM, so a gap and a day without one read differently. The calendar keeps them apart: a struck-through date for nothing logged, while a No BM day is read as zero BMs, outside the usual once there is one, and its label says no BM.", "CareClinic lets people catch up on several entries in one go. Add to this day works on any past day the calendar shows."]
     };
   };
   const homeScreenNote = (M, P) => {
@@ -566,14 +601,14 @@
         `The sentence now: ${lineQuote(M, P, list)} Does it say enough, or too much?`,
         "A day's score blends the last 3 logged days, so one log moves it by about a third of what it would on its own. Say that on the score's detail, or is the sentence enough?"
       ],
-      res: ["Oura's Today since October 2025: score shortcuts, one daily highlight, then a timeline you can add to."]
+      res: ["Oura's Today since its late-2025 redesign: a row of small score shortcuts, then the main score as a big arc with one headline about the day, then a timeline you can add to. Day first moves the score to a small ring by the date and leads with the day; the Home decision recommends Score first, which keeps Oura's order."]
     };
   };
   const calScreenNote = (M, P) => {
     const Q = cal(M, P);
     return {
       t: "History: Calendar",
-      lede: `A month of ${M.P.name}'s days, each marked from the same reading of a day Insights uses, with ${MARKS}; ticks for symptoms and meals.${P.plan === "free" ? ` On Free, days before the last ${FREE_DAYS} show only as logged.` : ""} Tap a day for its logs, drawn as the list draws them, with Add to this day. The arrow keys move between days. On the phone now: "${Q.sum}"`,
+      lede: `A month of ${M.P.name}'s days, each marked from the same reading of a day Insights uses, with ${MARKS}. Ticks show symptoms and meals.${P.plan === "free" ? ` On Free, days before the last ${FREE_DAYS} show only as logged.` : ""}${marksStyle(P)} Tap a day for its logs, drawn as the list draws them, with Add to this day. The arrow keys move between days. On the phone now: "${Q.sum}"`,
       ba: [
         ["An endless scroll: 14 days at a time, newest first", "A month at a glance, Previous and Next month, and the tapped day's logs under it"],
         ["A gap found by scrolling for it", Q.gaps ? `${plural(Q.gaps, "gap")} since the first log, each a struck-through date in its month` : "Gaps show as struck-through dates, so none hide in a scroll"],

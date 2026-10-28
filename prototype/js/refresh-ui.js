@@ -146,11 +146,77 @@
     return { ds, cols, bms, inForms, unsure, mornings, inWin, loggedDays, symDays, symItems, meals, topForm, gaps };
   };
 
+  /* ---------- what stood out today ----------
+     Today's entries, ranked, one way for Score first's sentence and Day first's marked row. First a flag on a BM, or an
+     alarm feature named in a note (a BM's note read with the BM net) or a symptom: never read, only routed to primary
+     care. Then a shift from the person's own usual: a form outside the usual forms, a first BM outside the usual
+     window, a BM past the usual count, or a No BM day. Then symptoms by strength: strong, moderate, mild, then one
+     logged without a strength (never read as mild). Ties go to the earlier entry. Shifts need a usual, so before day 14
+     only flags and symptoms can stand out. mode is the consistency option; without one, a form isn't read.
+     Each item: { e, kind (alarm, form, late, early, more, none, sym), rank, tone (info, shift, plain), chip, alarm?, s? } */
+  const FLAG_SIGN = { blood: "Blood in your stool", mucus: "Mucus in your stool", black: "A black or tar-like stool" };
+  RU.alarmOf = (e) => {
+    if (e.kind === "bm") {
+      const f = L.FLAGS.filter(([k]) => e.flags && e.flags[k]).map(([k]) => k);
+      if (f.length) return { flags: f, sign: f.length === 1 ? FLAG_SIGN[f[0]] : f.includes("black") ? "A black stool, and more" : "Blood and mucus in your stool", serious: f.includes("blood") || f.includes("black") };
+      const s = L.alarmsIn(e.note || "", { bm: true });
+      return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
+    }
+    if (e.kind === "sym") {
+      const s = L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`);
+      return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
+    }
+    return null;
+  };
+  const SHIFT_CHIP = { form: "Outside your usual forms", late: "Later than your window", early: "Earlier than your window", more: "More than your usual", none: "Fewer than your usual" };
+  RU.standouts = (M, mode) => {
+    const u = M.usual, es = todayOf(M), bms = es.filter((e) => e.kind === "bm");
+    const out = [];
+    es.forEach((e) => {
+      const a = RU.alarmOf(e);
+      if (a) { out.push({ e, kind: "alarm", rank: 4, tone: "info", chip: "Clinician note", alarm: a }); return; }
+      if (e.kind === "bm" && u) {
+        const i = bms.indexOf(e);
+        const why = mode && L.inForms(M, e, mode) === false ? "form" : i === 0 && !L.inWindow(M, e.t) ? (Math.round(e.t * 60) / 60 > u.tHi ? "late" : "early") : i >= u.nHi ? "more" : null;
+        if (why) out.push({ e, kind: why, rank: 3, tone: "shift", chip: SHIFT_CHIP[why] });
+      }
+      if (e.kind === "nobm" && u) out.push({ e, kind: "none", rank: 3, tone: "shift", chip: SHIFT_CHIP.none });
+      if (e.kind === "sym") {
+        const s = Math.max(0, ...e.items.map((i) => i.s || 0));
+        out.push({ e, kind: "sym", s, rank: s === 3 ? 2 : 1 + s / 10, tone: "plain", chip: s ? `${L.STRENGTH[s - 1]} symptom` : "Strength not said" });
+      }
+    });
+    return out.sort((a, b) => b.rank - a.rank || a.e.t - b.e.t);
+  };
+  /* the item that stood out, in the person's own terms: one sentence, no judgement words. An alarm names the sign and
+     routes it, and reads nothing: no score, no usual */
+  const nText = (a, b) => (a === b ? `${a}` : `${a} to ${b}`);
+  RU.leadText = (M, mode, N) => {
+    if (!N) return null;
+    const e = N.e, u = M.usual;
+    if (N.kind === "alarm") return N.alarm.serious ? `${N.alarm.sign}, noted in a log today: primary care is the right first stop.` : `${N.alarm.sign}, noted in a log today: if it's new for you or keeps showing up, check in with a clinician.`;
+    if (N.kind === "form") return `Your ${T(e.t)} BM was ${L.formName(e, mode)}, outside your usual forms, ${L.usualFormsText(M, mode)}.`;
+    if (N.kind === "late" || N.kind === "early") return `Your first BM came at ${T(e.t)}, ${N.kind === "late" ? "later" : "earlier"} than your usual ${winText(M)} window.`;
+    if (N.kind === "more") { const n = L.bms(L.day(M, L.TODAY)).length; return `${WORDS[n] || n} BMs today, more than your usual ${nText(u.nLo, u.nHi)} a day.`; }
+    if (N.kind === "none") return `No BM today, logged at ${T(e.t)}; your usual is ${nText(u.nLo, u.nHi)} a day.`;
+    if (N.kind === "sym") { const t = RU.entryText(e, mode).title; return N.s ? `${L.STRENGTH[N.s - 1]} ${lower1(t)} at ${T(e.t)}.` : `${t} at ${T(e.t)}, strength not said.`; }
+    return null;
+  };
+
   /* ---------- the one sentence on Today ----------
-     One sentence, and it says what the list below can't: how the day sits next to the person's usual. Symptoms and
-     meals are left to the list. */
+     One sentence. It leads with what stood out today (RU.standouts), and with nothing that did, says how the day's
+     timing sits next to the person's usual. RU.highlightOf says whether the lead is an alarm, so Today can draw it as
+     the Teal note; RU.highlight is the sentence alone */
   const winBetween = (M) => `${T(M.usual.tLo).replace(/ AM$/, "")} and ${T(M.usual.tHi)}`;
-  RU.highlight = (M) => {
+  RU.highlightOf = (M, mode) => {
+    /* a caller without a consistency option (a module's note quoting this sentence) reads with the phone's */
+    if (!mode && window.FLORIN_EXT && window.FLORIN_EXT.api && window.FLORIN_EXT.api.S) mode = window.FLORIN_EXT.api.S.form;
+    const N = RU.standouts(M, mode)[0];
+    if (N) return { text: RU.leadText(M, mode, N), alarm: N.kind === "alarm", N };
+    return { text: timingLine(M), alarm: false, N: null };
+  };
+  RU.highlight = (M, mode) => RU.highlightOf(M, mode).text;
+  const timingLine = (M) => {
     const x = L.day(M, L.TODAY);
     const es = x ? x.entries : [];
     const bms = es.filter((e) => e.kind === "bm"), no = es.find((e) => e.kind === "nobm");
@@ -234,7 +300,8 @@
       seen.sym ? `<span><i class="ap-wk-sq ap-wk-sq--1"></i><i class="ap-wk-sq ap-wk-sq--3"></i>Symptoms, milder to stronger</span>` : "",
       seen.sym0 ? `<span><i class="ap-wk-sq ap-wk-sq--0"></i>Strength not given</span>` : "",
       seen.no ? `<span><i class="ap-wk-no"></i>No BM, logged</span>` : "",
-      seen.gap ? `<span><i class="ap-wk-gapday">T</i>Nothing logged that day</span>` : ""
+      /* the key is the first gap day's own struck date, so it matches the mark on the card */
+      seen.gap ? `<span><i class="ap-wk-gapday">${(() => { const g = W.cols.find((c) => !c.before && !c.pending && !c.logged); return g ? dateOf(g.d).getDate() : ""; })()}</i>Nothing logged that day</span>` : ""
     ].join("");
     const learn = u ? "" : `<div class="ap-learn-st"><p><b>Day ${L.learnDay(M)} of ${L.LEARN_DAYS}.</b> Florin learns your usual from your first two weeks of logs, so this week shows counts, not comparisons.</p><div class="ap-learn-bar" role="img" aria-label="${esc(`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`)}"><i style="--w:${((L.learnDay(M) / L.LEARN_DAYS) * 100).toFixed(1)}%"></i></div></div>`;
     return `<section class="ap-card ap-wk" data-a>
@@ -263,7 +330,7 @@
       </header>`;
     },
     /* FloraScore (refresh-insights.js draws it), or the day's one sentence before that file has loaded */
-    hero: (M, V) => (RU.scoreHero ? RU.scoreHero(M, V) : `<section class="ap-hl" data-a aria-label="Today so far"><span class="ap-k ap-k--ray">Today so far</span><p class="ap-hl-line">${esc(RU.highlight(M))}</p></section>`),
+    hero: (M, V) => (RU.scoreHero ? RU.scoreHero(M, V) : `<section class="ap-hl" data-a aria-label="Today so far"><span class="ap-k ap-k--ray">Today so far</span><p class="ap-hl-line">${esc(RU.highlight(M, V && V.form))}</p></section>`),
     /* the check-in card: only when it's due, and never in the way. Its Start is secondary: Ray stays on logging */
     checkin: (M, V) => {
       if (!ckOn(V)) return "";

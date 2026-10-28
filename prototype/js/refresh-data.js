@@ -113,7 +113,7 @@
   L.FLAGS = [["blood", "Blood"], ["mucus", "Mucus"], ["black", "Black or tar-like"]];
   L.MEALS = [["breakfast", "Breakfast"], ["lunch", "Lunch"], ["dinner", "Dinner"], ["other", "Other"]];
   L.ALARM = [
-    [/\b(bloody|bleed\w*)\b|\bblood\b(?! (orange|sugars?|glucose|pressure|tests?|work|panel|draw|counts?|type|donation|bank))/i, "Blood"], [/\b(black|tarry|tar-like) (stool|bm|poo)\w*|\btar-like\b|\btarry\b/i, "A black or tar-like stool"],
+    [/\b(bloody|bleed\w*)\b|\bblood\b(?! (orange|sugars?|glucose|pressure|tests?|work|panel|draw|counts?|type|donation|bank))/i, "Blood"], [/\b(black|tarry|tar-like) (stool|bm|poo)\w*|\btar-like\b|\btarry\b|\blike tar\b/i, "A black or tar-like stool"],
     [/\bfevers?\b|\bfeverish\b/i, "A fever"], [/\b(vomit\w*|threw up|throwing up)\b/i, "Vomiting"], [/\b(weight loss|lost weight|losing weight)\b/i, "Weight loss"],
     [/\bw(o|a)k(e|en|ing|es)?\b(?:(?![.;]).){0,40}?\bto (go|the bathroom|the toilet|use the bathroom)\b|\bw(o|a)k\w* (up )?(at night|in the night|overnight)\b|\bup in the night to go\b/i, "Waking at night to go"]
   ];
@@ -126,23 +126,60 @@
      night (1 to 4 AM, or most nights, two nights in a row) to go. A hedge ("not sure if that was blood") isn't read as
      a no. Ask Florin runs this same check on a question, so a note and a question hear the same phrasings */
   const STOOL = "(?:stools?|poo\\w*|bms?|bowel movements?|motions?|faeces|feces)", STOOLW = STOOL.slice(3, -1);
+  /* foods a colour word often goes with, so "black coffee", "red pepper soup" or "dark chocolate" is never read as a
+     stool's colour */
+  const FOODX = "(?:meat|wine|peppers?|peppercorns?|onions?|beans?|lentils?|cabbage|apples?|grapes?|grapefruit|curry|sauce|velvet|food|dye|coffee|tea|olives?|rice|pudding|liquorice|licorice|chocolate|roast|beer|ale|greens|salmon|lemonade|berries|beets?|beetroot|tomato\\w*|jelly|bull|forest|cake|lady|sesame|garlic|currants?)";
+  const NOFOOD = `(?![\\s-]+${FOODX}\\b)`;
+  /* a stool and its colour, read across the whole sentence ("My poo was really dark, almost black"), with the no read in
+     the colour's own clause, so "Stool normal colour, not black" stays a no */
+  const DARK = "(?:jet black|black|tarry|tar|like tar|very dark|really dark|almost black|nearly black)";
+  const STOOL_COLOUR = new RegExp(`\\b${STOOL}\\b(?:(?![.;]).){0,30}?\\b(${DARK})\\b${NOFOOD}|\\b(black|tarry|very dark|really dark|almost black|nearly black)\\b${NOFOOD}(?:(?![.;]).){0,20}?\\b${STOOL}\\b`, "i");
+  /* a body temperature, read as a number: 38 to 41 in Celsius, 100 to 104 in Fahrenheit. Not the weather ("39 degrees
+     outside", "it's 39 degrees") and not an angle */
+  const WXB = "(?<![\\d.])(?<!\\b(?:it|it's|its|it is|it was|it got to|it hit|weather|outside|forecast)\\s+(?:about |nearly |over |almost |around )?)";
+  const WXA = "(?![a-z])(?!\\s*(?:outside|out\\b|in the shade|in the sun|weather|heat|angle|turn|incline))";
+  const TEMP_READ = new RegExp(`${WXB}(?:3[89]|4[01])(?:[.,]\\d+)?\\s?(?:°\\s?c?|degrees?(?:\\s?(?:c|celsius))?|c)${WXA}|${WXB}10[0-4](?:[.,]\\d+)?\\s?(?:°\\s?f?|degrees?(?:\\s?(?:f|fahrenheit))?|f)${WXA}`, "i");
   L.ALARM_WIDE = [
-    [new RegExp(`\\b${STOOL}\\b(?:(?![.;]).){0,30}?\\b(black|jet black|tarry|tar|very dark|almost black|nearly black)\\b|\\b(black|tarry|very dark|almost black)\\b(?:(?![.;]).){0,20}?\\b${STOOL}\\b`, "i"), "A black or tar-like stool"],
-    [new RegExp(`\\bred\\b(?! (meat|wine|peppers?|onions?|beans?|lentils?|cabbage|apples?|grapes?|curry|sauce|velvet|food|dye))(?:(?![.;]).){0,30}?\\b(toilet|bowl|paper|tissue|wip\\w*|${STOOLW}|underwear)\\b|\\b(toilet|bowl|paper|tissue|${STOOLW})\\b(?:(?![.;]).){0,30}?\\b(red|bright red|maroon)\\b`, "i"), "Blood"],
-    [/\b(have|had|has|got|running|ran|with|developed|getting) (a |an )?(high |slight |bit of a |raised |real )?temperature\b|\bhigh temperature\b|\btemp(erature)? (of|is|was|at) \d|\b(worr\w*|concerned|anxious) about my (temperature|temp)\b|\bmy (temperature|temp) (is|was|'s|has been|keeps|went|keeps going|is going|has gone) (up|high|raised|rising)\b/i, "A fever"],
-    [/(?<!to )\b(lost|losing|lose|dropped|dropping|shed)\b(?:(?![.;]).){0,25}?\b(weight|kgs?|kilos?|kilograms?|lbs?|pounds?|stone)\b|\bweight (has |have |keeps )?(dropped|dropping|gone down|going down|fallen|falling)\b/i, "Weight loss"],
+    [STOOL_COLOUR, "A black or tar-like stool"],
+    [new RegExp(`\\bred\\b${NOFOOD}(?:(?![.;]).){0,30}?\\b(toilet|bowl|paper|tissue|wip\\w*|${STOOLW}|underwear)\\b|\\b(toilet|bowl|paper|tissue|${STOOLW})\\b(?:(?![.;]).){0,30}?\\b(red|bright red|maroon)\\b`, "i"), "Blood"],
+    /* a temperature had, run or worried about, with up to three words between ("had chills and a temperature"), and
+       "temp" for short ("running a temp", never "a temp job") */
+    [/\b(have|had|has|got|running|ran|with|developed|getting)\b(?:\s+(?!(?:no|not|never|without|any|my|the|your|his|her|their|its|our|room|water|oven|bath|normal)\b)[\w']+){0,3}?\s+(?:a |an )?(?:high |slight |bit of a |raised |real |little )?temp(?:erature)?\b(?! (?:job|jobs|agency|role|position|contract|work|worker|staff|gig))|\bhigh temperature\b|\btemp(erature)? (of|is|was|at) \d|\b(worr\w*|concerned|anxious) about my (temperature|temp)\b|\bmy (temperature|temp) (is|was|'s|has been|keeps|went|keeps going|is going|has gone) (up|high|raised|rising)\b/i, "A fever"],
+    [TEMP_READ, "A fever"],
+    /* a digit can sit straight against its unit: "lost 4kg", "dropped 10lbs" */
+    [/(?<!to )\b(lost|losing|lose|dropped|dropping|shed)\b(?:(?![.;]).){0,25}?(?:\b(?:weight|kgs?|kilos?|kilograms?|lbs?|pounds?|stone)|(?<=\d)(?:kgs?|kilos?|lbs?|st(?! (?:place|prize|round|game|match))))\b|\bweight (has |have |keeps )?(dropped|dropping|gone down|going down|fallen|falling)\b/i, "Weight loss"],
     [/\b(being|been|was|were|keep being|kept being|keeps being) sick\b(?! of| and tired| with)|\bpuk\w*/i, "Vomiting"]
+  ];
+  /* a BM's own note: the BM is the stool, so a colour on its own is a sign there ("It looked like tar", "some red in
+     it"), unless a food follows it ("after black coffee"). Used with L.alarmsIn(note, { bm: true }) */
+  L.ALARM_BM = [
+    [new RegExp(`\\b(jet black|black|blackish|tarry|tar|like tar|tar-like|very dark|really dark|almost black|nearly black)\\b${NOFOOD}(?![\\s-]+(?:red|maroon|brown|green))`, "i"), "A black or tar-like stool"],
+    [new RegExp(`\\b(bright red|dark red|blood-red|red|reddish|maroon|pink|pinkish)\\b${NOFOOD}`, "i"), "Blood"]
   ];
   const WAKE = /\b(wak\w*|woke|woken|awake|up)\b(?! late)/i, GOING = /\bto go\b|\bpoo\w*|\bbms?\b|\bbathroom\b|\btoilet\b|\bloo\b|\bbowels?\b|\burge\b/i;
   const NIGHT = /\b(at night|in the night|overnight|night-?time|middle of the night|(most|several|many|a few|a couple of|two|three|four|five) nights|nights? in a row|[1-4] ?(am|a\.m\.)|[1-4] in the morning|small hours)\b/i;
   const HEDGE = /\b(not sure|not certain|unsure|don'?t know|do not know|can'?t tell|cannot tell|not clear|no idea)\b/gi;
-  L.alarmsIn = (text) => {
+  /* the clause of sentence s that ends at index at, from the comma or "but" before it */
+  const clauseTo = (s, at) => { const cut = s.slice(0, at).split(/,|\bbut\b/i); return cut[cut.length - 1]; };
+  /* o.bm: the text is a BM's own note, so L.ALARM_BM joins the net */
+  L.alarmsIn = (text, o) => {
     const out = [], add = (name) => { if (!out.includes(name)) out.push(name); };
-    String(text || "").split(/[.;!?\n]|,|\bbut\b/i).forEach((c0) => {
-      const c = c0.replace(HEDGE, " ");
-      L.ALARM.concat(L.ALARM_WIDE).forEach(([rx, name]) => { const m = rx.exec(c); if (m && !NEG.test(c.slice(0, m.index))) add(name); });
-      const w = WAKE.exec(c);
-      if (w && NIGHT.test(c) && GOING.test(c) && !NEG.test(c.slice(0, w.index))) add("Waking at night to go");
+    const rules = L.ALARM.concat(L.ALARM_WIDE.filter(([rx]) => rx !== STOOL_COLOUR), o && o.bm ? L.ALARM_BM : []);
+    /* sentences end at . ; ! ? or a new line, but a decimal point ("38.5C") keeps its sentence */
+    String(text || "").split(/[;!?\n]|\.(?!\d)|(?<!\d)\./).forEach((s0) => {
+      const s = s0.replace(HEDGE, " ");
+      /* the stool's colour, over the sentence: no when the colour's clause says no, or the stool's own does ("No BM,
+         really dark day") */
+      const m = STOOL_COLOUR.exec(s);
+      if (m) {
+        const at = m[1] ? m.index + m[0].length - m[1].length : m.index;
+        if (!NEG.test(clauseTo(s, at)) && !(m[1] && NEG.test(clauseTo(s, m.index)))) add("A black or tar-like stool");
+      }
+      s.split(/,|\bbut\b/i).forEach((c) => {
+        rules.forEach(([rx, name]) => { const k = rx.exec(c); if (k && !NEG.test(c.slice(0, k.index))) add(name); });
+        const w = WAKE.exec(c);
+        if (w && NIGHT.test(c) && GOING.test(c) && !NEG.test(c.slice(0, w.index))) add("Waking at night to go");
+      });
     });
     return L.ALARM.map(([, n]) => n).filter((n) => out.includes(n));
   };
@@ -566,13 +603,18 @@
     /* meals logged on only some days (most often the rough ones) leave no ordinary days to compare with, and name
        foods by selection alone (in testing, Sarah with meals kept around rough days: toast, 13 of 19). Under 60% of
        logged days with a meal, every meal pattern, late dinners included, is held back and Insights offers a food check */
-    const logged = days.length, withMeal = days.filter((f) => f.meals.length).length, roughMeal = days.filter((f) => f.meals.length && f.nsym).length;
-    const coverage = logged ? withMeal / logged : 0;
+    /* coverage is counted once, over the days logged in the 90-day window (not the pairs the tests use), so the gate
+       and every sentence about it say the same thing: "Meals are logged on 36 of the 85 days you logged in the last 90
+       days". withMeal and logged are the same counts, kept under their old names */
+    const window = TODAY - d0 + 1;
+    const inWin = Object.values(F).filter((f) => f.d >= d0 && f.logged);
+    const loggedDays = inWin.length, mealDays = inWin.filter((f) => f.meals.length).length, roughMeal = inWin.filter((f) => f.meals.length && f.nsym).length;
+    const coverage = loggedDays ? mealDays / loggedDays : 0;
     const sparse = coverage < L.MEAL_COVER;
     const shown = sparse ? [] : tests.filter((t) => t.show);
     const found = shown.sort((a, b) => b.tier.k - a.tier.k || b.rate - a.rate || b.n - a.n);
     const quiet = sparse ? [] : checked.filter((food) => !found.some((t) => t.food === food));
-    return { found, tests, checked: sparse ? [] : checked, quiet, waiting: sparse ? [] : waiting, counts, lateCount, d0, coverage, sparse, withMeal, logged, roughShare: withMeal ? roughMeal / withMeal : 0 };
+    return { found, tests, checked: sparse ? [] : checked, quiet, waiting: sparse ? [] : waiting, counts, lateCount, d0, coverage, sparse, mealDays, loggedDays, window, withMeal: mealDays, logged: loggedDays, roughShare: mealDays ? roughMeal / mealDays : 0 };
   };
 
   /* ---------- FloraScore, from manual logs ----------
@@ -636,7 +678,10 @@
     const mean = (s, k) => Ut.mean(s.map((x) => (k ? x.parts[k] : x.value)));
     const f = 21 / 16;
     const parts = Object.keys(L.SCORE_W).map((k) => ({ key: k, weight: L.SCORE_W[k], now: Math.round(mean(wk, k)), before: Math.round(mean(lw, k)), delta: f * L.SCORE_W[k] * (mean(wk, k) - mean(lw, k)) }));
-    return { wk: mean(wk), lw: mean(lw), delta: Math.round(mean(wk) - mean(lw)), parts };
+    /* the change is the difference of the two averages as they're shown, so "+8" always sits next to 76 and 84 (the
+       data looks use the same rule). wk and lw stay unrounded for the waterfall's geometry */
+    const wkR = Math.round(mean(wk)), lwR = Math.round(mean(lw));
+    return { wk: mean(wk), lw: mean(lw), wkR, lwR, delta: wkR - lwR, parts };
   };
 
   /* ---------- changing the model ---------- */

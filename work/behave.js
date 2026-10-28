@@ -969,7 +969,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       ok(!bad.length, `data style, ${data === "new" ? "new day 5" : "just joined"} in ${form}: every look's Insights and Today read, day by day (${bad.join(", ") || "all five"})`);
       /* Your days counts the days logged the way the week card does; with nothing logged it says so in words */
       await lpick("look", "rings"); await lopen("look-insights");
-      const wk = await q.evaluate(() => { const m = document.querySelector('.rx-stage .ap-rx [data-rlk-k="week"]').textContent.match(/(\d+)\s*of (\d+) days? logged/); return m ? `${m[1]} of ${m[2]}` : null; });
+      /* fix-library: with nothing logged the card says so in words too ("Nothing logged yet", never "0 of 1 days"), read here as 0 */
+      const wk = await q.evaluate(() => { const t = document.querySelector('.rx-stage .ap-rx [data-rlk-k="week"]').textContent, m = t.match(/(\d+)\s*of (\d+) days? logged/); return m ? `${m[1]} of ${m[2]}` : /Nothing logged yet/.test(t) && !/\b0\s*of\b/.test(t) ? "0 of none" : null; });
       await q.click(`${ph} [data-rlk-k="week"] .rlk-go`); await lw();
       const dp = await q.evaluate(() => { const h = document.querySelector(".rx-stage .ap-rx .rlk-days-page .ap-dhero"); const b2 = h.querySelector(".ap-big"), m = b2 && b2.textContent.match(/(\d+)\s*of (\d+) days? logged/); return { big: b2 ? (m ? `${m[1]} of ${m[2]}` : b2.textContent) : null, text: document.querySelector(".rx-stage .ap-rx .rlk-days-page").textContent }; });
       const logged0 = wk && /^0 of/.test(wk);
@@ -985,6 +986,84 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await lc.close();
   }
   /* ===== end build-looks ===== */
+
+  /* ===== fix-looks: Oura is dark first. Picking it turns the phone dark (the phone, the Theme toggle and the Demo
+     summary) unless the viewer has picked a theme; leaving it puts the theme back; the Easy version, which draws Easy
+     read, leaves the theme alone; a stored Oura pick boots dark (prototype/js/refresh-looks.js) ===== */
+  {
+    const fl = [];
+    const thCtx = async (scheme) => {
+      const c = await b.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: scheme });
+      const q = await c.newPage();
+      q.on("pageerror", (e) => fl.push(e.message));
+      q.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /refresh-looks/.test(m.text()))) fl.push(m.text()); });
+      await q.goto(PAGE); await q.waitForSelector(".rx-stage .ap-rx"); await q.waitForTimeout(400);
+      return { c, q };
+    };
+    const thPick = (q) => async (k, v) => { await q.evaluate(([k, v]) => { const b2 = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (!b2) throw new Error(`no ${k}=${v} control`); b2.click(); }, [k, v]); await q.waitForTimeout(350); };
+    const thOpen = (q) => async (id) => { await q.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await q.waitForTimeout(450); };
+    /* the phone, the Theme toggle, the Demo summary and the look's cards: one word when they agree, else each */
+    const thState = (q) => q.evaluate(() => {
+      const r = document.querySelector(".rx-stage .ap-rx"), on = document.querySelector('[data-rx="theme"][aria-pressed="true"]'), sum = (document.querySelector("[data-sum]") || {}).textContent || "";
+      const cards = [...new Set([...r.querySelectorAll(".rlk-look")].map((n) => n.dataset.theme))];
+      const all = [r.dataset.theme, on && on.dataset.v, /Dark$/.test(sum.trim()) ? "dark" : /Light$/.test(sum.trim()) ? "light" : "none", ...cards];
+      return new Set(all).size === 1 ? all[0] : `phone ${all[0]}, toggle ${all[1]}, summary ${all[2]}, cards ${cards.join("/") || "none"}`;
+    });
+    /* a light system: Oura turns everything dark, the first time it draws, and Rings puts light back */
+    {
+      const { c, q } = await thCtx("light");
+      const pick = thPick(q), open = thOpen(q);
+      const s0 = await thState(q);
+      await open("look-today"); await pick("look", "oura");
+      const s1 = await thState(q);
+      await open("look-insights");
+      const s2 = await thState(q), n2 = await q.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .rlk-look.lk-oura").length);
+      ok(s0 === "light" && s1 === "dark" && s2 === "dark" && n2 > 0, `fix-looks: on a light page, picking Oura turns the phone, the Theme toggle, the Demo summary and every Oura card dark (before ${s0}, Today ${s1}, Insights ${s2})`);
+      const note = await q.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="look"]'); if (b2.getAttribute("aria-pressed") !== "true") b2.click(); return [...document.querySelectorAll("#rxNotes .rx-opts li")].map((x) => x.textContent).find((t) => /^Oura/.test(t.trim())) || ""; });
+      ok(/Picking it turns the phone dark/.test(note) && /Theme, under Demo, shows it on light too/.test(note) && !/[–—!]/.test(note), "fix-looks: the Oura option's note says picking it turns the phone dark, and where light is");
+      await pick("look", "rings");
+      const s3 = await thState(q);
+      ok(s3 === "light", `fix-looks: leaving Oura for Rings puts the light theme back (${s3})`);
+      /* the Easy version draws Easy read, so Oura picked under it leaves the theme alone; Easy off draws Oura, dark */
+      await pick("easy", "true"); await pick("look", "oura");
+      const e1 = await thState(q);
+      await pick("easy", "false");
+      const e2 = await thState(q);
+      await pick("easy", "true");
+      const e3 = await thState(q);
+      await pick("easy", "false"); await pick("look", "rings");
+      ok(e1 === "light" && e2 === "dark" && e3 === "light" && await thState(q) === "light", `fix-looks: with the Easy version on, picking Oura leaves the theme alone; Easy off turns it dark, Easy on gives light back (${e1}, ${e2}, ${e3})`);
+      /* the viewer's own pick holds: Light picked, Oura stays light; Dark picked, Rings stays dark */
+      await pick("theme", "light"); await pick("look", "oura");
+      const p1 = await thState(q);
+      await pick("theme", "dark"); await pick("look", "rings");
+      const p2 = await thState(q);
+      ok(p1 === "light" && p2 === "dark", `fix-looks: a theme the viewer picked holds: Light then Oura stays light, Dark then Rings stays dark (${p1}, ${p2})`);
+      /* a stored Oura pick boots dark, the toggle and the summary with it, and leaving it gives light back */
+      await pick("theme", "light"); await pick("look", "oura");
+      await q.reload(); await q.waitForSelector(".rx-stage .ap-rx"); await q.waitForTimeout(500);
+      await open("look-insights");
+      const r1 = await thState(q), look = await q.evaluate(() => document.querySelector(".rx-stage .ap-rx").getAttribute("data-look"));
+      await pick("look", "built");
+      const r2 = await thState(q);
+      ok(look === "oura" && r1 === "dark" && r2 === "light", `fix-looks: a reload with Oura stored boots dark, toggle and summary too, and As built gives light back (${look}: ${r1}, then ${r2})`);
+      await c.close();
+    }
+    /* a dark system: Oura is dark already, and leaving it keeps dark, the page's own theme */
+    {
+      const { c, q } = await thCtx("dark");
+      const pick = thPick(q);
+      const d0 = await thState(q);
+      await pick("look", "oura");
+      const d1 = await thState(q);
+      await pick("look", "rings");
+      const d2 = await thState(q);
+      ok(d0 === "dark" && d1 === "dark" && d2 === "dark", `fix-looks: on a dark page, Oura and then Rings stay dark (${d0}, ${d1}, ${d2})`);
+      await c.close();
+    }
+    ok(!fl.length, `fix-looks: no console errors or module warnings${fl.length ? ": " + fl.slice(0, 2).join(" | ") : ""}`);
+  }
+  /* ===== end fix-looks ===== */
 
   /* ===== build-variants: Home Day first and History Calendar (prototype/js/refresh-variants.js) ===== */
   {
@@ -1006,11 +1085,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* the strongest event today, ranked here on its own: a flag or an alarm feature, then a shift from the usual (a form
        outside the usual forms, a first BM outside the window, a BM past the usual count, No BM), then symptoms by
        strength, strong first, unrated last; the earlier wins a tie. Day first must mark that entry and no other */
+    /* fix-variants: a BM's note is read with the BM net (L.alarmsIn's bm option), as the core's RU.alarmOf reads it */
     const vmark = () => v.evaluate(() => {
       const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, u = M.usual;
       const x = L.day(M, L.TODAY), es = x ? x.entries : [], bms = es.filter((e) => e.kind === "bm");
       const rank = (e) => {
-        if (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "").length)) return 4;
+        if (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "", { bm: true }).length)) return 4;
         if (e.kind === "sym" && L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`).length) return 4;
         if (e.kind === "bm" && u) { const i = bms.indexOf(e); if (L.inForms(M, e, mode) === false || (i === 0 && !L.inWindow(M, e.t)) || i >= u.nHi) return 3; }
         if (e.kind === "nobm" && u) return 3;
@@ -1029,7 +1109,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const card = document.querySelector(".rx-stage .ap-rx .vr-hl"), all = card ? card.textContent : "";
       const line = (document.querySelector(".rx-stage .ap-rx .vr-hl-line") || {}).textContent || "";
       const x = L.day(M, L.TODAY), es = x ? x.entries : [];
-      const alarm = es.some((e) => (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "").length)) || (e.kind === "sym" && L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`).length));
+      const alarm = es.some((e) => (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "", { bm: true }).length)) || (e.kind === "sym" && L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`).length));
       const partWord = / from (Timing|How often|Form|Comfort)\b/.test(line);
       if (alarm) return { ok: !!card && !/FloraScore/.test(all) && !partWord, line, alarm };
       if (!M.usual) return { ok: line.includes(`starts on day ${L.LEARN_DAYS}, in ${L.LEARN_DAYS - L.learnDay(M)} day`), line };
@@ -1054,7 +1134,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const vcal = () => v.evaluate(() => {
       const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, U = window.FLORIN_APP.util;
       const free = api.V().plan === "free";
-      const alarmIn = (e) => (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "").length)) || (e.kind === "sym" && L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`).length);
+      const alarmIn = (e) => (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "", { bm: true }).length)) || (e.kind === "sym" && L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`).length);
       const before = (el) => getComputedStyle(el.querySelector(".vr-cal-mk"), "::before");
       const clear = (c) => /rgba\(0, 0, 0, 0\)|transparent/.test(c);
       const lay = document.querySelector(".rx-stage .ap-rx .ap-layer");
@@ -1107,7 +1187,13 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const dec = async (k, val) => { await vpick(k, val); return v.evaluate(() => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", lede: (document.querySelector("#rxNotes .rx-note-lede") || {}).textContent || "" })); };
     const dh = await dec("home", "day"), dc = await dec("history", "calendar");
     const built = await v.evaluate(() => ({ home: (window.FLORIN_EXT.built.home || []).join(","), history: (window.FLORIN_EXT.built.history || []).join(",") }));
-    ok(dh.on === "On the phone" && built.home === "day" && /^Day first\./.test(dh.rec) && /leads with what happened, which is what the review asked Today's highlight to do/.test(dh.rec) && !/next pass/.test(dh.lede), `Day first: claimed in EXT.built, On the phone, and the note recommends it (${dh.on})`);
+    /* fix-variants: the Home note recommends Score first, as the deck does, with the hero's sentence leading on the most
+       notable log, for Will to confirm; it no longer claims Oura's Today puts the score second. The research line says
+       what Will's screenshots show: shortcuts, then the main score as a big arc, then a timeline */
+    await vpick("home", "day");
+    const dhn = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="home"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return { rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", res: [...document.querySelectorAll("#rxNotes .rx-res li")].map((l) => l.textContent).join(" "), q: [...document.querySelectorAll("#rxNotes .rx-q li")].map((l) => l.textContent).join(" "), hl: window.FLORIN_RUI.highlight(window.FLORIN_EXT.api.M(), window.FLORIN_EXT.api.V().form) }; });
+    ok(dh.on === "On the phone" && built.home === "day" && /^Score first, with the hero's sentence leading on the most notable thing logged today and saying what it did to FloraScore/.test(dh.rec) && /Will to confirm\.$/.test(dh.rec) && !/October 2025|Day first keeps that order/.test(dh.rec + dhn.res) && /a row of small score shortcuts, then the main score as a big arc/.test(dhn.res) && dhn.q.includes(`"${dhn.hl}"`) && !/next pass/.test(dh.lede), `Day first: claimed in EXT.built and On the phone; the note recommends Score first for Will to confirm, quotes Score first's sentence now, and reads Oura's Today as the screenshots show it (${dh.on})`);
+    /* end fix-variants */
     const vtotal = await v.evaluate(() => window.FLORIN_EXT.api.M().days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0));
     ok(dc.on === "On the phone" && built.history === "calendar" && /^Calendar\./.test(dc.rec) && /answers the designer's "endless scroll"/.test(dc.rec) && dc.rec.includes(`${vtotal} entries`) && !/next pass/.test(dc.lede), `Calendar: claimed in EXT.built, On the phone, and the note recommends it, quoting "endless scroll" with the computed ${vtotal} entries (${dc.on})`);
     /* the list's figure in the note: 14 days shown, 14 more a tap, so the first day takes ceil((days - 14) / 14) taps */
@@ -1155,6 +1241,24 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const al = await v.evaluate(() => { const h = document.querySelector(".rx-stage .ap-rx .vr-hl"), a = h && h.querySelector(".ap-ask-alarm"); return { a: !!a, role: a && a.getAttribute("role"), text: a ? a.textContent : "", all: h ? h.textContent : "", chip: (document.querySelector(".rx-stage .ap-rx .vr-mk .ap-chip--info") || {}).textContent }; });
     ok(m3.ok && m3.rank === 4 && al.a && al.role === "note" && /When to see a clinician/.test(al.text) && /Primary care/.test(al.text) && al.chip === "Clinician note", "Day first: a flag outranks everything, marked Clinician note, with the Teal note to primary care");
     ok(l3.ok && l3.alarm && !/FloraScore/.test(al.all), `Day first, a flag today: no score reading anywhere in the card, banner or sentence (${l3.line || "no sentence"})`);
+    /* fix-variants: on a flag day the chip keeps L.score's number (its detail shows the same one) but reads it against
+       nothing, on screen or in its label, as the card under it and the Home note say. The reviewer's state: Sarah, a
+       Watery BM with blood at 7:00 PM, which read "Within your usual range" before */
+    {
+      const fx = async () => v.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), c = document.querySelector(".rx-stage .ap-rx .vr-sc"), w = document.querySelector(".rx-stage .ap-rx .vr-sc-w"), s = L.score(M, L.TODAY, api.V().form); return { num: (c.querySelector("b") || {}).textContent, score: s && s.value, word: w ? w.textContent : "", aria: c.getAttribute("aria-label") || "" }; });
+      const f1 = await fx();
+      ok(f1.num === String(f1.score) && f1.word === "Not read against your usual today: a log is noted for a clinician" && !/usual range|Within|above|below/i.test(f1.word + f1.aria) && f1.aria.startsWith(`FloraScore ${f1.score}. Not read against your usual today`), `Day first, a mucus flag today: the chip keeps FloraScore ${f1.score} and reads it against nothing (${f1.aria})`);
+      await v.evaluate(() => window.FLORIN_EXT.api.set("data", "est")); await vw();
+      await vopen("home-day");
+      const f0 = await fx();
+      await vadd({ kind: "bm", t: 19, form: 7, word: null, how: {}, dur: null, flags: { blood: true } });
+      const f2 = await fx();
+      await vpick("plan", "free"); await vopen("home-day");
+      const f3 = await fx();
+      await vpick("plan", "member");
+      ok(/usual range$/.test(f0.word) && f2.num === String(f2.score) && !/usual range/.test(f2.word + f2.aria) && /noted for a clinician/.test(f2.word) && !/usual range/.test(f3.word + f3.aria) && f3.num === String(f3.score), `Day first, a blood flag at 7:00 PM: "${f0.word}" before, then FloraScore ${f2.score} read against nothing, on Member and Free ("${f2.word}")`);
+    }
+    /* end fix-variants */
     /* a tile on Today logs the BM in one tap, and focus lands on the new row */
     await v.evaluate(() => window.FLORIN_EXT.api.set("data", "est")); await vw();
     const n0 = await v.evaluate(() => window.FLORIN_RUI.bmCount(window.FLORIN_EXT.api.M()));
@@ -1275,6 +1379,70 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const fl = await v.evaluate(() => { const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M(); const bs = [...document.querySelectorAll(".rx-stage .ap-rx .vr-cal-d")]; const bad = bs.filter((el) => { const x = L.day(M, +el.dataset.v); if (!x) return el.classList.contains("is-dim"); const want = !(x.logged && x.entries.some((e) => e.kind === "sym")); return want !== el.classList.contains("is-dim"); }); return { bad: bad.length, n: document.querySelectorAll(".rx-stage .ap-rx .ap-hi-filter").length, on: (document.querySelector('.rx-stage .ap-rx .ap-hi-filter[aria-pressed="true"]') || {}).textContent }; });
     ok(!fl.bad && fl.n === 5 && fl.on === "Symptoms", `Calendar: the five filter chips stay, and Symptoms dims every day without one (${fl.bad} wrong)`);
     await v.click(`${vph} .ap-hi-filter[data-v="all"]`); await vw();
+    /* fix-variants: the calendar's symptom ticks, the chip's sentence, and what the calendar's notes say about marks */
+    {
+      /* a moderate symptom, and one logged without a strength, each on a past day this month that had none */
+      const tkd = await v.evaluate(() => {
+        const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mo = L.dateOf(L.TODAY).getMonth();
+        const days = M.days.filter((x) => x.d < L.TODAY && L.dateOf(x.d).getMonth() === mo && x.logged && x.entries.length && !x.entries.some((e) => e.kind === "sym"));
+        if (days[0]) L.add(M, { kind: "sym", d: days[0].d, t: 15, items: [{ name: "Cramping", s: 2 }], last: 1, note: "" });
+        if (days[1]) L.add(M, { kind: "sym", d: days[1].d, t: 15.5, items: [{ name: "Gas", s: 0 }], last: 1, note: "" });
+        api.renderTab(true);
+        return { s2: days[0] ? days[0].d : null, s0: days[1] ? days[1].d : null };
+      });
+      /* every strength's tick against the card and against the picked day (Card 2 over the card), composited on a canvas */
+      const vtk = (tkd) => v.evaluate((tkd) => {
+        const cv = document.createElement("canvas"); cv.width = cv.height = 1; const g = cv.getContext("2d", { willReadFrequently: true });
+        const px = (...fills) => { g.clearRect(0, 0, 1, 1); fills.forEach((f) => { g.fillStyle = f; g.fillRect(0, 0, 1, 1); }); const d = g.getImageData(0, 0, 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; };
+        const lum = (c) => { const [r, gg, bb] = c.match(/\d+/g).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * gg + 0.0722 * bb; };
+        const cr = (a, c) => { const x = lum(a), y = lum(c); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+        const lay = document.querySelector(".rx-stage .ap-rx .ap-layer"), card = getComputedStyle(lay.querySelector(".vr-cal")).backgroundColor;
+        const picked = getComputedStyle(lay.querySelector('.vr-cal-d[aria-pressed="true"]')).backgroundColor;
+        const out = {};
+        for (const k of [0, 1, 2, 3]) {
+          let t = lay.querySelector(`.vr-cal-g .vr-t--s${k}`), tmp = null;
+          if (!t) { tmp = document.createElement("i"); tmp.className = `vr-t vr-t--sym vr-t--s${k}`; lay.querySelector(".vr-cal-ts").appendChild(tmp); t = tmp; }
+          const cs = getComputedStyle(t), clear = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor);
+          const edge = (cs.boxShadow.match(/^([a-z-]+\([^)]*\))/) || [])[1] || null;
+          const c = clear ? edge : cs.backgroundColor;
+          const onCard = c ? cr(px(card, c), px(card)) : 0, onPicked = c ? cr(px(card, picked, c), px(card, picked)) : 0;
+          out[k] = { hollow: clear && !!edge, onCard: +onCard.toFixed(2), onPicked: +onPicked.toFixed(2) };
+          if (tmp) tmp.remove();
+        }
+        const lab = (d) => (d == null ? "" : lay.querySelector(`.vr-cal-d[data-v="${d}"]`).getAttribute("aria-label"));
+        const lg = lay.querySelector(".vr-cal-lg");
+        return { out, s0Label: lab(tkd.s0), s2Label: lab(tkd.s2), s0Grid: !!lay.querySelector(".vr-cal-g .vr-t--s0"), s0Legend: !!lg && !!lg.querySelector(".vr-t--s0") && /strength not said/.test(lg.textContent) };
+      }, tkd);
+      for (const theme of ["light", "dark"]) {
+        await vpick("theme", theme); await vw(200);
+        const tk = await vtk(tkd), o = tk.out;
+        ok([1, 2, 3].every((k) => !o[k].hollow && o[k].onCard >= 3 && o[k].onPicked >= 3) && o[0].hollow && o[0].onCard >= 3 && o[0].onPicked >= 3, `Calendar, ${theme}: every symptom tick holds 3:1 on the card and the picked day, filled by strength, and only strength not said is hollow (${[0, 1, 2, 3].map((k) => `s${k} ${o[k].onCard}/${o[k].onPicked}${o[k].hollow ? " hollow" : ""}`).join(", ")})`);
+        if (theme === "light") ok((tkd.s0 == null || (tk.s0Grid && tk.s0Legend && /gas with no strength said/.test(tk.s0Label) && !/mild gas/.test(tk.s0Label))) && (tkd.s2 == null || /moderate cramping/.test(tk.s2Label)), `Calendar: a day's label says each symptom's strength, a symptom logged without one says so, and the legend shows the hollow tick for it (${tk.s0Label} | ${tk.s2Label})`);
+      }
+      await vpick("theme", "light");
+      /* the chip's sentence sits on its own line under the chip, for 12 weeks, day 5 and day 1 */
+      const under = [];
+      for (const data of ["est", "new", "fresh"]) {
+        await vpick("data", data); await vopen("home-day");
+        under.push(await v.evaluate((data) => { const r = document.querySelector(".rx-stage .ap-rx .vr-sc-row"), c = r.querySelector(".vr-sc"), w = r.querySelector(".vr-sc-w"); if (!w) return `${data}: no sentence`; const cb = c.getBoundingClientRect(), wb = w.getBoundingClientRect(), rb = r.getBoundingClientRect(); return wb.top >= cb.bottom - 1 && Math.abs(wb.width - (rb.width - parseFloat(getComputedStyle(r).paddingLeft) - parseFloat(getComputedStyle(r).paddingRight))) <= 1 ? "" : `${data}: beside the chip`; }, data));
+      }
+      await vpick("data", "est");
+      ok(under.every((x) => !x), `Day first: the chip's sentence takes its own line under the chip with 12 weeks of logs, on day 5 and on day 1${under.filter(Boolean).length ? ": " + under.filter(Boolean).join("; ") : ""}`);
+      /* the calendar's notes: which marks it shares with As built's week card and which are its own; with a data style or
+         the Easy version on, that Today's week is drawn in that style; with Rings, what a Teal dot means where */
+      const calNote = async () => { await vopen("hist-cal"); return v.evaluate(() => (document.querySelector("#rxNotes .rx-note-lede") || {}).textContent || ""); };
+      const nb = await calNote();
+      await vpick("look", "rings"); const nr = await calNote();
+      await vpick("look", "built");
+      await v.evaluate(() => window.FLORIN_EXT.api.set("easy", true)); await vw();
+      const ne = await calNote();
+      await v.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await vw();
+      await vpick("history", "calendar");
+      const nd = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="history"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return (document.querySelector("#rxNotes .rx-note-lede") || {}).textContent || ""; });
+      const shared = (t) => /the marks As built's week card on Today uses: Plum filled within the usual \(Ray in dark\), a Gold ring outside it, and a struck-through date/.test(t) && /Two marks are the calendar's own: a dash for a day with logs but nothing on BMs/.test(t) && /a Teal ring for a day with a flag/.test(t) && !/the same marks as Today's week card/.test(t);
+      ok(shared(nb) && shared(nd) && !/drawn in that style/.test(nb) && /With the Rings data style on, Today's week is drawn in that style/.test(nr) && /In Rings a Teal dot under a day means symptoms; on the calendar a Teal dot means a meal/.test(nr) && /With the Easy version on, Today's week is drawn in that style/.test(ne) && !/Teal dot/.test(ne), "Calendar notes: the marks it shares with As built's week card and its own, and with a data style or Easy on, that Today's week is drawn in that style (Rings names the Teal dot)");
+    }
+    /* end fix-variants */
     /* both themes and Free */
     await vpick("theme", "dark"); await vpick("plan", "free"); await vopen("hist-cal");
     const dk = await v.evaluate(() => ({ cal: !!document.querySelector(".rx-stage .ap-rx .vr-cal-g"), rep: (document.querySelector(".rx-stage .ap-rx .ap-hist-rep") || {}).dataset, sum: document.querySelector(".rx-stage .ap-rx .vr-cal-sum").textContent, pay: (document.querySelector('.rx-stage .ap-rx .vr-cal [data-act="pay"]') || {}).dataset }));
@@ -1341,12 +1509,13 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ppick("onboard", "full");
     const sw2 = (await ptop()).step;
     ok(sw1 === "periods" && sw2 === "usual", `onboarding: switched part way, the flow lands on the next step it has, never Welcome (usual > ${sw1}, isnt > ${sw2})`);
-    /* Escape goes back a step, never out of onboarding, and does nothing on the first */
+    /* Escape goes back a step, never out of onboarding part way; on Welcome it closes, as Welcome's Close does
+       (fix-profile: the page opens every flow, so Welcome must always be able to leave it, logs untouched) */
     await q.focus(".rx-stage .ap-rx .ap-o:not(.is-out) .ap-ck-q h3"); await q.keyboard.press("Escape"); await pw();
     const es1 = await ptop();
-    await popen("onb-short"); await q.keyboard.press("Escape"); await pw();
-    const es2 = await ptop();
-    ok(es1 && es1.type === "onb" && es1.step === "goals" && es2 && es2.type === "onb" && es2.step === "welcome", `onboarding: Escape goes back a step and never closes it (usual > ${es1 && es1.step}, welcome > ${es2 && es2.step})`);
+    await popen("onb-short"); await q.focus(".rx-stage .ap-rx .ap-o:not(.is-out) .ap-ck-q h3"); await q.keyboard.press("Escape"); await pw();
+    const es2 = await ptop(), esm = await q.evaluate(() => window.FLORIN_EXT.api.M().mode);
+    ok(es1 && es1.type === "onb" && es1.step === "goals" && es2 === null && esm === "est", `onboarding: Escape goes back a step part way, and on Welcome closes it with the logs as they were (usual > ${es1 && es1.step}, welcome > ${es2 ? es2.step : "closed"}, ${esm})`);
     await ppick("onboard", "short"); await popen("today");
 
     /* Profile's usual figures are the model's, in A, B and C, for each person */
@@ -1632,6 +1801,117 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await popen("today"); await ppick("onboard", "short");
     await ppick("easy", "false"); await ppick("data", "est");
     ok(!ez.length, `profile and onboarding, Easy version on: every screen opens and reads (${ez.join(", ") || "all five"})`);
+    /* ===== fix-profile: the third pass's review of Profile and onboarding, kept as checks ===== */
+    {
+      const v0 = await pv();
+      const fx = (s) => q.evaluate((s) => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); const x = o && o.querySelector(s); return x ? parseFloat(getComputedStyle(x).fontSize) : null; }, s);
+      /* 1. Welcome offers Larger text and simpler screens before the first question, in both flows; the step stays on
+         Welcome and redraws at Easy's sizes, and the steps after follow */
+      const wz = [];
+      for (const flow of ["short", "full"]) {
+        await popen(`onb-${flow}`);
+        const w0 = await ptop(), h0 = await fx(".ap-ck-q h3"), l0 = await fx(".ap-gd-lede");
+        const has = await q.evaluate(() => !!document.querySelector('.rx-stage .ap-rx .pf-onb[data-step="welcome"] [data-act="onb-easy"][role="switch"]'));
+        await ptap('[data-act="onb-easy"]', 400);
+        const w1 = await ptop(), h1 = await fx(".ap-ck-q h3"), l1 = await fx(".ap-gd-lede");
+        const z1 = await q.evaluate(() => ({ v: window.FLORIN_EXT.api.V().easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v, sw: document.querySelector('.rx-stage .ap-rx [data-act="onb-easy"]').getAttribute("aria-checked") }));
+        await ptap('[data-act="onb-next"]', 300);
+        const n1 = await ptop(), hn = await fx(".ap-ck-q h3");
+        if (!(w0.step === "welcome" && has && w1.step === "welcome" && z1.v === true && z1.page === "true" && z1.sw === "true" && h1 > h0 && l1 > l0 && l1 >= 16 && n1.step === "name" && hn >= h1)) wz.push(`${flow}: ${w0.step} ${has} ${h0}>${h1} ${l0}>${l1} ${n1.step} ${hn}`);
+        await ppick("easy", "false");
+      }
+      ok(!wz.length, `fix-profile: Welcome offers Larger text and simpler screens in both flows; it flips V.easy and the left bar, Welcome redraws bigger at once and the next step follows (${wz.join("; ") || "short and full"})`);
+      await popen("today");
+
+      /* 2. the Onboarding toggle's flow can be left from the phone: Welcome's Close, logs as they were, and the other
+         toggles reach the phone again */
+      /* part 1 left Onboarding on full, so picking short opens it from Today */
+      await ppick("onboard", "short");
+      const c0 = await ptop();
+      const cx = await q.evaluate(() => { const b2 = document.querySelector('.rx-stage .ap-rx .pf-onb[data-step="welcome"] .ap-ck-h [data-act="close"]'); if (!b2) return null; const r = b2.getBoundingClientRect(), af = getComputedStyle(b2, "::after"), out = (x) => (af.content !== "none" && !isNaN(parseFloat(x)) ? -parseFloat(x) : 0); return { w: Math.round(r.width + out(af.left) + out(af.right)), h: Math.round(r.height + out(af.top) + out(af.bottom)), l: b2.getAttribute("aria-label") }; });
+      await ptap('.ap-ck-h [data-act="close"]', 450);
+      const c1 = await ptop(), cm = await q.evaluate(() => ({ mode: window.FLORIN_EXT.api.M().mode, inert: !!document.querySelector(".rx-stage .ap-rx .ap-tb[inert], .rx-stage .ap-rx [inert] .ap-tb") }));
+      await ppick("history", "calendar").catch(() => {}); await popen("history").catch(() => {});
+      const c2 = await ptop();
+      await ppick("onboard", "full");
+      const c3 = await ptop();
+      await ptap('[data-act="onb-next"]', 300);
+      const c4 = await q.evaluate(() => !!document.querySelector('.rx-stage .ap-rx .pf-onb .ap-ck-h [data-act="close"]'));
+      ok(c0 && c0.step === "welcome" && cx && cx.w >= 44 && cx.h >= 44 && cx.l === "Close" && c1 === null && cm.mode === "est" && !cm.inert && c2 === null && c3 && c3.step === "welcome" && !c4, `fix-profile: Welcome has a Close (${cx ? `${cx.w}x${cx.h} to tap` : "missing"}) that leaves the toggle's flow with the logs as they were (${cm.mode}), so the next toggle reaches the phone; later steps have Back, not Close`);
+      await popen("today"); await ppick("history", v0.history).catch(() => {});
+
+      /* 3. this week's finished check-in counts in Profile, as Insights and Ask count it */
+      const ckDone = async () => {
+        await popen("today");
+        if (!(await q.$(`${ph} .ap-ckc [data-act="ck-start"]`))) return false;
+        await q.click(`${ph} .ap-ckc [data-act="ck-start"]`); await pw(600);
+        for (let i = 0; i < 4; i++) { await q.click(`${ph} .ap-ck-opt[data-v="1"]`); await pw(650); if (await q.$(`${ph} .ap-ck-next`)) { await q.click(`${ph} .ap-ck-next`); await pw(400); } }
+        await q.click(`${ph} [data-act="ck-finish"]`); await pw(600);
+        await q.click(`${ph} .ap-ck-fin [data-act="close"]`); await pw(700);
+        return q.evaluate(() => window.FLORIN_EXT.api.M().checkin.status === "done");
+      };
+      const k1 = await ckDone();
+      const kw = await q.evaluate(() => { const M = window.FLORIN_EXT.api.M(); return M.checkins.filter((k) => k.answers && !k.skipped).length + 1; });
+      await popen("profile");
+      const kx = await q.evaluate(() => document.querySelector('.rx-stage .ap-rx [data-act="pf-export"] em').textContent);
+      await ptap('[data-act="pf-del"]');
+      const kd = (await ptop()).text;
+      await q.keyboard.press("Escape"); await pw();
+      ok(k1 && kx.includes(`and ${kw} check-ins`) && kd.includes(`and ${kw} weekly check-ins`), `fix-profile: with this week's check-in finished, Export and Delete count ${kw} check-ins, this week's too (${kx})`);
+      await ppick("data", "fresh");
+      const k2 = await ckDone();
+      await popen("profile");
+      const fx1 = await q.evaluate(() => document.querySelector('.rx-stage .ap-rx [data-act="pf-export"] em').textContent);
+      await ptap('[data-act="pf-del"]');
+      const fd = (await ptop()).text;
+      await q.keyboard.press("Escape"); await pw();
+      ok(!k2 || (/^1 check-in from today$/.test(fx1) && /Delete your logs\?/.test(fd) && /This deletes 1 weekly check-in\. It can't be undone/.test(fd) && !/all 1 /.test(fd) && !/starts learning/.test(fd)), `fix-profile: Just joined, with the check-in finished: Export says 1 check-in and Delete names it, without "all" (${k2 ? fx1 : "no check-in card on day 1"})`);
+      await ppick("data", "est"); await popen("today");
+
+      /* 4. Easy, Most often lately?: a word picked in B, seen in A or C, marks its steps in words, checks none, and says
+         what Continue keeps; a step picked then is exact */
+      await ppick("easy", "true"); await ppick("form", "B");
+      await popen("onb-full");
+      { let k = 0; while ((await ptop()).step !== "usual" && k++ < 8) await ptap('[data-act="onb-skip"]', 150); }
+      await ptap('.pf-fo-b[data-word="3"]');
+      const mz = [];
+      for (const f of ["C", "A"]) {
+        await ppick("form", f);
+        const m = await q.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx .pf-onb"); return { maybe: [...r.querySelectorAll(".pf-fo-b.is-maybe")].map((x) => `${x.dataset.form}:${(x.querySelector(".pf-fo-maybe") || {}).textContent}`).join(","), checked: r.querySelectorAll('.pf-fo-b[aria-checked="true"]').length, info: (r.querySelector(".pf-fo-info") || {}).textContent || "", desc: (r.querySelector(".pf-fo") || { getAttribute: () => "" }).getAttribute("aria-describedby") === ((r.querySelector(".pf-fo-info") || {}).id || "x") }; });
+        const sm = await zsmall();
+        if (!(m.maybe === "5:Could be this one,6:Could be this one" && m.checked === 0 && /You picked Loose, which could be either of the two marked "Could be this one"\. Tap one to be exact, or Continue to keep Loose\./.test(m.info) && m.desc && sm.min >= 16)) mz.push(`${f}: ${m.maybe} ${m.checked} ${m.info.slice(0, 40)} ${sm.min}px`);
+      }
+      await ptap('.pf-fo-b[data-form="5"]');
+      const m5 = await q.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx .pf-onb"); return { on: [...r.querySelectorAll('.pf-fo-b[aria-checked="true"]')].map((x) => x.dataset.form).join(), maybe: r.querySelectorAll(".pf-fo-b.is-maybe").length, info: !!r.querySelector(".pf-fo-info") }; });
+      ok(!mz.length && m5.on === "5" && !m5.maybe && !m5.info, `fix-profile: Easy's Most often, lately?, a B word seen in C and A marks its two steps "Could be this one", checks none and says Continue keeps it; picking a step makes it exact (${mz.join("; ") || "C and A"})`);
+      await popen("today"); await ppick("form", v0.form); await ppick("easy", "false"); await ppick("onboard", "short");
+
+      /* 5. Profile names the account's email (without making one up) and can delete the account, asked first */
+      await popen("profile");
+      const hp = await q.evaluate(() => { const r = [...document.querySelectorAll('.rx-stage .ap-rx .ap-o--t-pf [data-act="pf-info"]')]; return r.map((x) => x.dataset.v).join(","); });
+      const dr = await q.evaluate(() => { const rows = [...document.querySelectorAll('.rx-stage .ap-rx .ap-o--t-pf [data-act^="pf-del"]')].map((x) => x.dataset.act); return rows.join(","); });
+      await ptap('[data-act="pf-info"][data-v="account"]');
+      const em = await ptop();
+      await q.keyboard.press("Escape"); await pw();
+      await ptap('[data-act="pf-delacct"]');
+      const da = await ptop();
+      const dfoc = await q.evaluate(() => { const a = document.activeElement, y = document.querySelector('.rx-stage .ap-rx [data-act="pf-delacct-yes"]'); return { foc: a ? a.textContent.trim() : "", bg: y ? getComputedStyle(y).backgroundColor : "" }; });
+      const dcnt = await q.evaluate(() => { const M = window.FLORIN_EXT.api.M(); return M.days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0); });
+      await ptap('[data-act="pf-delacct-yes"]', 450);
+      const dy = await q.evaluate(() => ({ top: ([...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop() || { className: "" }).className, tst: document.querySelector(".rx-stage .ap-rx .ap-tst").textContent, mode: window.FLORIN_EXT.api.M().mode, foc: document.activeElement && document.activeElement.dataset.act }));
+      ok(/^account,help,/.test(hp) && em.type === "pf-info" && /Email and sign-in/.test(em.text) && /the email you signed up with/.test(em.text) && !/@/.test(em.text), `fix-profile: Help starts with Email and sign-in, whose sheet says what it holds without making up an address (${hp})`);
+      ok(dr === "pf-del,pf-delacct" && da.type === "pf-del" && /Delete your account\?/.test(da.text) && da.text.includes(`${dcnt} entries`) && /can't be undone/.test(da.text) && /export your logs/.test(da.text) && dfoc.foc === "Keep my account" && !/rgb\((2[0-9]{2}), ([0-9]{1,2}), ([0-9]{1,2})\)/.test(dfoc.bg) && /ap-o--t-pf\b/.test(dy.top) && /deletes your account and signs you out\. The prototype keeps it/.test(dy.tst) && dy.mode === "est" && dy.foc === "pf-delacct", `fix-profile: Delete my account, after Delete my logs, asks first with the ${dcnt} entries named and Keep my account focused, never red; confirming says what the app does and keeps the demo (${dfoc.bg})`);
+      await popen("today");
+
+      /* 6. with the check-in off, the short onboarding's note never sends periods to the check-in's Period tag */
+      await ppick("checkin", "false"); await popen("onb-short");
+      const nOff = await q.evaluate(() => document.querySelector("#rxNotes").textContent);
+      await popen("today"); await ppick("checkin", "true"); await popen("onb-short");
+      const nOn = await q.evaluate(() => document.querySelector("#rxNotes").textContent);
+      ok(/kept for cycle context later/.test(nOff) && !/Period tag/.test(nOff) && /the Period tag on the check-in/.test(nOn) && /Welcome offers Larger text/.test(nOn) && /Welcome has Close/.test(nOn), "fix-profile: the short onboarding's note follows the check-in (Period tag only when it's on) and says Welcome offers larger text and can be closed");
+      await popen("today"); await ppick("checkin", String(v0.checkin));
+    }
+    /* ===== end fix-profile ===== */
     ok(!pe.length, `profile and onboarding: no console errors or module warnings${pe.length ? ": " + pe.slice(0, 2).join(" | ") : ""}`);
     await pc.close();
   }
@@ -1961,6 +2241,103 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(!ferr.length, `Ask: no page errors through the review's checks${ferr.length ? ": " + ferr[0] : ""}`);
     await fp.close();
     /* end fix-ask */
+
+    /* ===== fix-ask: the third review's findings, kept as checks. A condition named, a supplement, a food to quit or
+       still eat get the redirect, and the app's own questions don't; a gastroenterologist and mucus get the clinician
+       answer, mucus led by the flag note's own line and never sent; the check on Claude's answers fails forecasts,
+       causes, food advice, resolved, regular, comparisons with other people and humour, and passes Florin's own
+       disclaimers; the no-score answer says what L.score counts and what brings it back; no answer says good days; in
+       Easy the options under a redirect are Easy's size; the Ask opener clears a seeded chat ===== */
+    {
+      const tp = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+      const terr = [];
+      tp.on("pageerror", (e) => terr.push(e.message));
+      tp.on("console", (m) => { if (m.type() === "error") terr.push(m.text()); });
+      await tp.addInitScript(() => {
+        window.__askCalls = [];
+        window.claude = { use: async (name) => (name === "sample" ? (input) => { window.__askCalls.push({ input }); return Promise.resolve({ text: "Keep logging each BM when it happens. Florin reads it against your own usual.", truncated: false }); } : null) };
+      });
+      await tp.goto(PAGE); await tp.waitForSelector(".rx-stage .ap-rx"); await tp.waitForTimeout(400);
+      const tw = (ms = 400) => tp.waitForTimeout(ms);
+      const tph = ".rx-stage .ap-rx";
+      const topen = async (id) => { await tp.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await tw(); };
+      const tset = async (k, v) => { await tp.evaluate(([k, v]) => document.querySelector(`[data-rx="${k}"][data-v="${v}"]`).click(), [k, v]); await tw(); };
+      const task = async (q, ms = 450) => { await tp.fill(`${tph} .ap-askx-in`, q); await tp.press(`${tph} .ap-askx-in`, "Enter"); await tw(ms); };
+      const tlast = () => tp.evaluate(() => { const ts = document.querySelectorAll(".rx-stage .ap-rx .ap-askx-a"), a = ts[ts.length - 1]; return a ? { text: a.querySelector(".ap-askx-text").textContent.replace(/\s+/g, " ").trim(), opts: a.querySelectorAll(".ap-ask-opt").length } : null; });
+      const RED = [["Is this Crohn's?", "clinic"], ["Is this Crohn’s?", "clinic"], ["Is it colitis?", "clinic"], ["Could it be coeliac?", "clinic"], ["Does this mean I have SIBO?", "clinic"], ["Is my gut inflamed?", "clinic"], ["What probiotic is best for me?", "clinic"], ["Would a probiotic help?", "clinic"], ["What condition do my logs point to?", "clinic"], ["Would going dairy free help?", "food"], ["Would cutting out dairy help?", "food"], ["Should I quit coffee?", "food"], ["Can I still eat pizza?", "food"], ["Should I skip pizza?", "food"]];
+      const NOTRED = ["Could it be a gap in my logs?", "Does this mean I have a pattern?", "Can I skip a day of logging?", "Can I skip the check-in this week?", "Should I quit logging dinner?", "Can I still have a FloraScore if I miss a day?", "Would logging more help?", "Could it be the late dinners?"];
+      const MUSTFAIL = ["Your bloating seems to have resolved this week.", "Your FloraScore should climb if you keep this up.", "Expect a calmer week if dinners come earlier.", "Pizza may be behind your looser BMs.", "Dairy could be the culprit here. Try a week without it and compare.", "Try skipping pizza for a week and see what changes.", "Your gut seems inflamed after pizza.", "Eating earlier helps your gut settle.", "Most people go once or twice a day, and so do you.", "Your gut is on track this week.", "Haha, that is a funny question.", "Coffee upsets your stomach.", "Your bloating is due to pizza.", "Your BMs are regular this week.", "That is a positive sign.", "Your mornings are better than last week.", "Your timing is textbook.", "Your bloating should ease by the weekend.", "The average person goes once a day.", "Coffee is causing your bloating.", "Your FloraScore is good this week."];
+      const MUSTPASS = ["Patterns show what tends to happen together; they don't prove cause.", "Patterns show what tends to happen together, not what causes it.", "What's behind your FloraScore this week is timing.", "A gap stays a gap due to how Florin reads logs.", "If you skip a day, it stays a gap.", "If you keep logging meals, Florin can look.", "Florin compares you with your own usual, never with other people."];
+      const te = await tp.evaluate(([RED, NOTRED, MUSTFAIL, MUSTPASS]) => {
+        const L = window.FLORIN_LOGS, AK = window.FLORIN_ASK, api = window.FLORIN_EXT.api, out = {};
+        const K = " Keep logging each BM when it happens.";
+        out.red = RED.filter(([q, w]) => { const r = AK.route(q); return r.kind !== "redirect" || r.which !== w; }).map(([q]) => q);
+        out.notred = NOTRED.filter((q) => AK.route(q).kind !== "ask");
+        const M = api.M(), V = api.V(), R = AK.read(M, V, null);
+        const gi = AK.answer(M, V, "Do I need to see a gastroenterologist?", null), mu = AK.answer(M, V, "Is it bad that there's mucus?", null);
+        out.clin = gi.intent === "clinician" && /primary care/.test(AK.textOf(gi)) && mu.intent === "clinician" && AK.textOf(mu).indexOf("If mucus is new for you, keeps showing up, or comes with pain or blood, check in with a clinician.") === 0 && /Primary care is the right first stop/.test(AK.textOf(mu)) && AK.answer(M, V, "I logged mucus today. How do I bring my logs to a clinician?", null).intent === "report";
+        out.passed = MUSTFAIL.filter((t) => AK.check(t + K, R).ok);
+        out.failed = MUSTPASS.filter((t) => !AK.check(t + K, R).ok).map((t) => `${t} (${AK.check(t + K, R).rules.join(", ")})`);
+        /* no FloraScore today, three ways: the facts say how many of the last 3 days have a BM, or No BM, the answer says
+           what brings it back, and doing that brings it back */
+        const V3 = { form: "C", plan: "member", checkin: true, uid: 9, mealUI: "quick" };
+        const strip = (M, d) => L.day(M, d).entries.filter((e) => e.kind === "bm" || e.kind === "nobm").map((e) => e.id).forEach((id) => L.remove(M, id));
+        const cases = [
+          { off: [0, 1], n: 1, tr: "Log today's BMs, or No BM if there wasn't one", add: [0] },
+          { off: [1, 2], n: 1, tr: "Add a BM, or No BM, for yesterday from History", add: [1] },
+          { off: [0, 1, 2], n: 0, tr: "Log today's BMs, or No BM, and add yesterday's from History", add: [0, 1] }
+        ];
+        out.noscore = [];
+        cases.forEach((c) => {
+          const M3 = L.build("sarah", "est", { meals: "all" });
+          c.off.forEach((k) => strip(M3, L.TODAY - k));
+          const R3 = AK.read(M3, V3, null), A3 = AK.answer(M3, V3, "Why is there no FloraScore today?", null), tx = AK.textOf(A3);
+          const fact = R3.X["s.today"][1], how = R3.X["s.how"][1];
+          c.add.forEach((k) => L.add(M3, { kind: "nobm", d: L.TODAY - k, t: 20 }));
+          const back = L.score(M3, L.TODAY, "C");
+          if (fact !== `not scored: a BM, or No BM, is logged on ${c.n} of the last 3 days, and it needs 2` || !/among the last 3 that have a BM, or No BM, logged/.test(how) || !tx.startsWith("There's no FloraScore today: it needs a BM, or No BM, logged on 2 of your last 3 days") || !tx.includes(c.tr) || !AK.check(tx, R3).ok || !back || back.value == null) out.noscore.push(`${c.off.join("+")}: ${fact} / ${tx} / back ${back && back.value}`);
+        });
+        out.how = /blends the days among your last 3 that have a BM, or No BM, logged/.test(AK.textOf(AK.answer(M, V, "How is FloraScore worked out?", null)));
+        /* never good days: every answer that asks for ordinary days, and the facts, for meals every day, rough days only
+           and none */
+        out.good = [];
+        for (const meals of ["all", "rough", "none"]) for (const data of ["est", "new"]) {
+          const Mg = L.build("sarah", data, { meals });
+          if (/\bgood\b|\bbad\b/i.test(AK.read(Mg, V3, null).text)) out.good.push(`${meals}/${data}: facts`);
+          ["How have my symptoms been?", "What tends to come before my rougher days?", "How sure are these patterns?", "How do I test one?", "What could I try this week?", "How do I log symptoms well?", "What should I log, and when?", "Is my FloraScore good?", "What do my logs show this week?"].forEach((q) => { const tx = AK.textOf(AK.answer(Mg, V3, q, null)); if (/\bgood\b|\bbad\b/i.test(tx)) out.good.push(`${meals}/${data} "${q}": ${tx}`); });
+        }
+        return out;
+      }, [RED, NOTRED, MUSTFAIL, MUSTPASS]);
+      ok(!te.red.length, `Ask: a condition named (Crohn's, colitis, coeliac, SIBO, inflamed), a probiotic, a food to quit, skip or still eat, and going dairy free get the redirect${te.red.length ? ": missed " + te.red.join(" | ") : ""}`);
+      ok(!te.notred.length, `Ask: questions about the app that share those words (a gap, a pattern, skipping a day or the check-in, quitting logging dinner) stay ordinary${te.notred.length ? ": " + te.notred.join(" | ") : ""}`);
+      ok(te.clin, "Ask: a gastroenterologist gets the clinician answer; mucus gets it led by the flag note's own line, and the flag note's mucus question still gets the report answer");
+      ok(!te.passed.length, `Ask: the check on Claude's answers fails resolved, regular, good, forecasts, a food behind or to blame, skipping a food, inflamed, on track, most people and humour${te.passed.length ? ": passed " + te.passed.join(" | ") : ""}`);
+      ok(!te.failed.length, `Ask: and it passes Florin's own lines: they don't prove cause, not what causes it, what's behind your FloraScore, due to how Florin reads logs, if you skip a day, if you keep logging, never with other people${te.failed.length ? ": failed " + te.failed.join(" | ") : ""}`);
+      ok(!te.noscore.length && te.how, `Ask: with no FloraScore today, the facts and the answer say a BM, or No BM, on 2 of the last 3 days, and what they say to log brings it back${te.noscore.length ? ": " + te.noscore.join(" | ") : ""}`);
+      ok(!te.good.length, `Ask: no answer or fact calls a day good or bad, with meals every day, on rough days only or none${te.good.length ? ": " + te.good.slice(0, 2).join(" | ") : ""}`);
+      /* in the phone, with Claude there: a condition and mucus never reach it */
+      await topen("ask");
+      const tc0 = await tp.evaluate(() => window.__askCalls.length);
+      await task("Is this Crohn's?");
+      let tl = await tlast();
+      ok(tl && /for a clinician, not an app/.test(tl.text) && tl.opts === 2 && (await tp.evaluate(() => window.__askCalls.length)) === tc0, "Ask: Is this Crohn's? gets the clinic redirect with its two options, and isn't sent to Claude");
+      await task("Is it bad that there's mucus?");
+      tl = await tlast();
+      ok(tl && tl.text.startsWith("If mucus is new for you") && (await tp.evaluate(() => window.__askCalls.length)) === tc0, "Ask: a question about mucus gets the clinician answer on the phone, and isn't sent to Claude");
+      /* Easy: the options under a redirect are Easy's size, like the Ask next chips beside them */
+      await tset("easy", "true"); await topen("ask");
+      await task("Do I have IBS?");
+      const eo = await tp.evaluate(() => [...[...document.querySelectorAll(".rx-stage .ap-rx .ap-askx-a")].pop().querySelectorAll(".ap-ask-opt")].map((x) => { const r = x.getBoundingClientRect(), cs = getComputedStyle(x), ic = x.querySelector(".ic").getBoundingClientRect(); return { h: Math.round(r.height), f: parseFloat(cs.fontSize), ic: Math.round(ic.width) }; }));
+      ok(eo.length === 2 && eo.every((o) => o.h >= 64 && o.f >= 18 && o.ic === 20), `Ask: in Easy the options under a redirect are 64px or taller at 18px, with 20px chevrons (${eo.map((o) => `${o.h}px/${o.f}px/${o.ic}px`).join(", ")})`);
+      await tset("easy", "false");
+      /* the Ask opener: from a seeded chat, the plain tab (the core's open("ask") calls it once refresh-app.js does) */
+      await topen("ask-alarm");
+      const op = await tp.evaluate(() => { const X = window.FLORIN_EXT; X.opens.ask(X.api); return new Promise((res) => setTimeout(() => res({ log: !!document.querySelector(".rx-stage .ap-rx .ap-askx-log"), sugg: !!document.querySelector(".rx-stage .ap-rx .ap-askx-sugg"), tab: X.api.S.tab, h: document.querySelector("#rxNotes h2").textContent }), 400)); });
+      ok(op.tab === "ask" && !op.log && op.sugg && op.h === "Ask Florin", `Ask: the Ask opener clears a seeded chat and shows the plain tab, with its notes (${op.h})`);
+      ok(!terr.length, `Ask: no page errors through the third review's checks${terr.length ? ": " + terr[0] : ""}`);
+      await tp.close();
+    }
+    /* ===== end fix-ask: the third review ===== */
   }
   /* ===== end build-ask ===== */
 
@@ -2238,8 +2615,149 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     }
     ok(!broke.length, `Easy plus at 360px: every word on one line${broke.length ? ` (broken: ${broke.join(", ")})` : ""}`);
     await ez3.close();
+    /* ----- fix-easy (pass 3): the Easy tab bar's four words sit on one line, the plus's 36px circle included, at 360
+       and 390, light and dark; the icons stay centred on one line and every tab stays 64px tall ----- */
+    {
+      const off = [];
+      for (const [w, h] of [[360, 780], [390, 844]]) {
+        for (const theme of ["light", "dark"]) {
+          const tp = await b.newPage({ viewport: { width: w, height: h }, colorScheme: theme });
+          await tp.goto(PAGE); await tp.waitForSelector(".rx-stage .ap-rx"); await tp.waitForTimeout(400);
+          await tp.evaluate((t) => { window.FLORIN_EXT.api.set("easy", true); const x = document.querySelector(`[data-rx="theme"][data-v="${t}"]`); if (x && x.getAttribute("aria-pressed") !== "true") x.click(); }, theme);
+          await tp.waitForTimeout(400);
+          const tm = await tp.evaluate(() => {
+            const tb = document.querySelector(".rx-stage .ap-rx .ap-tb");
+            return [...tb.querySelectorAll("button")].filter((x) => getComputedStyle(x).display !== "none").map((x) => {
+              const r = x.getBoundingClientRect(), i = x.querySelector(".ic").getBoundingClientRect(), s = x.querySelector("span").getBoundingClientRect();
+              return { w: x.textContent.trim(), h: r.height, lab: s.top - r.top, icon: i.top + i.height / 2 - r.top };
+            });
+          });
+          const spread = (k) => Math.max(...tm.map((x) => x[k])) - Math.min(...tm.map((x) => x[k]));
+          if (tm.length !== 4 || spread("lab") > 0.5 || spread("icon") > 0.5 || tm.some((x) => Math.round(x.h) !== 64)) off.push(`${w} ${theme}: ${tm.map((x) => `${x.w} word ${x.lab.toFixed(1)}, icon ${x.icon.toFixed(1)}, ${x.h.toFixed(0)}px`).join("; ")}`);
+          await tp.close();
+        }
+      }
+      ok(!off.length, `Easy tab bar: Today, Add, History and Ask have their words on one line and their icons centred on one line, 64px tall, at 360 and 390, light and dark${off.length ? ` (${off.join(" | ")})` : ""}`);
+    }
+    /* ----- end fix-easy (pass 3) ----- */
   }
   /* ===== end build-easy ===== */
+
+  /* ===== fix-library: the data looks (library/js) read this week's saved check-in, count days and BMs the way Insights
+     does (within out of the days or BMs read either way, the rest named), say a one-day stretch in words, keep Bento's
+     usual edge at 3:1 on light and give every Bento board a heading ===== */
+  {
+    const lq = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    const le = [];
+    lq.on("pageerror", (e) => le.push(e.message));
+    lq.on("console", (m) => { if (m.type() === "error") le.push(m.text()); });
+    await lq.goto(PAGE); await lq.waitForSelector(".rx-stage .ap-rx"); await lq.waitForTimeout(400);
+    const R = await lq.evaluate(() => {
+      const L = window.FLORIN_LOGS, FLL = window.FLL, LOOKS = window.FLOOKS, U = window.FLORIN_APP.util;
+      const txt = (h) => { const t = document.createElement("div"); t.innerHTML = h; return t.textContent.replace(/\s+/g, " ").trim(); };
+      const draw = (M, keys) => {
+        const D = window.FLD.build(M.P.id, { mode: "C", M }), o = { D, html: {}, t: {} };
+        LOOKS.forEach((lk) => keys.forEach((k) => { const h = lk.components[k](D, { uid: `fl${lk.id}${k}`, theme: "light", esc: FLL.esc, T: FLL.T, n1: FLL.n1, lin: FLL.lin, C: FLL.C, motion: false }); o.html[`${lk.id}.${k}`] = h; o.t[`${lk.id}.${k}`] = txt(h); }));
+        return o;
+      };
+      const save = (M, a) => Object.assign(M.checkin, { status: "done", answers: a, tags: [], note: "" });
+      const r = {};
+      /* the check-in, saved this week, 12 weeks in: every look reads it as the latest week */
+      {
+        const M = L.build("sarah", "est", { meals: "all" }); save(M, [3, 3, 3, 3]);
+        const o = draw(M, ["checkin"]), Q = o.D.checkin.questions, prev = Q[0].weeks[Q[0].weeks.length - 2].label.replace("Week of ", "");
+        r.ckEst = { data: o.D.checkin.saved && Q.every((q) => q.latest && q.latest.label === "This week" && q.latest.v === 3 && q.cmp && q.cmp.k !== "same"), stale: LOOKS.filter((lk) => !/this week/i.test(o.t[`${lk.id}.checkin`]) || o.t[`${lk.id}.checkin`].includes(prev)).map((lk) => lk.id), prev };
+      }
+      /* the first check-in saved, while learning (Just joined, day 5): saved, not compared, never "No answer yet" */
+      r.ckFirst = ["fresh", "new"].map((data) => {
+        const M = L.build("sarah", data, { meals: "all" }); save(M, [1, 1, 2, 1]);
+        const o = draw(M, ["checkin"]), C = o.D.checkin, bad = [];
+        if (!(C.saved && C.count === 1 && C.questions.every((q) => q.latest && q.latest.label === "This week" && !q.cmp))) bad.push("data");
+        LOOKS.forEach((lk) => { const t = o.t[`${lk.id}.checkin`], h = o.html[`${lk.id}.checkin`]; if (/No answer yet|Not answered|answers? moved|Not started|0 of 0/.test(t) || /the this week/i.test(h)) bad.push(`${lk.id}: ${t.slice(0, 90)}`); });
+        if (!/1\s*of 3 check-ins saved/.test(o.t["rings.checkin"])) bad.push("rings count");
+        if (!/Your first check-in, this week, is saved/.test(o.t["journal.checkin"])) bad.push("journal lede");
+        if (!/Your first check-in is saved/.test(o.t["oura.checkin"]) || !/Your first check-in is saved/.test(o.t["bento.checkin"])) bad.push("oura or bento");
+        return `${data}: ${bad.join("; ") || "ok"}`;
+      });
+      /* days: within out of within plus shifted, from L.facts, and the day left out named (a gap day logged with a
+         symptom only; Alex's B word Loose today, read in C) */
+      const dayCase = (M, look4) => {
+        const o = draw(M, ["week", "month"]), bad = [];
+        [[7, "week"], [30, "month"]].forEach(([n, k]) => {
+          const F = L.span(M, n, "C"), w = F.filter((f) => f.state === "usual").length, kn = w + F.filter((f) => f.state === "shifted").length;
+          ["rings", "oura", "easy"].forEach((id) => { if (!new RegExp(`(?<!\\d)${w}\\s*of ${kn} days within your usual`).test(o.t[`${id}.${k}`])) bad.push(`${id}.${k} not ${w} of ${kn}`); });
+          if (!o.t[`bento.${k}`].includes(`On ${w} of ${kn} days`)) bad.push(`bento.${k} not ${w} of ${kn}`);
+          if (look4(F, k)) ["rings", "oura", "easy", "bento"].forEach((id) => { if (!o.t[`${id}.${k}`].includes(look4(F, k))) bad.push(`${id}.${k} names nothing left out`); });
+        });
+        return bad;
+      };
+      {
+        const M = L.build("sarah", "est", { meals: "all" }), g = L.span(M, 7, "C").find((f) => !f.logged && !f.today);
+        L.add(M, { kind: "sym", d: g.d, t: 13, items: [{ name: "Bloating", s: 0 }], note: "" });
+        const name = U.DOWL[L.dateOf(g.d).getDay()];
+        r.gap = dayCase(M, (F, k) => (k === "week" ? `${name} had nothing about BMs, so it isn't counted` : "1 day had nothing about BMs, so it isn't counted"));
+        r.gapLeft = L.span(M, 7, "C").filter((f) => f.logged).length - L.span(M, 7, "C").filter((f) => f.state === "usual" || f.state === "shifted").length;
+      }
+      {
+        const M = L.build("alex", "est", { meals: "all" });
+        L.add(M, { kind: "bm", d: L.TODAY, t: L.NOW, form: null, word: 3, how: {}, dur: null, flags: {}, note: "" });
+        r.loose = dayCase(M, (F, k) => (k === "week" ? "Today could be either, so it isn't counted" : ""));
+        /* forms: within out of the BMs read either way, the either named in sight; and a word read firmer (Hard) is firmer */
+        const o = draw(M, ["form"]), bms = L.span(M, 30, "C").flatMap((f) => f.bms), w = bms.filter((x) => L.inForms(M, x, "C") === true).length, e = bms.filter((x) => L.inForms(M, x, "C") === null).length;
+        r.form = { w, read: bms.length - e, e, bad: ["rings", "bento", "oura", "easy"].filter((id) => !new RegExp(`(?<!\\d)${w}\\s*of ${bms.length - e}(?!\\d)`).test(o.t[`${id}.form`])).concat(/1 could be either/.test(o.t["rings.form"]) ? [] : ["rings either"]) };
+        const H = L.build("alex", "est", { meals: "all" });
+        L.add(H, { kind: "bm", d: L.TODAY, t: L.NOW, form: null, word: 0, how: {}, dur: null, flags: {}, note: "" });
+        const oh = draw(H, ["form"]);
+        r.hard = [/(?<!\d)1 was firmer\b/.test(oh.t["rings.form"]), /(?<!\d)1 firmer than your usual/.test(oh.t["bento.form"]), oh.D.form.firmer === 1];
+      }
+      /* day 1, nothing logged: no "0 of 1", "of 0", "1 days", "Last 1 days" or "Oct 11 to Oct 11" anywhere */
+      {
+        const M = L.build("sarah", "fresh", { meals: "all" }), keys = ["score", "week", "month", "timing", "often", "form", "symptoms", "pattern"];
+        const o = draw(M, keys), d0 = o.D.days[7][0].label, re = new RegExp(`(?<!\\d)0 ?of \\d|\\bof 0(?!\\d)|(?<!\\d)1 days\\b|[Ll]ast 1 days|${d0} to ${d0}|(?<!\\d)0 days logged|BMs on 0|(?<!\\d)0 logged`);
+        r.fresh = [];
+        LOOKS.forEach((lk) => keys.forEach((k) => { const t = o.t[`${lk.id}.${k}`], h = o.html[`${lk.id}.${k}`]; const m = t.match(re) || h.match(/aria-label="[^"]*\b(0 of \d|of 0\b|1 days)[^"]*"/); if (m) r.fresh.push(`${lk.id}.${k}: ${m[0].slice(0, 60)}`); }));
+      }
+      return r;
+    });
+    ok(R.ckEst.data && !R.ckEst.stale.length, `fix-library: a check-in saved this week is every data style's latest week, read against the first weeks, not the week of ${R.ckEst.prev}${R.ckEst.stale.length ? ` (stale: ${R.ckEst.stale.join(", ")})` : ""}`);
+    ok(R.ckFirst.every((x) => /: ok$/.test(x)), `fix-library: a first check-in saved while learning reads as saved, never No answer yet or 0 answers moved (${R.ckFirst.join(" | ")})`);
+    ok(R.gapLeft > 0 && !R.gap.length, `fix-library: a day logged with nothing about BMs is left out of within your usual and named, week and month, in Rings, Oura, Easy read and Bento${R.gap.length ? `: ${R.gap.join("; ")}` : ""}`);
+    ok(!R.loose.length, `fix-library: a day that could be either is left out of within your usual and named${R.loose.length ? `: ${R.loose.join("; ")}` : ""}`);
+    ok(!R.form.bad.length, `fix-library: form cards say ${R.form.w} of ${R.form.read} within, the ${R.form.e} that could be either named, as Insights does${R.form.bad.length ? `: ${R.form.bad.join(", ")}` : ""}`);
+    ok(R.hard.every(Boolean), `fix-library: a word read firmer than the usual forms (Hard, in C) counts as firmer in Rings and Bento (${R.hard.join(", ")})`);
+    ok(!R.fresh.length, `fix-library: on day 1 with nothing logged, no data style says 0 of 1, of 0, 1 days or a one-day span as a range${R.fresh.length ? `: ${R.fresh.slice(0, 4).join(" | ")}` : ""}`);
+    /* in the app: Bento's usual edge against the card, and one heading per board */
+    const lpick = async (k, v) => { await lq.evaluate(([k, v]) => document.querySelector(`[data-rx="${k}"][data-v="${v}"]`).click(), [k, v]); await lq.waitForTimeout(300); };
+    const lopen = async (id) => { await lq.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await lq.waitForTimeout(500); };
+    await lpick("look", "bento");
+    const edge = {};
+    for (const th of ["light", "dark"]) {
+      await lpick("theme", th); await lopen("look-today");
+      edge[th] = await lq.evaluate(() => {
+        const parse = (s) => { const c = document.createElement("canvas").getContext("2d"); c.fillStyle = s; c.fillRect(0, 0, 1, 1); return [...c.getImageData(0, 0, 1, 1).data]; };
+        const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+        const pill = document.querySelector('.rx-stage .ap-rx [data-rlk-k="week"] .bt-day--u .bt-pill');
+        if (!pill) return 0;
+        const card = parse(getComputedStyle(pill.closest(".bt-t")).backgroundColor).slice(0, 3), m = getComputedStyle(pill).boxShadow.match(/(rgba?\([^)]*\)|oklch\([^)]*\)|color\([^)]*\))/);
+        const e = parse(m[1]), a = e[3] / 255, mix = [0, 1, 2].map((i) => Math.round(e[i] * a + card[i] * (1 - a)));
+        const x = lum(mix), y = lum(card);
+        return +((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)).toFixed(2);
+      });
+    }
+    ok(edge.light >= 3 && edge.dark >= 3, `fix-library: Bento's within-your-usual day edge is 3:1 or more against the card (light ${edge.light}, dark ${edge.dark})`);
+    await lpick("theme", "light"); await lopen("look-insights");
+    const bh = await lq.evaluate(() => { const bt = [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer .bt")]; return { n: bt.length, one: bt.filter((a) => a.querySelectorAll("h1, h2, h3, h4").length === 1).length, h2: [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer .bt h2")].map((h) => getComputedStyle(h).fontWeight).every((fw) => fw === "400") }; });
+    ok(bh.n >= 10 && bh.one === bh.n && bh.h2, `fix-library: in Bento's Insights every board has one heading, kept at the kicker's weight (${bh.one} of ${bh.n})`);
+    const lib = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    lib.on("pageerror", (e) => le.push(e.message));
+    await lib.goto("file://" + path.resolve(__dirname, "../library/_local.html")); await lib.waitForTimeout(600);
+    const lh = await lib.evaluate(() => { const bt = [...document.querySelectorAll(".lk-bento .bt")]; return { n: bt.length, one: bt.filter((a) => a.querySelectorAll("h3").length === 1).length }; });
+    ok(lh.n >= 10 && lh.one === lh.n, `fix-library: on the library page every Bento board has one h3 under its row's h2 (${lh.one} of ${lh.n})`);
+    await lib.close();
+    ok(!le.length, `fix-library: no console or page errors${le.length ? ": " + le.slice(0, 2).join(" | ") : ""}`);
+    await lq.close();
+  }
+  /* ===== end fix-library ===== */
 
   /* ===== integrate: the modules as one ===== */
   {
@@ -2273,6 +2791,188 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(!ge.length, `no console or page errors in the integration checks${ge.length ? ": " + ge.slice(0, 3).join(" | ") : ""}`);
     await g.close();
   }
+
+  /* ===== fix-core: the third review's core findings, kept as checks. Score first's sentence leads with what stood
+     out; a BM's own note and the wider alarm net hear more ways of writing a sign; the week's score change and the
+     meal coverage say the same numbers everywhere; the page's notes, Screens list, skip link and Show it button ===== */
+  {
+    const cp = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    const ce = [];
+    cp.on("pageerror", (e) => ce.push(e.message));
+    cp.on("console", (m) => { if (m.type() === "error") ce.push(m.text()); });
+    await cp.goto(PAGE); await cp.waitForSelector(".rx-stage .ap-rx"); await cp.waitForTimeout(500);
+    const cw = (ms = 350) => cp.waitForTimeout(ms);
+    const cgo = async (id) => { await cp.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await cw(); };
+    const cset = async (k, v) => { await cp.evaluate(([k, v]) => { const x = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (x && x.getAttribute("aria-pressed") !== "true") x.click(); }, [k, v]); await cw(); };
+    const hero = () => cp.evaluate(() => { const h = document.querySelector(".rx-stage .ap-rx .ap-layer .ap-hero"), s = h && h.querySelector(".ap-hero-sub"); return h ? { line: h.querySelector(".ap-hero-line").textContent, sub: s.textContent, flag: s.classList.contains("ap-hero-flag"), aria: h.getAttribute("aria-label") || "" } : null; });
+    const cadd = (e) => cp.evaluate((e) => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS; L.add(api.M(), Object.assign({ d: L.TODAY, how: {}, dur: null, flags: {}, note: "" }, e)); api.renderTab(true); }, e);
+    await cset("form", "C"); await cgo("today");
+    /* 1. Score first: the day's top item leads, ranked as Day first ranks it */
+    const h0 = await hero();
+    const top0 = await cp.evaluate(() => { const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = window.FLORIN_EXT.api.M(); const N = RU.standouts(M, "C")[0]; return N ? RU.leadText(M, "C", N) : null; });
+    ok(h0 && h0.sub === top0 && /^Mild bloating at /.test(h0.sub) && !h0.flag, `fix-core: Score first's sentence leads with what stood out today, a mild symptom on Sarah's day (${h0 && h0.sub})`);
+    await cadd({ kind: "bm", t: 19.67, form: 7 });
+    const h1 = await hero();
+    ok(/^Your 7:40 PM BM was Watery, outside your usual forms/.test(h1.sub) && !h1.flag && /usual range|Within/.test(h1.line), `fix-core: a Watery BM leads the Score first sentence, outside your usual forms (${h1.sub})`);
+    await cadd({ kind: "bm", t: 19.7, form: 4, flags: { blood: true } });
+    const h2 = await hero();
+    ok(h2.flag && /^Blood in your stool, noted in a log today: primary care is the right first stop\.$/.test(h2.sub) && h2.line === "Not read against your usual today." && !/usual range|Within|above|below/i.test(h2.line + h2.sub) && h2.aria.includes(h2.sub), `fix-core: a flagged BM leads as the Teal note, names the sign, reads nothing, and the card's label says it (${h2.sub})`);
+    /* the Teal note is Teal on the Forest card, never red: its edge's hue sits with Teal's */
+    const tl = await cp.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .ap-hero-flag"); return getComputedStyle(s).boxShadow + " " + getComputedStyle(s).backgroundColor; });
+    ok(!/rgb\((2[0-9]{2}), ([0-9]{1,2}), ([0-9]{1,2})\)/.test(tl), `fix-core: the note on the score card is Teal, not red (${tl.slice(0, 60)})`);
+    await cp.evaluate(() => window.FLORIN_EXT.api.set("data", "est")); await cw();
+    /* 2. a BM's own note: the BM is the stool */
+    const bmNet = await cp.evaluate(() => {
+      const L = window.FLORIN_LOGS;
+      const yes = ["It looked like tar", "Black and sticky", "It was black", "Jet black, smelled awful", "very dark today", "almost black", "bright red", "some red in it", "Dark red streaks", "maroon"];
+      const no = ["After black coffee", "red pepper soup last night", "no black, normal colour", "Had a red wine", "Sudden urge this morning.", "Late dinner last night."];
+      return { missed: yes.filter((t) => !L.alarmsIn(t, { bm: true }).length), tripped: no.filter((t) => L.alarmsIn(t, { bm: true }).length), general: yes.filter((t) => /^(bright red|maroon|some red in it)$/.test(t) && L.alarmsIn(t).length) };
+    });
+    ok(!bmNet.missed.length && !bmNet.tripped.length && !bmNet.general.length, `fix-core: a BM's note is read with the BM net: a colour alone is a sign there, a food after it isn't, and a question elsewhere keeps the narrower net (missed: ${bmNet.missed.join(" | ") || "none"}; tripped: ${bmNet.tripped.join(" | ") || "none"}; general net: ${bmNet.general.join(" | ") || "none"})`);
+    await cgo("bm");
+    await cp.click('.rx-stage .ap-rx .ap-fm-b[data-form="4"]'); await cw(150);
+    await cp.fill('.rx-stage .ap-rx [data-in="note"]', "It looked like tar");
+    await cp.click('.rx-stage .ap-rx [data-act="save-bm"]'); await cw(600);
+    const tar = await cp.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); return o ? o.textContent : ""; });
+    ok(/When to see a clinician/.test(tar) && /A black or tar-like stool/.test(tar), "fix-core: saving a BM noted 'It looked like tar' opens the primary care note");
+    await cp.evaluate(() => window.FLORIN_EXT.api.set("data", "est")); await cw();
+    /* 3. the wider net, for a log's note and an Ask question alike */
+    const wide2 = await cp.evaluate(() => {
+      const L = window.FLORIN_LOGS;
+      const yes = ["I've lost 4kg without trying", "dropped 10lbs this month", "My poo was really dark, almost black", "it was black, like tar", "I'm running a temp", "I had chills and a temperature", "I've been really unwell, 39 degrees", "38.5C last night"];
+      const no = ["lost my keys", "a temp job", "I have a temp job", "not black, normal colour", "Stool normal colour, not black", "39 degrees outside", "it's 39 degrees today", "had my temperature taken, it was fine", "No stool today, black coffee only"];
+      return { missed: yes.filter((t) => !L.alarmsIn(t).length), tripped: no.filter((t) => L.alarmsIn(t).length) };
+    });
+    ok(!wide2.missed.length && !wide2.tripped.length, `fix-core: the wider net hears kilos and pounds against the digit, a dark stool across a comma, a temp, chills and a temperature, and a reading, and not the weather or a temp job (missed: ${wide2.missed.join(" | ") || "none"}; tripped: ${wide2.tripped.join(" | ") || "none"})`);
+    /* 4. the week's FloraScore change is the difference of the two averages as shown */
+    const dl = await cp.evaluate(() => {
+      const L = window.FLORIN_LOGS, bad = [];
+      for (const who of ["sarah", "marcus", "alex"]) for (const m of ["A", "B", "C"]) { const mv = L.scoreMoved(L.build(who, "est"), m); if (mv && (mv.delta !== Math.round(mv.wk) - Math.round(mv.lw) || mv.wkR !== Math.round(mv.wk) || mv.lwR !== Math.round(mv.lw))) bad.push(`${who} ${m}`); }
+      return bad;
+    });
+    ok(!dl.length, `fix-core: for every person and option, the week's change is round(this week) minus round(last week)${dl.length ? ` (off: ${dl.join(", ")})` : ""}`);
+    await cset("persona", "alex"); await cgo("i-score");
+    const al = await cp.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, mv = L.scoreMoved(api.M(), api.V().form); const t = document.querySelector(".rx-stage .ap-rx .ap-layer").textContent; return { mv: mv && [mv.lwR, mv.wkR, mv.delta], chip: t.includes(`+${mv.delta} vs last week`), wf: t.includes(`from ${mv.lwR} last week to ${mv.wkR} this week`) || !!document.querySelector(`.rx-stage .ap-rx [aria-label*="from ${mv.lwR} last week to ${mv.wkR} this week"]`) }; });
+    ok(al.mv && al.mv[2] === al.mv[1] - al.mv[0] && al.chip && al.wf, `fix-core: Alex's FloraScore detail: the chip says +${al.mv && al.mv[2]} beside ${al.mv && al.mv[0]} and ${al.mv && al.mv[1]}`);
+    await cset("persona", "sarah");
+    /* 5. meal coverage: counted over the days logged in the 90-day window, the same as the data looks */
+    await cset("meals", "rough"); await cgo("i-pat");
+    const mc = await cp.evaluate(() => {
+      const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), PR = L.patterns(M, api.V().form);
+      const D = window.FLD && window.FLD.build ? window.FLD.build(M.P.id, { M, mode: api.V().form }) : null;
+      const t = document.querySelector(".rx-stage .ap-rx .ap-layer").textContent;
+      return { pr: [PR.mealDays, PR.loggedDays, PR.window], fld: D && D.patterns && D.patterns.meals ? [D.patterns.meals.days, D.patterns.meals.logged, D.patterns.meals.window] : null, said: t.includes(`Meals are logged on ${PR.mealDays} of the ${PR.loggedDays} days you logged in the last ${PR.window} days`), sparse: PR.sparse, gate: PR.sparse === PR.mealDays / PR.loggedDays < L.MEAL_COVER, old: /of your last \d+ days/.test(t) };
+    });
+    ok(mc.said && mc.sparse && mc.gate && !mc.old && (!mc.fld || mc.fld.join() === mc.pr.join()), `fix-core: Possible patterns says meals on ${mc.pr[0]} of the ${mc.pr[1]} days logged in the last ${mc.pr[2]} days, the same counts the gate and the data looks use (${mc.fld ? mc.fld.join(" of ") : "looks not loaded"})`);
+    await cp.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="mealUI"]'); b2.click(); }); await cw();
+    const mn = await cp.evaluate(() => [...document.querySelectorAll("#rxNotes .rx-q li")].map((l) => l.textContent).join(" "));
+    ok(/has meals on \d+ of the \d+ days logged in the last \d+ days, under 60%/.test(mn), `fix-core: the Meal sheet note states the same day counts (${(mn.match(/has meals on [^,]+/) || [""])[0]})`);
+    await cp.evaluate(() => document.querySelector('[data-rx="dclose"]') && document.querySelector('[data-rx="dclose"]').click());
+    await cset("meals", "all");
+    /* 6. the week card's legend samples the gap day's own struck date */
+    await cgo("today");
+    const gl = await cp.evaluate(() => { const g = document.querySelector(".rx-stage .ap-rx .ap-wk-days .is-gap em"), k = document.querySelector(".rx-stage .ap-rx .ap-wk-legend .ap-wk-gapday"); return { g: g && g.textContent, k: k && k.textContent }; });
+    ok(gl.g && gl.k === gl.g, `fix-core: the week legend's Nothing logged sample is the gap day's struck date (${gl.k}), not a stray letter`);
+    /* 7. every symptom strength on the week card is 3:1 or more against the card, in order, light and dark */
+    const sq = [];
+    for (const th of ["light", "dark"]) {
+      await cset("theme", th);
+      sq.push(await cp.evaluate((th) => {
+        const cv = document.createElement("canvas"); cv.width = cv.height = 1; const cx = cv.getContext("2d", { willReadFrequently: true });
+        const rgb = (c) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = "#000"; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+        const over = (f, b) => f.slice(0, 3).map((v, i) => v * f[3] + b[i] * (1 - f[3]));
+        const lum = (c) => { const a = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; };
+        const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+        const card = document.querySelector(".rx-stage .ap-rx .ap-wk"), bg = rgb(getComputedStyle(card).backgroundColor);
+        const out = [1, 2, 3].map((k) => { const i = document.createElement("i"); i.className = `ap-wk-sq ap-wk-sq--${k}`; card.appendChild(i); const c = rgb(getComputedStyle(i).backgroundColor); i.remove(); return +ratio(over(c, bg), bg).toFixed(2); });
+        return { th, out };
+      }, th));
+    }
+    await cset("theme", "light");
+    ok(sq.every((r) => r.out.every((v, i) => v >= 3 && (!i || v > r.out[i - 1]))), `fix-core: mild, moderate and strong squares are 3:1 or more on the card, in order (${sq.map((r) => `${r.th} ${r.out.join(", ")}`).join("; ")})`);
+    /* 8. the faintest inks clear 4.5:1 in light: the app's on the card, the page's on its panels and ground */
+    const ink = await cp.evaluate(() => {
+      const cv = document.createElement("canvas"); cv.width = cv.height = 1; const cx = cv.getContext("2d", { willReadFrequently: true });
+      const rgb = (c) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = "#000"; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2]]; };
+      const lum = (c) => { const a = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; };
+      const ratio = (a, b) => { const x = lum(a), y = lum(b); return +(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)).toFixed(2)); };
+      const col = (host, v) => { const s = document.createElement("span"); s.style.color = `var(${v})`; host.appendChild(s); const c = getComputedStyle(s).color; s.remove(); return rgb(c); };
+      const ph = document.querySelector(".rx-stage .ap-rx"), card = ph.querySelector(".ap-wk");
+      const panel = document.querySelector(".rx-panel--dec");
+      return { app: ratio(col(card, "--ap-ink3"), rgb(getComputedStyle(card).backgroundColor)), panel: ratio(col(panel, "--ink-3"), rgb(getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() ? getComputedStyle(panel).backgroundColor : "#fff")), ground: ratio(col(document.body, "--ink-3"), rgb(getComputedStyle(document.body).backgroundColor)) };
+    });
+    ok(ink.app >= 4.5 && ink.ground >= 4.5, `fix-core: light, the faintest inks clear 4.5:1: the app's on the card ${ink.app}, the page's on its ground ${ink.ground} (panel ${ink.panel})`);
+    /* 9. the detail charts draw no dashed lines; a day not logged is its struck date */
+    await cgo("i-score");
+    const ds = await cp.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer .c-avg, .rx-stage .ap-rx .ap-layer .c-wf-conn")].map((x) => getComputedStyle(x).strokeDasharray).filter((v) => v && v !== "none"));
+    const avl = await cp.evaluate(() => (document.querySelector(".rx-stage .ap-rx .ap-layer .c-avg-lbl") || {}).textContent || "");
+    await cgo("i-timing");
+    const dt = await cp.evaluate(() => {
+      const L = document.querySelector(".rx-stage .ap-rx .ap-layer");
+      const dash = [...L.querySelectorAll(".c-row-base")].map((x) => getComputedStyle(x).strokeDasharray).filter((v) => v && v !== "none");
+      const gaps = [...L.querySelectorAll(".c-row.is-gap")].map((g) => ({ lbl: (g.querySelector(".c-row-lbl") || {}).textContent || "", struck: /line-through/.test(getComputedStyle(g.querySelector(".c-row-lbl")).textDecorationLine), base: getComputedStyle(g.querySelector(".c-row-base")).stroke }));
+      const lg = [...L.querySelectorAll(".ap-legend *")].some((x) => /dashed/.test(getComputedStyle(x).borderTopStyle));
+      return { dash, gaps, lg, key: (L.querySelector(".ap-legend .ap-lg-gap") || {}).textContent || "" };
+    });
+    ok(!ds.length && /^Average \d+$/.test(avl) && !dt.dash.length && !dt.lg && dt.gaps.length && dt.gaps.every((g) => g.lbl && g.struck && g.base === "none") && dt.gaps.some((g) => g.lbl === dt.key), `fix-core: FloraScore and Timing draw no dashed lines; the average is labelled (${avl}), and a day not logged is its struck date, as in the legend (${dt.key})`);
+    /* 10. with the Easy version on, Home and Data style say Picked, Easy draws its own, with the line under each row */
+    await cset("easy", "true");
+    const ez = {};
+    for (const [k, v] of [["look", "oura"], ["home", "day"]]) {
+      await cset(k, v);
+      ez[k] = await cp.evaluate((k) => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "", line: (() => { const x = document.querySelector(`[data-shadow="${k}"]`); return x && !x.hidden ? x.textContent : ""; })() }), k);
+    }
+    await cset("easy", "false");
+    const ez0 = await cp.evaluate(() => [...document.querySelectorAll("[data-shadow]")].every((x) => x.hidden));
+    await cset("look", "built"); await cset("home", "score");
+    ok(ez.look.on === "Picked; Easy draws its own" && ez.home.on === "Picked; Easy draws its own" && /Easy version draws Easy read/.test(ez.look.line) && /Easy version draws its own Today/.test(ez.home.line) && ez0, `fix-core: with Easy on, Oura and Day first read Picked; Easy draws its own, with a line under each row; Easy off takes the lines away (${ez.look.on})`);
+    /* 11. a row picked from the list shows that screen's note, even when the phone is already on it */
+    await cgo("today"); await cset("history", "calendar");
+    const n1 = await cp.evaluate(() => document.querySelector("#rxNotes h2").textContent);
+    /* the option shows on another screen: the note offers to show it, and keeps itself up when it does */
+    const sb = await cp.evaluate(() => { const x = document.querySelector('#rxNotes [data-rx="show"]'); return x ? x.dataset.v : null; });
+    await cp.evaluate(() => document.querySelector('#rxNotes [data-rx="show"]').click()); await cw();
+    const sa = await cp.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), h: document.querySelector("#rxNotes h2").textContent, again: !!document.querySelector('#rxNotes [data-rx="show"]') }));
+    ok(/^History/.test(n1) && sb === "history" && sa.key === "hist-cal" && sa.h === n1 && !sa.again, `fix-core: History set to Calendar from Today: the note offers Show it on the phone, which opens the calendar and keeps the decision's note up (${sa.key})`);
+    await cgo("today");
+    const n2 = await cp.evaluate(() => ({ h: document.querySelector("#rxNotes h2").textContent, eyebrow: document.querySelector("#rxNotes .rx-eyebrow").textContent }));
+    await cgo("today");
+    const n3 = await cp.evaluate(() => document.querySelector("#rxNotes h2").textContent);
+    await cset("history", "list"); await cgo("today");
+    await cp.evaluate(() => document.querySelector('[data-rx="history"][data-v="calendar"]').click()); await cw();
+    await cgo("today");
+    const n4 = await cp.evaluate(() => ({ h: document.querySelector("#rxNotes h2").textContent, eyebrow: document.querySelector("#rxNotes .rx-eyebrow").textContent }));
+    await cset("history", "list");
+    ok(n4.eyebrow === "On the phone now" && !/^History/.test(n4.h) && n3 === n2.h, `fix-core: a decision's note, then Today picked from the list while the phone is on Today: Today's note shows (${n4.h})`);
+    /* 12. the arrow keys walk the Screens list: every enabled row once, in order, from Plus menu */
+    await cgo("plus");
+    await cp.evaluate(() => { document.activeElement && document.activeElement.blur(); });
+    const flat = await cp.evaluate(() => [...document.querySelectorAll('[data-rx="screen"]:not([disabled])')].map((x) => x.dataset.v));
+    const walk = [await cp.evaluate(() => document.querySelector(".rx-panel--nav").dataset.row)];
+    for (let i = 1; i < flat.length; i++) { await cp.keyboard.press("ArrowRight"); await cw(420); walk.push(await cp.evaluate(() => document.querySelector(".rx-panel--nav").dataset.row)); }
+    const i0 = flat.indexOf("plus"), want = flat.slice(i0).concat(flat.slice(0, i0));
+    const off = walk.map((r, i) => (r === want[i] ? null : `${i}: ${r} for ${want[i]}`)).filter(Boolean);
+    ok(!off.length && new Set(walk).size === flat.length, `fix-core: from Plus menu, ArrowRight visits all ${flat.length} rows once, in order, no repeats${off.length ? ` (${off.slice(0, 3).join("; ")})` : ""}`);
+    /* Easy's Your weeks lights the Insights row */
+    await cp.evaluate(() => window.FLORIN_EXT.api.set("easy", true)); await cw();
+    await cp.evaluate(() => window.FLORIN_EXT.api.go("insights")); await cw();
+    const ezr = await cp.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), lit: (document.querySelector('[data-rx="screen"][aria-current="true"]') || {}).dataset || {} }));
+    await cp.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await cw();
+    ok(ezr.key !== "ez-weeks" || ezr.lit.v === "insights", `fix-core: with Easy on, its Insights (Your weeks) lights the Insights row (${ezr.key}: ${ezr.lit.v || "none"})`);
+    await cp.evaluate(() => { for (const [k, v] of [["home", "score"], ["history", "list"], ["easy", "false"], ["plan", "member"]]) { const x = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (x && x.getAttribute("aria-pressed") !== "true") x.click(); } }); await cw();
+    /* 13. the first Tab stop is Skip to the phone, which takes focus into the phone; the header links the deck and the looks */
+    await cp.goto(PAGE); await cp.waitForSelector(".rx-stage .ap-rx"); await cw(500);
+    await cp.keyboard.press("Tab");
+    const sk = await cp.evaluate(() => { const a = document.activeElement; const r = a.getBoundingClientRect(); return { t: a.textContent, vis: r.top >= 0 && r.height >= 44 }; });
+    await cp.keyboard.press("Enter"); await cw(200);
+    const inPh = await cp.evaluate(() => !!document.activeElement && !!document.activeElement.closest(".rx-stage .ap-rx"));
+    const links = await cp.evaluate(() => [...document.querySelectorAll(".rx-head-links a")].map((a) => `${a.textContent}|${a.target}|${a.rel}|${a.href}`));
+    ok(sk.t === "Skip to the phone" && sk.vis && inPh, `fix-core: the first Tab stop is Skip to the phone, shown on focus, and it takes focus into the phone`);
+    ok(links.length === 2 && links.every((l) => /\|_blank\|noopener\|https:\/\/claude\.ai\/artifact\//.test(l)) && /decisions, as slides.*2h5ikADR2eFCY1DZYbJEJU/.test(links[0]) && /data looks library.*FdsxDLSQqETo3HRCVmUZzL/.test(links[1]), "fix-core: the header links the decisions deck and the data looks library, each in a new tab");
+    ok(!ce.length, `fix-core: no console or page errors${ce.length ? ": " + ce.slice(0, 3).join(" | ") : ""}`);
+    await cp.close();
+  }
+  /* ===== end fix-core ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

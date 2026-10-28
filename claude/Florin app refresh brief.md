@@ -276,13 +276,39 @@ The five modules were built in parallel, each in its own files, and checked alon
   weeks of logs and Just joined, and opens Today, Insights, FloraScore's detail, History, Ask, plus, Log a BM,
   symptoms, the meal sheet, Profile and onboarding in each: clean on Member, on Free and at 390 wide.
 
+**The third review, in the core (Oct 28)**
+
+Five reviewers read the third pass. What the core changed:
+
+- *Score first's sentence leads with what stood out.* The core now ranks today's logs (`RU.standouts`) the way Day
+  first does, and both Home options use it: a flag or an alarm feature first, as the Teal note on the score card that
+  names the sign and reads nothing (the score's line says "Not read against your usual today"); then a shift from the
+  person's own usual; then symptoms by strength, one without a strength said as "strength not said". With nothing
+  notable it keeps the timing sentence. A Watery BM now leads ("Your 7:40 PM BM was Watery, outside your usual forms,
+  Formed to Loose."), where it used to say the first BM was in the window.
+- *The alarm net hears more.* A BM's own note treats the BM as the stool: "It looked like tar", "almost black", "some
+  red in it", "maroon" now open the primary care note, and "after black coffee" or "red pepper soup" don't. Everywhere:
+  "lost 4kg", "dropped 10lbs", "really dark, almost black", "like tar", "running a temp", "chills and a temperature"
+  and a reading such as 39 degrees or 38.5C. "A temp job", "39 degrees outside" and "not black, normal colour" stay
+  quiet.
+- *One number for one thing.* This week's FloraScore change is the difference of the two averages as shown (Alex: 84
+  and 76, so +8, where Insights said 7). Meal coverage is counted over the days logged in the 90 days, the way the data
+  looks count it ("36 of the 85 days you logged", not "34 of your last 80 days"), and the 60% gate uses the same counts.
+- *The page.* Read the note sits under the toggles, never over the phone's tab bar. A row picked from Screens always
+  shows its note. The arrow keys walk every row once, in order. With Easy on, Home and Data style say "Picked; Easy
+  draws its own". A changed decision whose option shows elsewhere offers Show it on the phone. Skip to the phone is the
+  first Tab stop, and the header links the deck and the looks library.
+- *Craft.* BM tiles keep Formed on one line at 360 wide. Mild symptom squares are 3.4:1 (were 1.5:1). The detail
+  charts lost their dashed lines; a day not logged is its struck date. The faintest inks, in the app and on the page,
+  clear 4.5:1 in light. These two token changes, and the chart kit's dashes, are for the studio to take back.
+
 **The calls for Will, from every note**
 
 Where our recommendation and a module's note now disagree, both are named.
 
-- *Home.* The deck recommends Score first, with the highlight leading on the most notable log; the Home note, written
-  once Day first was on the phone, recommends Day first (it leads with what happened, puts logging on the first screen,
-  and reads right on days 1 to 13). Pick one before the deck goes out. Also: should a strong symptom outrank a shift
+- *Home.* The deck and the Home note now both recommend Score first, for Will to confirm, and Score first's sentence
+  leads on the most notable log, ranked as Day first ranks it (built in the core, Oct 28). On a flag day the score
+  keeps its number but isn't read against the usual, on both options: right? Also: should a strong symptom outrank a shift
   in what stands out? Is a small ring by the date enough to tie Florin to the score people know from Oura? Day first
   puts the BM tiles on Today as well as on plus: keep both? Does the day's sentence say enough, or too much?
 - *History.* A day with a flag is marked for a clinician and not read against the usual: right, or show both? On
@@ -319,6 +345,6 @@ Where our recommendation and a module's note now disagree, both are named.
   in the clinician answer? An urgent-care number for the person's country, from Profile?
 - *Weekly check-in, BM logging, consistency, meals, membership, FloraScore, integrations, messaging.* As on the
   deck's last slide and in each decision's note: ship C once counsel has read it and drop B; Quick tiles with a When
-  row; one box and the mic with a free 14-day food check; the check-in on and free; the report and the food check's
+  row in the saved toast (Just now, 30 min ago, 1 hr ago, Earlier), recommended and for Will to confirm, not built; one box and the mic with a free 14-day food check; the check-in on and free; the report and the food check's
   start free, under $10 a month; FloraScore's four parts and weights; integrations now or later; how we describe the
   app before Florin One. The report for a clinician is still a placeholder everywhere it's offered.

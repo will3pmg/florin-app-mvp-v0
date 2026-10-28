@@ -13,7 +13,9 @@
 .vr-sc-l { font-family: var(--mono); font-size: 10.5px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; color: var(--ray); }
 .vr-sc b { font-size: 20px; font-weight: 300; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .vr-sc .ic { width: 14px; height: 14px; color: var(--ray); }
-.vr-sc-w { flex: 1 1 140px; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); }
+/* the sentence always takes its own line under the chip, at every width and for every person, so it never wraps
+   one word or a number onto a line of its own beside the chip; a sentence that wraps never leaves one word alone */
+.vr-sc-w { flex: 1 1 100%; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); text-wrap: pretty; }
 
 /* today's logs: the one that stood out carries a chip and an edge in its tone (Teal a flag, Gold a shift, ink a symptom) */
 .vr-mk { position: relative; }
@@ -48,11 +50,11 @@
 .vr-cal-w span { text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
 .vr-cal-g { row-gap: 4px; }
 
-/* a day: its date, its mark, then its ticks. The marks are Today's week card's (refresh.css .ap-wk-dot), keyed on what
-   the day shows (data-shown): Plum filled within the usual (Ray in dark), a hollow Gold ring for a shift (a shape cue as
-   well as a colour, so it holds in dark next to Ray), a neutral dot for could be either or logged, a short dash for a
-   day with logs but nothing on BMs, a neutral dot in a Teal ring for a day noted for a clinician (Teal is context, never
-   a reading). A gap has no mark: its date is struck through, as on the week card. No mark before the first log, today
+/* a day: its date, its mark, then its ticks, keyed on what the day shows (data-shown). Shared with As built's week card
+   (refresh.css .ap-wk-dot): Plum filled within the usual (Ray in dark), a hollow Gold ring for a shift (a shape cue as
+   well as a colour, so it holds in dark next to Ray), a neutral dot for could be either or logged. The calendar's own:
+   a short dash for a day with logs but nothing on BMs (the week card's dash is a No BM log), a neutral dot in a Teal
+   ring for a day noted for a clinician (Teal is context, never a reading). A gap has no mark: its date is struck through, as on the week card. No mark before the first log, today
    with nothing yet, or outside the logs. The legend draws the same markup, so the two can't drift */
 .vr-cal-d { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; min-height: 56px; padding: 8px 0 4px; border-radius: 12px; color: var(--ap-ink); }
 .vr-cal-n { font-size: 13px; font-weight: 500; line-height: 16px; font-variant-numeric: tabular-nums; }
@@ -70,11 +72,15 @@
 .vr-cal-d[aria-pressed="true"] { background: var(--ap-card2); }
 .vr-cal-d[aria-pressed="true"] .vr-cal-n { font-weight: 600; }
 .vr-cal-d.is-dim > * { opacity: .3; }
+/* a symptom tick is the only visual mark of a symptom day, so every strength holds 3:1 against the card and the picked
+   day in both themes: mild Ink 2 at 65%, moderate at 82%, strong solid, all filled, the scale of the week card's
+   squares (refresh.css .ap-wk-sq), so a strength looks the same on Today and in History. A day whose symptoms were all
+   logged without a strength is the only hollow tick (an Ink 2 edge), so it never reads as mild */
 .vr-cal-ts { display: flex; gap: 4px; height: 8px; align-items: center; }
-.vr-t { display: inline-block; width: 6px; height: 6px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
-.vr-t--s0 { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
-.vr-t--s1 { background: color-mix(in srgb, var(--ap-ink2) 35%, transparent); }
-.vr-t--s2 { background: color-mix(in srgb, var(--ap-ink2) 65%, transparent); }
+.vr-t { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
+.vr-t--s0 { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-ink2); }
+.vr-t--s1 { background: color-mix(in srgb, var(--ap-ink2) 65%, transparent); }
+.vr-t--s2 { background: color-mix(in srgb, var(--ap-ink2) 82%, transparent); }
 .vr-t--meal { border-radius: 999px; background: var(--ap-teal); }
 
 /* the legend: the same marks, in words */
@@ -82,7 +88,6 @@
 .vr-cal-lg .vr-cal-mk { width: 12px; }
 .vr-cal-lg [data-shown="gap"] > .vr-cal-n { font-size: 11px; line-height: 1; }
 .vr-lg-today { display: inline-block; width: 12px; height: 12px; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--ap-ink); }
-.vr-cal-lg .vr-t + .vr-t { margin-left: -4px; }
 /* on Free, what membership adds to the month */
 .vr-cal-pay { align-self: flex-start; min-height: 44px; }
 
@@ -100,7 +105,8 @@
 .ap.ap--easy [data-shown="shifted"] > .vr-cal-mk::before { box-shadow: inset 0 0 0 3px var(--ap-shift); }
 .ap.ap--easy [data-shown="nocount"] > .vr-cal-mk::before { width: 16px; height: 3px; }
 .ap.ap--easy [data-shown="flag"] > .vr-cal-mk::before { width: 8px; height: 8px; }
-.ap.ap--easy .vr-t { width: 8px; height: 8px; }
+.ap.ap--easy .vr-cal-ts { height: 10px; }
+.ap.ap--easy .vr-t { width: 10px; height: 10px; }
 .ap.ap--easy .vr-lg-today { width: 16px; height: 16px; }
 .ap.ap--easy :is(.vr-cal-d:is(.is-plain, .is-out), [data-shown="gap"]) > .vr-cal-n { color: var(--ap-ink2); }
 .ap.ap--easy .vr-cal-w, .ap.ap--easy .vr-cal-g { margin-inline: -16px; }

@@ -52,8 +52,10 @@
     </article>`);
   }
   const note = (s, disc) => `<p class="jr-note"${disc ? " data-disclaimer" : ""}>${s}</p>`;
-  const lastN = (days) => `Last ${days.length} days`;
-  const span = (days) => `${days[0].label} to ${days[days.length - 1].label}`;
+  /* a stretch in words: on day 1 it is today, never "Last 1 days" or "Oct 11 to Oct 11" */
+  const lastN = (days) => (days.length === 1 ? "Today" : `Last ${days.length} days`);
+  const lastOf = (n, noun) => (n === 1 ? "today" : `last ${n} ${noun}s`);
+  const span = (days) => (days.length === 1 ? (days[0].today ? "Today" : days[0].label) : `${days[0].label} to ${days[days.length - 1].label}`);
   /* when your usual is ready, in words: the day it starts while Florin is still learning */
   const whenUsual = (D) => (D.learning ? `on day ${D.learning.of}` : "once Florin knows your usual");
 
@@ -291,7 +293,7 @@
     const by = (s) => days.filter((f) => f.state === s);
     const nm = (f) => (f.today ? "today" : DOWL[f.dow]);
     let lede;
-    if (learning) lede = `You logged ${lg.length} of the last ${days.length} days; Florin learns your usual over your first ${D.learning.of}.`;
+    if (learning) lede = `${!lg.length ? "Nothing is logged yet" : days.length === 1 ? "You logged today" : `You logged ${lg.length} of the last ${days.length} days`}; Florin learns your usual over your first ${D.learning.of} days.`;
     else if (!lg.length) lede = "Nothing is logged this week yet.";
     else {
       const sh = by("shifted").map(nm), un = by("unsure").map(nm), nc = by("nocount").map(nm);
@@ -346,7 +348,7 @@
     const lg = days.filter((f) => f.logged), cnt = (s) => days.filter((f) => f.state === s).length;
     const nu = cnt("usual"), ns = cnt("shifted"), nE = cnt("unsure"), nN = cnt("nocount");
     let lede;
-    if (learning) lede = `You logged ${lg.length} of your first ${n} days; Florin learns your usual over your first ${D.learning.of}.`;
+    if (learning) lede = `${!lg.length ? "Nothing is logged yet" : n === 1 ? "You logged your first day" : `You logged ${lg.length} of your first ${n} days`}; Florin learns your usual over your first ${D.learning.of} days.`;
     else if (!lg.length) lede = "Nothing is logged this month yet.";
     else if (nu === lg.length) lede = `All ${lg.length} days you logged sat ${mk("within your usual", "usual")}.`;
     else {
@@ -359,7 +361,9 @@
     const cells = days.map((f, i) => { if (i && DOWI[f.dow] === 0) row++; return { f, col: DOWI[f.dow], row }; });
     const nRows = row + 1, cy = (rw) => top + rw * rh + r + 2, H = cy(nRows - 1) + r + 8;
     let b = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"].map((d, i) => tx(i * cw + cw / 2, 10, d, "", "middle")).join("");
-    b += tx(W, 10, learning ? "LOGGED" : "IN USUAL", "", "end");
+    /* each week's count down the right, once there is something to count (day 1, nothing logged, has none) */
+    const counts = !learning || lg.length > 0;
+    if (counts) b += tx(W, 10, learning ? "LOGGED" : "IN USUAL", "", "end");
     /* each week's count, kept for the figure's label too, since text inside it isn't read out */
     const perWeek = [];
     for (let rw = 0; rw < nRows; rw++) {
@@ -367,7 +371,7 @@
       const rc = cells.filter((c) => c.row === rw), rl = rc.filter((c) => c.f.logged);
       const t = learning ? `${rl.length} of ${rc.length}` : `${rc.filter((c) => c.f.state === "usual").length} of ${rl.length}`;
       perWeek.push(t);
-      b += `<text class="tm" x="${W}" y="${f1(cy(rw) + 4)}" text-anchor="end">${t}</text>`;
+      if (counts) b += `<text class="tm" x="${W}" y="${f1(cy(rw) + 4)}" text-anchor="end">${t}</text>`;
     }
     cells.forEach(({ f, col, row: rw }, i) => {
       const x = col * cw + cw / 2, y = cy(rw), role = stateRole(f.state);
@@ -377,8 +381,8 @@
       if (f.today) b += dot(x, y, r + 3.5, "jr-today jr-pop", i + 2, "20ms");
     });
     const roles = rolesIn(days);
-    const byWeek = perWeek.length > 1 ? ` ${learning ? "Logged" : "Within your usual"} by week, Monday to Sunday: ${perWeek.join(", ")}.` : "";
-    const aria = (learning ? `${lg.length} of ${n} days logged.` : `${nu} of ${lg.length} logged days within your usual, ${ns} shifted${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} not logged.`) + byWeek;
+    const byWeek = counts && perWeek.length > 1 ? ` ${learning ? "Logged" : "Within your usual"} by week, Monday to Sunday: ${perWeek.join(", ")}.` : "";
+    const aria = (learning ? (lg.length ? `${lg.length} of ${plural(n, "day")} logged.` : "Nothing logged yet.") : `${nu} of ${lg.length} logged days within your usual, ${ns} shifted${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} not logged.`) + byWeek;
     return shell("month", {
       kicker: learning ? "Your first days" : "The last month", meta: span(days), lede,
       fig: svg(ctx, H, aria, b),
@@ -445,7 +449,7 @@
     return shell("timing", {
       kicker: "Timing", meta: lastN(days), lede,
       fig: svg(ctx, bot + 26, aria, b),
-      cap: capT(`First BM, last ${n} mornings`)
+      cap: capT(`First BM, ${lastOf(n, "morning")}`)
     });
   }
 
@@ -503,7 +507,7 @@
     return shell("often", {
       kicker: "How often", meta: lastN(days), lede,
       fig: svg(ctx, base + 30, aria, b),
-      cap: capT(`BMs a day, last ${n} days`)
+      cap: capT(`BMs a day, ${lastOf(n, "day")}`)
     });
   }
 
@@ -559,7 +563,7 @@
     return shell("form", {
       kicker: "Form", meta: lastN(days), lede,
       fig: svg(ctx, H, aria, b),
-      cap: capT(`Every BM by form, last ${days.length} days`)
+      cap: capT(`Every BM by form, ${lastOf(days.length, "day")}`)
     });
   }
 
@@ -573,7 +577,7 @@
     const toN = (t) => (/^Rarely/i.test(t) ? Infinity : /^Most days/i.test(t) ? 1 : +((t.match(/(\d+)\s*$/) || [])[1] || Infinity));
     let lede;
     if (!Sy.logged30) lede = "No days are logged yet.";
-    else if (!Sy.withSym30) lede = `No symptoms came up on the ${Sy.logged30} days you logged${Sy.usualText ? `; your usual is ${e(lower1(Sy.usualText))}` : ""}.`;
+    else if (!Sy.withSym30) lede = `No symptoms came up on the ${plural(Sy.logged30, "day")} you logged${Sy.usualText ? `; your usual is ${e(lower1(Sy.usualText))}` : ""}.`;
     else {
       const head = `Symptoms came up on ${ofAll(Sy.withSym30, Sy.logged30, "days you logged")}, ${lower1(nowText)}`;
       if (Sy.usualText) {
@@ -581,6 +585,9 @@
         lede = `${head}, ${a === u ? mk("the same as your usual", "usual") : mk(`${a < u ? "more" : "less"} often than your usual`, "shift") + ` of ${e(lower1(Sy.usualText))}`}.`;
       } else lede = `${head}, ${rows.length === 1 ? `each time ${e(lower1(rows[0].name))}` : `${e(lower1(rows[0].name))} most often`}.`;
     }
+    const alarm = `<aside class="jr-alarm"><span class="jr-alarm-k">When to see a clinician</span><p>Blood, black or tar-like stools, a fever, vomiting that won’t stop, weight loss, or waking at night to go: talk to your primary care clinician first.</p></aside>`;
+    /* nothing logged yet (day 1): no figure of empty rows and zero days, only the answer */
+    if (!Sy.logged30) return shell("symptoms", { kicker: "Symptoms", meta: lastN(days), lede, foot: alarm });
     const anyRow = { name: "Any symptom", days: Sy.withSym30, cells: days.map((f) => (!f.logged ? null : f.sym.length ? Math.max(...f.sym.map((s) => s.strength || 0)) : false)), any: true };
     const R = [anyRow, ...rows];
     /* the strip sits between the names and the day counts, each given the room it needs */
@@ -619,11 +626,10 @@
     const yA = yLast + 18;
     b += tx(left, yA, up(days[0].label), "t3") + tx(W - right + 4, yA, "TODAY", "tk", "end");
     const aria = `Symptoms on ${Sy.withSym30} of ${Sy.logged30} logged days${Sy.usualText ? `, ${lower1(nowText)}, against a usual of ${lower1(Sy.usualText)}` : ""}. ${rows.map((x) => `${x.name} on ${plural(x.days, "day")}`).join(", ")}.`;
-    const alarm = `<aside class="jr-alarm"><span class="jr-alarm-k">When to see a clinician</span><p>Blood, black or tar-like stools, a fever, vomiting that won’t stop, weight loss, or waking at night to go: talk to your primary care clinician first.</p></aside>`;
     return shell("symptoms", {
       kicker: "Symptoms", meta: lastN(days), lede,
       fig: svg(ctx, yA + 4, aria, b),
-      cap: capT(`Symptoms by day, last ${n} days`),
+      cap: capT(`Symptoms by day, ${lastOf(n, "day")}`),
       foot: alarm
     });
   }
@@ -651,13 +657,14 @@
     }
     /* the last check-in is the latest week answered on any question */
     const answered = Q.filter((q) => q.latest), lw = Math.max(...answered.map((q) => q.latest.w));
-    const lastLabel = answered.find((q) => q.latest.w === lw).latest.label;
     const read = Q.filter((q) => q.cmp), same = read.filter((q) => q.cmp.k === "same");
     let lede;
-    if (!read.length) lede = `Your last check-in was the ${e(lower1(lastLabel))}; Florin reads each answer against ${mk("your first weeks", "usual")} once they’re in.`;
-    else if (same.length === read.length) lede = `On your last check-in, ${e(lower1(lastLabel))}, ${read.length === 1 ? "your answer" : `all ${read.length} answers`} sat ${mk("about the same as your first weeks", "usual")}.`;
-    else if (!same.length) lede = `On your last check-in, ${e(lower1(lastLabel))}, ${read.length === 1 ? "your answer" : `all ${read.length} answers`} ${mk("moved from your first weeks", "shift")}.`;
-    else lede = `On your last check-in, ${e(lower1(lastLabel))}, ${same.length} of ${read.length} answers sat ${mk("about the same as your first weeks", "usual")}.`;
+    const lastWhen = answered.find((q) => q.latest.w === lw).latest.when;
+    /* before the first three there is nothing to read against: the check-in is saved, and said so */
+    if (!read.length) lede = `${C.count === 1 ? "Your first check-in" : "Your last check-in"}, ${e(lastWhen)}, is saved; once you have ${["one", "two", "three", "four", "five"][C.baseWeeks - 1] || C.baseWeeks}, Florin reads each answer against ${mk("your first weeks", "usual")}.`;
+    else if (same.length === read.length) lede = `On your last check-in, ${e(lastWhen)}, ${read.length === 1 ? "your answer" : `all ${read.length} answers`} sat ${mk("about the same as your first weeks", "usual")}.`;
+    else if (!same.length) lede = `On your last check-in, ${e(lastWhen)}, ${read.length === 1 ? "your answer" : `all ${read.length} answers`} ${mk("moved from your first weeks", "shift")}.`;
+    else lede = `On your last check-in, ${e(lastWhen)}, ${same.length} of ${read.length} answers sat ${mk("about the same as your first weeks", "usual")}.`;
     const nw = Q[0].weeks.length, PW = W - 92, X = lin(0, nw - 1, 8, PW - 8), Y = (v) => 40 - v * 10;
     const rowsH = Q.map((q, qi) => {
       let body = "";
@@ -678,7 +685,8 @@
       const chip = q.cmp ? `<span class="jr-tag jr-tag--${q.cmp.k === "same" ? "usual" : "shift"}">${e(q.cmp.text)}</span>` : "";
       return `<div class="jr-ck-row"><div class="jr-ck-h"><span class="jr-ck-l">${e(q.label)}</span>${chip}</div>${svg(ctx, 46, null, body)}</div>`;
     }).join("");
-    const axis = svg(ctx, 14, null, tx(X(0), 10, up(shortWeek(Q[0].weeks[0].label)), "t3") + tx(PW - 8, 10, up(shortWeek(Q[0].weeks[nw - 1].label)), "t3", "end"));
+    /* the weeks' axis: the first week and the latest, or the one week when there is only one */
+    const axis = svg(ctx, 14, null, nw > 1 ? tx(X(0), 10, up(shortWeek(Q[0].weeks[0].label)), "t3") + tx(PW - 8, 10, up(shortWeek(Q[0].weeks[nw - 1].label)), "t3", "end") : tx(X(0), 10, up(shortWeek(Q[0].weeks[0].label)), "t3"));
     const aria = Q.map((q) => `${q.label}: ${q.latest ? q.opts[q.latest.v] : "not answered"}${q.cmp ? `, ${lower1(q.cmp.text)}` : ""}`).join(". ") + ".";
     return shell("checkin", {
       kicker: "Weekly check-in", meta: `${plural(nw, "week")}`, lede,

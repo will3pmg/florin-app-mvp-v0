@@ -7,6 +7,7 @@
      the full survey, the Easy version), across the three people and both themes
    - with the check-in off, no screen may mention it
    - tap targets under 44px inside the phone, at 390 wide where the app fills the screen at full size
+   - the BM tiles' words on one line at 360, 375 and 390, and Read the note clear of the phone from 760 to 1019 wide
    - em dashes and exclamation points in any user-facing string in the source, modules included */
 const { chromium } = require("playwright");
 const path = require("path");
@@ -121,6 +122,46 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
     }
     await ctx.close();
   }
+
+  /* ===== fix-core: the BM tiles' words stay one line at 360, 375 and 390 (plus and Day first's Log a BM card, A and C),
+     and the Read the note button never covers the phone between 760 and 1019 wide ===== */
+  for (const [w, h] of [[360, 780], [375, 812], [390, 844]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const p = await ctx.newPage();
+    p.on("pageerror", (e) => note(`${w} tiles: pageerror: ${e.message}`));
+    await p.goto(PAGE); await p.waitForSelector(".ap-rx"); await p.waitForTimeout(300);
+    for (const form of ["A", "C"]) {
+      for (const home of ["score", "day"]) {
+        await p.evaluate(([f, hm]) => { const api = window.FLORIN_EXT.api; api.set("form", f); api.set("home", hm); api.open(hm === "day" ? "today" : "plus"); }, [form, home]);
+        await p.waitForTimeout(350);
+        const two = await p.evaluate(() => {
+          const ph = document.querySelector(".rx-stage .ap-rx");
+          const host = ph.querySelector(".ap-o:not(.is-out):last-child") || ph.querySelector(".ap-layer");
+          return [...host.querySelectorAll(".ap-fm--A .ap-fm-w")].filter((x) => { const lh = parseFloat(getComputedStyle(x).lineHeight) || parseFloat(getComputedStyle(x).fontSize) * 1.15; return x.getBoundingClientRect().height > lh * 1.5; }).map((x) => `${x.textContent} ${Math.round(x.getBoundingClientRect().width)}px`);
+        });
+        if (two.length) note(`${w} ${form} ${home === "day" ? "Day first's Log a BM" : "plus"}: a tile's word breaks onto two lines: ${two.join(", ")}`);
+      }
+    }
+    await p.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("home", "score"); api.set("form", "C"); });
+    await ctx.close();
+  }
+  for (const [w, h] of [[1000, 800], [780, 700], [900, 900], [1010, 1000]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const p = await ctx.newPage();
+    await p.goto(PAGE); await p.waitForSelector(".ap-rx"); await p.waitForTimeout(400);
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.evaluate(() => document.querySelector('[data-rx="home"][data-v="day"]').click()); await p.waitForTimeout(400);
+    const j = await p.evaluate(() => {
+      const b = document.querySelector(".rx-jump"), s = document.querySelector(".rx-stage");
+      if (!b || b.hidden) return { shown: false };
+      const r = b.getBoundingClientRect(), q = s.getBoundingClientRect();
+      return { shown: true, hit: !(r.right <= q.left || r.left >= q.right || r.bottom <= q.top || r.top >= q.bottom), r: [Math.round(r.left), Math.round(r.right)], q: [Math.round(q.left), Math.round(q.right)] };
+    });
+    if (j.shown && j.hit) note(`${w}x${h}: Read the note covers the phone (button ${j.r.join(" to ")}, stage ${j.q.join(" to ")})`);
+    await p.evaluate(() => document.querySelector('[data-rx="home"][data-v="score"]').click());
+    await ctx.close();
+  }
+  /* ===== end fix-core ===== */
 
   /* em dashes and exclamation points in the source strings: the core files and every module */
   const files = fs.readdirSync(path.resolve(__dirname, "../prototype/js")).filter((f) => /^refresh-.*\.js$/.test(f));

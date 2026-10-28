@@ -461,7 +461,8 @@
         st.saved = true;
         pop({ instant: true, focusId: e.id });
         renderTab(true);
-        const signs = L.alarmsIn(e.note), sign = signs.length ? L.signText(signs) : null, flagged = L.FLAGS.some(([k]) => e.flags[k]);
+        /* the BM is the stool, so its note is read with the BM net: "It looked like tar" names the sign */
+        const signs = L.alarmsIn(e.note, { bm: true }), sign = signs.length ? L.signText(signs) : null, flagged = L.FLAGS.some(([k]) => e.flags[k]);
         if (flagged || sign) { const fo = push("flag", { flags: Object.assign({}, e.flags), sign: flagged ? null : sign, signs: flagged ? [] : signs, restore }); if (fo) fo.okey = { act: "edit", id: e.id }; }
         else toast(`${edit ? "Saved" : "BM saved"}. ${L.formName(e, S.form)} at ${T(e.t)}${whenTxt(e)}.${res.replacedNoBm ? ` It replaces No BM ${e.d === L.TODAY ? "today" : "for that day"}.` : ""}`, restore);
       },
@@ -958,7 +959,7 @@
       ],
       open: [
         "One line for the day loses meal times, so the later-dinner pattern can't be read from it. Keep the one-meal sheet a tap away for people who want times, or drop times altogether?",
-        M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.withMeal} of ${PR.logged} days, so Insights holds patterns back and offers the food check.` : `With meals every day, ${M.P.name}'s logs find ${PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}. Switch Meal logs to Rough days only to see what happens when people log only when things feel off.`) : "",
+        M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.mealDays} of the ${plural(PR.loggedDays, "day")} logged in the last ${PR.window} days, so Insights holds patterns back and offers the food check.` : `With meals every day, ${M.P.name}'s logs find ${PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}. Switch Meal logs to Rough days only to see what happens when people log only when things feel off.`) : "",
         "Food check: 14 days, one line a day, good days too, then Insights reads it. Membership, or for everyone?"
       ].filter(Boolean),
       res: ["Oura shows a Discovery only after a tag is used about 5 to 40 times.", "Logging only on rough days can make ordinary foods look like triggers: every meal day is a rough day. In testing, Sarah's logs named toast this way."]
@@ -1252,7 +1253,8 @@
   };
   /* a phone screen id (key()) to the row that lights up in the list, or null for a screen the list doesn't have (a
      module's overlay with no row of its own): then no row lights up */
-  const KEY_SCREEN = { "meal-voice": "meal", nobm: "today" };
+  /* Easy's Your weeks stands in for Insights, so it lights the Insights row */
+  const KEY_SCREEN = { "meal-voice": "meal", nobm: "today", "ez-weeks": "insights" };
   const keyToScreen = (k) => {
     const ids = screenGroups().flatMap(([, items]) => items.map(([id]) => id));
     if (ids.includes(k)) return k;
@@ -1302,7 +1304,7 @@
             ["quick", "Plus, then a tile: two taps for a usual BM, saved at the time it's tapped. The BM's header still opens the full form, and a catch-up day always does."],
             ["full", "Plus, then Log a BM, then the form: when, consistency and the details, then Save. Every log carries its time and details, at a tap or two more each time. No tiles on the menu, no one-tap save."]
           ],
-          rec: "Keep the quick tiles, as Will's Oct 14 note asked, and add a When row on the plus card (now, or earlier today) so a log made after the fact isn't saved at the wrong time.",
+          rec: "For Will to confirm: keep the quick tiles, as his Oct 14 note asked, and add a When row to the saved toast (Just now, 30 min ago, 1 hr ago, Earlier), so a late tap keeps the right time without opening the form. Catching up an earlier day and a person's first few BMs still open the form.",
           open: ["Should a person's first two weeks always open the form, while Florin learns their usual, rather than the first 5 BMs?", "A one-tap log has no details: urgency, straining, how long and the flag only come from the form. Enough for the people who need them most?"],
           res: ["Bellyx claims 2 taps; Stool Log, a few.", "Logging from a widget or the watch, without opening the app, is the next step after this."]
         };
@@ -1314,7 +1316,7 @@
         t: "Home: score first, or day first",
         lede: `What Today opens on. Score first leads with FloraScore, then ${P.checkin ? "the check-in when it's due, " : ""}today's entries and the week. Day first leads with today itself: the entries and what to log next, with the score further down.${pending("home", "Score first")}`,
         opts: [
-          ["score", "As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence about the day."],
+          ["score", "As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence that leads with what stood out today, ranked as Day first ranks it: a flag as the Teal note, then a shift from the usual, then symptoms by strength."],
           ["day", "Today's timeline and a quick way to log first, then FloraScore and the week. For people who mostly open the app to log."]
         ],
         rec: "Score first. It ties Florin to the score people know from Oura (Will, Oct 14). Day first is worth testing with people who log several times a day.",
@@ -1365,7 +1367,7 @@
             ["detailed", "Each meal with its time, so dinner times count. Same as yesterday and recent foods are one tap each."]
           ],
           rec: "Quick, since people log meals when things feel off (Will, Oct 14), with the one-meal sheet a tap away for people who want times. Meal logs on the left shows what rough-day-only logging does to patterns.",
-          open: [M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.withMeal} of ${plural(PR.logged, "day")}, under ${Math.round(L.MEAL_COVER * 100)}%, so Insights holds patterns back and offers the ${L.FOOD_CHECK_DAYS}-day food check.` : `With these meal logs, ${M.P.name}'s logs show ${plural(PR.found.length, "possible pattern")}.`) : `Patterns wait for a food to come up 5 times in ${L.PATTERN_DAYS} days.`, "Keep meal times at all, or drop them with the one-meal sheet?"],
+          open: [M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.mealDays} of the ${plural(PR.loggedDays, "day")} logged in the last ${PR.window} days, under ${Math.round(L.MEAL_COVER * 100)}%, so Insights holds patterns back and offers the ${L.FOOD_CHECK_DAYS}-day food check.` : `With these meal logs, ${M.P.name}'s logs show ${plural(PR.found.length, "possible pattern")}.`) : `Patterns wait for a food to come up 5 times in ${L.PATTERN_DAYS} days.`, "Keep meal times at all, or drop them with the one-meal sheet?"],
           res: ["Oura shows a Discovery only after a tag is used about 5 to 40 times."]
         };
       }
@@ -1420,6 +1422,27 @@
   ];
   const DEC = {};
   DECISIONS.forEach((D) => (DEC[D.k] = D));
+  /* a decision another one draws over: with the Easy version on, the phone draws Easy's own Today in Easy read, so
+     Home and Data style are picked but not what the phone shows. Its line sits under the row in the left bar, and the
+     note badges the option Picked; Easy draws its own. (Easy keeps BM logging, Meal sheet and History.) */
+  const SHADOWED = {
+    home: { on: () => P.easy === true, line: "The Easy version draws its own Today, so this shows when Easy is off.", badge: "Picked; Easy draws its own" },
+    look: { on: () => P.easy === true, line: "The Easy version draws Easy read, so this shows when Easy is off.", badge: "Picked; Easy draws its own" }
+  };
+  const shadowOf = (k) => (SHADOWED[k] && SHADOWED[k].on() ? SHADOWED[k] : null);
+  /* where each decision shows on the phone, for the note's Show it on the phone: the decisions that show on most
+     screens (Consistency, the check-in, Data style, Version) have none */
+  const SHOWN_ON = {
+    home: { open: "today", here: (S, t) => !t && S.tab === "today" },
+    history: { open: "history", here: (S, t) => !t && S.tab === "history" },
+    bmUI: { open: "plus", here: (S, t) => !!t && ["plus", "bm", "earlier"].includes(t.type) },
+    mealUI: { open: "meal", here: (S, t) => !!t && t.type === "meal" }
+  };
+  const showFor = (k) => {
+    const w = SHOWN_ON[k];
+    if (!w || !P.ph || shadowOf(k)) return null;
+    return w.here(P.ph.S, P.ph.top()) ? null : w.open;
+  };
 
   /* ====================================================================== */
   /* THE PAGE                                                                */
@@ -1452,6 +1475,7 @@
       <span class="rx-ctl-l" id="rxd-${D.k}">${esc(D.label)}</span>
       <div class="${D.chips ? "rx-chips" : "rx-seg"}" role="group" aria-labelledby="rxd-${D.k}">${btns(D.k, D.opts, P[D.k])}</div>
       <button type="button" class="rx-info" data-rx="dinfo" data-v="${D.k}" aria-pressed="false" aria-label="About ${esc(D.label)}">${ic("info")}</button>
+      ${SHADOWED[D.k] ? `<p class="rx-small rx-dec-shadow" data-shadow="${D.k}" hidden></p>` : ""}
     </div>`;
   const MEAL_SHORT = { rough: "Rough days" };
   const demoHTML = () => `
@@ -1477,10 +1501,14 @@
     ? `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${esc(id)}" disabled><span>${esc(l)}</span><em>Check-in is off</em></button></li>`
     : `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${esc(id)}">${esc(l)}</button></li>`).join("")}</ol></li>`).join("");
 
+  /* the page's companions: the decisions deck and the data looks library, each its own artifact */
+  const DECK_URL = "https://claude.ai/artifact/2h5ikADR2eFCY1DZYbJEJU", LOOKS_URL = "https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL";
   mount.innerHTML = `
+    <a class="rx-skip" href="#rxStage" data-rx="skip">Skip to the phone</a>
     <header class="rx-head">
       <div class="rx-head-t"><p class="rx-eyebrow">Florin app refresh · Third pass · Oct 27</p><h1>The app, with the open decisions as toggles</h1></div>
-      <p class="rx-lede">Today's app, the one that ships without hardware. Each open decision is a toggle on the left: change one and the phone changes with it, and the notes say what it decides.</p>
+      <div class="rx-head-r"><p class="rx-lede">Today's app, the one that ships without hardware. Each open decision is a toggle on the left: change one and the phone changes with it, and the notes say what it decides.</p>
+      <p class="rx-head-links"><a href="${DECK_URL}" target="_blank" rel="noopener">The decisions, as slides</a><a href="${LOOKS_URL}" target="_blank" rel="noopener">The data looks library</a></p></div>
     </header>
     <div class="rx-main">
       <aside class="rx-side rx-side--l" id="rxLeft" aria-label="Toggles"></aside>
@@ -1527,8 +1555,8 @@
   }
   function onNav(k) {
     if (!P.ph) return; /* still being built */
-    /* a decision's note stays up until the phone moves to another screen */
-    if (k !== P.key) P.dec = null;
+    /* a decision's note stays up until the phone moves to another screen (but not when the note itself showed it) */
+    if (k !== P.key && !P.keepDec) P.dec = null;
     P.key = k;
     notes();
     syncNav();
@@ -1594,13 +1622,18 @@
     const opts = N.opts && N.opts.length ? `<h3 class="rx-h3">The options</h3><ul class="rx-opts">${N.opts.map(([v, text, label]) => {
       const o = D && D.opts.find(([x]) => x === v), on = !!D && P[D.k] === v;
       /* On the phone only for an option the phone draws; one still to be drawn is Picked */
-      return `<li${on ? ' class="is-on"' : ""}><b>${esc(label || (o ? o[1] : String(v)))}${on ? `<span class="rx-on">${drawn(D.k, v) ? "On the phone" : "Picked"}</span>` : ""}</b><span>${esc(text)}</span></li>`;
+      const sh = on && shadowOf(D.k);
+      return `<li${on ? ' class="is-on"' : ""}><b>${esc(label || (o ? o[1] : String(v)))}${on ? `<span class="rx-on">${sh ? sh.badge : drawn(D.k, v) ? "On the phone" : "Picked"}</span>` : ""}</b><span>${esc(text)}</span></li>`;
     }).join("")}</ul>` : "";
+    /* the option shows on another screen: one tap takes the phone there, and this note stays up */
+    const show = dec ? showFor(P.dec) : null;
+    const showB = show ? `<button type="button" class="rx-btn rx-note-show" data-rx="show" data-v="${esc(show)}">${ic("chev")}Show it on the phone</button>` : "";
     notesPanel.innerHTML = `<article class="rx-note${dec ? " rx-note--dec" : ""}">
         <p class="rx-eyebrow">${dec ? "Decision" : "On the phone now"}</p>
         <h2 id="rxNoteH" tabindex="-1">${esc(N.t || "")}</h2>
         ${N.lede ? `<p class="rx-note-lede">${esc(N.lede)}</p>` : ""}
         ${opts}
+        ${showB}
         ${N.rec ? `<h3 class="rx-h3">Recommended</h3><p class="rx-rec">${esc(N.rec)}</p>` : ""}
         ${N.ba && N.ba.length ? `<h3 class="rx-h3">Was, now</h3><ul class="rx-ba">${N.ba.map(([a, b]) => `<li><s>${esc(a)}</s><b>${esc(b)}</b></li>`).join("")}</ul>` : ""}
         ${list("To decide", "rx-q", N.open)}
@@ -1614,8 +1647,12 @@
     const tl = mount.querySelector("[data-time]");
     if (tl) tl.textContent = timeLine();
   }
+  /* the lit row names what the phone draws (it matches the note, which reads P.key); a screen the list has no row for
+     lights the row the page opened, while the phone is still on it */
   function syncNav() {
-    const cur = keyToScreen(P.key);
+    const cur = keyToScreen(P.key) || (P.row && P.key === P.rowKey ? P.row : null);
+    /* the row the page opened last, for the checks (behave.js walks the list with the arrow keys) */
+    navPanel.dataset.row = P.row || "";
     mount.querySelectorAll('[data-rx="screen"]').forEach((b) => b.setAttribute("aria-current", String(b.dataset.v === cur)));
   }
   function renderNav() { navPanel.querySelector(".rx-nav").innerHTML = screensHTML(); syncNav(); }
@@ -1634,6 +1671,7 @@
     DECISIONS.forEach((D) => mount.querySelectorAll(`[data-rx="${D.k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === String(P[D.k])))));
     ["persona", "data", "meals", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
     mount.querySelectorAll('[data-rx="theme"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === appTheme())));
+    mount.querySelectorAll("[data-shadow]").forEach((el) => { const sh = shadowOf(el.dataset.shadow); el.hidden = !sh; el.textContent = sh ? sh.line : ""; });
     syncFold();
   }
 
@@ -1652,10 +1690,13 @@
   /* the notes sit under the phone between 760 and 1019px: a decision changed up in the bar points down to its note */
   const notesOut = () => { if (isM()) return false; const r = notesPanel.getBoundingClientRect(); return r.top > window.innerHeight - 48 || r.bottom < 48; };
   const toNotes = () => { notesPanel.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); const h = notesPanel.querySelector("#rxNoteH"); if (h) h.focus({ preventScroll: true }); };
+  /* the button sits at the foot of the toggles column, never over the phone or its tab bar */
+  const placeJump = () => { const r = left.getBoundingClientRect(); jump.style.left = `${Math.round(r.left + r.width / 2)}px`; };
   function pointAtNote(D) {
     clearTimeout(jump._t);
     if (!D || !notesOut()) { jump.hidden = true; return; }
     jump.textContent = `Read the note on ${D.label}`;
+    placeJump();
     jump.hidden = false;
     jump._t = setTimeout(() => (jump.hidden = true), 8000);
   }
@@ -1704,9 +1745,19 @@
         else if (P.dec && notesOut()) toNotes();
         break;
       case "dclose": P.dec = null; notes(); break;
+      /* the skip link: focus goes to the phone's first control (the top sheet's, when one is open) */
+      case "skip": {
+        e.preventDefault();
+        const all = [...P.ph.el.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')];
+        const first = all.find((x) => !x.closest("[inert]") && x.getClientRects().length);
+        if (first) first.focus();
+        break;
+      }
+      case "show": closeSheet(); jump.hidden = true; P.keepDec = true; try { P.ph.open(v); } finally { P.keepDec = false; } notes(); syncNav(); break;
       case "jump": jump.hidden = true; toNotes(); break;
       case "fold": P.demoOpen = !P.demoOpen; store.set("demoOpen", P.demoOpen); syncFold(); sizeSides(); break;
-      case "screen": closeSheet(); jump.hidden = true; P.ph.open(v); scrollToStage(); break;
+      /* a row picked from the list always shows that screen's note, even when the phone is already on it */
+      case "screen": closeSheet(); jump.hidden = true; P.dec = null; P.row = v; P.ph.open(v); P.rowKey = P.key; notes(); syncNav(); scrollToStage(); break;
       case "persona": case "data": case "meals": P.ph.set(k, v); break;
       case "plan": setPlan(v); break;
       case "theme": P.themeSet = v; P.ph.set("theme", v); break;
@@ -1723,8 +1774,24 @@
     const from = e.target, free = from === document.body || from === document.documentElement || (from.closest && from.closest(".rx-panel--nav"));
     if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !isM() && free && !e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
       const flat = screenGroups().flatMap(([, items]) => items.map(([id]) => id)).filter((id) => !offScreen(id));
-      const i = Math.max(0, flat.indexOf(keyToScreen(P.key)));
-      P.ph.open(flat[(i + (e.key === "ArrowRight" ? 1 : -1) + flat.length) % flat.length]);
+      /* step from the row the page opened while the phone is still on it ("Log a BM, details filled in" draws the bm
+         screen, which would step back to it), else from the row the phone's screen lights */
+      const at = P.row && P.key === P.rowKey && flat.includes(P.row) ? P.row : keyToScreen(P.key);
+      const i = Math.max(0, flat.indexOf(at));
+      const next = flat[(i + (e.key === "ArrowRight" ? 1 : -1) + flat.length) % flat.length];
+      e.preventDefault();
+      P.dec = null; P.row = next;
+      P.ph.open(next);
+      P.rowKey = P.key;
+      notes(); syncNav();
+      /* a screen that puts focus in the phone (a sheet, a chat) would end the walk there: focus goes back to the lit row */
+      const back = () => {
+        if (!P.ph.el.contains(document.activeElement)) return;
+        const lit = navPanel.querySelector('[data-rx="screen"][aria-current="true"]');
+        if (lit) lit.focus({ preventScroll: true });
+      };
+      requestAnimationFrame(() => requestAnimationFrame(back));
+      setTimeout(back, 300);
     }
   });
 
@@ -1751,7 +1818,7 @@
   /* the header settles once the fonts are in, and the phone's room with it */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   let wasM = isM();
-  window.addEventListener("resize", FL.debounce(() => { if (isM() !== wasM) { wasM = isM(); place(); } else fit(); }, 120));
+  window.addEventListener("resize", FL.debounce(() => { if (isM() !== wasM) { wasM = isM(); place(); } else fit(); if (!jump.hidden) placeJump(); }, 120));
   let sideQ = 0;
   window.addEventListener("scroll", () => { if (!sideQ) sideQ = requestAnimationFrame(() => { sideQ = 0; sizeSides(); if (!jump.hidden && !notesOut()) jump.hidden = true; }); }, { passive: true });
 })();

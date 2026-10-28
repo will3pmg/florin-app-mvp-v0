@@ -10,9 +10,11 @@
    - RU.lookOf(V), RU.lookCards(M, V, keys, o) and RU.lookAfter(el), so another module (the Easy version) can draw
      cards in a look through RU
    - EXT.built.look, EXT.decisions.look (the notes for Will), EXT.notes for its screens, EXT.screens, EXT.opens,
-     EXT.keys, EXT.acts and EXT.onSet (theme, look, rebuilds). The acts: a voice meal from a card; idetail and iback,
-     wrapped, so a detail opens on its card's range and Back lands on that card; rlk-week, Today's See the week on
-     Insights; ck-start and ck-tag, wrapped, so tags set on an Oura card reach this week's check-in
+     EXT.keys, EXT.acts and EXT.onSet (theme, look, rebuilds). Oura is dark first: while the phone draws it and the
+     viewer hasn't picked a theme, the module sets the phone dark through api.set (also once at load, for a stored
+     Oura pick), and gives the theme back when the phone stops drawing Oura. The acts: a voice meal from a card;
+     idetail and iback, wrapped, so a detail opens on its card's range and Back lands on that card; rlk-week, Today's
+     See the week on Insights; ck-start and ck-tag, wrapped, so tags set on an Oura card reach this week's check-in
    Copy rules hold here as everywhere: no em or en dashes, no exclamation points, everything read against the
    person's own usual. */
 (function () {
@@ -580,9 +582,47 @@
   /* every option this module draws, as long as its look loaded */
   EXT.built.look = ["rings", "journal", "bento", "oura", "easy"].filter((id) => !!lookById(id));
 
-  /* the page follows the theme without a redraw; a new style draws in; a fresh model forgets the dismissed cards */
+  /* ---------- Oura is dark first: every Oura screen Will sent is dark ----------
+     While the phone draws Oura (so not with the Easy version on, which draws Easy read) and nobody has picked a theme,
+     the phone turns dark through api.set, so the Theme toggle and the Demo summary say Dark too. When it stops drawing
+     Oura, the theme it had comes back, so no other style is left on a dark ground nobody chose. A theme set from
+     anywhere else (the Theme toggle, Profile's chips, the page following the system theme) is the viewer's pick and is
+     kept from then on. Sets before the load ends (the page settling its theme) aren't a pick: nobody can click yet */
+  const TH = { picked: false, mine: null, self: false, booted: false };
+  const themeTo = (api, v) => { TH.self = true; try { api.set("theme", v); } finally { TH.self = false; } };
+  function follow(api) {
+    if (!api || !api.root || TH.picked) return false;
+    const cur = api.root.dataset.theme === "dark" ? "dark" : "light";
+    if (lookIdOf(api.V()) === "oura") {
+      if (cur === "dark") return false;
+      TH.mine = cur;
+      themeTo(api, "dark");
+      return true;
+    }
+    if (!TH.mine) return false;
+    const back = TH.mine;
+    TH.mine = null;
+    if (cur === back) return false;
+    themeTo(api, back);
+    return true;
+  }
+  /* a stored Oura pick: once every page script has run, so the page hears the set and its toggle and summary follow
+     (the page ignores a set made during the phone's first draw) */
+  const boot = () => {
+    TH.booted = true;
+    try { follow(EXT.api); } catch (e) { warn("the phone didn't turn dark for a stored Oura pick", e); }
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+  else setTimeout(boot, 0);
+
+  /* the page follows the theme without a redraw; a new style draws in (Oura on dark first); a fresh model forgets the
+     dismissed cards */
   EXT.onSet.push((k, v, api) => {
-    if (k === "theme") api.root.querySelectorAll(".rlk-look").forEach((n) => n.setAttribute("data-theme", v));
+    if (k === "theme") {
+      if (!TH.self && TH.booted) { TH.picked = true; TH.mine = null; }
+      api.root.querySelectorAll(".rlk-look").forEach((n) => n.setAttribute("data-theme", v));
+    }
+    if (k === "look" || k === "easy") follow(api);
     if ((k === "look" || k === "easy") && (api.S.tab === "today" || (api.S.tab === "insights" && !api.S.ins.k)) && !api.top()) api.renderTab();
     if (k === "persona" || k === "data" || k === "meals") resetMem();
   });
@@ -597,13 +637,16 @@
     easy: [null, "One big number and one plain sentence a card, in large type, with the words written on every picture: the easiest for anyone with reading glasses or little patience for charts.", "Leaves out most of the shape of the data (ranges, day by day), so it's thin as the only style for someone who wants depth."]
   };
   const low = (t) => t.charAt(0).toLowerCase() + t.slice(1);
-  /* ck: the check-in is on, so a note may name it; with it off, nothing in a note does */
-  const optText = (id, ck) => {
+  /* ck: the check-in is on, so a note may name it; with it off, nothing in a note does. ez: the Easy version is on, so
+     picking Oura draws Easy read and leaves the theme alone */
+  const OURA_DARK = "Picking it turns the phone dark, as Oura's own screens are, unless a theme has been picked; Theme, under Demo, shows it on light too.";
+  const optText = (id, ck, ez) => {
     const g = GOOD_BAD[id];
     if (!g) return "";
     const what = g[0] || (lookById(id) && lookById(id).idea) || "";
+    const dark = id === "oura" ? ` ${ez ? `With the Easy version off, ${low(OURA_DARK)}` : OURA_DARK}` : "";
     const good = id === "oura" && ck ? `${g[1]} On Insights, the week asks about a shifted day with the check-in's tags.` : g[1];
-    return `${what} Good at: ${low(good)} Less good: ${low(g[2])}`;
+    return `${what}${dark} Good at: ${low(good)} Less good: ${low(g[2])}`;
   };
   const recOf = (ck) => `Ours, for Will to confirm: Oura's arc and Contributors for Today and FloraScore; Field journal's straight-axis figures for the detail pages; Easy read as the larger-text setting, which the Easy version uses whatever is picked here. One style for the data cards on a screen, never two; the timeline${ck ? ", the check-in card" : ""} and the next step stay the app's own. In every style Plum is your usual (Ray on dark), Gold a shift and Teal context; no red, no green.`;
   /* what the free plan keeps in a style, said with or without the check-in */
@@ -614,7 +657,7 @@
     return {
       t: "Data style",
       lede: `How the numbers are drawn on Today and Insights. In a style, Insights is that look's cards in order (the score, its parts, the trend, the week, the month, timing, how often, form, symptoms${ck ? ", the check-in" : ""} and patterns), each with a link to its detail, and Today's FloraScore and week are its score and week cards. Every card is drawn from the phone's own logs, so a BM logged here redraws it. Detail pages stay as built, with one new page, Your days, behind the week and the month cards. On the phone: As built, ${drawnList.join(", ")}.${P && P.easy ? " The Easy version is on, so the phone draws Easy read whatever is picked here." : ""}`,
-      opts: ["built", "rings", "journal", "bento", "oura", "easy"].map((id) => [id, optText(id, ck)]),
+      opts: ["built", "rings", "journal", "bento", "oura", "easy"].map((id) => [id, optText(id, ck, !!(P && P.easy))]),
       rec: recOf(ck),
       open: [
         "Oura on Today and the score, Field journal on the details: mix by surface like this, or one style everywhere?",
