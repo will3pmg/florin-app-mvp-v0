@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+.card{height:100%;background:#FDFCF8;border-radius:28px;padding:30px 32px;display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 0 0 2px #E3DFD4}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.top{display:flex;justify-content:space-between;font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;padding-bottom:12px;border-bottom:2px solid #00352B}
+.top b{font-weight:700}
+h1{margin:0;font:400 30px/1.3 Georgia,"Times New Roman",serif}
+.hl{background:linear-gradient(#EDE3C4,#EDE3C4) left 62%/100% 58% no-repeat}
+.big{display:flex;align-items:center;justify-content:space-between}
+.num{font-size:128px;line-height:1;font-weight:300;letter-spacing:-4px}
+.sub{font:24px ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#3E5A52;margin-top:6px}
+svg text{font-family:ui-monospace,Menlo,Consolas,monospace}
+.fig{font:24px ui-monospace,Menlo,Consolas,monospace;color:#3E5A52;padding-top:12px;border-top:2px solid #E3DFD4}
+.fig b{color:#00352B}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.two>div{border-top:2px solid #00352B;padding-top:10px}
+.two .k{font:24px ui-monospace,Menlo,Consolas,monospace;letter-spacing:0;color:#3E5A52}
+.two .v{font-size:52px;font-weight:300;line-height:1.1}
+.note{font:italic 24px/1.35 Georgia,"Times New Roman",serif;color:#3E5A52}
+.go .hl{animation:mark .8s 1.2s ease-out both}
+.go .arc{animation:draw 1.5s .2s cubic-bezier(.3,.7,.2,1) both}
+.go .band,.go .two,.go .fig{animation:fade .6s .9s ease-out both}
+.go .dot{animation:fade .3s 1.6s ease-out both}
+@keyframes mark{from{background-size:0% 58%}}
+@keyframes draw{from{stroke-dashoffset:1}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="card" role="img" aria-label="Field journal look: FloraScore 83 out of 100, a little above the usual range of 74 to 82; this week 83, last week 80">
+  <div class="top"><b>FloraScore</b><span>Sunday, October 11</span></div>
+  <h1>Today sits <span class="hl">a little above your usual range</span> of 74 to 82.</h1>
+  <div class="big">
+    <div><div class="num" data-n="83">83</div><div class="sub">OUT OF 100</div></div>
+    <svg viewBox="0 0 220 220" width="176" height="176" aria-hidden="true">
+      <circle cx="110" cy="110" r="92" fill="none" stroke="#E3DFD4" stroke-width="4"/>
+      <g id="tk" stroke="#8A9A94" stroke-width="2"></g>
+      <path id="bd" class="band" fill="none" stroke="#C9B7C2" stroke-width="16"/>
+      <path id="ac" class="arc" fill="none" stroke="#00352B" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="0"/>
+      <circle id="dt" class="dot" r="8" fill="#00352B"/>
+    </svg>
+  </div>
+  <div class="fig"><b>Fig. 1</b>&nbsp; Today, out of 100</div>
+  <div class="two">
+    <div><div class="k">THIS WEEK</div><div class="v" data-n="83">83</div><div class="k">+3 ON LAST WEEK</div></div>
+    <div><div class="k">LAST WEEK</div><div class="v" data-n="80">80</div><div class="k">AVERAGE</div></div>
+  </div>
+  <div class="note">FloraScore compares you with you. It isn’t a medical score.</div>
+</div>
+<script>
+/* Sarah today: 83, usual range 74 to 82; this week's average 83, last week's 80 (L.score, L.scoreUsual, L.scoreMoved) */
+var P=function(f,r){var a=f*2*Math.PI;return[(110+r*Math.sin(a)).toFixed(1),(110-r*Math.cos(a)).toFixed(1)]};
+function arc(a,b,r){var p=P(a,r),q=P(b,r);return'M'+p+'A'+r+','+r+' 0 '+(b-a>.5?1:0)+' 1 '+q}
+document.getElementById('ac').setAttribute('d',arc(0,.83,92));
+document.getElementById('bd').setAttribute('d',arc(.74,.82,84));
+var d=P(.83,92),dt=document.getElementById('dt');dt.setAttribute('cx',d[0]);dt.setAttribute('cy',d[1]);
+var tk=document.getElementById('tk'),h='';for(var i=0;i<20;i++){var o=P(i/20,104),n=P(i/20,i%5?98:94);h+='<line x1="'+o[0]+'" y1="'+o[1]+'" x2="'+n[0]+'" y2="'+n[1]+'"/>'}tk.innerHTML=h;
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1300);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html>

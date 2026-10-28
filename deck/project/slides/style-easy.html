@@ -1,0 +1,156 @@
+<section id="style-easy" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:32px;">
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Data styles · 6 of 6</p>
+    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Data style: Easy read</h2>
+  </div>
+  <x-embed style="position:absolute; left:128px; top:280px; width:536px; height:640px;"><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Easy read: FloraScore</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+p{margin:0}
+.card{height:100%;background:#FFFFFD;border-radius:32px;padding:28px;display:flex;flex-direction:column;gap:24px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+.t{font-size:32px;line-height:1.2;font-weight:500}
+.side{font-size:26px;line-height:1.3;color:#36544C}
+.ring{position:relative;width:272px;height:272px;margin:0 auto;flex:none}
+.ring svg{display:block;width:100%;height:100%;overflow:visible}
+.trk{fill:none;stroke:rgba(0,55,44,.09)}
+.utrk{fill:none;stroke:rgba(0,55,44,.09);stroke-width:2}
+.ub{fill:none;stroke:#4F2641;stroke-width:10;stroke-linecap:round}
+.ue{stroke:#4F2641;stroke-width:3;stroke-linecap:round}
+.arc{fill:none;stroke:#00352B;stroke-linecap:round}
+.end{fill:#C2A64B;stroke:#FFFFFD;stroke-width:4}
+.edge{fill:none;stroke:#695612;stroke-width:2}
+.c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+.n{font-size:88px;line-height:1;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.u{font-size:24px;line-height:1.25;font-weight:500;color:#4F2641}
+.ans{font-size:34px;line-height:1.25}
+.dot{display:inline-block;vertical-align:.06em;width:22px;height:22px;margin-right:16px;border-radius:50%;background:#C2A64B;box-shadow:inset 0 0 0 2px #695612}
+.note{font:24px/1.5 Georgia,"Times New Roman",serif;color:#36544C}
+.go .card>*{animation:rise .45s cubic-bezier(.2,.7,.1,1) both}
+.go .card>:nth-child(2){animation-delay:60ms}
+.go .card>:nth-child(3){animation-delay:120ms}
+.go .card>:nth-child(4){animation-delay:180ms}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="card" role="img" aria-label="Easy read look: FloraScore 83 today in one big ring, your usual 74 to 82 written inside it and drawn on its outer edge, and the plain sentence A little above your usual range">
+  <div class="h"><p class="t">FloraScore</p><p class="side">Sunday, October 11</p></div>
+  <div class="ring">
+    <svg id="ch" viewBox="0 0 240 240" aria-hidden="true"></svg>
+    <div class="c" aria-hidden="true"><b class="n">83</b><span class="u">Your usual<br>74 to 82</span></div>
+  </div>
+  <p class="ans"><i class="dot" aria-hidden="true"></i>A little above your usual range.</p>
+  <p class="note">FloraScore compares you with you. It isn’t a medical score, and a lower number isn’t a diagnosis.</p>
+</div>
+<script>
+/* Sarah today (C, 12 weeks, every meal), from FLD.build: FloraScore 83, usual range 74 to 82, "A little above your usual
+   range". The ring is look-easy's own: one track, the score from 12 o'clock, the usual as a band with end ticks outside it */
+var V=83,U=[74,82],C=120,R=90,SW=22,RU=114,ns='http://www.w3.org/2000/svg',ch=document.getElementById('ch');
+var pol=function(r,f){return[(C+r*Math.sin(f*2*Math.PI)).toFixed(1),(C-r*Math.cos(f*2*Math.PI)).toFixed(1)]};
+function arc(r,a,b){var p=pol(r,a),q=pol(r,b);return'M'+p+'A'+r+','+r+' 0 '+(b-a>.5?1:0)+' 1 '+q}
+function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);ch.appendChild(e);return e}
+el('circle',{cx:C,cy:C,r:R,'class':'trk','stroke-width':SW});
+el('circle',{cx:C,cy:C,r:RU,'class':'utrk'});
+el('path',{d:arc(RU,U[0]/100,U[1]/100),'class':'ub'});
+U.forEach(function(u){var a=pol(RU-9,u/100),b=pol(RU+9,u/100);el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],'class':'ue'})});
+el('path',{d:arc(R,0,V/100),'class':'arc','stroke-width':SW});
+var e=pol(R,V/100);el('circle',{cx:e[0],cy:e[1],r:14,'class':'end'});el('circle',{cx:e[0],cy:e[1],r:11,'class':'edge'});
+var B=document.body,Rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function play(){if(Rm)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html></x-embed>
+  <x-embed style="position:absolute; left:696px; top:280px; width:536px; height:640px;"><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Easy read: this week</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+p,ol,ul{margin:0;padding:0;list-style:none}
+.card{height:100%;background:#FFFFFD;border-radius:32px;padding:28px;display:flex;flex-direction:column;gap:20px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+.t{font-size:32px;line-height:1.2;font-weight:500}
+.side{font-size:26px;line-height:1.3;color:#36544C}
+.lead{display:flex;flex-direction:column;gap:14px}
+.big{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+.n{font-size:88px;line-height:1;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.unit{font-size:28px;line-height:1.3}
+.ans{font-size:34px;line-height:1.25}
+.dot{display:inline-block;vertical-align:.06em;width:22px;height:22px;margin-right:16px;border-radius:50%;background:#C2A64B;box-shadow:inset 0 0 0 2px #695612}
+.row{display:grid;grid-template-columns:repeat(7,1fr)}
+.day{display:flex;flex-direction:column;align-items:center;gap:10px}
+.k,.now{font-size:24px;line-height:1.2;font-weight:500;white-space:nowrap}
+.c{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;font-size:26px;line-height:1;font-weight:500;font-variant-numeric:tabular-nums}
+.is-usual{background:#4F2641;color:#F9F7F2}
+.is-shift{background:#C2A64B;color:#00352B;box-shadow:inset 0 0 0 2px #695612}
+.is-none{box-shadow:inset 0 0 0 2px #6A837C}
+.gr{display:flex;flex-direction:column;gap:12px}
+.gr li{display:flex;align-items:flex-start;gap:14px;font-size:24px;line-height:1.35}
+.gr .c{width:30px;height:30px;margin-top:1px}
+.gr b{font-weight:500}
+.go .card>*{animation:rise .45s cubic-bezier(.2,.7,.1,1) both}
+.go .card>:nth-child(2){animation-delay:60ms}
+.go .card>:nth-child(3){animation-delay:120ms}
+.go .card>:nth-child(4){animation-delay:180ms}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="card" role="img" aria-label="Easy read look, this week: 4 of 6 days within your usual. Seven day circles, Monday 5 to today the 11th: within your usual on Monday, Tuesday, Saturday and today, outside your usual on Wednesday and Friday, Thursday not logged">
+  <div class="h"><p class="t">This week</p><p class="side">Oct 5 to today</p></div>
+  <div class="lead">
+    <p class="big"><b class="n">4</b><span class="unit">of 6 days within your usual</span></p>
+    <p class="ans"><i class="dot" aria-hidden="true"></i>Outside your usual on Wednesday and Friday.</p>
+  </div>
+  <ol class="row" id="row" aria-hidden="true"></ol>
+  <ul class="gr" aria-hidden="true">
+    <li><i class="c is-usual"></i><span><b>Within your usual:</b> Mon, Tue, Sat and today</span></li>
+    <li><i class="c is-shift"></i><span><b>Outside your usual:</b> Wed and Fri</span></li>
+    <li><i class="c is-none"></i><span><b>Not logged:</b> Thu</span></li>
+  </ul>
+</div>
+<script>
+/* Sarah's week (C, 12 weeks, every meal), from FLD.build, days[7]: Oct 5 to 11. Wednesday's first BM came at 8:55 AM,
+   after her usual 7:15 to 8:45 AM; on Friday one BM was firmer than her usual forms; Thursday has no logs */
+var W=[['Mon',5,'usual'],['Tue',6,'usual'],['Wed',7,'shift'],['Thu',8,'none'],['Fri',9,'shift'],['Sat',10,'usual'],['Sun',11,'usual',1]],h='';
+W.forEach(function(d){h+='<li class="day"><span class="k">'+d[0]+'</span><span class="c is-'+d[2]+'">'+d[1]+'</span>'+(d[3]?'<span class="now">Today</span>':'')+'</li>'});
+document.getElementById('row').innerHTML=h;
+var B=document.body,Rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function play(){if(Rm)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html></x-embed>
+  <div style="position:absolute; left:1296px; top:280px; width:496px; height:640px; display:flex; flex-direction:column; gap:28px;">
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">THE IDEA</p>
+      <p style="font-size:28px; line-height:1.4;">One question a card: the number big, one plain sentence, and one picture with its words on it.</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">STRENGTH</p>
+      <p style="font-size:28px; line-height:1.4;">Nothing to decode: large type, main text in full-strength ink, and every colour comes with its word.</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">COST</p>
+      <p style="font-size:28px; line-height:1.4;">Less to explore: counts replace lines over time, so how a month moved is harder to see.</p>
+    </div>
+  </div>
+  <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
+    <p style="font-size:24px; color:#3E5A52;">Florin app refresh · Decisions · Oct 27</p>
+    <p style="font-size:24px; color:#3E5A52;">19</p>
+  </div>
+  <aside>Easy read is the look made for a 70-year-old with reading glasses, a slight tremor and little patience for charts. Every card asks one question and answers it the same way: a short title, the number big, one plain sentence in large type, and at most one simple picture with its words written on it (a row of day circles, a few thick bars with the count on them, or one big ring). A colour always comes with its word, main text is full-strength ink, with Ink 2 only for secondary lines, and nothing a person has to read is in small caps or mono.
+
+The FloraScore card: one big ring, the only ring in the look, with 83 inside it and “Your usual 74 to 82” written under the number. Her usual is a Plum band with end ticks on the ring’s outer edge; the ring runs to 83 and ends in a Gold dot, because today is a little above her usual range. The sentence says so in words, with the same Gold dot beside it: “A little above your usual range.” Then the plain line that FloraScore compares you with you and isn’t a medical score. The stage two spec drew Easy’s FloraScore as a number with no arcs; the look keeps this one ring, with its words written inside it.
+
+The week card: “This week, Oct 5 to today”, 4 of 6 days within her usual, and “Outside your usual on Wednesday and Friday.” Seven day circles with the date inside: Plum for within her usual (Monday, Tuesday, Saturday and today), Gold for outside it (Wednesday, when her first BM came at 8:55 AM, after her usual 7:15 to 8:45 AM window, and Friday, when one BM was firmer than her usual forms), and a thin outline for Thursday, which has no logs: a gap, never a zero. The words under the circles name every state on show, so Gold never stands alone. Today’s circle is Plum while the FloraScore’s dot is Gold: the day itself sat within her usual, and the score, which blends her last 3 logged days, sits a point above her usual range.
+
+Motion: in the app each part of a card fades and rises in once, a step apart, with no sweeps and no counting. The slide plays it the same way.
+
+Strength: nothing to decode, for anyone who turns on larger text and simpler screens. Cost, our read: counts in words stand in for lines over time, so how a month moved is harder to see; that stays on the standard screens.
+
+Sources: the model at commit 75cf4f8 (FLD.build for Sarah in C, 12 weeks, every meal) and look-easy.js in the data looks library, https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
+</section>

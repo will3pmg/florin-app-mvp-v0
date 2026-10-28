@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Bento: this week</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+.tile{height:100%;background:#FFFEFB;border-radius:32px;padding:28px;box-shadow:inset 0 0 0 2px #E6E2D8;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;justify-content:space-between;font:24px ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;color:#3E5A52}
+h1{margin:0;font:400 30px/1.3 Georgia,"Times New Roman",serif}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;flex:1}
+.d{display:flex;flex-direction:column;align-items:center;gap:10px}
+.p{flex:1;width:100%;border-radius:30px;display:flex;flex-direction:column-reverse;align-items:center;padding:16px 0;gap:10px;transform-origin:bottom}
+.p i{width:14px;height:14px;border-radius:50%}
+.u{background:#EFE7EA;box-shadow:inset 0 0 0 2px #C9B7C2}.u i{background:#4F2641}
+.s{background:#C2A64B}.s i{background:#00352B}
+.n{background:#FFFEFB;box-shadow:inset 0 0 0 2px #8A9A94}
+.t{box-shadow:inset 0 0 0 2px #C9B7C2,0 0 0 4px #FFFEFB,0 0 0 7px #00352B}
+.l{font-size:24px;color:#3E5A52}.l b{color:#00352B;font-weight:600}
+.lg{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:24px;color:#3E5A52}
+.lg i{display:inline-block;width:20px;height:20px;border-radius:6px;margin-right:8px;vertical-align:-3px}
+.go .p{animation:fill .7s cubic-bezier(.2,.8,.2,1) both}
+.go .p i{animation:fade .3s both}
+.go h1{animation:fade .6s 1.3s both}
+@keyframes fill{from{transform:scaleY(.05);opacity:.2}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="tile" role="img" aria-label="Bento look: this week as seven day tiles. On 4 of 6 logged days the BMs were within the usual, on 2 they shifted, and Thursday has no logs">
+  <div class="top"><span>This week</span><span>Oct 5 to Oct 11</span></div>
+  <h1>On 4 of 6 logged days, your BMs were within your usual. On 2, they shifted.</h1>
+  <div class="wk" id="wk"></div>
+  <div class="lg"><span><i style="background:#EFE7EA;box-shadow:inset 0 0 0 2px #C9B7C2"></i>Within your usual</span><span><i style="background:#C2A64B"></i>Shifted</span><span><i style="box-shadow:inset 0 0 0 2px #8A9A94"></i>No logs</span><span><i style="width:14px;height:14px;border-radius:50%;background:#4F2641;vertical-align:0"></i>One dot per BM</span></div>
+</div>
+<script>
+/* Sarah's week from L.span(7) in C: each day's state and its BM count; Thursday was not logged; Sunday is today */
+var W=[['Mon','u',1],['Tue','u',2],['Wed','s',1],['Thu','n',0],['Fri','s',2],['Sat','u',1],['Today','u',1]],h='';
+W.forEach(function(d,i){var dots='';for(var k=0;k<d[2];k++)dots+='<i style="animation-delay:'+(.5+i*.1+k*.1).toFixed(2)+'s"></i>';
+ h+='<div class="d"><div class="p '+d[1]+(i===6?' t':'')+'" style="animation-delay:'+(i*.09).toFixed(2)+'s">'+dots+'</div><div class="l">'+(i===6?'<b>Today</b>':d[0])+'</div></div>'});
+document.getElementById('wk').innerHTML=h;
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html>

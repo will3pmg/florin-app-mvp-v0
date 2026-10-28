@@ -1,0 +1,46 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-10-27T23:11:00Z" },
+  "lists": "css",
+  "title": "Florin app decisions",
+  "order": [
+    "cover",
+    "howto",
+    "glance",
+    "consistency",
+    "bmlog",
+    "meals",
+    "checkin",
+    "home",
+    "history",
+    "onboarding",
+    "profile",
+    "easy",
+    "ask",
+    "style-built",
+    "style-rings",
+    "style-journal",
+    "style-bento",
+    "style-oura",
+    "style-easy",
+    "style-pick",
+    "membership",
+    "florascore",
+    "integrations",
+    "messaging",
+    "asks"
+  ],
+  "sections": {
+    "opening": { "description": "What the deck is for, how to use the demo's decision toggles, and every decision at a glance.", "start": "cover" },
+    "logging": { "description": "How people log: consistency words, BM logging, meals and the weekly check-in.", "start": "consistency" },
+    "screens": { "description": "The screens with a choice to make: Home, History, onboarding, Profile, the Easy version and Ask Florin.", "start": "home" },
+    "data-styles": { "description": "One slide per data style, each animated with Sarah's figures from the model, then our pick.", "start": "style-built" },
+    "business": { "description": "The membership line, FloraScore, integrations, messaging before Florin One, and what we need from Will.", "start": "membership" }
+  },
+  "faces": {
+    "lora": { "family": "Lora", "href": "https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" },
+    "dm-sans": { "family": "DM Sans", "href": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300..700&display=swap" },
+    "space-mono": { "family": "Space Mono", "href": "https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" }
+  },
+  "designSystems": []
+}

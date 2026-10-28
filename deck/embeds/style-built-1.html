@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>As built: FloraScore card</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+.card{height:100%;background:#FFFEFB;border-radius:32px;padding:32px;display:flex;flex-direction:column;gap:18px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.top{display:flex;align-items:center;gap:16px}
+.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#3E5A52;text-transform:uppercase}
+h1{margin:0;font:500 34px/1.2 Georgia,"Times New Roman",serif}
+p{margin:0;font-size:24px;line-height:1.35;color:#3E5A52}
+p b{color:#00352B}
+.parts{display:grid;grid-template-columns:1fr 1fr;gap:14px 32px}
+.row{display:flex;justify-content:space-between;font-size:24px;color:#3E5A52}
+.row b{color:#00352B;font-weight:600}
+.tr{height:10px;border-radius:5px;background:#ECE8E0;margin-top:6px;overflow:hidden}
+.fl{height:100%;border-radius:5px;background:#00352B;transform-origin:left center}
+.lg{display:flex;gap:28px;font-size:24px;color:#3E5A52;align-items:center}
+.sw{display:inline-block;width:28px;height:16px;border-radius:4px;vertical-align:-1px;margin-right:8px}
+.go .fl{animation:grow 1.1s cubic-bezier(.2,.7,.2,1) both}
+.go .fl.b{animation-delay:.12s}.go .fl.c{animation-delay:.24s}.go .fl.d{animation-delay:.36s}
+.go .ln{animation:draw 1.8s .4s ease-out both}
+.go .ring{animation:sweep 1.2s ease-out both}
+.go .dot{animation:pop .4s 2.1s ease-out both}
+@keyframes grow{from{transform:scaleX(0)}}
+@keyframes draw{from{stroke-dashoffset:1}}
+@keyframes sweep{from{stroke-dasharray:0 100}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}}
+.dot{transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="card" role="img" aria-label="FloraScore card as built: 83, a little above the usual range of 74 to 82">
+  <div class="top">
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect width="52" height="52" rx="14" fill="#F1EEE6"/><circle cx="26" cy="26" r="13" fill="none" stroke="#DCD7CC" stroke-width="5"/><circle class="ring" cx="26" cy="26" r="13" fill="none" stroke="#00352B" stroke-width="5" pathLength="100" stroke-dasharray="83 100" transform="rotate(-90 26 26)" stroke-linecap="round"/></svg>
+    <span class="k">FloraScore · Today</span>
+  </div>
+  <h1><span data-n="83">83</span>, a little above your usual range</h1>
+  <p>Your usual range is <b>74 to 82</b>. 3 points above last week, on average.</p>
+  <div class="parts">
+    <div><div class="row"><span>Timing</span><b>95</b></div><div class="tr"><div class="fl" style="width:95%"></div></div></div>
+    <div><div class="row"><span>How often</span><b>97</b></div><div class="tr"><div class="fl b" style="width:97%"></div></div></div>
+    <div><div class="row"><span>Form</span><b>94</b></div><div class="tr"><div class="fl c" style="width:94%"></div></div></div>
+    <div><div class="row"><span>Comfort</span><b>93</b></div><div class="tr"><div class="fl d" style="width:93%"></div></div></div>
+  </div>
+  <svg id="ch" viewBox="0 0 472 190" width="100%" height="190" aria-hidden="true"></svg>
+  <div class="lg"><span><i class="sw" style="background:#00352B;height:4px;vertical-align:5px"></i>FloraScore</span><span><i class="sw" style="background:#E8E2E5"></i>Your usual range</span></div>
+</div>
+<script>
+/* Sarah, last 30 days (Sep 12 to Oct 11), from L.scoreSeries in the model; null is Oct 8, a day with no logs */
+var S=[82,79,82,82,86,83,83,80,84,84,70,70,71,85,82,80,78,79,77,81,79,82,82,85,86,83,null,78,83,83],U=[74,82];
+var W=472,H=190,lo=66,hi=90,x=function(i){return 6+i*(W-12)/29},y=function(v){return 6+(hi-v)*(H-12)/(hi-lo)};
+var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg';
+function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);ch.appendChild(e);return e}
+el('rect',{x:0,y:y(U[1]),width:W,height:y(U[0])-y(U[1]),fill:'#E8E2E5',rx:4});
+var d='',pen=false;S.forEach(function(v,i){if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);pen=true});
+el('path',{d:d,fill:'none',stroke:'#00352B','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'ln'});
+el('circle',{cx:x(29),cy:y(83),r:7,fill:'#00352B','class':'dot'});
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1200);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html>

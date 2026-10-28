@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore over time</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+.card{height:100%;background:#FDFCF8;border-radius:28px;padding:30px 32px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 0 0 2px #E3DFD4}
+.top{display:flex;justify-content:space-between;font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;padding-bottom:12px;border-bottom:2px solid #00352B}
+.top b{font-weight:700}
+h1{margin:0;font:400 30px/1.3 Georgia,"Times New Roman",serif}
+.ul{border-bottom:3px solid #8E6E82}
+svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#3E5A52}
+.fig{font:24px ui-monospace,Menlo,Consolas,monospace;color:#3E5A52;padding-top:12px;border-top:2px solid #E3DFD4}
+.fig b{color:#00352B}
+.p{transform-box:fill-box;transform-origin:center}
+.go .ln{animation:draw 2s .3s linear both}
+.go .p{animation:pop .3s ease-out both}
+.go .an{animation:fade .6s 2.4s ease-out both}
+.go .bd{animation:fade .6s ease-out both}
+@keyframes draw{from{stroke-dashoffset:1}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="card" role="img" aria-label="Field journal look: FloraScore over the last 30 days, within the usual range of 74 to 82 on 15 of 29 days, above on 11 and below on 3">
+  <div class="top"><b>FloraScore over time</b><span>30 days</span></div>
+  <h1>Your FloraScore sat <span class="ul">within your usual range</span> on <span data-n="15">15</span> of 29 days.</h1>
+  <svg id="ch" viewBox="0 0 472 340" width="100%" height="340" style="flex:none" aria-hidden="true"></svg>
+  <div class="fig"><b>Fig. 3</b>&nbsp; FloraScore, last 30 days</div>
+</div>
+<script>
+/* Sarah, Sep 12 to Oct 11 (L.scoreSeries, C). null is Oct 8, no logs: a gap, never a zero. Usual range 74 to 82 */
+var S=[82,79,82,82,86,83,83,80,84,84,70,70,71,85,82,80,78,79,77,81,79,82,82,85,86,83,null,78,83,83],U=[74,82];
+var x0=46,x1=340,yt=48,bot=262,lo=66,hi=90,x=function(i){return x0+i*(x1-x0)/29},y=function(v){return yt+(hi-v)*(bot-yt)/(hi-lo)};
+var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg';
+function el(t,a,txt){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;ch.appendChild(e);return e}
+[70,80,90].forEach(function(v){el('line',{x1:x0-6,x2:x1+6,y1:y(v),y2:y(v),stroke:'#E3DFD4','stroke-width':2});el('text',{x:0,y:y(v)+8},v)});
+el('rect',{x:x0-6,y:y(U[1]),width:x1-x0+12,height:y(U[0])-y(U[1]),fill:'#EFE7EA','class':'bd'});
+el('line',{x1:x0-6,x2:x0-6,y1:12,y2:y(U[0]),stroke:'#4F2641','stroke-width':3,'class':'bd'});
+el('text',{x:x0+2,y:24,style:'fill:#4F2641','class':'bd'},'YOUR USUAL, 74 TO 82');
+var d='',pen=false;S.forEach(function(v,i){if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);pen=true});
+el('path',{d:d,fill:'none',stroke:'#93A69F','stroke-width':3,'stroke-linejoin':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'ln'});
+var above=0,below=0;S.forEach(function(v,i){if(v==null)return;var inn=v>=U[0]&&v<=U[1];if(v>U[1])above++;if(v<U[0])below++;
+ el('circle',{cx:x(i),cy:y(v),r:6,fill:inn?'#00352B':'#C2A64B','class':'p',style:'animation-delay:'+(.3+i*2/29).toFixed(2)+'s'})});
+el('circle',{cx:x(29),cy:y(83),r:12,fill:'none',stroke:'#00352B','stroke-width':3,'class':'an'});
+el('line',{x1:x(29),x2:x(29),y1:y(83)-14,y2:62,stroke:'#00352B','stroke-width':2,'class':'an'});
+el('text',{x:x(29)+6,y:54,'text-anchor':'end',style:'fill:#00352B','class':'an'},'TODAY, 83');
+el('text',{x:x(10)-4,y:y(70)+34,'class':'an'},'LOWEST, 70 ON SEP 22');
+el('text',{x:472,y:y(U[1])-10,'text-anchor':'end',style:'fill:#695612','class':'an'},'ABOVE '+above);
+el('text',{x:472,y:y(U[0])+30,'text-anchor':'end',style:'fill:#695612','class':'an'},'BELOW '+below);
+for(var i=0;i<30;i++)el('line',{x1:x(i),x2:x(i),y1:bot+44,y2:bot+(i%7===0?56:50),stroke:'#B8C2BD','stroke-width':2});
+el('text',{x:x(0)-8,y:bot+76},'SEP 12');el('text',{x:x(14),y:bot+76,'text-anchor':'middle'},'SEP 26');el('text',{x:x(29)+8,y:bot+76,'text-anchor':'end',style:'fill:#00352B'},'TODAY');
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/2000);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html>

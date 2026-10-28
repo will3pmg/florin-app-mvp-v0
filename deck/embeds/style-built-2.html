@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>As built: Timing card</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
+.card{height:100%;background:#FFFEFB;border-radius:32px;padding:32px;display:flex;flex-direction:column;gap:18px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.top{display:flex;align-items:center;gap:16px}
+.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#3E5A52;text-transform:uppercase}
+h1{margin:0;font:500 34px/1.2 Georgia,"Times New Roman",serif}
+p{margin:0;font-size:24px;line-height:1.35;color:#3E5A52}
+p b{color:#00352B}
+svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#3E5A52}
+.lg{display:flex;flex-wrap:wrap;gap:10px 24px;font-size:24px;color:#3E5A52}
+.lg i{display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:8px;vertical-align:0}
+.d{transform-box:fill-box;transform-origin:center}
+.go .d{animation:drop .5s cubic-bezier(.3,1.4,.5,1) both}
+.go .win{animation:fade .6s ease-out both}
+.go .tag{animation:fade .5s 1.6s ease-out both}
+@keyframes drop{from{opacity:0;transform:translateY(-40px)}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
+</style></head>
+<body>
+<div class="card" role="img" aria-label="Timing card as built: usually 7:15 to 8:45 AM, 21 of 28 mornings in that window">
+  <div class="top">
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect width="52" height="52" rx="14" fill="#F1EEE6"/><circle cx="26" cy="26" r="13" fill="none" stroke="#00352B" stroke-width="3"/><path d="M26 18v9l6 4" fill="none" stroke="#00352B" stroke-width="3" stroke-linecap="round"/></svg>
+    <span class="k">Timing · First BM</span>
+  </div>
+  <h1>Usually 7:15 to 8:45 AM</h1>
+  <p><b><span data-n="21">21</span> of 28 mornings</b> in that window: 5 later and 2 earlier.</p>
+  <svg id="ch" viewBox="0 0 472 270" width="100%" height="270" style="flex:none" aria-hidden="true"></svg>
+  <div class="lg"><span><i style="background:#00352B"></i>In your window</span><span><i style="background:#C2A64B"></i>Outside it</span><span><i style="background:#E8E2E5;border-radius:4px"></i>Your usual window</span></div>
+</div>
+<script>
+/* Sarah's first BM on each of the 28 mornings with one, Sep 12 to Oct 11 (L.span, C), in hours; the last is today, 7:42 AM */
+var F=[8.017,7.384,7.628,8.162,7.754,8.914,7.577,6.998,7.919,7.669,7.911,7.999,7.155,7.348,7.556,9.08,7.83,9.33,8.08,9.17,7.75,7.67,7.58,7.83,8.92,7.5,7.67,7.7];
+var lo=7.25,hi=8.75,W=472,base=218,x=function(h){return 10+(h-6)*(W-20)/4};
+var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg';
+function el(t,a,txt){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;ch.appendChild(e);return e}
+el('rect',{x:x(lo),y:58,width:x(hi)-x(lo),height:base-52,fill:'#E8E2E5',stroke:'#C9BCC4','stroke-width':2,rx:6,'class':'win'});
+el('line',{x1:6,x2:W-6,y1:base+8,y2:base+8,stroke:'#D8D3C8','stroke-width':2});
+[[6,'6 AM','start'],[7,'7',null],[8,'8',null],[9,'9',null],[10,'10 AM','end']].forEach(function(t){el('text',{x:t[2]==='start'?6:t[2]==='end'?W-6:x(t[0]),y:base+44,'text-anchor':t[2]||'middle'},t[1])});
+/* stack the mornings in 10-minute bins, earliest first, so the dots land the way the studio's chart kit draws them */
+var bins={},order=F.map(function(h,i){return [h,i]}).sort(function(a,b){return a[0]-b[0]});
+order.forEach(function(o,j){var b=Math.floor(o[0]*6),n=bins[b]=(bins[b]||0)+1,h=o[0],inw=Math.round(h*60)/60>=lo&&Math.round(h*60)/60<=hi,today=o[1]===F.length-1;
+ var c=el('circle',{cx:x((b+.5)/6),cy:base-8-(n-1)*17,r:7,fill:today?'#FFFEFB':inw?'#00352B':'#C2A64B',stroke:today?'#00352B':'none','stroke-width':today?3:0,'class':'d',style:'animation-delay:'+(0.2+j*0.04).toFixed(2)+'s'});
+ if(today){var tx=x((b+.5)/6),ty=base-8-(n-1)*17;el('line',{x1:tx,x2:tx,y1:40,y2:ty-10,stroke:'#00352B','stroke-width':2,'class':'tag'});el('text',{x:tx,y:28,'text-anchor':'middle','class':'tag',style:'fill:#00352B'},'Today 7:42 AM')}});
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1200);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
+</script>
+</body></html>
