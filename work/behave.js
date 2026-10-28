@@ -354,7 +354,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   await open("today");
   ok(await p.evaluate(() => !/in the last 30 days|in 30 days/.test(document.querySelector(".rx-stage .ap-rx .ap-layer").textContent)), "Today counts foods over the same 90 days Insights checks");
 
+  /* a sweep of the Screens list sets the decisions its screens belong to (Home: Day first sets Home, Easy version:
+     Today sets Version, the onboarding screens set Onboarding), and they stay, as they do for anyone using the page.
+     So a sweep notes the decisions first and puts them back after, for the checks that follow */
+  const DKEYS = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"];
+  const noteDecisions = () => p.evaluate((ks) => Object.fromEntries(ks.map((k) => [k, (document.querySelector(`[data-rx="${k}"][aria-pressed="true"]`) || {}).dataset.v])), DKEYS);
+  const putDecisions = async (was) => { await p.evaluate((was) => Object.entries(was).forEach(([k, v]) => { const b = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (b && b.getAttribute("aria-pressed") !== "true") b.click(); }), was); await wait(300); };
+
   /* 27. nothing on screen or in the notes reads undefined or NaN, for any person or screen */
+  const before27 = await noteDecisions();
   const ids = await p.$$eval('[data-rx="screen"]:not([disabled])', (b) => b.map((x) => x.dataset.v));
   const bad = [];
   for (const who of ["sarah", "marcus", "alex"]) {
@@ -362,6 +370,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     for (const id of ids) { await open(id); const t = await p.evaluate(() => document.body.innerText); if (/\bundefined\b|\bNaN\b/.test(t)) bad.push(`${who}/${id}`); }
   }
   ok(!bad.length, `no screen or note reads undefined or NaN (${bad.slice(0, 4).join(", ") || "none"})`);
+  ok(await p.evaluate(() => document.querySelector('[data-rx="easy"][aria-pressed="true"]').dataset.v === "true" && document.querySelector(".rx-stage .ap-rx").classList.contains("ap--easy")), "the sweep ends on the Easy screens, and Easy is on, on the phone and on the left");
+  await putDecisions(before27);
+  ok(JSON.stringify(await noteDecisions()) === JSON.stringify(before27), "and the decisions go back to what they were before the sweep");
 
   /* 28. skipping the check-in hands focus to Undo; finishing it lands on the card that replaced Start */
   await open("today");
@@ -433,12 +444,14 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   /* 31b. the wider net, in the core so a log's note catches what Ask catches; nothing ordinary trips it */
   const wide = await p.evaluate(() => {
     const L = window.FLORIN_LOGS;
-    const yes = ["My stool was black this morning", "My poo was black", "I have a temperature", "I've lost 5 kg without trying", "I lost a lot of weight", "Getting up at night to poop", "I keep waking up at 3am needing the bathroom", "There was red in the toilet", "Not sure if that was blood"];
-    const no = ["Up at 5am for the gym, BM at 7:30", "red pepper soup for dinner", "trying to lose weight", "checked the room temperature", "Had red wine, toilet trip after", "blood pressure fine"];
+    const yes = ["My stool was black this morning", "My poo was black", "I have a temperature", "I've lost 5 kg without trying", "I lost a lot of weight", "Getting up at night to poop", "I keep waking up at 3am needing the bathroom", "There was red in the toilet", "Not sure if that was blood", "Should I worry about my temperature?", "my temperature is high", "woke up two nights in a row needing the loo", "up most nights to go"];
+    const no = ["Up at 5am for the gym, BM at 7:30", "red pepper soup for dinner", "trying to lose weight", "checked the room temperature", "Had red wine, toilet trip after", "blood pressure fine", "took my temperature, it was fine", "bad nights, bathroom at 7", "woke up after a good night, BM at 8"];
     let seeded = 0;
     ["sarah", "marcus", "alex"].forEach((who) => L.build(who, "est").days.forEach((x) => x.entries.forEach((e) => { if (L.alarmsIn(e.kind === "sym" ? `${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}` : e.note || "").length) seeded++; })));
-    return { missed: yes.filter((t) => !L.alarmIn(t)), tripped: no.filter((t) => L.alarmIn(t)), seeded };
+    const A = window.FLORIN_ASK, same = !A || yes.concat(no).every((t) => A.signsIn(t).join() === L.alarmsIn(t).join());
+    return { missed: yes.filter((t) => !L.alarmIn(t)), tripped: no.filter((t) => L.alarmIn(t)), seeded, same };
   });
+  ok(wide.same, "Ask Florin hears a sign with the same net as a log's note (one net, L.alarmsIn)");
   ok(!wide.missed.length && !wide.tripped.length && wide.seeded === 0, `the core alarm net hears how people write a sign, and nothing ordinary trips it (missed: ${wide.missed.join(" | ") || "none"}; tripped: ${wide.tripped.join(" | ") || "none"}; seeded notes flagged: ${wide.seeded})`);
 
   /* 32. a day with no BM logged has no FloraScore of its own, so the 30-day line breaks there and isn't counted */
@@ -622,6 +635,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(await p.evaluate(() => /just joined/i.test(document.querySelector("[data-time]").textContent) && /day 1 of 14/.test(document.querySelector("[data-time]").textContent)), "Just joined: the demo time line says so");
 
   /* 39. the toggles together, every screen: nothing reads undefined or NaN, nothing names the check-in when it's off */
+  const before39 = await noteDecisions();
   await pick("checkin", "false"); await pick("bmUI", "full"); await wait(300);
   const ids2 = await p.$$eval('[data-rx="screen"]:not([disabled])', (b2) => b2.map((x) => x.dataset.v));
   const bad2 = [];
@@ -635,7 +649,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   }
   ok(!bad2.length, `with check-in off and full form only, no screen reads undefined, NaN or the check-in (${bad2.slice(0, 4).join(", ") || "none"})`);
   for (const [k, v] of [["checkin", "true"], ["bmUI", "quick"], ["persona", "sarah"], ["data", "est"], ["plan", "member"]]) await pick(k, v);
-  await wait(300);
+  await putDecisions(before39);
 
   /* 40. the Oct 28 review: the page follows every phone.set, Picked until an option is drawn, arrows stay off the
      toggles, a meal sheet switch keeps what's typed, the time line counts logs, a broken overlay never opens, the left
@@ -657,14 +671,29 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(await pressed("checkin") === "false" && off.dis && !/check-in/i.test(off.time + off.lede), "a module's set(checkin, false) moves the toggle, the Screens list, the time line and the notes");
     await api(() => window.FLORIN_EXT.api.set("checkin", true)); await api(() => window.FLORIN_EXT.api.set("plan", "free")); await api(() => window.FLORIN_EXT.api.set("persona", "marcus")); await api(() => window.FLORIN_EXT.api.set("history", "calendar")); await dw();
     ok(await pressed("checkin") === "true" && await pressed("plan") === "free" && await pressed("persona") === "marcus" && await pressed("history") === "calendar" && await d.evaluate(() => localStorage.getItem("florin-refresh:history") === '"calendar"' && /Marcus/.test(document.querySelector("[data-sum]").textContent) && /Free/.test(document.querySelector("[data-sum]").textContent)), "and set(plan), set(persona) and set(history) do too, stored and summed up in the Demo line");
-    /* On the phone, or Picked */
-    await d.click('[data-rx="history"][data-v="list"]'); await dw();
+    /* integrate: every option of every decision is drawn by the core or a module, so each reads On the phone, and no
+       decision note says anything comes in the next pass. The Picked path stays for an option nobody claims */
+    const allOn = await d.evaluate(async () => {
+      const out = { off: [], later: [] }, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      const keys = [...new Set([...document.querySelectorAll('[data-rx="dinfo"]')].map((b) => b.dataset.v))];
+      for (const k of keys) {
+        const btns = [...document.querySelectorAll(`[data-rx="${k}"]`)], was = btns.find((b) => b.getAttribute("aria-pressed") === "true");
+        for (const b of btns) {
+          b.click(); await sleep(60);
+          const on = (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "";
+          if (on !== "On the phone") out.off.push(`${k}=${b.dataset.v} (${on || "no option lit"})`);
+          if (/next pass|in this pass|being drawn|still to be drawn/i.test(document.querySelector("#rxNotes .rx-note").textContent)) out.later.push(`${k}=${b.dataset.v}`);
+        }
+        if (was) was.click(); await sleep(60);
+      }
+      out.n = keys.length;
+      return out;
+    });
+    ok(allOn.n === 9 && !allOn.off.length && !allOn.later.length, `every option of every decision reads On the phone, and no decision note says it comes in the next pass (${allOn.n} decisions${allOn.off.length ? "; not on: " + allOn.off.join(", ") : ""}${allOn.later.length ? "; later: " + allOn.later.join(", ") : ""})`);
+    const hadCal = await api(() => { const had = window.FLORIN_EXT.built.history; window.FLORIN_EXT.built.history = []; return had; });
     await d.click('[data-rx="history"][data-v="calendar"]'); await dw();
-    const pk = await d.evaluate(() => ({ on: document.querySelector("#rxNotes .rx-opts .is-on .rx-on").textContent, lede: document.querySelector("#rxNotes .rx-note-lede").textContent }));
-    ok(pk.on === "Picked" && /Calendar is drawn in the next pass/.test(pk.lede), `an option the phone doesn't draw yet reads Picked, and the lede says so (${pk.on})`);
-    await api(() => { window.FLORIN_EXT.built.history = ["calendar"]; }); await d.click('[data-rx="history"][data-v="list"]'); await d.click('[data-rx="history"][data-v="calendar"]'); await dw();
-    ok(await d.evaluate(() => document.querySelector("#rxNotes .rx-opts .is-on .rx-on").textContent === "On the phone" && !/next pass/.test(document.querySelector("#rxNotes .rx-note-lede").textContent)), "once a module claims it in EXT.built, it reads On the phone");
-    await api(() => { delete window.FLORIN_EXT.built.history; }); await d.click('[data-rx="history"][data-v="list"]'); await dw();
+    ok(await d.evaluate(() => document.querySelector("#rxNotes .rx-opts .is-on .rx-on").textContent === "Picked"), "an option no module claims in EXT.built would read Picked");
+    await api((had) => { window.FLORIN_EXT.built.history = had; }, hadCal); await d.click('[data-rx="history"][data-v="list"]'); await dw();
     await api(() => { window.FLORIN_EXT.api.set("plan", "member"); window.FLORIN_EXT.api.set("persona", "sarah"); }); await dw();
     /* the arrow keys step Screens from the list, never from a toggle */
     await dclick('[data-rx="screen"][data-v="insights"]'); await dw();
@@ -2171,7 +2200,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     });
     ok(iso.std && iso.warned && iso.back, "if Easy's Today throws, the standard Today is drawn and a console.warn names refresh-easy.js");
 
-    /* the Version note, and the screens in the list: a preview that gives the version back */
+    /* the Version note, and the screens in the list, which turn Easy on */
     await ez.evaluate(() => document.querySelector('[data-rx="dinfo"][data-v="easy"]').click()); await zw(300);
     const vn = await ez.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "" }));
     ok(vn.t === "Version: standard, or easy" && vn.on === "On the phone" && /Larger text and simpler screens/.test(vn.rec), `the Version note reads On the phone for Easy and recommends the Profile setting (${vn.on})`);
@@ -2184,12 +2213,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* fix-easy: in Easy, History's filters wrap, none off the edge */
     await ez.evaluate(() => document.querySelector('.rx-stage .ap-rx .ap-tb [data-tab="history"]').click()); await zw();
     ok(await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), f = r.querySelector(".ap-hist-f"); return r.classList.contains("ap--easy") && !!f && f.scrollWidth <= f.clientWidth + 1; }), "Easy History: the filters all show, wrapped, none off the edge");
+    /* integrate: the Easy screens set Version to Easy and it stays, as Home: Day first sets Home, so the phone and the
+       left bar always agree; Standard on the left gives the standard version back, tab bar and all */
     await zgo("history");
-    ok(await zpressed("easy") === "false" && await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), p = r.querySelector(".ap-tb-plus"); return !r.classList.contains("ap--easy") && p.getAttribute("aria-label") === "Log something" && !p.querySelector(".ap-ez-tbl") && getComputedStyle(r.querySelector('.ap-tb [data-tab="insights"]')).display !== "none"; }), "leaving the Easy screens from the list gives the standard version back, tab bar and all");
-    /* fix-easy: a version picked on the left while previewing stays */
-    await zgo("ez-today"); await zset("easy", "false"); await zset("easy", "true"); await zgo("history");
-    ok(await zpressed("easy") === "true", "a version picked on the left while previewing stays when the list moves on");
-    await zset("easy", "false");
+    const kept = await ez.evaluate(() => ({ stored: localStorage.getItem("florin-refresh:easy"), easy: document.querySelector(".rx-stage .ap-rx").classList.contains("ap--easy") }));
+    ok(await zpressed("easy") === "true" && kept.easy && kept.stored === "true", "after the Easy screens, the next screen in the list is still Easy, and the toggle and the stored decision say so");
+    await ez.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await zw(300);
+    await zgo("ez-bm");
+    ok(await zpressed("easy") === "true", "Easy version: log a BM turns Easy on too");
+    await zset("easy", "false"); await zgo("history");
+    ok(await zpressed("easy") === "false" && await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), p = r.querySelector(".ap-tb-plus"); return !r.classList.contains("ap--easy") && p.getAttribute("aria-label") === "Log something" && !p.querySelector(".ap-ez-tbl") && getComputedStyle(r.querySelector('.ap-tb [data-tab="insights"]')).display !== "none"; }), "Standard on the left gives the standard version back, tab bar and all");
     ok(!ee.length, `no console or page errors in the Easy checks${ee.length ? ": " + ee.slice(0, 3).join(" | ") : ""}`);
     await ez.close();
     /* fix-easy: a 360px phone: on plus, no word breaks inside itself, in A, B or C */
@@ -2207,6 +2240,39 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ez3.close();
   }
   /* ===== end build-easy ===== */
+
+  /* ===== integrate: the modules as one ===== */
+  {
+    const g = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    const ge = [];
+    g.on("pageerror", (e) => ge.push(e.message));
+    g.on("console", (m) => { if (m.type() === "error") ge.push(m.text()); });
+    await g.goto(PAGE); await g.waitForSelector(".rx-stage .ap-rx"); await g.waitForTimeout(400);
+    const gw = (ms = 450) => g.waitForTimeout(ms);
+    const ggo = async (id) => { await g.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await gw(); };
+    /* Make a report, on the note after a flagged BM, opens Ask Florin on the clinician path with that log's sign */
+    await ggo("flag");
+    await g.click('.rx-stage .ap-rx .ap-fl [data-act="flag-report"]'); await g.waitForTimeout(900);
+    const fr = await g.evaluate(() => { const ph = document.querySelector(".rx-stage .ap-rx"); const a = [...ph.querySelectorAll(".ap-askx-a")].pop(); return { tab: window.FLORIN_EXT.api.S.tab, open: ph.querySelectorAll(".ap-o:not(.is-out)").length, q: ([...ph.querySelectorAll(".ap-ask-me")].pop() || {}).textContent || "", alarm: !!(a && a.querySelector(".ap-ask-alarm")), sign: a ? (a.querySelector(".ap-ask-alarm b") || {}).textContent : "", key: window.FLORIN_EXT.api.key() }; });
+    ok(fr.tab === "ask" && !fr.open && fr.alarm && /Blood/.test(fr.sign) && fr.key === "ask-alarm" && /I logged blood today/.test(fr.q), `Make a report on the flag note opens Ask Florin on the clinician path, the sign named on the Teal banner (${fr.sign || fr.key})`);
+    await g.evaluate(() => window.FLORIN_EXT.api.set("plan", "free")); await gw(300);
+    await ggo("flag");
+    await g.click('.rx-stage .ap-rx .ap-fl [data-act="flag-report"]'); await gw(600);
+    ok(await g.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .ap-o--t-pay:not(.is-out)")), "on Free, Make a report opens the membership sheet");
+    await g.evaluate(() => window.FLORIN_EXT.api.set("plan", "member")); await gw(300);
+    /* the Easy version's detail pages: the back word (Your weeks) stays on one line beside the longest titles */
+    await g.evaluate(() => window.FLORIN_EXT.api.set("easy", true)); await gw(300);
+    const wrapped = [];
+    for (const id of ["i-ck", "i-pat", "i-score", "i-timing"]) {
+      await ggo(id);
+      const w = await g.evaluate(() => { const b = document.querySelector(".rx-stage .ap-rx .ap-layer .ap-back span"); if (!b) return "no back"; const lh = parseFloat(getComputedStyle(b).lineHeight) || parseFloat(getComputedStyle(b).fontSize) * 1.3; return b.getBoundingClientRect().height > lh * 1.5 ? b.textContent : ""; });
+      if (w) wrapped.push(`${id}: ${w}`);
+    }
+    ok(!wrapped.length, `Easy: a detail page's back word stays on one line (${wrapped.join(", ") || "Your weeks, on 4 pages"})`);
+    await g.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await gw(300);
+    ok(!ge.length, `no console or page errors in the integration checks${ge.length ? ": " + ge.slice(0, 3).join(" | ") : ""}`);
+    await g.close();
+  }
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

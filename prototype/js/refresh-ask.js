@@ -591,32 +591,12 @@
   const textOf = (a) => [...(a.lines || []), a.try].filter(Boolean).join(" ");
 
   /* ---------- steps 1 and 2: alarm words, then a request Florin never answers itself ---------- */
-  /* Step 1 reads L.alarmsIn first, the check a log's note uses, then this module's own net for the ways a question
-     names a sign that the note check misses: a stool or BM next to black, very dark, tar or red; a temperature; weight
-     lost by the kilo or pound; up or awake at night to go; being sick. A hedge ("not sure if that was blood") isn't read
-     as a no. Like the core, a clause that says no to the sign ("no blood") isn't caught. Florin only names the sign. */
-  const STOOL = "(?:stools?|poo\\w*|bms?|bowel movements?|motions?|faeces|feces)";
-  const NET = [
-    [new RegExp(`\\b${STOOL}\\b(?:(?![.;]).){0,30}?\\b(black|jet black|tarry|tar|very dark|almost black|nearly black)\\b|\\b(black|tarry|very dark|almost black)\\b(?:(?![.;]).){0,20}?\\b${STOOL}\\b`, "i"), "A black or tar-like stool"],
-    [new RegExp(`\\bred\\b(?! (meat|wine|peppers?|onions?|beans?|lentils?|cabbage|apples?|grapes?|curry|sauce|velvet|food|dye))(?:(?![.;]).){0,30}?\\b(toilet|bowl|paper|tissue|wip\\w*|${STOOL.slice(3, -1)}|underwear)\\b|\\b(toilet|bowl|paper|tissue|${STOOL.slice(3, -1)})\\b(?:(?![.;]).){0,30}?\\b(red|bright red|maroon)\\b`, "i"), "Blood"],
-    [/\b(have|had|has|got|running|ran|with|developed|getting) (a |an )?(high |slight |bit of a |raised |real )?temperature\b|\bhigh temperature\b|\bmy temperature\b|\btemp(erature)? (of|is|was|at) \d/i, "A fever"],
-    [/(?<!to )\b(lost|losing|lose|dropped|dropping|shed)\b(?:(?![.;]).){0,25}?\b(weight|kgs?|kilos?|kilograms?|lbs?|pounds?|stone)\b|\bweight (has |have |keeps )?(dropped|dropping|gone down|going down|fallen|falling)\b/i, "Weight loss"],
-    [/\b(being|been|was|were|keep being|kept being|keeps being) sick\b(?! of| and tired| with)|\b(puk\w*|vomit\w*)\b/i, "Vomiting"]
-  ];
-  const WAKE = /\b(wak\w*|woke|woken|awake|up)\b(?! late)/i, NIGHT = /\b(at night|in the night|overnight|night-?time|middle of the night|nights?|[1-5] ?(am|a\.m\.)|[1-5] in the morning|small hours)\b/i, GOING = /\bto go\b|\bpoo\w*|\bbms?\b|\bbathroom\b|\btoilet\b|\bloo\b|\bbowels?\b|\burge\b/i;
-  const HEDGE = /\b(not sure|not certain|unsure|don'?t know|do not know|can'?t tell|cannot tell|not clear|no idea)\b/gi;
-  const NEG = /\b(no|not|without|never|none|zero|didn'?t|don'?t|wasn'?t|haven'?t|hasn'?t)\b[^,;.]*$/i;
-  function signsIn(q) {
-    const out = L.alarmsIn(q).slice();
-    const add = (name) => { if (!out.includes(name)) out.push(name); };
-    String(q || "").split(/[.;!?\n]|,|\bbut\b/i).forEach((c0) => {
-      const c = c0.replace(HEDGE, " ");
-      L.ALARM.concat(NET).forEach(([rx, name]) => { const m = rx.exec(c); if (m && !NEG.test(c.slice(0, m.index))) add(name); });
-      const w = WAKE.exec(c);
-      if (w && NIGHT.test(c) && GOING.test(c) && !NEG.test(c.slice(0, w.index))) add("Waking at night to go");
-    });
-    return L.ALARM.map(([, n]) => n).filter((n) => out.includes(n));
-  }
+  /* Step 1 is L.alarmsIn, the check a log's note uses, with the wider net for how people write a sign (L.ALARM_WIDE):
+     a stool or BM next to black, very dark, tar or red; a temperature; weight lost by the kilo or pound; up or awake at
+     night to go; being sick. A hedge ("not sure if that was blood") isn't read as a no, and a clause that says no to
+     the sign ("no blood") isn't caught. One net, so a note and a question hear the same phrasings. Florin only names
+     the sign. */
+  const signsIn = (q) => L.alarmsIn(q);
 
   /* Step 2: a request to diagnose, prescribe, dose or predict, or to say what to cut out, gets a fixed, kind redirect. A
      question about what will happen is one only when it isn't about the app ("will my logs be in the report") */
@@ -1035,6 +1015,19 @@
     const q = which === "alarm" ? ALARM_SEED : seedQuestion(read(S.M, api.V(), null));
     ask(api, q, { computedOnly: true }).catch((e) => warn("seeding the chat threw", e));
   }
+  /* Make a report, on the note after a flagged log: Ask Florin opens on the clinician path with that log's sign in the
+     question (a sign gets the When to see a clinician answer, mucus alone the answer on bringing logs to a clinician).
+     Computed only, never sent to Claude. On Free, the membership sheet, as the report is a membership feature */
+  act("flag-report", (b, api) => {
+    const S = api.S, q = (b.dataset.q || "").trim();
+    api.closeAll();
+    if (S.plan === "free") { api.push("pay", { from: "report" }); return; }
+    if (!q) { api.toast(b.dataset.msg); return; }
+    stopChat(S);
+    S.askx = null; S.askCtx = null;
+    api.go("ask");
+    ask(api, q, { computedOnly: true }).catch((e) => warn("asking from the flag note threw", e));
+  });
   EXT.opens["ask-chat"] = (api) => seed(api, "chat");
   EXT.opens["ask-alarm"] = (api) => seed(api, "alarm");
   EXT.screens.push(["Ask Florin", [["ask-chat", "Ask Florin, a conversation"], ["ask-alarm", "Ask Florin, a sign that needs a clinician"]], { before: "Membership" }]);
@@ -1110,10 +1103,10 @@
   });
   EXT.notes["ask-alarm"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, a sign that needs a clinician",
-    lede: "A question that names an alarm feature (blood, a black or tar-like stool, a fever, vomiting, weight loss, waking at night to go) gets the When to see a clinician answer: the Teal banner with the sign in bold and one line, then primary care first, the urgent-care line and a report to bring. Florin names the sign and never reads past it, and the question never goes to Claude. It runs the check a log's note uses (L.alarmsIn), then a wider net for how people ask: my stool was black, I have a temperature, I lost 5 kg, up at night to go, being sick. A hedge (\"not sure if that was blood\") still counts; \"no blood\" and blood pressure don't.",
+    lede: "A question that names an alarm feature (blood, a black or tar-like stool, a fever, vomiting, weight loss, waking at night to go) gets the When to see a clinician answer: the Teal banner with the sign in bold and one line, then primary care first, the urgent-care line and a report to bring. Florin names the sign and never reads past it, and the question never goes to Claude. It runs the same check a log's note uses (L.alarmsIn), which hears how people write a sign as well as the words: my stool was black, I have a temperature, I lost 5 kg, up most nights to go, being sick. A hedge (\"not sure if that was blood\") still counts; \"no blood\" and blood pressure don't.",
     ba: [["Left to the coach to notice", "Caught on the phone, before anything is sent"], ["A red warning", "Teal, never red: no sources and no options, as DESIGN.md has it. The one question offered after it is how to bring the logs to a clinician"]],
     rec: "Keep it on the phone and first in line, for answers from Claude and computed ones alike.",
-    open: ["Once the clinician report is built, should this answer offer it right there?", "An urgent-care number for the person's country, from Profile?", "The wider net lives in the Ask module for now. Move it into the core check, so a log's note catches the same phrasings?"],
+    open: ["Once the clinician report is built, should this answer offer it right there?", "An urgent-care number for the person's country, from Profile?"],
     res: ["DESIGN.md, Alarm banner: the turn opens with the banner, sends the person to primary care first, with a report to bring."]
   });
   EXT.notes.ask = (M, P) => (P.plan === "free" ? null : {

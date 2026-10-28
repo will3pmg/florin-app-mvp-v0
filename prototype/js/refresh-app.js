@@ -596,6 +596,8 @@
       },
       edit(b) { if (b.closest(".ap-tst")) { tst.classList.remove("is-on"); S.undo = null; } openEntry(b.dataset.id, { details: !!b.dataset.details }); },
       toast(b) { if (b.dataset.close) closeAll(); toast(b.dataset.msg); },
+      /* Make a report on the flag note: Ask Florin's module asks its clinician question (data-q); without it, a toast */
+      "flag-report"(b) { closeAll(); toast(b.dataset.msg); },
       hfilter(b) { S.hist.filter = b.dataset.v; renderTab(true); },
       hmore() { S.hist.n = (S.hist.n || 14) + 14; renderTab(true); },
       undo() { const u = S.undo; S.undo = null; tst.classList.remove("is-on"); if (u) u(); refocus(null); },
@@ -1052,7 +1054,7 @@
         ["Bloody and Mucus as symptom pills, with nothing after", "Primary care first, a report to bring, and Undo for a mis-tap. Teal, never red"],
         ["Fever or vomiting typed into a note went unnoticed", "The same note opens when a log names an alarm feature, on a BM or a symptom"]
       ],
-      open: ["Make a report opens Ask Florin on the clinician path with this log loaded. That lands with the chat, in the next pass."],
+      open: ["Make a report opens Ask Florin on the clinician path, with this log's sign in the question: the When to see a clinician answer, primary care first and a report to bring (on Free, the membership sheet). The report itself is still a placeholder: what should it hold for a first visit?"],
       res: ["DESIGN.md: the alarm banner names the sign, sends the person to primary care first and never uses red.", "Throne: flag blood or mucus every time."]
     }),
     nobm: () => ({ t: "No BM today", lede: "Logged on purpose, so an empty day isn't read as missing data. Logging a BM later replaces it.", ba: [["No way to say nothing happened", "From 5 PM on the day (plus, or Today), or any time for an earlier day"]], open: [], res: ["Throne's guidance says to log no-BM days explicitly. GutLog has a journal for them."] }),

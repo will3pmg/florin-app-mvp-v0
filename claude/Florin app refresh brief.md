@@ -196,3 +196,129 @@ Will, after seeing the second pass: the app is a lot of text and simple graphs; 
 - **Data looks** (library/, its own artifact): the same eleven data components drawn in three looks, Rings, Field journal and Bento, from the same numbers, as the start of a component library.
 
 **Next:** pick a look and take it through Insights; Ask Florin's answers; the studio fold-back once the calls above are settled.
+
+## Will's notes (Oct 27) and what they changed
+
+Will, after the Oct 14 build: put the open decisions on the page as toggles instead of separate demos, then build out
+what each decision needs. His asks, what was built for each, and the calls that are his. Everything below is in the
+prototype at the same link, and in the decisions deck (https://claude.ai/artifact/2h5ikADR2eFCY1DZYbJEJU).
+
+**What was built, ask by ask**
+
+- **Toggles on the left, above the screens.** The page is one live phone in the middle under a slim header. The left
+  bar runs Decisions (nine toggles: Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style,
+  Version, Onboarding), then Demo (person, logs, meal logs, plan, theme, reset, folded to one line), then Screens. Each
+  decision is stored per viewer and has an info button for its note: what it decides, every option, our
+  recommendation, what's open and the research. The notes for the screen sit on the right. On a phone the app is full
+  screen, with Toggles and Notes as sheets.
+- **The 3 demos become a toggle and a slide.** The A, B and C phones side by side are gone. Consistency is one toggle
+  (A 1 to 7, B 5 words, C 7 words) that redraws the whole app, and the deck has a Consistency slide that sets the three
+  side by side with one demo person's last 30 days in each.
+- **Quick BM or full.** BM logging: Quick tiles and form (the tiles on plus; once 5 BMs are logged a tile saves at
+  once, with Add details and Undo) or Full form only (one Log a BM row, every BM through the form, no one-tap save).
+- **History and home.** Home: Score first (the Forest FloraScore card) or Day first (the date with a small FloraScore
+  ring, today's logs with the one that stood out marked, a row to log from, and one sentence on what stood out and
+  what that log did to the score). History: List, or a Calendar of the month with each day marked the way Today's week
+  card marks it (Plum within the usual, a Gold ring outside it, a gap struck through, a Teal ring for a flag, never
+  read) and a tapped day drawn as the list draws it.
+- **Check-in with and without.** Weekly check-in On or Off. Off takes it out of the whole app: Today, plus, Insights
+  (six cards), History and its report, the paywall's free list, the demo time line, and its screens in the list.
+  FloraScore never used it, so nothing else moves.
+- **Data style.** Six options: As built and the five library looks (Rings, Field journal, Bento, Oura, Easy read). In
+  a look, Insights is that look's cards in order, each opening its detail, and Today's FloraScore and week are its
+  score and week cards, all drawn from the phone's live logs, so a BM logged on the phone redraws them. Detail pages
+  stay as built, with one new page, Your days.
+- **An Oura-like style, from his screenshots.** The Oura look, in the library and on the phone: dark first on a
+  Forest atmosphere, FloraScore as an open arc with the usual on its track and the day's one big thing in Lora, the
+  parts as shortcut rings and Contributors rows, Vitals-style range tracks, trends with a 30 and 90 day switch, and a
+  curved clock for the morning. `reference/oura.md` says what each of his screens does and how it translates under
+  Florin's rules (no state words that judge, the person's own usual on every track).
+- **An elderly-friendly version.** Version: Standard or Easy, for a 70-year-old with reading glasses, a mild tremor
+  and little patience for charts. Type about a third larger, every control 56px or more with its word on it, text in
+  Ink, Today as a greeting, one sentence, FloraScore as a big number, three big buttons and this week as day circles;
+  plus as labelled buttons; a BM in four short steps; symptoms as big chips; Insights folded into Today as Your weeks,
+  in the Easy read look. History and Ask keep their content, bigger.
+- **Profile and onboarding, from the shipping survey.** The shipping app's 14-question survey and profile are
+  transcribed in `reference/shipping-app/onboarding-and-profile.md`. Onboarding: Short (8 steps, under two minutes,
+  only what changes the app on day 1) or the Full survey (the shipping sections in 14 steps, reworded: no scale
+  named, goals that say what Florin does rather than promise an outcome, weight left out, and blood or a black stool
+  answered with the primary care note on the step). Profile opens from the Today avatar: the person's usual read from
+  the model, every onboarding answer (each reopens its step), the BM reminder and check-in day, logging, Larger text
+  and simpler screens, connected apps, membership, their data and help.
+- **Ask Florin interactive.** A working chat on the person's own logs. Each question goes alarm words first (the Teal
+  When to see a clinician answer, never sent anywhere), then a fixed redirect for diagnose, dose or predict, then
+  Claude on the viewer's own account through the artifact's sample capability, with a facts packet from the model,
+  then a check of the answer (the 22 claims rules, Ask's own rules and a numbers check). A failed check, or no
+  Claude, gives the answer computed from the logs. Ask about this brings a card's numbers in, and every answer lists
+  the numbers it used.
+- **A decisions deck.** 25 slides in Claude Slides: how to use the demo, every decision at a glance, one slide per
+  decision, one per data style with Sarah's figures, then the business calls and the list of what we need from Will.
+  Its source is `deck/`.
+
+**Making the modules one app (Oct 28)**
+
+The five modules were built in parallel, each in its own files, and checked alone. Together:
+
+- A screen in the list that belongs to a decision now sets it, and it stays: Easy version: Today and log a BM set
+  Version to Easy, as Home: Day first, History: Calendar and the onboarding screens already set theirs. Before, Easy
+  turned itself back off when the list moved on, so a sweep of the list left the next check on a different version
+  than the left bar showed (and the arrow keys left it on).
+- Every option of every decision is drawn now, so every note reads On the phone, and no note says anything comes in
+  the next pass.
+- One alarm net. Ask Florin's wider net had moved into the core check; its own copy is gone, and the two phrasings
+  only it heard (worried about my temperature, my temperature is high; up most nights, two nights in a row) are in the
+  core, so a log's note hears them too.
+- Make a report on the note after a flagged log opens Ask Florin on the clinician path, the sign in the question
+  (Member), or the membership sheet (Free). It was a toast saying the chat was still to come.
+- The Rings look said "Average null a day" to a screen reader on day 1 (fixed in `library/js/look-rings.js`, one
+  line). In the Easy version, the back word on a detail page no longer wraps beside a long title.
+- `work/sweep.js` sets every pair of decisions against each other (95 settings), for Sarah, in both themes, with 12
+  weeks of logs and Just joined, and opens Today, Insights, FloraScore's detail, History, Ask, plus, Log a BM,
+  symptoms, the meal sheet, Profile and onboarding in each: clean on Member, on Free and at 390 wide.
+
+**The calls for Will, from every note**
+
+Where our recommendation and a module's note now disagree, both are named.
+
+- *Home.* The deck recommends Score first, with the highlight leading on the most notable log; the Home note, written
+  once Day first was on the phone, recommends Day first (it leads with what happened, puts logging on the first screen,
+  and reads right on days 1 to 13). Pick one before the deck goes out. Also: should a strong symptom outrank a shift
+  in what stands out? Is a small ring by the date enough to tie Florin to the score people know from Oura? Day first
+  puts the BM tiles on Today as well as on plus: keep both? Does the day's sentence say enough, or too much?
+- *History.* A day with a flag is marked for a clinician and not read against the usual: right, or show both? On
+  Free the calendar reads only the last 7 days against the usual: or should History, which is free, read every day?
+  Keep a List and Calendar switch on History itself? Start the calendar on today, or on the last day with a log?
+- *Data style.* Ours: Oura for Today and the score, Field journal's figures for the detail pages, Easy read for the
+  larger-text setting, one style per screen. Mix by surface like that, or one style everywhere? Keep the Oura week's
+  tags going onto that week's check-in? Insights in a style shows 30 days without range tabs: enough? On Free, the
+  style's cut (the score, the week and the check-in) is less than As built's free plan: keep it, or match? Your days:
+  list every day at 30 and 90, or only the shifted ones?
+- *Easy version.* A setting in Profile (recommended), or a version of its own? Offer it once in onboarding, or turn
+  it on when the phone's own text size is large? Keep the one-tap save in Easy, since a tremor brings mis-taps? Fold
+  Insights into Today, or keep a tab? Keep the calendar in Easy (days about 49px wide), or the list? FloraScore on
+  Easy's Today at all? "Something feels off" and "What I ate" as the words? Auto-advance after a pick, or a Next
+  button? The nearest hour, or minutes? Easy leaves out straining, didn't feel finished, burning, how long and the
+  note: enough? Which cards earn a place in Your weeks?
+- *Onboarding.* Which questions earn a place on day 1 (the short flow's 8 are the proposal)? Research consent as a
+  step, or only in Profile? Age range and sex at all, or only for a clinician report? Is a BM reminder worth a step on
+  day 1? What should "what brings you" change on day 1? Ask the rest in context (eating with the first meal, foods to
+  watch with the first food check, medicines and conditions with the first report)? Should foods to watch count from
+  day 1, or wait for 5 logs? The full survey has no reminder step: add the short flow's? The sign note on onboarding:
+  once on the step, or back on Today on day 1? Fever, vomiting that won't stop and weight loss aren't on the survey's
+  list (the shipping survey left them out): add them?
+- *Profile.* Turn the check-in off here as well as change its day? Logging repeats BM logging and the meal sheet as a
+  person's own setting: theirs to pick, or one for everyone? Connected apps for this version (Apple Health first)?
+  Export: a file for the person, the clinician report, or both? Offer Larger text again after a few days? On day 1,
+  the answers lead Profile until there's a usual: right order? A changed answer (periods, say): offer to change what
+  it feeds right there?
+- *Ask Florin.* The deck recommends one free answer a week on Free and never locking the clinician question; the
+  prototype keeps Ask locked on Free (and Make a report on Free opens the membership sheet), so this is open. Claude
+  runs on the viewer's own usage here; the shipping app needs its own model account and a privacy review before any
+  log leaves the phone. Show Claude's answer only once checked, at the cost of a pause? Thumbs and memories the person
+  can see and delete? Should the card's question go in the box, or wait as a chip? Once the report is built, offer it
+  in the clinician answer? An urgent-care number for the person's country, from Profile?
+- *Weekly check-in, BM logging, consistency, meals, membership, FloraScore, integrations, messaging.* As on the
+  deck's last slide and in each decision's note: ship C once counsel has read it and drop B; Quick tiles with a When
+  row; one box and the mic with a free 14-day food check; the check-in on and free; the report and the food check's
+  start free, under $10 a month; FloraScore's four parts and weights; integrations now or later; how we describe the
+  app before Florin One. The report for a clinician is still a placeholder everywhere it's offered.

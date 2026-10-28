@@ -3,7 +3,8 @@
    - console errors and page errors, at 1440, 1100, 900, 390, 375 and 360 wide
    - sideways scroll on the page, at every width
    - every screen through the 22 claims rules (the notes panel's own check), in A, B and C, established and new, and
-     with the decisions toggled (check-in off, full BM form only, Just joined), across the three people and both themes
+     with the decisions toggled (check-in off, full BM form only, Just joined, Day first, Calendar, each data style,
+     the full survey, the Easy version), across the three people and both themes
    - with the check-in off, no screen may mention it
    - tap targets under 44px inside the phone, at 390 wide where the app fills the screen at full size
    - em dashes and exclamation points in any user-facing string in the source, modules included */
@@ -15,7 +16,10 @@ const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 const problems = [];
 const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
 /* a run: a consistency option, the logs, and any decisions or demo controls to set first (the rest stay at default) */
-const BASE = { persona: "sarah", data: "est", form: "C", theme: "light", checkin: "true", bmUI: "quick" };
+const BASE = { persona: "sarah", data: "est", form: "C", theme: "light", checkin: "true", bmUI: "quick", mealUI: "quick", home: "score", history: "list", look: "built", easy: "false", onboard: "short" };
+/* every control a run sets, the module decisions included: a sweep of the Screens list sets the decisions its screens
+   belong to (Home: Day first, History: Calendar, the onboarding screens, Easy version), so each run puts them back */
+const SET = ["persona", "data", "form", "theme", "checkin", "bmUI", "mealUI", "home", "history", "look", "easy", "onboard"];
 const WIDE = [
   { form: "A" }, { form: "B" }, { form: "C" }, { form: "A", data: "new" }, { form: "C", data: "new" }
 ];
@@ -24,9 +28,13 @@ const TOGGLES = [
   { checkin: "false", persona: "sarah" }, { checkin: "false", persona: "marcus", theme: "dark", form: "B" }, { checkin: "false", persona: "alex", data: "new" },
   { bmUI: "full", persona: "sarah", theme: "dark" }, { bmUI: "full", persona: "marcus", form: "A" }, { bmUI: "full", persona: "alex", theme: "dark" },
   { data: "fresh", persona: "sarah" }, { data: "fresh", persona: "marcus", theme: "dark" }, { data: "fresh", persona: "alex", form: "A" },
-  { data: "fresh", checkin: "false", bmUI: "full", persona: "sarah", theme: "dark", form: "B" }
+  { data: "fresh", checkin: "false", bmUI: "full", persona: "sarah", theme: "dark", form: "B" },
+  /* the module decisions: Day first and Calendar, each data style, the full survey and the Easy version */
+  { home: "day", history: "calendar", persona: "marcus", theme: "dark" }, { look: "rings", data: "fresh" }, { look: "journal", form: "B", checkin: "false" },
+  { look: "bento", persona: "alex", theme: "dark" }, { look: "oura", home: "day" }, { look: "easy", onboard: "full", persona: "marcus" },
+  { easy: "true", persona: "alex", theme: "dark" }, { easy: "true", data: "fresh", checkin: "false", bmUI: "full" }
 ];
-const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }];
+const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }, { easy: "true", history: "calendar" }, { home: "day", look: "oura", theme: "dark" }];
 
 (async () => {
   const browser = await chromium.launch();
@@ -41,14 +49,14 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
     const runs = (w === 1440 ? WIDE.concat(TOGGLES) : w === 390 ? NARROW : w < 760 ? NARROW.slice(0, 1) : WIDE.slice(0, 3).concat(TOGGLES.slice(0, 1), TOGGLES.slice(3, 4), TOGGLES.slice(6, 7))).map((r) => Object.assign({}, BASE, r));
     for (const r of runs) {
       /* the controls exist once: in the side bar, or in the Toggles sheet on a phone; a click reaches them either way */
-      for (const k of ["persona", "data", "form", "theme", "checkin", "bmUI"]) {
+      for (const k of SET) {
         await p.evaluate(([k, v]) => { const b = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (b && b.getAttribute("aria-pressed") !== "true") b.click(); }, [k, r[k]]);
       }
       /* a free screen in the list switches the demo to Free; each run starts on Member */
       await p.evaluate(() => { const b = document.querySelector('[data-rx="plan"][data-v="member"]'); if (b) b.click(); });
       await p.waitForTimeout(200);
       const ids = await p.$$eval('[data-rx="screen"]:not([disabled])', (bs) => bs.map((b) => b.dataset.v));
-      const tagR = `${w} ${r.persona}/${r.form}/${r.data}/${r.theme}${r.checkin === "false" ? "/check-in off" : ""}${r.bmUI === "full" ? "/full form" : ""}`;
+      const tagR = `${w} ${r.persona}/${r.form}/${r.data}/${r.theme}${r.checkin === "false" ? "/check-in off" : ""}${r.bmUI === "full" ? "/full form" : ""}${["mealUI", "home", "history", "look", "easy", "onboard"].filter((k) => r[k] !== BASE[k]).map((k) => `/${k} ${r[k]}`).join("")}`;
       if (r.checkin === "false" && ids.some((id) => ["ck", "ck-card", "ck-last", "ckdone", "ckday", "i-ck"].includes(id))) note(`${tagR}: check-in screens still open from the list`);
       for (const id of ids) {
         await p.evaluate((id) => { const b = document.querySelector(`[data-rx="screen"][data-v="${id}"]`); b && b.click(); }, id);

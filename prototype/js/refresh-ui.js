@@ -474,6 +474,13 @@
     </div>`;
   };
 
+  /* the question Make a report asks Ask Florin (refresh-ask.js takes the "flag-report" act): the log's sign in the
+     person's words, so the answer starts on the clinician path with this log. Without the module it toasts */
+  const flagQuestion = (st, f) => {
+    const said = st.sign ? [lower1(st.sign)] : f.map((k) => ({ blood: "blood", mucus: "mucus", black: "a black or tar-like stool" })[k]);
+    const list = said.length < 2 ? said.join("") : `${said.slice(0, -1).join(", ")} and ${said[said.length - 1]}`;
+    return `I logged ${list} today. How do I bring my logs to a clinician?`;
+  };
   /* after a BM with blood, mucus or a black stool: a clinician note, never a reading of it */
   /* the same note when an alarm feature is typed into a note or a symptom name (st.sign) */
   RU.flagNote = (st) => {
@@ -485,7 +492,7 @@
       <div class="ap-psh-h"><h2>Saved, with a note</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${ic("close")}</button></div>
       <div class="ap-ask-alarm" role="note"><span class="ap-k">When to see a clinician</span><b>${esc(sign)}</b><p>${st.sign ? "You wrote this in your log. It's worth a clinician's look soon. Florin won't try to read it." : f.includes("blood") ? "Even a small amount is worth a clinician's look soon. Florin won't try to read it." : f.includes("black") ? "A black or tar-like stool is worth a clinician's look soon. Florin won't try to read it." : "If it's new for you, keeps showing up, or comes with pain or blood, check in with a clinician. Florin won't try to read it."}</p>${f.includes("blood") || f.includes("black") || (st.signs || [st.sign]).some((x) => x === "Blood" || x === "A black or tar-like stool") ? `<p class="ap-fl-urgent">If there's a lot of blood, or you feel faint or dizzy, get urgent care now.</p>` : ""}</div>
       <p class="ap-fl-body">Primary care is the right first stop: your GP or a nurse practitioner. Your logs can go with you as a report, so you don't have to remember dates.</p>
-      <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="toast" data-msg="Ask Florin opens on the clinician path, with this log and a report ready to bring. That comes in the next pass." data-close="1">Make a report for your clinician</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Done</button>${st.restore ? `<button type="button" class="ap-fsh-del" data-act="flag-undo">${ic("undo")}Undo this log</button>` : ""}</div>
+      <div class="ap-fl-act"><button type="button" class="ap-btn ap-btn--block" data-act="flag-report" data-q="${esc(flagQuestion(st, f))}" data-msg="A report of your logs to bring to a clinician: dates, BMs, symptoms and meals. That comes in the next pass." data-close="1">Make a report for your clinician</button><button type="button" class="ap-btn ap-btn--line ap-btn--block" data-act="close">Done</button>${st.restore ? `<button type="button" class="ap-fsh-del" data-act="flag-undo">${ic("undo")}Undo this log</button>` : ""}</div>
     </div>`;
   };
 

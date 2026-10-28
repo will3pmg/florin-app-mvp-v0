@@ -1,7 +1,8 @@
 # Florin app refresh: working notes for Claude
 
 This repo holds the **Florin app refresh**: a clickable phone prototype of today's Florin app, the one that ships
-without hardware. People log manually (BMs, symptoms, meals, a weekly check-in). No sensor, no gas data, no FloraScore.
+without hardware. People log manually (BMs, symptoms, meals, a weekly check-in). No sensor and no gas data; FloraScore
+is built from the logs.
 
 Read these first, in order:
 
@@ -24,17 +25,35 @@ prototype/js/refresh-data.js  the manual-logs model built on the seeded days (wi
 prototype/js/refresh-ui.js    every app screen as a render function (window.FLORIN_RUI)
 prototype/js/refresh-insights.js  the Insights tab, its detail pages and the Ask tab hand-off (extends FLORIN_RUI)
 prototype/js/app-charts.js    the studio's small SVG chart kit (window.FLC), used by Insights
-prototype/js/refresh-{looks,variants,profile,ask,easy}.js and css/refresh-*.css   feature modules, one per decision
-                              (data style; Day first and Calendar; profile and onboarding; Ask Florin; the Easy version).
-                              Each registers into FLORIN_EXT and never edits a core file
+prototype/js/refresh-looks.js     the Data style decision: Insights as a library look's cards, Today's FloraScore and week
+                              as its score and week cards, and one detail page of its own, Your days (i-days)
+prototype/js/refresh-variants.js  Home Day first (the date with a small score ring, today's logs with the one that stood
+                              out marked, a row to log from) and History Calendar (a month of marked days; a tapped day
+                              is drawn as the list draws it)
+prototype/js/refresh-profile.js   Profile, from the Today avatar, and onboarding, Short or the Full survey (the shipping
+                              survey reworded), with the primary care note on a sign
+prototype/js/refresh-ask.js       Ask Florin as a chat: alarm words first (L.alarmsIn), a fixed redirect for diagnose,
+                              dose or predict, then Claude through the sample capability, checked, with answers computed
+                              from the logs as the floor; Make a report on the flag note opens it on the clinician path
+prototype/js/refresh-easy.js      the Easy version: larger text and simpler screens. Its own Today, plus, a BM in four
+                              steps, symptoms, Your weeks in place of Insights; History and Ask drawn bigger
+prototype/css/refresh-{looks,variants,profile,ask,easy}.css   each module's styles, scoped to what it draws
+                              Each module registers into FLORIN_EXT and wraps RU; it never edits a core file
 prototype/js/refresh-app.js   the page: the one phone (Phone, phone.set), the decisions, notes per screen and decision
 library/                       Florin data looks: the same numbers drawn in five looks, the start of a component library
 library/js/looks-data.js       the one data object (FLD.build) every look draws from, built on refresh-data.js
 library/js/look-*.js, css/look-*.css   one look each, registered on window.FLOOKS, every rule scoped under .lk-<id>
 reference/shipping-app/       the app that ships today: Log a visit, History, the onboarding survey and profile
 reference/oura.md              what Oura's screens do, and how each idea translates under Florin's rules
-work/                          QA and screenshot scripts (work/shots-library.js for the looks)
+work/                          QA and screenshot scripts (work/shots-library.js for the looks, work/sweep.js for every
+                              pair of decisions)
 ```
+
+Load order (both pages): lib.js, claims-rules.js, data-app.js, app-charts.js, refresh-data.js, refresh-ui.js,
+refresh-insights.js, then the library's looks-data.js and look-rings, journal, bento, oura and easy, then the modules
+in this order: looks, variants, profile, ask, easy, and refresh-app.js last. The css follows the same order (app.css,
+refresh.css, look-*.css, refresh-<module>.css). A later module wraps what an earlier one drew: Easy wraps Day first's
+Today and the look's Insights, and draws its own in their place.
 
 The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar holds **Decisions**
 (Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), one line each,
@@ -43,13 +62,19 @@ one-line summary (folded by default, remembered per viewer as `florin-refresh:de
 bar scrolls on its own and is sized from where it sits, so its end is always in reach. The right bar is the notes for
 the screen, or for the decision just changed (until the phone moves to another screen); each decision's info button
 shows its note. Between 760 and 1019px the notes sit under the phone: an info button scrolls to them, and a changed
-decision shows a "Read the note" button. A decision's note says **On the phone** only for an option the phone draws,
-and **Picked** for one still to be drawn. Decisions are stored (`florin-refresh:<key>`); the demo controls aren't. The
-arrow keys step through Screens from the list or with nothing focused. Under 760px the app is full screen and a bottom
-bar opens Toggles (Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled.
+decision shows a "Read the note" button. Every option of every decision is drawn, by the core or a module, so each
+reads **On the phone** (an option no module claimed would read **Picked**). A screen in the list that belongs to a
+decision sets that decision, and it stays: Home: Day first, History: Calendar, the onboarding screens and the Easy
+version's, as the Membership screens set Plan to Free. So the phone and the left bar always agree, and a check that
+sweeps the list puts the decisions back after. Decisions are stored (`florin-refresh:<key>`); the demo controls
+aren't. The arrow keys step through Screens from the list or with nothing focused. Under 760px the app is full screen
+and a bottom bar opens Toggles (Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled.
 Weekly check-in Off takes the check-in out of the whole app (`RU.ckOn(V)`), and its screens are disabled in the list.
 BM logging Full form only shows one Log a BM row on plus and no one-tap save. Home Day first, History Calendar, Data
-style, Version Easy and Onboarding Full survey are stored and stamped on the phone, and drawn by their modules.
+style, Version Easy and Onboarding are stored and stamped on the phone, and drawn by their modules. Where they meet:
+Easy has its own Today (Home's Day first waits under it) and always draws Easy read (whatever Data style says), and
+keeps History as a calendar when that's picked; Profile's Larger text and simpler screens sets Version, its Logging
+rows set BM logging and Meal sheet, and its theme row sets the theme, all through phone.set, so the left bar follows.
 
 The prototype loads the library's looks (looks-data.js, look-*.js and their css, never library.js, which mounts the
 library page) before the modules: `_local.html` from `../library/`, `index.html` from `js/` and `css/`, so publish them
@@ -120,8 +145,10 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
   (`data-bm-ui="full"`, `data-look="rings"`, `data-easy="true"`) for a module's CSS; an overlay's element carries
   `.ap-o--t-<type>`.
 - **built**: until a module claims an option in `EXT.built[key]`, a decision's note says Picked for it, not On the
-  phone, and its lede says it's drawn in the next pass. The core draws every option of form, bmUI, checkin and mealUI,
-  and only Score first, List, As built and Standard of the others; no onboarding at all.
+  phone. The core draws every option of form, bmUI, checkin and mealUI, and only Score first, List, As built and
+  Standard of the others, and no onboarding. The modules claim the rest: looks `look` rings, journal, bento, oura and
+  easy; variants `home` day and `history` calendar; profile `onboard` short and full; easy `easy` true. So every option
+  reads On the phone, and behave.js checks it stays that way.
 - **V()** = `{ form, uid, mealUI, plan, bmUI, home, history, checkin, look, easy, onboard, persona, data, meals }`.
 - **Wrap, don't edit.** Render functions are looked up when called, so `const base = RU.plus; RU.plus = (M, V, st) =>
   V.easy ? mine(M, V, st) : base(M, V, st)` works for `RU.today`, `RU.history`, `RU.insights`, `RU.idetail`, `RU.ask`,
@@ -129,10 +156,34 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
 - **Today** is `RU.todayLayout(M, V)` (an array of part names, Score first: top, hero, checkin, entries, week, next,
   fine) over `RU.todayParts[name](M, V)`. Replace `hero` or `week` (data style), or wrap `todayLayout` or `RU.today`
   (Day first, Easy). The `top` part holds the 44px avatar, `data-act="profile"`; with no module's `profile` act it
-  toasts that the profile comes in this pass.
+  toasts that the profile comes in this pass; the profile module's act opens Profile.
 - **History** is `RU.history(M, V, st)` over `RU.historyDay(M, V, d, entries)`, `RU.entryRow(e, M, V)` and
   `RU.historyNext(M, V)`, so a calendar shows a day the same way.
 - Helpers: `RU.ckOn(V)` (the check-in is on), `RU.bmCount(M)`, `RU.QUICK_AFTER` (5 BMs before a tile saves at once).
+  The looks module adds `RU.lookOf(V)`, `RU.lookCards(M, V, keys, o)` and `RU.lookAfter(el)`, so another module draws
+  cards in a look (Easy draws Your weeks with them).
+- **Alarm words** have one net, `L.alarmsIn(text)` (L.ALARM, then L.ALARM_WIDE for how people write a sign: a stool
+  next to black or red, a temperature, weight lost by the kilo, up most nights to go, being sick; a hedge isn't a no).
+  A log's note, Day first's highlight and Ask Florin's questions all run it; never add a second one in a module.
+- **Make a report** on the flag note is `data-act="flag-report"` with the question in `data-q`. The core toasts that
+  the report comes later; the Ask module opens Ask on the clinician path with it (Member), or the paywall (Free).
+
+What each module registers (the file's header comment has the detail):
+
+```
+refresh-looks     wraps RU.insights, RU.todayParts.hero and .week, RU.idetail (Your days), RU.askContext; acts idetail,
+                  iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style; keys tab:insights and
+                  tab:today; notes, decisions.look, built.look; onSet (theme, look, a rebuild)
+refresh-variants  wraps RU.today (Day first) and RU.history (Calendar); acts vr-quick, vr-cal-day, vr-cal-m; screens
+                  home-day and hist-cal in Tabs; keys tab:today and tab:history; notes, decisions.home and .history
+refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
+                  (the first name); screens Onboarding and profile; notes, decisions.onboard, built.onboard; onSet
+refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-*, ask-about and ask-clear (wrapped),
+                  flag-report; screens ask-chat and ask-alarm; keys tab:ask; notes; onSet (form, check-in, meals, plan)
+refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idetail under V.easy; acts ez-* and plus-day
+                  (wrapped); screens ez-today and ez-bm (which set Version to Easy); keys tab:today, tab:insights, bm;
+                  notes (its screens, plus and sym in Easy), decisions.easy, built.easy; onSet (easy, theme)
+```
 - A hook that throws is logged and skipped, never allowed to take the page down. A wrapped screen that throws is drawn
   the core's way instead (`RU.core` keeps every core screen from before the modules loaded), and so is a Today part
   or layout. A module screen with no note of its own shows "On the phone" and lights no row in Screens.
@@ -157,15 +208,23 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
 NODE_PATH=$(npm root -g) node work/qa.js            # console errors, sideways scroll, claims check, 44x44 tap targets
 NODE_PATH=$(npm root -g) node work/behave.js        # interactions and data: drafts, focus, one-tap log, check-in rule
 node work/audit-spacing.js                          # must say the prototype is on the scale
-NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every screen in every state
+NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every screen in the list, in every state
+NODE_PATH=$(npm root -g) node work/sweep.js         # every pair of decisions, both themes, 12 weeks and Just joined:
+                                                    # errors, junk text, dashes, claims, overflow, blank, check-in off
 ```
+
+The sweep takes about 5 minutes on 4 workers; `--plan free` and `--width 390` run the same pairs on Free or full
+screen on a phone, and `--limit 20` is a quick look.
 
 ## Publishing
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
 page and every `prototype/css` and `prototype/js` file at the same relative path (`css/app.css`, `js/refresh-app.js`,
-the modules and their css included). The library files `index.html` loads go under `js/` and `css/` too, from
-`library/`:
+the five modules and their css included). The library's look files `index.html` loads go under `js/` and `css/` too,
+from `library/`: `css/look-*.css`, and `js/looks-data.js` with `js/look-*.js`. The page declares the capabilities
+`{ sample: {} }`, so Ask Florin can ask Claude on the viewer's own account (the first question in a view asks the viewer
+to allow it); without it, or on a local file, every answer is computed from the logs. Keep the capability on every
+republish (omit `capabilities` on a redeploy to keep what's there, or pass it again).
 
 ```
 js/looks-data.js  <- library/js/looks-data.js        css/look-rings.css    <- library/css/look-rings.css

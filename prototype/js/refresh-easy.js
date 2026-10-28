@@ -99,28 +99,12 @@
     requestAnimationFrame(() => themes(a));
   }
 
-  /* ---------- the Screens list: a preview that gives the version back ----------
-     "Easy version: Today" in the list turns Easy on, so the phone can show it, and the page's toggle follows. Picking
-     another screen in the list puts the version back as it was, unless someone picked a version in the meantime (on
-     the left, or in Profile): that choice stays. The page's own sweep of every screen relies on this, so the screens
-     after Easy's are drawn as they'd be without it.
-     It listens to the list's buttons (capture, before the page opens the screen) rather than wrapping api.open: there
-     is no documented "leaving this screen" hook yet, and this patches nothing of the core's. A reload while previewing
-     keeps Easy on, as the page stores it, and the toggle shows it */
-  const MY_SCREENS = ["ez-today", "ez-bm"];
-  let auto = null, selfSet = false;
-  const setEasy = (a, v) => { selfSet = true; try { a.set("easy", v); } finally { selfSet = false; } };
-  const preview = (a) => { if (!a || a.S.easy) return; auto = { prev: false }; setEasy(a, true); };
-  try {
-    document.addEventListener("click", (e) => {
-      try {
-        const b = e.target && e.target.closest ? e.target.closest('[data-rx="screen"]') : null, a = api();
-        if (!b || !auto || !a || MY_SCREENS.includes(b.dataset.v)) return;
-        const prev = auto.prev; auto = null;
-        if (!!a.S.easy !== prev) setEasy(a, prev);
-      } catch (err) { warn("giving the version back", err); }
-    }, true);
-  } catch (e) { warn("listening to the Screens list", e); }
+  /* ---------- the Screens list: Easy's screens turn Easy on, and it stays ----------
+     "Easy version: Today" and "log a BM" in the list set the Version decision to Easy, as Home: Day first sets Home and
+     the onboarding screens set Onboarding: the page's toggle follows, the choice is stored, and every screen after it
+     is drawn in Easy until Version is set back on the left (or in Profile). The phone never shows one version while the
+     left bar says another, whichever way the list is stepped (a click or the arrow keys) */
+  const setEasy = (a) => { if (a && !a.V().easy) a.set("easy", true); };
 
   /* ====================================================================== */
   /* TODAY                                                                    */
@@ -637,9 +621,9 @@
   /* ====================================================================== */
   EXT.built.easy = [true];
   EXT.screens.push(["Easy version", [["ez-today", "Easy version: Today"], ["ez-bm", "Easy version: log a BM"]]]);
-  EXT.opens["ez-today"] = (a) => { preview(a); };
+  EXT.opens["ez-today"] = (a) => { setEasy(a); };
   EXT.opens["ez-bm"] = (a) => {
-    preview(a);
+    setEasy(a);
     a.act("open-bm", document.createElement("button"));
     const ov = a.top();
     if (ov && ov.type === "bm" && ov.st) { ov.st.ez = null; a.rerender(ov, { noRestore: true }); const h = ov.el.querySelector(".ap-ez-q"); if (h) h.focus({ preventScroll: true }); }
@@ -653,7 +637,7 @@
   chainKey("tab:insights", (o) => (o && o.st && o.st.easy && !(o.st.ins && o.st.ins.k) ? "ez-weeks" : null));
   chainKey("bm", () => (easyNow() ? "ez-bm" : null));
   EXT.onSet.push((k, v, a) => {
-    if (k === "easy") { if (!selfSet) auto = null; sync(a); }
+    if (k === "easy") sync(a);
     if (k === "theme") themes(a);
   });
 

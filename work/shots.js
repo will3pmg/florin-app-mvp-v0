@@ -11,8 +11,11 @@ const ONLY = process.argv[3] ? process.argv[3].split(",") : null;
 const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 fs.mkdirSync(OUT, { recursive: true });
 
-const SCREENS = ["today", "ck-card", "plus", "earlier", "bm", "bm-details", "guide", "flag", "sym", "meal", "ck", "ck-last", "ckdone", "ckday", "history", "insights", "i-score", "i-timing", "i-often", "i-form", "i-sym", "i-ck", "i-pat", "i-pattern", "ask-about", "ask"];
-/* each state sets these page controls (the rest stay at their defaults: Sarah, check-in on, quick tiles) */
+/* every screen in the Screens list, the modules' included, read from the page. The Membership screens switch the demo
+   to Free, so they're taken once, in the first state */
+const FREE = ["pay", "free-insights", "free-ask"];
+/* each state sets these page controls (the rest stay at their defaults: Sarah, check-in on, quick tiles, and the
+   module decisions as built) */
 const STATES = [
   { id: "C-light-est", form: "C", theme: "light", data: "est" },
   { id: "A-light-est", form: "A", theme: "light", data: "est" },
@@ -21,10 +24,16 @@ const STATES = [
   { id: "C-light-new", form: "C", theme: "light", data: "new" },
   { id: "C-light-fresh", form: "C", theme: "light", data: "fresh" },
   { id: "C-dark-ckoff", form: "C", theme: "dark", data: "est", checkin: "false", persona: "marcus" },
-  { id: "C-light-full", form: "C", theme: "light", data: "est", bmUI: "full", persona: "alex" }
+  { id: "C-light-full", form: "C", theme: "light", data: "est", bmUI: "full", persona: "alex" },
+  { id: "C-dark-modules", form: "C", theme: "dark", data: "est", home: "day", history: "calendar", look: "oura", onboard: "full" },
+  { id: "C-light-easy", form: "C", theme: "light", data: "est", easy: "true" },
+  { id: "C-light-fresh-easy", form: "C", theme: "light", data: "fresh", easy: "true", look: "rings" }
 ];
-const DEFAULTS = { persona: "sarah", checkin: "true", bmUI: "quick" };
-const pick = (page, k, v) => page.evaluate(([k, v]) => { const b = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (b && !b.disabled) b.click(); }, [k, v]);
+const DEFAULTS = { persona: "sarah", checkin: "true", bmUI: "quick", mealUI: "quick", home: "score", history: "list", look: "built", easy: "false", onboard: "short" };
+/* the controls a state sets. A module's screen sets its own decision (Home: Day first, Easy version, the onboarding
+   screens), so each shot puts the state back first, and the screen sets only its own */
+const SET = ["persona", "data", "form", "theme", "checkin", "bmUI", "mealUI", "home", "history", "look", "easy", "onboard"];
+const pick = (page, k, v) => page.evaluate(([k, v]) => { const b = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (b && !b.disabled && b.getAttribute("aria-pressed") !== "true") b.click(); }, [k, v]);
 
 (async () => {
   const browser = await chromium.launch();
@@ -37,12 +46,14 @@ const pick = (page, k, v) => page.evaluate(([k, v]) => { const b = document.quer
   await page.waitForSelector(".ap-rx");
   await page.evaluate(() => document.fonts && document.fonts.ready);
   const report = [];
-  for (const s0 of STATES) {
+  const SCREENS = await page.$$eval('[data-rx="screen"]', (bs) => bs.map((b) => b.dataset.v));
+  for (const [si, s0] of STATES.entries()) {
     const s = Object.assign({}, DEFAULTS, s0);
-    for (const k of ["persona", "data", "form", "theme", "checkin", "bmUI"]) await pick(page, k, s[k]);
-    await pick(page, "plan", "member");
     for (const id of SCREENS) {
       if (ONLY && !ONLY.includes(id)) continue;
+      if (FREE.includes(id) && si > 0) continue;
+      for (const k of SET) await pick(page, k, s[k]);
+      await pick(page, "plan", "member");
       /* a screen the decisions switched off (the check-in's, with it off) is skipped */
       if (await page.$eval(`[data-rx="screen"][data-v="${id}"]`, (b) => b.disabled).catch(() => true)) continue;
       await page.click(`.rx-side [data-rx="screen"][data-v="${id}"]`);
@@ -70,7 +81,8 @@ const pick = (page, k, v) => page.evaluate(([k, v]) => { const b = document.quer
       report.push({ state: s.id, screen: id, file, lint });
     }
   }
-  for (const k of ["persona", "data", "form", "theme", "checkin", "bmUI"]) await pick(page, k, Object.assign({ data: "est", form: "C", theme: "light" }, DEFAULTS)[k]);
+  for (const k of SET) await pick(page, k, Object.assign({ data: "est", form: "C", theme: "light" }, DEFAULTS)[k]);
+  await pick(page, "plan", "member");
   await ctx.close();
 
   /* the page: 1440 and 1100 wide, and the phone layout at 390 with each sheet */

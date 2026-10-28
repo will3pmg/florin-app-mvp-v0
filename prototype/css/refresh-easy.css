@@ -73,6 +73,11 @@
 .ap--easy .ap-back { min-height: 56px; padding: 0 16px 0 0; gap: 4px; font-size: 18px; font-weight: 500; color: var(--ap-ink); }
 .ap--easy .ap-back .ic { width: 24px; height: 24px; }
 .ap--easy .ap-nav-t { font-size: 18px; }
+/* the back word (Your weeks) stays on one line at 18px: the title takes the room left beside it, centred there, and
+   wraps only if it must (Weekly check-in, Possible patterns) */
+.ap--easy .ap-nav { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 8px; }
+.ap--easy .ap-back { white-space: nowrap; }
+.ap--easy .ap-nav-t { text-align: center; }
 
 /* ---------- sheets ---------- */
 .ap--easy .ap-psh { gap: 20px; padding: 12px 20px 32px; }

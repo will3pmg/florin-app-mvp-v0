@@ -515,7 +515,7 @@
     const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} not logged`].filter(Boolean);
     const ans = u ? `${inRange} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.`
       : `${plural(known.length, "day")} logged so far. Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
-    const aria = `BMs a day${learning ? ` so far, one ring segment for each of your first ${N} days` : ", last 30 days, one ring segment per day"}. Average ${o.avg30} a day${avgWord ? `, ${avgWord}` : ""}${u ? ` of ${o.usualText}` : ""}. ${ans}${gaps ? ` Days not logged are left as ${gaps === 1 ? "a gap" : "gaps"}.` : ""}`;
+    const aria = `BMs a day${learning ? ` so far, one ring segment for each of your first ${N} days` : ", last 30 days, one ring segment per day"}.${o.avg30 != null ? ` Average ${o.avg30} a day${avgWord ? `, ${avgWord}` : ""}${u ? ` of ${o.usualText}` : ""}.` : ""} ${ans}${gaps ? ` Days not logged are left as ${gaps === 1 ? "a gap" : "gaps"}.` : ""}`;
     const svg = `<svg class="rg-svg rg-chart rg-oring" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
       ${band}${before}${after}${marks}${laneLbl}${now}
       ${startLbl}
