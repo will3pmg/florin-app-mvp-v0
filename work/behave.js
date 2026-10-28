@@ -109,9 +109,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const M = L.build("sarah", "new");
     L.add(M, { kind: "sym", d: L.TODAY, t: 19, items: [{ name: "Belly pain", s: 0 }], last: null, note: "" });
     const html = RU.weekCard(M, "A");
-    return /strength not given/.test(html);
+    return /strength not said/.test(html) && !/strength not given/.test(html);
   });
-  ok(mild, "an unrated symptom shows as strength not given");
+  ok(mild, "an unrated symptom shows as strength not said");
 
   /* 8. a No BM day is never drawn as a gap */
   const nobm = await p.evaluate(() => {
@@ -183,10 +183,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   await p.click(`${ph} [data-act="mq-mic"]`, { force: true });
   await p.waitForFunction(() => { const v = document.querySelector(".rx-stage .ap-rx .ap-mq-voice"); return v && v.classList.contains("is-done"); }, null, { timeout: 15000 });
   const said = await p.$eval(`${ph} .ap-mq-text`, (e) => e.value);
-  ok(/for breakfast/.test(said) && /for dinner/.test(said), `the mic fills the box with the day, word by word (${said.slice(0, 40)}...)`);
+  /* final-fix: what's played is the day's meals not logged yet, so saying the day never logs a food twice */
+  const sayWant = await p.evaluate(() => { const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M(), x = L.day(M, L.TODAY); return { want: L.mealSay(M, L.TODAY), logged: x.entries.filter((e) => e.kind === "meal").map((e) => e.meal) }; });
+  ok(said === sayWant.want && /for dinner/.test(said) && !sayWant.logged.some((k) => k !== "day" && new RegExp(`for ${k}`).test(said)), `the mic fills the box with the day's meals not logged yet, word by word (${said.slice(0, 60)}; logged: ${sayWant.logged.join(", ")})`);
   ok(await p.evaluate(() => document.activeElement && document.activeElement.classList.contains("ap-mq-text")), "when the mic stops, focus is in the box to fix anything");
   await p.click(`${ph} [data-act="save-meal"]`); await wait(600);
-  ok(/Saved what you ate today\. \d+ foods counted/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "saving says how many foods were counted");
+  ok(/Saved what you ate today\. (1 food|\d+ foods) counted/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "saving says how many foods were counted");
   const quickData = await p.evaluate(() => {
     const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, out = {};
     const none = L.build("sarah", "est", { meals: "none" }), rough = L.build("sarah", "est", { meals: "rough" });
@@ -1114,7 +1116,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       if (alarm) return { ok: !!card && !/FloraScore/.test(all) && !partWord, line, alarm };
       if (!M.usual) return { ok: line.includes(`starts on day ${L.LEARN_DAYS}, in ${L.LEARN_DAYS - L.learnDay(M)} day`), line };
       const s = L.score(M, L.TODAY, V.form), y = L.score(M, L.TODAY - 1, V.form);
-      if (!s || s.value == null) return { ok: /No FloraScore yet today/.test(line), line };
+      if (!s || s.value == null) return { ok: line.includes(`No FloraScore today: ${L.NO_SCORE}.`), line };
       const dv = y && y.value != null ? s.value - y.value : null;
       const want = dv == null ? `FloraScore is ${s.value}.` : dv === 0 ? `FloraScore is ${s.value}, the same as yesterday` : `FloraScore is ${s.value}, ${Math.abs(dv)} ${dv > 0 ? "higher" : "lower"} than yesterday's ${y.value}`;
       const said = /Without the |didn't change it/.test(line);
@@ -1188,10 +1190,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const dh = await dec("home", "day"), dc = await dec("history", "calendar");
     const built = await v.evaluate(() => ({ home: (window.FLORIN_EXT.built.home || []).join(","), history: (window.FLORIN_EXT.built.history || []).join(",") }));
     /* fix-variants: the Home note recommends Score first, as the deck does, with the hero's sentence leading on the most
-       notable log, for Will to confirm; it no longer claims Oura's Today puts the score second. The research line says
+       notable log (and, with membership, what it did to FloraScore, as the hero says it), for Will to confirm; it no longer claims Oura's Today puts the score second. The research line says
        what Will's screenshots show: shortcuts, then the main score as a big arc, then a timeline */
     await vpick("home", "day");
-    const dhn = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="home"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return { rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", res: [...document.querySelectorAll("#rxNotes .rx-res li")].map((l) => l.textContent).join(" "), q: [...document.querySelectorAll("#rxNotes .rx-q li")].map((l) => l.textContent).join(" "), hl: window.FLORIN_RUI.highlight(window.FLORIN_EXT.api.M(), window.FLORIN_EXT.api.V().form) }; });
+    const dhn = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="home"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return { rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", res: [...document.querySelectorAll("#rxNotes .rx-res li")].map((l) => l.textContent).join(" "), q: [...document.querySelectorAll("#rxNotes .rx-q li")].map((l) => l.textContent).join(" "), hl: (() => { const RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), V = api.V(), H = RU.highlightOf(M, V.form), fx = V.plan === "free" || H.alarm ? "" : RU.scoreEffect(M, V.form, H.N); return fx ? `${H.text} ${fx}` : H.text; })() }; });
     ok(dh.on === "On the phone" && built.home === "day" && /^Score first, with the hero's sentence leading on the most notable thing logged today and saying what it did to FloraScore/.test(dh.rec) && /Will to confirm\.$/.test(dh.rec) && !/October 2025|Day first keeps that order/.test(dh.rec + dhn.res) && /a row of small score shortcuts, then the main score as a big arc/.test(dhn.res) && dhn.q.includes(`"${dhn.hl}"`) && !/next pass/.test(dh.lede), `Day first: claimed in EXT.built and On the phone; the note recommends Score first for Will to confirm, quotes Score first's sentence now, and reads Oura's Today as the screenshots show it (${dh.on})`);
     /* end fix-variants */
     const vtotal = await v.evaluate(() => window.FLORIN_EXT.api.M().days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0));
@@ -2809,7 +2811,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await cset("form", "C"); await cgo("today");
     /* 1. Score first: the day's top item leads, ranked as Day first ranks it */
     const h0 = await hero();
-    const top0 = await cp.evaluate(() => { const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = window.FLORIN_EXT.api.M(); const N = RU.standouts(M, "C")[0]; return N ? RU.leadText(M, "C", N) : null; });
+    /* with membership the sentence goes on to say what that log did to FloraScore (RU.scoreEffect) */
+    const top0 = await cp.evaluate(() => { const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = window.FLORIN_EXT.api.M(); const N = RU.standouts(M, "C")[0]; if (!N) return null; const fx = RU.scoreEffect(M, "C", N); return `${RU.leadText(M, "C", N)}${fx ? ` ${fx}` : ""}`; });
     ok(h0 && h0.sub === top0 && /^Mild bloating at /.test(h0.sub) && !h0.flag, `fix-core: Score first's sentence leads with what stood out today, a mild symptom on Sarah's day (${h0 && h0.sub})`);
     await cadd({ kind: "bm", t: 19.67, form: 7 });
     const h1 = await hero();
@@ -2973,6 +2976,236 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await cp.close();
   }
   /* ===== end fix-core ===== */
+
+  /* ===== consolidate: the hand-offs between the third review's fixers, kept as checks. One wording of the no-score
+     rule (L.NO_SCORE) on every Today; Ask's meal counts said as Insights says them; no "good days"; a flagged today
+     read against nothing on every week card and score card; the page following the system again after Oura; Screens >
+     Ask Florin opening a fresh chat; Score first saying what the log did to FloraScore; the strength marks ===== */
+  {
+    const fs = require("fs");
+    const xp = await b.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: "light" });
+    const xe = [];
+    xp.on("pageerror", (e) => xe.push(e.message));
+    xp.on("console", (m) => { if (m.type() === "error") xe.push(m.text()); });
+    await xp.goto(PAGE); await xp.waitForSelector(".rx-stage .ap-rx"); await xp.waitForTimeout(600);
+    const xw = (ms = 400) => xp.waitForTimeout(ms);
+    const xset = async (k, v) => { await xp.evaluate(([k, v]) => window.FLORIN_EXT.api.set(k, v), [k, v]); await xw(); };
+    const xtext = () => xp.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-layer").innerText);
+    /* 1. no FloraScore today: every Today says the model's one rule */
+    const strip = () => xp.evaluate(() => {
+      const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M();
+      [L.TODAY, L.TODAY - 1].forEach((d) => L.day(M, d).entries.filter((e) => e.kind === "bm" || e.kind === "nobm").map((e) => e.id).forEach((id) => L.remove(M, id)));
+      api.go("today"); api.renderTab(true);
+      return { rule: window.FLORIN_LOGS.NO_SCORE, v: (L.score(M, L.TODAY, api.V().form) || {}).value };
+    });
+    const noScore = [];
+    for (const [k, v] of [["home", "score"], ["home", "day"], ["easy", true], ["look", "rings"], ["look", "journal"], ["look", "bento"], ["look", "oura"], ["look", "easy"]]) {
+      await xset("persona", "sarah"); await xset(k, v);
+      const r = await strip(); await xw(500);
+      const t = await xtext(), rule = r.rule.charAt(0).toUpperCase() + r.rule.slice(1);
+      if (r.v != null || !(t.includes(r.rule) || t.includes(rule))) noScore.push(`${k}=${v}`);
+      await xset(k, k === "home" ? "score" : k === "easy" ? false : "built");
+    }
+    ok(!noScore.length, `consolidate: with no FloraScore today, Score first, Day first, Easy and every data style say "${await xp.evaluate(() => window.FLORIN_LOGS.NO_SCORE)}"${noScore.length ? ": missed " + noScore.join(", ") : ""}`);
+    /* 2. Ask's meal counts are Insights' counts, in Insights' words */
+    const am = await xp.evaluate(() => {
+      const L = window.FLORIN_LOGS, AK = window.FLORIN_ASK, V = { form: "C", plan: "member", checkin: true, uid: 9, mealUI: "quick" }, bad = [];
+      for (const p of ["sarah", "marcus", "alex"]) {
+        const M = L.build(p, "est", { meals: "rough" }), PR = L.patterns(M, "C");
+        if (!PR.sparse || !PR.mealDays) continue;
+        const want = `${PR.mealDays} of the ${PR.loggedDays === 1 ? "1 day" : `${PR.loggedDays} days`} you logged in the last ${PR.window} days`;
+        const facts = AK.read(M, V, null).text;
+        ["What tends to come before my rougher days?", "How sure are these patterns?", "How do I test one?", "What have I been eating?"].forEach((q) => { const tx = AK.textOf(AK.answer(M, V, q, null)); if (/of your last \d+ days/.test(tx) || (/[Mm]eals are logged on \d/.test(tx) && !tx.includes(want))) bad.push(`${p} "${q}": ${tx.slice(0, 140)}`); });
+        if (!facts.includes(want)) bad.push(`${p} facts`);
+      }
+      return bad;
+    });
+    ok(!am.length, `consolidate: Ask states meal coverage as "N of the N days you logged in the last 90 days", the counts Insights and the gate use${am.length ? ": " + am.slice(0, 2).join(" | ") : ""}`);
+    /* 3. "good days" is in no copy (DESIGN.md keeps judgement out of the data): ordinary days */
+    const gd = [];
+    for (const dir of ["../prototype/js", "../library/js"]) for (const fn of fs.readdirSync(path.resolve(__dirname, dir)).filter((x) => x.endsWith(".js"))) {
+      fs.readFileSync(path.resolve(__dirname, dir, fn), "utf8").split("\n").forEach((ln, i) => { if (/["`][^"`]*\bgood days?\b[^"`]*["`]/i.test(ln)) gd.push(`${fn}:${i + 1}`); });
+    }
+    ok(!gd.length, `consolidate: no copy says good days, only ordinary days${gd.length ? ": " + gd.join(", ") : ""}`);
+    /* 4. a flagged today: every week card and score card reads it against nothing */
+    const flagBad = [];
+    for (const [k, v] of [["look", "built"], ["look", "rings"], ["look", "journal"], ["look", "bento"], ["look", "oura"], ["look", "easy"], ["easy", true]]) {
+      await xset("persona", "sarah"); await xset(k, v);
+      const r = await xp.evaluate(() => {
+        const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = api.M(), V = api.V();
+        L.add(M, { kind: "bm", d: L.TODAY, t: 19.7, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" });
+        api.go("today"); api.renderTab(true);
+        /* Field journal sets its apostrophes curly */
+        const W = RU.week(M, V.form), t = document.querySelector(".rx-stage .ap-rx .ap-layer").innerText.replace(/\u2019/g, "'");
+        const D = window.FLD && window.FLD.build("sarah", { mode: V.form, M });
+        return { t, flag: RU.FLAG_DAY, read: W.cols.filter((c) => c.flag).length, cnt: W.rbms.length + W.flagged.flatMap((c) => c.bms).length === W.bms.length, dstate: D ? D.days[7][D.days[7].length - 1].state : null, sflag: D ? D.score.flag : null };
+      });
+      const looksOk = r.dstate === "flag" && r.sflag === true;
+      const scoreRead = !/not read against your usual today/i.test(r.t) || /(Within|A little above|A little below|Above|Below) your usual range/.test(r.t);
+      if (!r.t.includes(r.flag) || scoreRead || !r.cnt || !looksOk) flagBad.push(`${k}=${v}${!r.t.includes(r.flag) ? " (no week line)" : ""}${scoreRead ? " (score read)" : ""}${looksOk ? "" : ` (data ${r.dstate}, ${r.sflag})`}`);
+      await xset(k, k === "easy" ? false : "built");
+    }
+    ok(!flagBad.length, `consolidate: with a flagged BM today, As built's week card, every data style's week and score cards and Easy's leave today unread and say why${flagBad.length ? ": " + flagBad.join(", ") : ""}`);
+    /* 5. Score first says what the log that stood out did to FloraScore, with membership; Free stops at the lead */
+    await xset("persona", "sarah");
+    const fx = await xp.evaluate(async () => {
+      const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = api.M(), V = api.V();
+      L.add(M, { kind: "bm", d: L.TODAY, t: 19.67, form: 7, how: {}, dur: null, flags: {}, note: "" });
+      api.go("today"); api.renderTab(true);
+      const N = RU.standouts(M, V.form)[0], e = RU.scoreEffect(M, V.form, N), sub = document.querySelector(".rx-stage .ap-rx .ap-hero-sub").textContent;
+      const w = RU.scoreWithout(M, N.e, V.form).value, s = L.score(M, L.TODAY, V.form).value;
+      return { sub, e, ok: e === (w === s ? "It didn't change FloraScore." : `Without it, FloraScore would be ${w}.`) };
+    });
+    ok(fx.ok && fx.e && fx.sub.endsWith(fx.e) && /^Your 7:40 PM BM was Watery/.test(fx.sub), `consolidate: Score first's sentence leads with the Watery BM and says what it did to FloraScore (${fx.sub})`);
+    await xset("plan", "free");
+    const fxFree = await xp.evaluate(() => {
+      const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M();
+      if (!L.day(M, L.TODAY).entries.some((e) => e.kind === "bm" && e.form === 7)) L.add(M, { kind: "bm", d: L.TODAY, t: 19.67, form: 7, how: {}, dur: null, flags: {}, note: "" });
+      api.go("today"); api.renderTab(true);
+      return document.querySelector(".rx-stage .ap-rx .ap-hero-sub").textContent;
+    });
+    ok(!/FloraScore/.test(fxFree) && /^Your 7:40 PM BM was Watery/.test(fxFree), `consolidate: on Free it stops at the lead, as Day first does (${fxFree})`);
+    await xset("plan", "member");
+    /* 6. the strength marks: the calendar's mild tick is the week card's mild square, and strength not said is hollow in both */
+    const mk = await xp.evaluate(() => {
+      const root = document.querySelector(".rx-stage .ap-rx"), box = document.createElement("div");
+      box.innerHTML = '<i class="ap-wk-sq ap-wk-sq--1"></i><i class="vr-t vr-t--sym vr-t--s1"></i><i class="ap-wk-sq ap-wk-sq--0"></i><i class="vr-t vr-t--sym vr-t--s0"></i>';
+      root.appendChild(box);
+      const c = [...box.children].map((x) => getComputedStyle(x));
+      const out = { mild: [c[0].backgroundColor, c[1].backgroundColor], hollow: [c[2].backgroundColor, c[3].backgroundColor] };
+      box.remove();
+      return out;
+    });
+    ok(mk.mild[0] === mk.mild[1] && mk.hollow.every((x) => /rgba\(0, 0, 0, 0\)|transparent/.test(x)), `consolidate: the calendar's mild tick matches the week card's mild square (${mk.mild[0]}), and strength not said is hollow in both`);
+    /* 7. Screens > Ask Florin after a seeded chat: a fresh chat, through EXT.opens.ask */
+    const xgo = async (id) => { await xp.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await xw(900); };
+    await xgo("ask-chat");
+    const a0 = await xp.evaluate(() => { const S = window.FLORIN_EXT.api.S; return S.askx ? S.askx.msgs.length : 0; });
+    await xgo("ask");
+    const a1 = await xp.evaluate(() => { const api = window.FLORIN_EXT.api, S = api.S; return { n: S.askx ? S.askx.msgs.length : 0, key: api.key(), lit: (document.querySelector('[data-rx="screen"][aria-current="true"]') || { dataset: {} }).dataset.v }; });
+    ok(a0 > 0 && a1.n === 0 && a1.key === "ask" && a1.lit === "ask", `consolidate: Screens > Ask Florin after the seeded chat opens a fresh chat and lights its own row (${a0} messages, then ${a1.n}; ${a1.key})`);
+    await xp.close();
+    /* 8. the page follows the system theme again after the Oura style turned the phone dark and gave it back */
+    const tp2 = await b.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: "light" });
+    await tp2.goto(PAGE); await tp2.waitForSelector(".rx-stage .ap-rx"); await tp2.waitForTimeout(900);
+    const th = async () => tp2.evaluate(() => document.querySelector(".rx-stage .ap-rx").dataset.theme);
+    await tp2.evaluate(() => document.querySelector('[data-rx="look"][data-v="oura"]').click()); await tp2.waitForTimeout(500);
+    const t1 = await th();
+    await tp2.evaluate(() => document.querySelector('[data-rx="look"][data-v="rings"]').click()); await tp2.waitForTimeout(500);
+    const t2 = await th();
+    await tp2.emulateMedia({ colorScheme: "dark" }); await tp2.waitForTimeout(600);
+    const t3 = await th();
+    await tp2.emulateMedia({ colorScheme: "light" }); await tp2.waitForTimeout(600);
+    const t4 = await th();
+    await tp2.evaluate(() => document.querySelector('[data-rx="look"][data-v="built"]').click()); await tp2.waitForTimeout(300);
+    await tp2.close();
+    ok(t1 === "dark" && t2 === "light" && t3 === "dark" && t4 === "light", `consolidate: Oura turns the phone dark and gives it back, and the page then follows the system again (${[t1, t2, t3, t4].join(", ")})`);
+    ok(!xe.length, `consolidate: no console or page errors${xe.length ? ": " + xe.slice(0, 3).join(" | ") : ""}`);
+  }
+  /* ===== end consolidate ===== */
+
+  /* ===== final-fix: a flagged today reads nothing anywhere: Easy's sentence, FloraScore's detail, Insights' cards and
+     counts, the data styles' 30-day cards and Ask Florin's answers; the week card's labels and flag line; the meal
+     transcript; the Oura theme after a system change ===== */
+  {
+    const fp = await b.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: "light" });
+    const fe = [];
+    fp.on("pageerror", (e) => fe.push(e.message));
+    fp.on("console", (m) => { if (m.type() === "error") fe.push(m.text()); });
+    await fp.goto(PAGE); await fp.waitForSelector(".rx-stage .ap-rx"); await fp.waitForTimeout(600);
+    const fw = (ms = 400) => fp.waitForTimeout(ms);
+    const fset = async (k, v) => { await fp.evaluate(([k, v]) => window.FLORIN_EXT.api.set(k, v), [k, v]); await fw(); };
+    const ftext = () => fp.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-layer").innerText.replace(/’/g, "'"));
+    const fflag = () => fp.evaluate(() => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M(); if (!L.day(M, L.TODAY).entries.some((e) => e.flags && e.flags.blood)) L.add(M, { kind: "bm", d: L.TODAY, t: 19.7, form: 7, how: {}, dur: null, flags: { blood: true }, note: "" }); api.renderTab(true); });
+    const fgo = (t) => fp.evaluate((t) => { window.FLORIN_EXT.api.go(t); window.FLORIN_EXT.api.renderTab(true); }, t);
+    const SIGN = "Blood in your stool, noted in a log today: primary care is the right first stop.";
+    await fset("persona", "sarah"); await fflag();
+    /* the model: today's state is "flag" and it reads on no side; the score keeps its number */
+    const mdl = await fp.evaluate(() => {
+      const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M(), f = L.facts(M, L.day(M, L.TODAY), "C"), s = L.score(M, L.TODAY, "C");
+      return { st: f.state, fl: f.flag, nul: f.inWin === null && f.inCount === null && f.formsIn === null, raw: f.raw.inWin != null, v: s && s.value };
+    });
+    ok(mdl.st === "flag" && mdl.fl && mdl.nul && mdl.raw && mdl.v != null, `final-fix: L.facts gives a flagged today the state "flag", read on no side, and FloraScore keeps its number (${mdl.v})`);
+    /* 1. Easy's Today leads with the sign, as the Teal note, and reads nothing of the day */
+    await fset("easy", true); await fflag(); await fgo("today"); await fw(500);
+    const ez = await fp.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .ap-ez-say"); return s ? { t: s.textContent.trim(), flag: s.classList.contains("ap-ez-flag"), bg: getComputedStyle(s).backgroundColor } : null; });
+    ok(ez && ez.flag && ez.t === SIGN && !/usual/.test(ez.t) && !/rgba\(0, 0, 0, 0\)/.test(ez.bg), `final-fix: Easy's Today leads with the sign and primary care, as the Teal note (${ez && ez.t})`);
+    await fset("easy", false);
+    /* 2. FloraScore's detail: not read against the usual, the sign under it, no judgement of the week */
+    await fflag(); await fgo("insights"); await fw(400);
+    await fp.evaluate(() => document.querySelector('.rx-stage .ap-rx [data-act="idetail"][data-k="score"]').click()); await fw(700);
+    const dt = await ftext();
+    ok(/Not read against your usual today\./.test(dt) && dt.includes(SIGN) && !/(Within|A little above|A little below|Above|Below) your usual range/.test(dt.split("Where today sits")[0]) && !/Steadier|bumpier/i.test(dt), `final-fix: FloraScore's detail reads a flagged today against nothing and names the sign (${dt.split("\n").slice(2, 5).join(" | ")})`);
+    /* 7. the week, in points */
+    const wk = await fp.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api; return L.scoreMoved(api.M(), api.V().form); });
+    const wkWant = wk.delta === 0 ? "The same as last week, on average." : `${Math.abs(wk.delta)} ${Math.abs(wk.delta) === 1 ? "point" : "points"} ${wk.delta > 0 ? "above" : "below"} last week, on average.`;
+    ok(dt.includes(wkWant), `final-fix: the detail says the week's change in points, as the Insights card does ("${wkWant}")`);
+    /* 3. Insights: the score card and the day counts leave today out, and say why */
+    await fp.evaluate(() => { const bk = document.querySelector('.rx-stage .ap-rx [data-act="iback"]'); if (bk) bk.click(); }); await fw(400); await fgo("insights"); await fw(500);
+    const ins = await fp.evaluate(() => {
+      const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = api.M(), V = api.V(), n = api.S.ins.range || 30;
+      const F = L.span(M, n, V.form), w = F.filter((f) => f.state === "usual").length, k = w + F.filter((f) => f.state === "shifted").length;
+      const t = document.querySelector(".rx-stage .ap-rx .ap-layer").innerText;
+      return { t, w, k, flag: RU.FLAG_DAY, mor: F.filter((f) => f.first != null && !f.flag).length, inW: F.filter((f) => f.inWin).length };
+    });
+    ok(/\d+, not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} mornings`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and ${ins.inW} of ${ins.mor} mornings without it, and says why`);
+    /* 4. every data style's 30-day cards leave today out of their counts */
+    const lookBad = [];
+    for (const look of ["rings", "journal", "bento", "oura", "easy"]) {
+      await fset("look", look); await fflag(); await fgo("insights"); await fw(500);
+      const r = await fp.evaluate(() => {
+        const api = window.FLORIN_EXT.api, M = api.M(), V = api.V(), D = window.FLD.build("sarah", { mode: V.form, M });
+        const ser = D.score.series[30], rd = ser.filter((s) => s.value != null && !s.flag).length;
+        return { t: document.querySelector(".rx-stage .ap-rx .ap-layer").innerText.replace(/’/g, "'"), rd, all: ser.filter((s) => s.value != null).length, mor: D.timing.mornings30, flagLine: D.flagLine };
+      });
+      const bad = [];
+      if (new RegExp(`\\d+ of ${r.all} days(\\.| within your usual range)`).test(r.t) && r.all !== r.rd) bad.push("trend counts today");
+      if (/In your usual window|Inside your usual window|first BM today came in your usual window|Today[^.\n]*inside your window/.test(r.t)) bad.push("today's timing read");
+      if (!r.t.includes(r.flagLine)) bad.push("no flag line");
+      if (bad.length) lookBad.push(`${look}: ${bad.join(", ")}`);
+    }
+    await fset("look", "built");
+    ok(!lookBad.length, `final-fix: every data style's trend, timing, often and form cards leave a flagged today out and say why${lookBad.length ? ": " + lookBad.join("; ") : ""}`);
+    /* 5. Ask Florin: the week and score answers leave today out, say why and offer primary care */
+    const ak = await fp.evaluate(() => {
+      const api = window.FLORIN_EXT.api, AK = window.FLORIN_ASK, RU = window.FLORIN_RUI, M = api.M(), V = api.V();
+      const a = (q) => AK.textOf(AK.answer(M, V, q, null));
+      return { week: a("How was this week?"), score: a("Why did my FloraScore go up this week?"), facts: AK.read(M, V, null).text, flag: RU.FLAG_DAY };
+    });
+    const akOk = (t) => t.includes(ak.flag) && /primary care is the right first stop/.test(t) && !/(Within|a little above|a little below|above|below) your usual range/i.test(t.replace(/last week/g, ""));
+    ok(akOk(ak.week) && akOk(ak.score) && /noted for a clinician/.test(ak.facts), `final-fix: Ask's week and score answers leave a flagged today unread, say why and point to primary care (${ak.week.slice(0, 120)}...)`);
+    /* 12 and 18. the week card names each symptom with its own strength, and its flag line sits under the BM rows */
+    const wc = await fp.evaluate(() => {
+      const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = api.M();
+      L.add(M, { kind: "sym", d: L.TODAY, t: 19.8, items: [{ name: "Gas", s: 0 }], last: null, note: "" });
+      const box = document.createElement("div"); box.innerHTML = RU.weekCard(M, api.V().form);
+      const today = [...box.querySelectorAll('.ap-wk-strip[aria-label="Symptoms, by day"] .sr')].pop().textContent;
+      const ms = [...box.querySelector(".ap-wk").children].map((c) => c.className);
+      const fl = ms.indexOf("ap-wk-fl"), rows = ms.map((c, i) => (c === "ap-wk-m" ? i : -1)).filter((i) => i >= 0);
+      return { today, under: fl > rows[1] && fl < rows[2] };
+    });
+    ok(/bloating, mild; gas, strength not said$/.test(wc.today) && wc.under, `final-fix: the week card says each symptom's own strength ("${wc.today}") and puts the flag line under the BM rows`);
+    /* 8. the meal transcript leaves out the meals already logged that day */
+    const ms = await fp.evaluate(() => { const L = window.FLORIN_LOGS, M = L.build("sarah", "est", { meals: "all" }), x = L.day(M, L.TODAY); return { say: L.mealSay(M, L.TODAY), logged: x.entries.filter((e) => e.kind === "meal").map((e) => e.meal) }; });
+    ok(ms.logged.length && !ms.logged.some((k) => new RegExp(`for ${k}`).test(ms.say)) && /^[A-Z]/.test(ms.say), `final-fix: the played transcript leaves out today's ${ms.logged.join(" and ")} ("${ms.say}")`);
+    ok(!fe.length, `final-fix: no console or page errors${fe.length ? ": " + fe.slice(0, 3).join(" | ") : ""}`);
+    await fp.close();
+    /* 13. the page following the system isn't a theme pick: Oura is dark first again after it */
+    const tp = await b.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: "dark" });
+    await tp.goto(PAGE); await tp.waitForSelector(".rx-stage .ap-rx"); await tp.waitForTimeout(900);
+    const tth = () => tp.evaluate(() => document.querySelector(".rx-stage .ap-rx").dataset.theme);
+    const tlook = async (v) => { await tp.evaluate((v) => document.querySelector(`[data-rx="look"][data-v="${v}"]`).click(), v); await tp.waitForTimeout(500); };
+    await tlook("oura"); await tlook("rings");
+    await tp.emulateMedia({ colorScheme: "light" }); await tp.waitForTimeout(600);
+    const s1 = await tth();
+    await tlook("oura");
+    const s2 = await tth();
+    await tlook("built");
+    const s3 = await tth();
+    await tp.close();
+    ok(s1 === "light" && s2 === "dark" && s3 === "light", `final-fix: after the page follows the system to light, Oura is dark first again and gives the theme back (${[s1, s2, s3].join(", ")})`);
+  }
+  /* ===== end final-fix ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

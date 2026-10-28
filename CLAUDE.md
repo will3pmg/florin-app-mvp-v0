@@ -41,7 +41,9 @@ prototype/css/refresh-{looks,variants,profile,ask,easy}.css   each module's styl
                               Each module registers into FLORIN_EXT and wraps RU; it never edits a core file
 prototype/js/refresh-app.js   the page: the one phone (Phone, phone.set), the decisions, notes per screen and decision
 library/                       Florin data looks: the same numbers drawn in five looks, the start of a component library
-library/js/looks-data.js       the one data object (FLD.build) every look draws from, built on refresh-data.js
+library/js/looks-data.js       the one data object (FLD.build) every look draws from, built on refresh-data.js. A look's
+                              day counts come from D.tally[7] and [30] (within, shifted, unsure, nocount, flag, known,
+                              and left, the sentence naming the days counted neither way), so every look counts alike
 library/js/look-*.js, css/look-*.css   one look each, registered on window.FLOOKS, every rule scoped under .lk-<id>
 reference/shipping-app/       the app that ships today: Log a visit, History, the onboarding survey and profile
 reference/oura.md              what Oura's screens do, and how each idea translates under Florin's rules
@@ -67,7 +69,9 @@ reads **On the phone** (an option no module claimed would read **Picked**). A sc
 decision sets that decision, and it stays: Home: Day first, History: Calendar, the onboarding screens and the Easy
 version's, as the Membership screens set Plan to Free. So the phone and the left bar always agree, and a check that
 sweeps the list puts the decisions back after. Decisions are stored (`florin-refresh:<key>`); the demo controls
-aren't. The arrow keys step through Screens from the list or with nothing focused, from the row the page opened while
+aren't. The phone follows the page's theme (the system's, or the page's own) until something sets one that differs from
+it; a set equal to the page's own clears that, so the phone goes back to following (the Oura style turning it dark and
+giving it back leaves nothing stored). The arrow keys step through Screens from the list or with nothing focused, from the row the page opened while
 the phone is still on it (so a row that draws another row's screen, such as Log a BM, details filled in, never loops),
 and focus comes back to the lit row if a screen took it into the phone. A row picked from the list always shows that
 screen's note. The first Tab stop is Skip to the phone. The header links the decisions deck and the data looks
@@ -95,7 +99,8 @@ take the entry; `L.inForms` is three-valued in A and C (null when a B word's ste
 which reads as "could be either", never a shift). Foods are counted only through `L.matchFoods`, for seeded meals and
 typed ones alike.
 
-Insights reads days through `L.facts` (a gap stays a gap, No BM is a zero, a day is usual, shifted, unsure or none)
+Insights reads days through `L.facts` (a gap stays a gap, No BM is a zero, a day is usual, shifted, unsure, none, or
+"flag" for a flagged today)
 and patterns through `L.patterns` (90 days, a food needs 5 logs, a one-sided binomial test at 1 in 100). Meal
 coverage is counted once, over the days logged in the 90-day window (`mealDays` of `loggedDays` in `window`, also
 under the old names `withMeal` and `logged`), never over the pairs of days the tests use, so the gate and every
@@ -106,14 +111,18 @@ A symptom logged without a strength keeps `s: 0` and reads as "strength not said
 FloraScore (`L.score`, `L.scoreUsual`, `L.scoreMoved`) is built from four logged parts (timing, how often, form,
 comfort), weighted 30/25/25/20 like the studio's, blended over the last 3 logged days. A day with no BM logged is left
 out and has no score of its own (today excepted, as far as it has gone), fewer than 2 logged days in 3 means no score,
-and there's no score before day 14. It doesn't depend on meals. `L.scoreMoved` gives this week's and last week's
+and there's no score before day 14. It doesn't depend on meals. The blend is `L.BLEND` (3) and `L.BLEND_MIN` (2), and
+`L.NO_SCORE` is the rule in words, the one wording every screen uses when there's no score today: "it needs a BM, or No
+BM, logged on 2 of your last 3 days" (Score first's hero, Day first, Easy, Ask and every data look, `D.score.why`).
+`L.scoreMoved` gives this week's and last week's
 averages raw (`wk`, `lw`, for the waterfall's geometry) and as shown (`wkR`, `lwR`); `delta` is `wkR - lwR`, so "+8"
 always sits beside 76 and 84.
 
 Meals are occasional (Will, Oct 14). `L.build(persona, data, { meals })` takes "all", "rough" (only days with a
 symptom) or "none". Under 60% of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back
 (`sparse`), because rough-day-only logs name ordinary foods by selection. The quick log (`RU.mealQuick`) is one box
-for the day with a voice button; the prototype plays `L.mealSay` in place of the microphone.
+for the day with a voice button; the prototype plays `L.mealSay` in place of the microphone (that day's meals not
+logged yet, so saying the day never counts a food twice).
 
 The page has a Plan switch. Free keeps logging, Today, FloraScore, the check-in, History and 7 days of Insights;
 Florin membership adds why the score moved, 30 and 90 days, details, patterns, the food check, Ask Florin and the
@@ -129,7 +138,8 @@ It never edits a core file: it registers into `window.FLORIN_EXT` (made by refre
 FLORIN_EXT = {
   overlays:  { [type]: { kind: "sheet" | "full" | "screen", render(M, V, st, api) -> html, key?(st) -> screenId } },
   acts:      { [name]: (button, api, event) => void },     // a data-act; wins over a core act of the same name
-  opens:     { [screenId]: (api) => void },                // open(id) for ids the core doesn't know (after going to Today)
+  opens:     { [screenId]: (api) => void },                // open(id) for ids the core doesn't know (after going to Today);
+                                                           // opens.ask: after the core's Ask tab, a module's fresh chat
   screens:   [[group, [[id, label], ...], { before?: group }]],  // joins a group of that name, or a new group
   notes:     { [screenId]: (M, P) => note },               // wins over the core note when it returns one
   decisions: { [key]: (M, P) => note },                    // replaces a decision's core note
@@ -177,7 +187,23 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
   only flags and symptoms. `RU.leadText(M, mode, item)` is its one sentence; `RU.highlightOf(M, mode)` gives
   `{ text, alarm }` (the timing sentence when nothing stood out) and `RU.highlight(M, mode)` the text alone (without a
   mode it reads with the phone's). Score first draws an alarm as the Teal note on the Forest card, and the score's line
-  then reads "Not read against your usual today", as Day first's chip does.
+  then reads "Not read against your usual today", as Day first's chip does. With membership the hero's sentence goes on
+  to say what the log that stood out did to FloraScore, `RU.scoreEffect(M, mode, N)` ("Without it, FloraScore would be
+  <n>." or "It didn't change FloraScore."), worked out by `RU.scoreWithout(M, e, mode)`, today scored without that entry;
+  Day first uses the same. Never for an alarm, never on Free.
+- **A flagged today** (`L.flagToday(M)`, also `RU.flagToday`: a flag or an alarm feature in today's logs, by
+  `L.alarmOf(e)`, which `RU.alarmOf` is) is read against nothing anywhere. The model does it: `L.facts` gives a flagged
+  today (once there's a usual) `state: "flag"`, `flag: true` and `inWin`, `inCount`, `formsIn` all null, with the
+  reading it would have had in `raw`; FloraScore reads `raw`, so it keeps its number. Everything that counts days
+  against the usual (Insights' cards and details, Ask Florin's facts and answers, the data looks, the calendar) leaves
+  it out and says `RU.FLAG_DAY` ("Today has a log noted for a clinician, so it isn't read against your usual."); a
+  chart draws it as a Teal ring (`.is-flag`, legend `sw--clin`). The hero, Day first's chip, Easy's FloraScore,
+  Insights' score card and FloraScore's detail keep the number and say "Not read against your usual today"; Easy's
+  sentence and the detail lead with the sign as the Teal note. `RU.week` gives the read counts over the other days
+  (`rbms`, `rmornings`, `flagged`) and puts the line under the two BM rows. In the data looks `D.flagToday`,
+  `D.score.flag`, a series point's `flag` and `D.flagLine` say the same; their 30-day counts (`D.timing.mornings30`,
+  `D.often.avg30`, `D.form`) are over the other days. Past days stay read (whether every surface should mark a flagged
+  day, as History's calendar does, is a call for Will).
 - Helpers: `RU.ckOn(V)` (the check-in is on), `RU.bmCount(M)`, `RU.QUICK_AFTER` (5 BMs before a tile saves at once).
   The looks module adds `RU.lookOf(V)`, `RU.lookCards(M, V, keys, o)` and `RU.lookAfter(el)`, so another module draws
   cards in a look (Easy draws Your weeks with them).
@@ -197,13 +223,16 @@ What each module registers (the file's header comment has the detail):
 ```
 refresh-looks     wraps RU.insights, RU.todayParts.hero and .week, RU.idetail (Your days), RU.askContext; acts idetail,
                   iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style; keys tab:insights and
-                  tab:today; notes, decisions.look, built.look; onSet (theme, look, a rebuild)
+                  tab:today; notes, decisions.look, built.look; onSet (theme, look, a rebuild). Oura sets the phone
+                  dark while it's drawn (through api.set, so the page follows) unless the viewer has picked a theme,
+                  and gives the theme back when it stops; with Easy on it leaves the theme alone
 refresh-variants  wraps RU.today (Day first) and RU.history (Calendar); acts vr-quick, vr-cal-day, vr-cal-m; screens
                   home-day and hist-cal in Tabs; keys tab:today and tab:history; notes, decisions.home and .history
 refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
                   (the first name); screens Onboarding and profile; notes, decisions.onboard, built.onboard; onSet
 refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-*, ask-about and ask-clear (wrapped),
-                  flag-report; screens ask-chat and ask-alarm; keys tab:ask; notes; onSet (form, check-in, meals, plan)
+                  flag-report; screens ask-chat and ask-alarm; opens ask-chat, ask-alarm and ask (Screens > Ask
+                  Florin is a fresh chat); keys tab:ask; notes; onSet (form, check-in, meals, plan)
 refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idetail under V.easy; acts ez-* and plus-day
                   (wrapped); screens ez-today and ez-bm (which set Version to Easy); keys tab:today, tab:insights, bm;
                   notes (its screens, plus and sym in Easy), decisions.easy, built.easy; onSet (easy, theme)

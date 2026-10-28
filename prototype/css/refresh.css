@@ -316,6 +316,8 @@
 .ap-info { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 13px; line-height: 1.45; }
 /* the icon box is one line of text tall, so the icon centres on the first line without a nudge */
 .ap-info .ic { width: 16px; height: 1.45em; flex: none; }
+/* the sign on a flag day, on FloraScore's detail and Insights: Teal, never read */
+.ap-rx .ap-dhero-flag { box-shadow: inset 3px 0 0 var(--ap-teal); }
 
 /* the BM extras, shown under the form (Oct 14: no Add details tap), all optional */
 .ap-xt { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
@@ -467,13 +469,15 @@
 .ap-wk-no { display: inline-block; width: 12px; height: 2px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
 .ap-wk-sq { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: var(--ap-card2); vertical-align: middle; }
 /* symptom strength in neutral ink, never the reading colour (Ray in dark means "your usual") */
-/* every strength reads at 3:1 or more against the card, in order: mild, moderate, strong. Hollow stays "not given" */
+/* every strength reads at 3:1 or more against the card, in order: mild, moderate, strong. Hollow stays "not said" */
 .ap-wk-sq--1 { background: color-mix(in srgb, var(--ap-ink2) 65%, transparent); }
 .ap-wk-sq--2 { background: color-mix(in srgb, var(--ap-ink2) 82%, transparent); }
 .ap-wk-sq--3 { background: var(--ap-ink2); }
 .ap-wk-n { font-family: var(--mono); font-size: 11px; color: var(--ap-info-ink); }
 .ap-wk-legend { margin-top: 4px; }
 .ap-wk-legend .ap-wk-sq { width: 9px; height: 9px; border-radius: 2px; }
+/* the flag's ring sits outside its box, so the key gives it room on both sides */
+.ap-wk-legend .ap-wk-flag { margin-inline: 4px; }
 .ap-wk-go { align-self: flex-start; }
 .ap-learn-bar { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
 /* learning has no usual yet, so the bar is neutral ink, never the usual colour */
@@ -606,6 +610,11 @@
 .ap-rx .dv-dot.is-new.is-shift { stroke: var(--ap-shift); }
 /* a word logged in B whose steps sit on both sides of the usual: hollow, never Gold */
 .ap-rx .dv-dot.is-maybe { fill: var(--ap-card); stroke: var(--ap-ink3); stroke-width: 1.5; }
+/* a flagged today on Insights' charts: noted for a clinician, a Teal ring, never read (the week card's mark) */
+.ap-rx .dv-dot.is-flag, .ap-rx .dv-new.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 2; }
+.ap-rx .dv-bar.is-flag { fill: var(--ap-info-bg); stroke: var(--ap-teal); stroke-width: 1.5; }
+.ap-rx .c-visit.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 1.5; opacity: 1; }
+.ap-rx .ap-legend .sw--clin { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-teal); }
 .ap-rx .dv-ctx { fill: var(--ap-teal); }
 .ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink2); }
 .ap-rx .dv-bar { fill: var(--ap-chart); }
@@ -713,8 +722,10 @@
 .ap-chs--week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .ap-rx .ap-chs.ap-chs--week > .ap-ch { min-width: 0; padding-inline: 0; }
 .ap-rx .ap-chs.ap-chs--week > .ap-ch::after { inset: -4px -2px; }
-/* a symptom logged without a strength: present, strength not given */
-.ap-wk-sq--0 { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
+/* a symptom logged without a strength: present, strength not said. Hollow, as History's calendar draws it */
+.ap-wk-sq--0 { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-ink2); }
+/* a day with a flag or an alarm feature: noted for a clinician, never read. The calendar's mark, a dot in a Teal ring */
+.ap-wk-flag { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ap-ink2); outline: 2px solid var(--ap-teal); outline-offset: 2px; vertical-align: middle; }
 /* small controls keep their size on screen and get a finger-sized hit area (44px or more) */
 .ap-rx .ap-ch, .ap-rx .ap-gd-b, .ap-rx .ap-hi-filter, .ap-rx .ap-avatar { position: relative; }
 .ap-rx .ap-ch::after { content: ""; position: absolute; inset: -4px 0; }
@@ -759,6 +770,8 @@
 .ap-wk-strip li { display: grid; place-items: center; min-height: 24px; }
 .ap-wk-strip li.is-gap { background: repeating-linear-gradient(135deg, var(--ap-card2) 0 2px, transparent 2px 6px); border-radius: 4px; }
 .ap-wk-meals { font-size: 13.5px; color: var(--ap-ink2); padding-top: 12px; border-top: 1px solid var(--ap-line); }
+/* the line naming a flagged day, so the counts above it add up */
+.ap-wk-fl { font-size: 13.5px; color: var(--ap-ink2); }
 .ap-wk-gapday { display: inline-grid; place-items: center; min-width: 16px; height: 16px; font-style: normal; font-size: 11px; font-weight: 500; color: var(--ap-ink2); text-decoration: line-through; text-decoration-thickness: 1px; }
 .ap-learn-st { display: flex; flex-direction: column; gap: 8px; }
 .ap-learn-st p { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }

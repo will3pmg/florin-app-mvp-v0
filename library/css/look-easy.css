@@ -90,6 +90,8 @@
 .lk-easy .ez-c.is-usual { background: var(--ez-usual); color: var(--ez-on-usual); }
 .lk-easy .ez-c.is-shift { background: var(--ez-shift); color: var(--ez-on-shift); }
 .lk-easy .ez-c.is-unsure { background: var(--ap-card2); box-shadow: inset 0 0 0 3px var(--ap-ink2); }
+/* today with a flag: noted for a clinician, never read. A Teal ring, the colour of the primary care note */
+.lk-easy .ez-c.is-flag { background: var(--ap-card2); box-shadow: inset 0 0 0 3px var(--ap-teal); }
 .lk-easy .ez-c.is-logged { background: var(--ez-read); color: var(--ez-on-read); }
 .lk-easy .ez-c.is-nocount { background: var(--ez-nocount); box-shadow: none; }
 /* a day not logged is a gap: a thin hairline, never a filled or empty-looking zero */

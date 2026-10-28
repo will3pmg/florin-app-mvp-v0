@@ -228,6 +228,10 @@
 .lk-bento .bt-day--u .bt-pill { background: var(--bt-uf); box-shadow: inset 0 0 0 1.5px var(--bt-uf-edge); color: var(--bt-on-uf); }
 .lk-bento .bt-day--s .bt-pill { background: var(--bt-s); box-shadow: none; color: var(--bt-on-s); }
 .lk-bento .bt-day--e .bt-pill { background: var(--bt-e); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); color: var(--ap-ink); }
+/* today with a flag: noted for a clinician, never read. A Teal edge, the colour of the primary care note */
+.lk-bento .bt-day--f .bt-pill { background: var(--ap-card2); box-shadow: inset 0 0 0 2px var(--ap-teal); color: var(--ap-ink); }
+.lk-bento .bt-sq--f { background: var(--ap-card2); color: var(--ap-ink); box-shadow: inset 0 0 0 2px var(--ap-teal); }
+.lk-bento .bt-sw--f { background: var(--ap-card2); box-shadow: inset 0 0 0 1.5px var(--ap-teal); }
 .lk-bento .bt-day--c .bt-pill { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); color: var(--ap-ink2); }
 .lk-bento .bt-day--l .bt-pill { background: var(--bt-l); box-shadow: none; color: var(--ap-ink); }
 .lk-bento .bt-day--pad .bt-pill { background: transparent; box-shadow: none; }

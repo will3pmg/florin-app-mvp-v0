@@ -46,14 +46,14 @@
   </div>
   <aside>FloraScore came back on Oct 14, built from the logs, because it ties Florin to the score people know from Oura. The review says keep it: it was a must-have for 40% of women and 44% of people spending $200 or more a year, and it is the one free hook that holds without meals.
 
-How it works (refresh-data.js): four parts, each 0 to 100 against the person’s own usual. Timing is the first BM against the usual window; How often is BMs against the usual count; Form is BMs within the usual forms; Comfort is the symptoms logged that day. They are weighted 30, 25, 25 and 20, as the studio weights its four, blended over the last 3 days that have logs, then mapped the way the studio maps it.
+How it works (refresh-data.js): four parts, each 0 to 100 against the person’s own usual. Timing is the first BM against the usual window; How often is BMs against the usual count; Form is BMs within the usual forms; Comfort is the symptoms logged that day. They are weighted 30, 25, 25 and 20, as the studio weights its four, blended over the days among the last 3 that have a BM, or No BM, logged, then mapped the way the studio maps it.
 
-Done: a day with no BM logged is left out and has no score of its own, never a zero; fewer than 2 logged days in the last 3 means no score; there is no score before day 14. It doesn’t depend on meals: 83, 83 and 84 for Sarah, Marcus and Alex in every meal mode (model, commit 475f259).
+Done: a day with no BM logged is left out and has no score of its own, never a zero; there is no score unless a BM, or No BM, is logged on 2 of the last 3 days, which every screen says in one wording (“it needs a BM, or No BM, logged on 2 of your last 3 days”); there is no score before day 14. It doesn’t depend on meals: 83, 83 and 84 for Sarah, Marcus and Alex in every meal mode (model, commit 475f259).
 
 The open questions, from the review’s calls for Will:
 Approve the four parts and weights, call it “FloraScore, from your logs”, and version the formula so Florin One can start a new usual range.
 Show each part in the score’s own points, so the four visibly add up to the number. Today Sarah’s parts, as blended for today, read 97, 97, 92 and 92 under a score of 83 (model: L.score(...).parts for Sarah, C). The as-built FloraScore card, which compares this week with last, and the Oura slide’s contributor rows show this week’s part averages instead, 95, 97, 94 and 93 (L.scoreMoved), so the deck names both.
 Can a perfect day reach 100? The mapping (63 plus the raw score above 80 times 21 over 16) caps a perfect logged day near 87: the best each part can score on a logged day is Timing 100, How often 97, Form 98 and Comfort 97, which blends to 98.15 raw and maps to about 87. Computed from the formula in refresh-data.js.
 
-Two related review findings to mention: Comfort scores 97 on any day with no symptom logged, so the review proposes a one-tap “No symptoms today” and counting Comfort only on answered days; and the detail page’s “Steadier than last week” comes close to the judgement words the claims rules forbid, so it should say points instead.</aside>
+Two related review findings to mention: Comfort scores 97 on any day with no symptom logged, so the review proposes a one-tap “No symptoms today” and counting Comfort only on answered days; and the detail page’s “Steadier than last week” came close to the judgement words the claims rules forbid, so it now says points instead (“3 points above last week, on average”), as the Insights card does.</aside>
 </section>

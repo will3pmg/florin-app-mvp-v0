@@ -125,16 +125,24 @@
       const pending = !!x && d === L.TODAY && !x.entries.length;
       const logged = !!x && x.logged && !pending;
       const es = logged ? x.entries : [];
-      return { d, x, before, pending, logged, bms: es.filter((e) => e.kind === "bm"), nobm: es.some((e) => e.kind === "nobm"), syms: es.filter((e) => e.kind === "sym"), meals: es.filter((e) => e.kind === "meal") };
+      /* today, with a flag or an alarm feature logged (RU.flagToday), is noted for a clinician and never read against
+         the usual, as Today's score is */
+      return { d, x, before, pending, logged, flag: logged && d === L.TODAY && RU.flagToday(M), bms: es.filter((e) => e.kind === "bm"), nobm: es.some((e) => e.kind === "nobm"), syms: es.filter((e) => e.kind === "sym"), meals: es.filter((e) => e.kind === "meal") };
     });
     const live = cols.filter((c) => !c.before && !c.pending);
     const bms = cols.flatMap((c) => c.bms);
+    /* the days read against the usual: every logged day but a flagged one. rbms and rmornings are theirs, and every
+       "within your usual" count is over them; bms and mornings stay every BM logged, for counts that read nothing */
+    const flagged = M.usual ? cols.filter((c) => c.flag) : [];
+    const read = cols.filter((c) => !flagged.includes(c));
+    const rbms = read.flatMap((c) => c.bms);
     /* a B word that straddles the usual (null) is left out of the count, never called a shift */
-    const ks = M.usual ? bms.map((b) => L.inForms(M, b, mode)) : [];
+    const ks = M.usual ? rbms.map((b) => L.inForms(M, b, mode)) : [];
     const inForms = M.usual ? ks.filter((k) => k === true).length : null;
     const unsure = ks.filter((k) => k === null).length;
     const mornings = cols.filter((c) => c.bms.length);
-    const inWin = M.usual ? mornings.filter((c) => L.inWindow(M, c.bms[0].t)).length : null;
+    const rmornings = read.filter((c) => c.bms.length);
+    const inWin = M.usual ? rmornings.filter((c) => L.inWindow(M, c.bms[0].t)).length : null;
     const loggedDays = live.filter((c) => c.logged).length;
     const symDays = cols.filter((c) => c.syms.length);
     const symItems = symDays.flatMap((c) => c.syms.flatMap((s) => s.items));
@@ -143,7 +151,7 @@
     bms.forEach((b) => { const k = L.formKey(b, mode); formCount[k] = (formCount[k] || 0) + 1; });
     const topForm = Object.entries(formCount).sort((a, b) => b[1] - a[1])[0];
     const gaps = live.filter((c) => !c.logged);
-    return { ds, cols, bms, inForms, unsure, mornings, inWin, loggedDays, symDays, symItems, meals, topForm, gaps };
+    return { ds, cols, bms, rbms, inForms, unsure, mornings, rmornings, inWin, flagged, loggedDays, symDays, symItems, meals, topForm, gaps };
   };
 
   /* ---------- what stood out today ----------
@@ -154,20 +162,12 @@
      logged without a strength (never read as mild). Ties go to the earlier entry. Shifts need a usual, so before day 14
      only flags and symptoms can stand out. mode is the consistency option; without one, a form isn't read.
      Each item: { e, kind (alarm, form, late, early, more, none, sym), rank, tone (info, shift, plain), chip, alarm?, s? } */
-  const FLAG_SIGN = { blood: "Blood in your stool", mucus: "Mucus in your stool", black: "A black or tar-like stool" };
-  RU.alarmOf = (e) => {
-    if (e.kind === "bm") {
-      const f = L.FLAGS.filter(([k]) => e.flags && e.flags[k]).map(([k]) => k);
-      if (f.length) return { flags: f, sign: f.length === 1 ? FLAG_SIGN[f[0]] : f.includes("black") ? "A black stool, and more" : "Blood and mucus in your stool", serious: f.includes("blood") || f.includes("black") };
-      const s = L.alarmsIn(e.note || "", { bm: true });
-      return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
-    }
-    if (e.kind === "sym") {
-      const s = L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`);
-      return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
-    }
-    return null;
-  };
+  /* the model holds the rule (L.alarmOf, in refresh-data.js), so L.facts and every screen read a flag the same way */
+  RU.alarmOf = L.alarmOf;
+  /* today has a flag or an alarm feature logged: Today's score, its sentence, every week card, Insights, Ask Florin and
+     the data looks then read nothing of today against the usual (L.facts gives today the state "flag") */
+  RU.flagToday = (M) => todayOf(M).some((e) => !!RU.alarmOf(e));
+  RU.FLAG_DAY = "Today has a log noted for a clinician, so it isn't read against your usual.";
   const SHIFT_CHIP = { form: "Outside your usual forms", late: "Later than your window", early: "Earlier than your window", more: "More than your usual", none: "Fewer than your usual" };
   RU.standouts = (M, mode) => {
     const u = M.usual, es = todayOf(M), bms = es.filter((e) => e.kind === "bm");
@@ -216,6 +216,23 @@
     return { text: timingLine(M), alarm: false, N: null };
   };
   RU.highlight = (M, mode) => RU.highlightOf(M, mode).text;
+  /* today's FloraScore with one of today's entries taken out: what that entry alone did to the score */
+  RU.scoreWithout = (M, e, mode) => {
+    const days = M.days.map((x) => (x.d === L.TODAY ? Object.assign({}, x, { entries: x.entries.filter((y) => y !== e) }) : x));
+    return L.score(Object.assign({}, M, { days }), L.TODAY, mode);
+  };
+  /* what the log that stood out did to FloraScore, said after the sentence that leads with it, worked out by scoring
+     today with and without it (never by crediting a part it didn't move): "Without it, FloraScore would be 80." or "It
+     didn't change FloraScore." Nothing for an alarm (a flagged log is never read through the score), nothing without a
+     score today. Why the score moved is a membership feature, so the caller leaves it off on Free */
+  RU.scoreEffect = (M, mode, N) => {
+    if (!N || !N.e || N.kind === "alarm" || !M.usual) return "";
+    const s = L.score(M, L.TODAY, mode);
+    if (!s || s.value == null) return "";
+    const w = RU.scoreWithout(M, N.e, mode);
+    if (!w || w.value == null) return "";
+    return w.value === s.value ? "It didn't change FloraScore." : `Without it, FloraScore would be ${w.value}.`;
+  };
   const timingLine = (M) => {
     const x = L.day(M, L.TODAY);
     const es = x ? x.entries : [];
@@ -252,13 +269,18 @@
     }).join("")}</ol>`;
     const dot = (k) => { seen[k === true ? "usual" : k === false ? "shift" : u ? "either" : "dot"] = true; return `<i class="ap-wk-dot${k === true ? " is-usual" : k === false ? " is-shift" : ""}"></i>`; };
     const noBm = (c) => (c.nobm ? (seen.no = true, ['<i class="ap-wk-no"></i>', "no BM, logged"]) : ["", "no BM logged"]);
+    /* a flagged day: the calendar's mark, a Teal ring, and no reading */
+    const flagMk = () => { seen.flag = true; return '<i class="ap-wk-flag"></i>'; };
+    const isFlag = (c) => W.flagged.includes(c);
     const bmStrip = strip("BMs", (c) => {
       if (!c.bms.length) return noBm(c);
+      if (isFlag(c)) return [flagMk(), `${plural(c.bms.length, "BM")}, noted for a clinician, not read against your usual`];
       const k = c.bms.map((b) => (u ? L.inForms(M, b, mode) : null));
       return [`<span class="ap-wk-dots">${k.map(dot).join("")}</span>`, `${plural(c.bms.length, "BM")}${u ? `, ${k.filter((v) => v === true).length} within your usual` : ""}`];
     });
     const firstStrip = strip("First BM", (c) => {
       if (!c.bms.length) return noBm(c);
+      if (isFlag(c)) return [flagMk(), `first at ${T(c.bms[0].t)}, noted for a clinician, not read against your usual`];
       const f = c.bms[0].t, k = u ? L.inWindow(M, f) : null;
       return [dot(k), `first at ${T(f)}${k === true ? ", inside your usual window" : k === false ? ", outside your usual window" : ""}`];
     });
@@ -266,7 +288,10 @@
       if (!c.syms.length) return ["", "no symptoms logged"];
       const s = Math.max(0, ...c.syms.flatMap((e) => e.items.map((i) => i.s || 0)));
       seen[s ? "sym" : "sym0"] = true;
-      return [`<i class="ap-wk-sq ap-wk-sq--${s}"></i>`, `${c.syms.flatMap((e) => e.items.map((i) => i.name.toLowerCase())).join(", ")}${s ? `, ${L.STRENGTH[s - 1].toLowerCase()}` : ", strength not given"}`];
+      /* each symptom with its own strongest strength that day; one logged without a strength says so, never mild */
+      const by = {};
+      c.syms.forEach((e) => e.items.forEach((i) => { by[i.name] = Math.max(by[i.name] || 0, i.s || 0); }));
+      return [`<i class="ap-wk-sq ap-wk-sq--${s}"></i>`, Object.entries(by).map(([n, k]) => `${n.toLowerCase()}, ${k ? L.STRENGTH[k - 1].toLowerCase() : "strength not said"}`).join("; ")];
     });
     const symWords = (() => {
       if (!W.symDays.length) return W.loggedDays ? `none on the ${plural(W.loggedDays, "day")} logged` : "none logged yet";
@@ -281,8 +306,8 @@
       return `${W.symDays.length} of ${plural(W.loggedDays, "day")} logged, ${lead}${how}${top.toLowerCase()}`;
     })();
     const rows = u ? [
-      ["BMs", `<b>${W.inForms} of ${W.bms.length - W.unsure}</b> within your usual, ${esc(L.usualFormsText(M, mode))}${W.unsure ? `, and ${W.unsure} that could be either` : ""}`, bmStrip],
-      ["First BM", `<b>${W.inWin} of ${plural(W.mornings.length, "morning")}</b> inside your usual window, ${esc(winText(M))}`, firstStrip],
+      ["BMs", `<b>${W.inForms} of ${W.rbms.length - W.unsure}</b> within your usual, ${esc(L.usualFormsText(M, mode))}${W.unsure ? `, and ${W.unsure} that could be either` : ""}`, bmStrip],
+      ["First BM", `<b>${W.inWin} of ${plural(W.rmornings.length, "morning")}</b> inside your usual window, ${esc(winText(M))}`, firstStrip],
       ["Symptoms", esc(symWords), symStrip]
     ] : [
       ["BMs", W.bms.length ? `<b>${plural(W.bms.length, "BM")}</b> logged${W.topForm && W.topForm[1] > 1 ? `, ${W.topForm[1] > W.bms.length / 2 ? "mostly" : "most often"} ${esc(W.topForm[0])}` : ""}` : "none logged yet", bmStrip],
@@ -291,14 +316,18 @@
     ];
     /* nothing logged this week yet (day 1, say): the counts in words, without seven empty strips under each */
     const none = !W.cols.some((c) => c.logged);
-    const body = rows.map(([l, s, st]) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${none ? "" : st}</div>`).join("");
+    /* a flagged day is named, so the counts above add up: it's left out of the two BM rows, never read. The line sits
+       under those rows, the ones it's about; symptoms are counts, not readings against the usual */
+    const flagLine = W.flagged.length ? `<p class="ap-wk-fl">${esc(RU.FLAG_DAY)}</p>` : "";
+    const body = rows.map(([l, s, st], i) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${none ? "" : st}</div>${i === 1 ? flagLine : ""}`).join("");
     const legend = [
       seen.usual ? `<span><i class="ap-wk-dot is-usual"></i>Within your usual</span>` : "",
       seen.shift ? `<span><i class="ap-wk-dot is-shift"></i>Outside it</span>` : "",
       seen.dot ? `<span><i class="ap-wk-dot"></i>Logged</span>` : "",
       seen.either ? `<span><i class="ap-wk-dot"></i>Could be either</span>` : "",
       seen.sym ? `<span><i class="ap-wk-sq ap-wk-sq--1"></i><i class="ap-wk-sq ap-wk-sq--3"></i>Symptoms, milder to stronger</span>` : "",
-      seen.sym0 ? `<span><i class="ap-wk-sq ap-wk-sq--0"></i>Strength not given</span>` : "",
+      seen.sym0 ? `<span><i class="ap-wk-sq ap-wk-sq--0"></i>Strength not said</span>` : "",
+      seen.flag ? `<span><i class="ap-wk-flag"></i>Noted for a clinician</span>` : "",
       seen.no ? `<span><i class="ap-wk-no"></i>No BM, logged</span>` : "",
       /* the key is the first gap day's own struck date, so it matches the mark on the card */
       seen.gap ? `<span><i class="ap-wk-gapday">${(() => { const g = W.cols.find((c) => !c.before && !c.pending && !c.logged); return g ? dateOf(g.d).getDate() : ""; })()}</i>Nothing logged that day</span>` : ""
@@ -622,7 +651,7 @@
     const hit = fs.find((f) => n(f) === 5 && !was.includes(f));
     /* what the count means: a food just reaching 5, foods Insights already reads, or (meals on few days) nothing yet */
     const sparse = L.patterns(M, "C").sparse;
-    const said = sparse ? `Florin counts these foods. Patterns need meals on most days, good days too.` : hit ? (() => { const [nm, pl] = L.FOOD_NAMES[hit]; return `${nm} ${pl ? "have" : "has"} now come up 5 times in ${L.PATTERN_DAYS} days. Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`; })() : fs.every((f) => n(f) >= 5) ? "Insights already looks at these foods for possible patterns." : `At 5 times in ${L.PATTERN_DAYS} days, Insights can look for a possible pattern.`;
+    const said = sparse ? `Florin counts these foods. Patterns need meals on most days, ordinary days too.` : hit ? (() => { const [nm, pl] = L.FOOD_NAMES[hit]; return `${nm} ${pl ? "have" : "has"} now come up 5 times in ${L.PATTERN_DAYS} days. Insights can look for a possible pattern in what tends to follow ${pl ? "them" : "it"}.`; })() : fs.every((f) => n(f) >= 5) ? "Insights already looks at these foods for possible patterns." : `At 5 times in ${L.PATTERN_DAYS} days, Insights can look for a possible pattern.`;
     return `<div class="ap-ml-counted"><span class="ap-ml-cl">Counted</span>${fs.map((f) => chip(`${L.FOOD_NAMES[f][0]} · ${n(f)} in ${L.PATTERN_DAYS} days`, "plain")).join("")}</div><p class="ap-ml-why">${esc(said)}</p>`;
   };
   RU.meal = (M, V, st) => {
@@ -751,7 +780,7 @@
             /* the week's own logs next to the answers: the weekly view, with no separate report */
             const Wk = RU.week(M, V.form);
             if (!M.usual) return "";
-            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li><b>${Wk.inForms} of ${plural(Wk.bms.length - Wk.unsure, "BM")}</b> within your usual${Wk.unsure ? `, and ${Wk.unsure} that could be either` : ""}</li><li>First BM inside your usual window on <b>${Wk.inWin} of ${plural(Wk.mornings.length, "morning")}</b></li><li>Symptoms on <b>${Wk.symDays.length} of ${plural(Wk.loggedDays, "day")}</b> logged</li></ul></div>`;
+            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li><b>${Wk.inForms} of ${plural(Wk.rbms.length - Wk.unsure, "BM")}</b> within your usual${Wk.unsure ? `, and ${Wk.unsure} that could be either` : ""}</li><li>First BM inside your usual window on <b>${Wk.inWin} of ${plural(Wk.rmornings.length, "morning")}</b></li><li>Symptoms on <b>${Wk.symDays.length} of ${plural(Wk.loggedDays, "day")}</b> logged</li></ul></div>`;
           })()}
           ${b ? `<div class="ap-legend"><span><i class="sw sw--band"></i>Your first three weeks</span><span><i class="sw ap-ckt-sw--past"></i>Each week</span><span><i class="sw ap-ckt-sw--now"></i>This week</span></div>` : ""}
           <ul class="ap-ckr-list">${rows}</ul>

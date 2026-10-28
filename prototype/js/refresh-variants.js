@@ -105,6 +105,7 @@
 
   /* today's FloraScore with one of today's entries taken out: what that entry alone did to the score */
   const scoreWithout = (M, e, mode) => {
+    if (RU.scoreWithout) return RU.scoreWithout(M, e, mode);
     const days = M.days.map((x) => (x.d === L.TODAY ? Object.assign({}, x, { entries: x.entries.filter((y) => y !== e) }) : x));
     return L.score(Object.assign({}, M, { days }), L.TODAY, mode);
   };
@@ -116,7 +117,7 @@
     const mode = V.form;
     if (!M.usual) { const left = L.LEARN_DAYS - L.learnDay(M); return left > 0 ? `Your FloraScore starts on day ${L.LEARN_DAYS}, in ${plural(left, "day")}.` : "Your FloraScore starts once Florin knows your usual."; }
     const s = L.score(M, L.TODAY, mode), y = L.score(M, L.TODAY - 1, mode);
-    if (!s || s.value == null) return "No FloraScore yet today: it needs a BM logged on 2 of your last 3 days.";
+    if (!s || s.value == null) return `No FloraScore today: ${L.NO_SCORE}.`;
     const dv = y && y.value != null ? s.value - y.value : null;
     const head = dv == null ? `FloraScore is ${s.value}. Yesterday has no FloraScore to compare it with` : !dv ? `FloraScore is ${s.value}, the same as yesterday` : `FloraScore is ${s.value}, ${Math.abs(dv)} ${dv > 0 ? "higher" : "lower"} than yesterday's ${y.value}`;
     if (V.plan === "free" || !N || !N.e || !NOUN[N.e.kind]) return `${head}.`;
@@ -165,8 +166,8 @@
       const s = L.score(M, L.TODAY, V.form), su = L.scoreUsual(M, V.form), v = s ? s.value : null;
       const flag = (list || standouts(M, V.form)).some((x) => x.kind === "alarm");
       ring = v == null ? 0 : v; num = v == null ? "No score" : String(v);
-      word = v == null ? "Not scored today: it needs a BM logged on 2 of your last 3 days" : flag ? FLAG_WORD : relOf(v, su) || "";
-      said = v == null ? [`FloraScore not scored today: it needs a BM logged on 2 of your last 3 days`] : flag ? [`FloraScore ${v}`, FLAG_WORD] : [`FloraScore ${v}`, word && su ? `${word}, ${su[0]} to ${su[1]}` : word];
+      word = v == null ? `Not scored today: ${L.NO_SCORE}` : flag ? FLAG_WORD : relOf(v, su) || "";
+      said = v == null ? [`FloraScore not scored today: ${L.NO_SCORE}`] : flag ? [`FloraScore ${v}`, FLAG_WORD] : [`FloraScore ${v}`, word && su ? `${word}, ${su[0]} to ${su[1]}` : word];
     }
     const svg = C && C.ring ? C.ring({ value: ring, size: 24, stroke: 3 }) : "";
     const inner = `<span class="vr-sc-ring" aria-hidden="true">${svg}</span><span class="vr-sc-l">FloraScore</span>${num ? `<b>${esc(num)}</b>` : ""}`;
@@ -543,9 +544,12 @@
      the log Day first marks, and whether it says what that log did to FloraScore */
   const scoreFirstNow = (M, P, list) => {
     const H = typeof RU.highlightOf === "function" ? RU.highlightOf(M, P.form) : { text: RU.highlight(M, P.form), N: null };
-    const N = list[0], leads = !!(N && H.N && H.N.e === N.e), said = /FloraScore/.test(H.text);
-    const how = !N ? "Nothing stands out today, so it says how the day's timing sits next to the usual." : !leads ? "The recommendation has it lead with the log Day first marks." : said ? "It leads with the log Day first marks." : "It leads with the log Day first marks; saying what that log did to FloraScore is the change left.";
-    return `Score first's sentence on ${M.P.name}'s logs now reads: "${H.text}" ${how}`;
+    const N = list[0], leads = !!(N && H.N && H.N.e === N.e);
+    /* what the hero adds with membership: what that log did to FloraScore (RU.scoreEffect), as Day first's sentence does */
+    const fx = P.plan === "free" || H.alarm || !RU.scoreEffect ? "" : RU.scoreEffect(M, P.form, H.N);
+    const text = fx ? `${H.text} ${fx}` : H.text;
+    const how = !N ? "Nothing stands out today, so it says how the day's timing sits next to the usual." : !leads ? "The recommendation has it lead with the log Day first marks." : N.kind === "alarm" ? "It leads with the flag, as the Teal note, and reads nothing through the score." : fx ? "It leads with the log Day first marks and says what that log did to FloraScore." : P.plan === "free" ? "It leads with the log Day first marks; on Free it stops there, as Day first does, since why the score moved is a membership feature." : "It leads with the log Day first marks.";
+    return `Score first's sentence on ${M.P.name}'s logs now reads: "${text}" ${how}`;
   };
   const homeDecision = (M, P) => {
     const list = standouts(M, P.form), ck = P.checkin !== false;
@@ -553,7 +557,7 @@
       t: "Home: score first, or day first",
       lede: `What Today opens on. Score first leads with FloraScore on the Forest card, then ${ck ? "the check-in when it's due, " : ""}today's entries and the week. Day first leads with the day: the date with a small FloraScore ring, today's logs in time order with the one that stood out marked, a row to log from, one sentence on what stood out and what that log did to the score, then the week${ck ? " and the check-in" : ""}. The Easy version has its own Today, so it takes precedence over both. A data style changes Day first's week only; FloraScore stays the small ring by the date.`,
       opts: [
-        ["score", `As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence ${typeof RU.highlightOf === "function" ? "that leads with what stood out today, ranked as Day first ranks it" : "about the first BM"}. The day's logs come after the score.`],
+        ["score", `As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence ${typeof RU.highlightOf === "function" ? "that leads with what stood out today, ranked as Day first ranks it, and with membership says what that log did to FloraScore" : "about the first BM"}. The day's logs come after the score.`],
         ["day", `The day leads. The most notable log is marked: a flag first (routed to primary care, never read, and never read through the score), then a shift from the person's usual, then the strongest symptom. ${P.bmUI === "full" ? "With the full form only, a Log a BM button opens the form" : "BM tiles sit on Today, so once 5 BMs are logged a usual BM is one tap"}. The sentence leads with what stood out, gives FloraScore against yesterday, and, with membership, what that log did to it, scored with and without it.`]
       ],
       rec: "Score first, with the hero's sentence leading on the most notable thing logged today and saying what it did to FloraScore, in the order Day first's sentence uses (a flag first, to primary care, then a shift from the usual, then the strongest symptom). It keeps FloraScore where Oura keeps its main score, the big arc that leads Today, and that's where the Oura data style draws its arc. Day first stays as the option to try with people like Sarah on a rough evening, when the day matters more than the number. It also reads right on days 1 to 13, where Score first opens on a ring with no score yet. Will to confirm.",

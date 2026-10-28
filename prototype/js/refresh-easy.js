@@ -109,8 +109,17 @@
   /* ====================================================================== */
   /* TODAY                                                                    */
   /* ====================================================================== */
-  /* the one plain sentence about today, from today's logs and the person's usual time */
-  function sentence(M) {
+  /* the one plain sentence about today, from today's logs and the person's usual time. A flag or an alarm feature
+     today comes first and alone, as Score first's Teal note does (RU.highlightOf): the sign and primary care, and
+     nothing of the day read against the usual */
+  const alarmLine = (M, mode) => {
+    if (!RU.flagToday || !RU.flagToday(M) || !RU.highlightOf) return null;
+    const H = RU.highlightOf(M, mode);
+    return H && H.alarm ? H.text : null;
+  };
+  function sentence(M, mode) {
+    const al = alarmLine(M, mode);
+    if (al) return al;
     const es = todayOf(M), bms = es.filter((e) => e.kind === "bm"), no = es.some((e) => e.kind === "nobm"), u = M.usual;
     if (bms.length) {
       const f = bms[0], n = bms.length;
@@ -147,13 +156,14 @@
       body = "Florin is learning your usual first.";
       label = `FloraScore, day ${lr.day} of ${lr.of}`;
     } else if (S.value == null) {
-      ans = "No FloraScore today yet.";
-      body = "It needs a BM, or No BM, logged on two of your last three days.";
+      ans = "No FloraScore today.";
+      body = `${L.NO_SCORE.charAt(0).toUpperCase()}${L.NO_SCORE.slice(1)}.`;
       label = "FloraScore, not scored today";
     } else {
       n = S.value;
-      shift = !!S.usual && (S.value < S.usual[0] || S.value > S.usual[1]);
-      ans = S.usual && S.relation ? `${S.relation}, ${S.usual[0]} to ${S.usual[1]}.` : "Florin is still learning your usual range.";
+      /* a flag today: the number stays, read against nothing, as Today's hero says */
+      shift = !S.flag && !!S.usual && (S.value < S.usual[0] || S.value > S.usual[1]);
+      ans = S.flag ? `${S.relation}.` : S.usual && S.relation ? `${S.relation}, ${S.usual[0]} to ${S.usual[1]}.` : "Florin is still learning your usual range.";
       label = `FloraScore today, ${S.value}`;
     }
     return box(`<article class="ez ez-score ap-ez-score" aria-label="${esc(label)}">
@@ -225,7 +235,7 @@
     const symOn = todayOf(M).some((e) => e.kind === "sym") || RU.week(M, V.form).symDays.length > 0;
     return `<div class="ap-scr ap-ez ap-ez-today">
         ${topPart(M)}
-        <p class="ap-ez-say" data-a>${esc(sentence(M))}</p>
+        ${(() => { const al = alarmLine(M, V.form); return al ? `<p class="ap-ez-say ap-ez-flag" data-a>${ic("info")}<span>${esc(al)}</span></p>` : `<p class="ap-ez-say" data-a>${esc(sentence(M, V.form))}</p>`; })()}
         ${scorePart(D, M)}
         ${doPart()}
         ${checkinPart(M, V)}
@@ -238,7 +248,7 @@
   /* ====================================================================== */
   /* YOUR WEEKS: Insights, folded under Today                                 */
   /* ====================================================================== */
-  const FOOD_MSG = () => `A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, good days too, then shows what tends to follow. It comes with the next pass.`;
+  const FOOD_MSG = () => `A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, ordinary days too, then shows what tends to follow. It comes with the next pass.`;
   function weeks(M, V) {
     if (!look()) throw new Error("the Easy read look isn't loaded");
     const D = dataOf(M, V), ck = RU.ckOn(V);

@@ -92,7 +92,7 @@
       </header>
       <div class="lb-ctls" role="group" aria-label="What the cards show">
         ${seg("persona", "Person", FLD.PERSONAS)}
-        ${seg("mode", "Stool form", [["A", "A · 1 to 7"], ["B", "B · 5 words"], ["C", "C · 7 words"]])}
+        ${seg("mode", "Consistency", [["A", "A · 1 to 7"], ["B", "B · 5 words"], ["C", "C · 7 words"]])}
         ${seg("data", "Logs", [["est", "12 weeks"], ["new", "New, day 5"]])}
         ${seg("meals", "Meal logs", FLD.MEAL_LOGS)}
         ${seg("theme", "Theme", [["light", "Light"], ["dark", "Dark"]])}

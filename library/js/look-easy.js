@@ -71,12 +71,14 @@
     usual: ["usual", "Within your usual"],
     shifted: ["shift", "Outside your usual"],
     unsure: ["unsure", "Could be either"],
+    /* today with a flag or an alarm feature logged: noted for a clinician, never read (a Teal ring) */
+    flag: ["flag", "Noted for a clinician"],
     logged: ["logged", "Logged"],
     nocount: ["nocount", "Logged, no BMs said"],
     none: ["none", "Not logged"]
   };
   const stateOf = (d) => (d.pending ? ["pending", "Not logged yet"] : STATE[d.state] || STATE.none);
-  const ORDER = ["usual", "shift", "unsure", "logged", "nocount", "none"];
+  const ORDER = ["usual", "shift", "unsure", "flag", "logged", "nocount", "none"];
   /* a day circle: the date inside, the state as its fill or its outline. A day not logged is a thin hairline, a gap;
      a day logged with no BMs said is a plain fill with no ring, so no two states differ only in the weight of a ring */
   const circle = (x, d) => `<span class="ez-c is-${stateOf(d)[0]}" aria-hidden="true">${d.date}</span>`;
@@ -114,10 +116,10 @@
         ${note(x, DISC, true)}`);
     }
     const v = S.value, u = S.usual;
-    const shift = v != null && (v < u[0] || v > u[1]);
+    const shift = !S.flag && v != null && (v < u[0] || v > u[1]);
     const ends = [u[0], u[1]].map((val) => { const [a, b] = pol(C, C, RU - 9, val / 100), [c2, d2] = pol(C, C, RU + 9, val / 100); return `<line x1="${a}" y1="${b}" x2="${c2}" y2="${d2}"/>`; }).join("");
     const [ex, ey] = v != null ? pol(C, C, R, v / 100) : [0, 0];
-    const aria = v == null ? `No FloraScore today yet. Your usual range is ${u[0]} to ${u[1]}.` : `FloraScore today ${v}. ${S.relation}, ${u[0]} to ${u[1]}.`;
+    const aria = v == null ? `No FloraScore today: ${lower1(S.why)} Your usual range is ${u[0]} to ${u[1]}.` : S.flag ? `FloraScore today ${v}. ${S.relation}: a log is noted for a clinician.` : `FloraScore today ${v}. ${S.relation}, ${u[0]} to ${u[1]}.`;
     const ring = `<div class="ez-ring">
         <svg class="ez-svg" viewBox="0 0 240 240" role="img" aria-label="${esc(aria)}">
           <circle class="ez-ring-trk" cx="${C}" cy="${C}" r="${R}" stroke-width="${SW}"/>
@@ -131,11 +133,11 @@
           <span class="ez-ring-u">Your usual<br>${u[0]} to ${u[1]}</span>
         </div>
       </div>`;
-    const rel = v != null ? `${S.relation}.` : "Not enough logs yet for a FloraScore today.";
+    const rel = v != null ? `${S.relation}.` : "No FloraScore today.";
     return card(x, "ez-score", `FloraScore today${v != null ? `, ${v}` : ""}`, "FloraScore", D.todayLabel, `
       ${ring}
       ${lead(x, null, null, rel, shift ? "shift" : null)}
-      ${v == null ? body(x, "Log a BM and it fills in.") : ""}
+      ${v == null ? body(x, S.why) : ""}
       ${note(x, DISC, true)}`);
   }
 
@@ -177,7 +179,8 @@
     D.days[30].forEach((d) => (byD[d.d] = d));
     const vals = ser.map((s) => { const d = byD[s.d]; return s.value == null || (d && !d.logged && !d.pending) ? null : s.value; });
     const noScore = vals.filter((v, i) => v == null && !(byD[ser[i].d] || {}).pending).length;
-    const nums = vals.filter((v) => v != null);
+    /* a flagged today keeps its score, read against nothing: in none of the counts, and said */
+    const nums = vals.filter((v, i) => v != null && !ser[i].flag), fl = ser.some((s) => s.flag);
     const within = nums.filter((v) => v >= u[0] && v <= u[1]).length, above = nums.filter((v) => v > u[1]).length, below = nums.filter((v) => v < u[0]).length;
     const n = nums.length;
     /* "most" only when it is a clear majority, two days in three; just over half is said as more than half */
@@ -194,7 +197,8 @@
     return card(x, "ez-trend", "FloraScore over 30 days", "FloraScore over 30 days", "Last 30 days", `
       ${lead(x, within, `of ${n} days within your usual range`, ans)}
       ${bars(x, rows)}
-      ${noScore ? body(x, `No FloraScore on ${plural(noScore, "day")}. A day without logs is left out.`) : ""}`);
+      ${noScore ? body(x, `No FloraScore on ${plural(noScore, "day")}. A day without logs is left out.`) : ""}
+      ${fl && D.flagLine ? body(x, D.flagLine) : ""}`);
   }
 
   /* ---------- this week: a row of seven big day circles, then the days in words ---------- */
@@ -262,7 +266,8 @@
     }
     const nw = pts[pts.length - 1];
     const later = u && nw.inWin === false && nw.first > u[1];
-    const where = !u ? null : nw.inWin === true ? "Inside your usual window." : nw.inWin === false ? (later ? "Later than your usual window." : "Earlier than your usual window.") : null;
+    /* a flagged today: its time, and why it isn't read */
+    const where = !u ? null : nw.flag ? D.flagLine || null : nw.inWin === true ? "Inside your usual window." : nw.inWin === false ? (later ? "Later than your usual window." : "Earlier than your usual window.") : null;
     const out = u && nw.inWin === false;
     /* the bar runs from the hour before the window to the hour after, at least two hours, so the window is drawn big
        and the morning always sits inside the bar. It is drawn only once there is a usual window: a lone dot on a bare
@@ -289,7 +294,8 @@
   /* ---------- how often: a thick bar per count, your usual ones named ---------- */
   function often(D, x) {
     const days = D.days[30], o = D.often, u = o.usual;
-    const known = days.filter((d) => d.count != null);
+    /* the days read: a flagged today is noted for a clinician, in none of the counts, and said */
+    const known = days.filter((d) => d.count != null && !d.flag), fl = days.some((d) => d.flag && d.count != null);
     const gaps = days.filter((d) => d.count == null && !d.pending).length;
     if (!known.length) {
       return card(x, "ez-often", "How often", "How often", null, `${lead(x, null, null, "No days logged yet.")}${body(x, "How many BMs you have each day will show here.")}`);
@@ -310,7 +316,8 @@
         : lead(x, known.length, known.length === 1 ? "day logged so far" : "days logged so far", `Florin learns your usual count by day ${D.learning ? D.learning.of : 14}.`)}
       ${bars(x, rows)}
       ${u ? body(x, `Your usual is ${o.usualText}.`) : ""}
-      ${gaps ? body(x, `Not logged on ${plural(gaps, "day")}. Those days are left out.`) : ""}`);
+      ${gaps ? body(x, `Not logged on ${plural(gaps, "day")}. Those days are left out.`) : ""}
+      ${fl && D.flagLine ? body(x, D.flagLine) : ""}`);
   }
 
   /* ---------- form: a thick bar for each form you logged, firmer at the top, each said against your usual ---------- */

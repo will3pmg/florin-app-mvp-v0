@@ -1,5 +1,8 @@
 /* Florin data looks: the page around the cards (.lb-). The cards themselves sit inside .ap and use the app's tokens.
    Spacing and radii on the DESIGN.md scales. */
+/* the app's faintest ink, a step darker in light so small notes and axis labels clear 4.5:1 on the card, as on the
+   prototype's phone (refresh.css). The studio's token is 4.07:1; to fold back into the studio's app.css */
+.ap:not([data-theme="dark"]) { --ap-ink3: oklch(from var(--forest) calc(l + .25) calc(c * .56) h); }
 .lb { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 32px; }
 .lb-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
 .lb-head { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }

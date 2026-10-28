@@ -60,11 +60,14 @@
   /* the FloraScore's own relation, as a state word: "A little above your usual range" reads "A little above your usual" */
   const scoreState = (S) => {
     if (!S.relation) return ["none", "No score yet today"];
+    /* a flag today: the number stays, read against nothing, in Teal as the primary care note is */
+    if (S.flag) return ["ctx", S.relation];
     return [S.relation.indexOf("Within") === 0 ? "usual" : "shift", S.relation.replace(/ range$/, "")];
   };
 
   /* the state of a day, as a class and a word */
-  const DAY = { usual: ["usual", "Within your usual"], shifted: ["shift", "Shifted"], unsure: ["either", "Could be either"], logged: ["read", "Logged"], nocount: ["nocount", "Logged, no BMs said"], none: ["gap", "Not logged"] };
+  /* flag: today with a flag or an alarm feature logged, noted for a clinician and never read (Teal) */
+  const DAY = { usual: ["usual", "Within your usual"], shifted: ["shift", "Shifted"], unsure: ["either", "Could be either"], flag: ["flag", "Noted for a clinician"], logged: ["read", "Logged"], nocount: ["nocount", "Logged, no BMs said"], none: ["gap", "Not logged"] };
   const dayState = (d) => (d.pending ? ["pending", "Not logged yet"] : DAY[d.state] || DAY.none);
 
   /* one BM's side of your usual forms: in, firmer, looser or either (a word that covers steps on both sides of an edge).
@@ -72,6 +75,8 @@
   const sideOf = (D, f) => {
     const u = D.form.usual;
     if (!u) return null;
+    /* a flagged today's BM: noted for a clinician, on neither side */
+    if (f.flag) return "flag";
     if (f.within === true) return "in";
     if (f.within == null) return Math.min(...f.steps) < u[0] ? "either-lo" : "either-hi";
     return Math.min(...f.steps) > u[1] ? "looser" : "firmer";
@@ -94,6 +99,8 @@
   function bigThing(D) {
     const t = todayOf(D), tu = D.timing.usual, fu = D.form.usual;
     if (!t || t.pending || !t.logged) return tu ? "No BM logged yet today" : "Nothing logged yet today";
+    /* a flag today: the primary care sentence (RU.highlight), and nothing of the day read against the usual */
+    if (t.flag && D.highlight) return D.highlight;
     if (t.count === 0) return "You logged no BM today";
     if (t.count == null) return "Nothing logged about BMs yet today";
     const where = !tu || t.inWin == null ? null : t.inWin ? "in" : t.first > tu[1] ? "later" : "earlier";
@@ -129,8 +136,10 @@
     const items = NAMES.map(([k, label], i) => {
       const p = P.find((y) => y.key === k);
       const st = p ? vs(p.value, p.usual) : null;
-      const cls = !p ? "" : st && st !== "within" ? " is-shift" : st ? " is-usual" : " is-read";
-      const tip = p ? `${label}: ${p.value} of 100 today${p.usual ? `, ${st === "within" ? "within" : st} your usual ${rng(p.usual)}` : ""}` : `${label}: fills in with your FloraScore`;
+      /* a flag today reads no part against its usual either */
+      const fl = !!D.score.flag;
+      const cls = !p ? "" : fl ? " is-read" : st && st !== "within" ? " is-shift" : st ? " is-usual" : " is-read";
+      const tip = p ? `${label}: ${p.value} of 100 today${p.usual && !fl ? `, ${st === "within" ? "within" : st} your usual ${rng(p.usual)}` : ""}` : `${label}: fills in with your FloraScore`;
       return `<li class="ou-sr${cls}" style="--i:${i}" title="${x.esc(tip)}">
         <span class="ou-sr-r"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="ou-sr-t" cx="${c}" cy="${c}" r="${r}"/>${p ? `<path class="ou-sr-a ou-sweep" pathLength="1" d="${arc(c, c, r, 0, clamp(p.value, 0, 99.9) / 100)}"/>` : ""}</svg>${p && !onHero ? `<b>${num(p.value, 0, 900)}</b>` : ""}</span>
         <span class="ou-sr-l">${x.esc(label)}</span>
@@ -170,10 +179,10 @@
     }
     const v = S.value, u = S.usual;
     const [sk, sw] = scoreState(S);
-    const shift = v != null && (v < u[0] || v > u[1]);
+    const shift = !S.flag && v != null && (v < u[0] || v > u[1]);
     /* your usual is a band on the track itself, in your usual's colour, and named in words under the state word */
     const [ex, ey] = v != null ? pol(cx, cy, R, fv(v)) : [0, 0];
-    const aria = v == null ? `No FloraScore today: not enough logs yet. Your usual range is ${rng(u)}.` : `FloraScore today ${v}. ${S.relation}, ${rng(u)}.`;
+    const aria = v == null ? `No FloraScore today: ${lower1(S.why)} Your usual range is ${rng(u)}.` : S.flag ? `FloraScore today ${v}. ${S.relation}: a log is noted for a clinician.` : `FloraScore today ${v}. ${S.relation}, ${rng(u)}.`;
     /* the two ends of your usual, written just outside the track; one number when they meet */
     const endAt = (val, dx) => { const [lx, ly] = pol(cx, cy, R + 20, fv(val)); return `<text class="ou-g-ue" x="${r1(lx + dx)}" y="${r1(ly + 4)}" text-anchor="middle">${val}</text>`; };
     const bandEnds = u[1] - u[0] < 4 ? endAt(Math.round((u[0] + u[1]) / 2), 0).replace(/>\d+</, `>${rng(u)}<`) : endAt(u[0], 0) + endAt(u[1], 0);
@@ -187,12 +196,12 @@
     const centre = v != null
       ? `<b class="ou-g-n">${num(v, 0, 1300)}</b>${stateW(x, sk, sw, "span")}`
       : `<b class="ou-g-n is-sm">Not yet</b>${stateW(x, "none", "No score yet today", "span")}`;
-    const sayT = v != null ? todaySay(D) : `Not enough logs yet for a FloraScore today. ${todaySay(D)}`;
+    const sayT = v != null ? todaySay(D) : `No FloraScore today: ${lower1(S.why)} ${todaySay(D)}`;
     return card(x, "ou--hero ou-score", `FloraScore today${v != null ? `, ${v}` : ""}`, `
       ${head(x, "FloraScore", dateK(x, D.todayLabel))}
       ${shortRings(D, x, true)}
       <div class="ou-gauge">${svg}<div class="ou-gauge-c" style="top:${topPct}%" aria-hidden="true">${centre}</div></div>
-      ${hl(x, bigThing(D), "is-centre")}
+      ${hl(x, bigThing(D), S.flag ? "is-centre is-flag" : "is-centre")}
       ${say(x, sayT)}
       <p class="ou-how" data-disclaimer>${esc(S.how)}</p>`);
   }
@@ -303,15 +312,17 @@
     /* the pill on the newest point, kept inside the plot */
     const pillT = `${lv} · ${last.today ? "Today" : last.label}`, pw = r1(pillT.length * 6.4 + 24);
     const px = r1(clamp(lx - pw / 2, 0, PR - pw));
-    const within = nums.filter((v) => !out(v)).length, above = nums.filter((v) => v > u[1]).length, below = nums.filter((v) => v < u[0]).length;
+    /* a flagged today keeps its point, read against nothing: in none of the counts */
+    const rd = vals.filter((v, i) => v != null && !ser[i].flag);
+    const within = rd.filter((v) => !out(v)).length, above = rd.filter((v) => v > u[1]).length, below = rd.filter((v) => v < u[0]).length;
     const noScore = vals.filter((v, i) => v == null && !(byD[ser[i].d] || {}).pending).length;
     const rel = last.today && lv === S.value && S.relation ? lower1(S.relation) : lv < u[0] ? "below your usual range" : lv > u[1] ? "above your usual range" : "within your usual range";
     const ans = `${last.today ? "Today" : `Latest, ${last.label},`} ${lv}, ${rel}.`;
     const spread = [above && `above it on ${plural(above, "day")}`, below && `below it on ${plural(below, "day")}`].filter(Boolean);
-    const aria = `FloraScore over ${n} days. ${within} of ${nums.length} days within your usual range, ${u[0]} to ${u[1]}${spread.length ? `, ${andList(spread)}` : ""}. ${ans}${noScore ? ` No FloraScore on ${plural(noScore, "day")}, left as breaks in the line.` : ""}`;
+    const aria = `FloraScore over ${n} days. ${within} of ${rd.length} days within your usual range, ${u[0]} to ${u[1]}${spread.length ? `, ${andList(spread)}` : ""}. ${ans}${noScore ? ` No FloraScore on ${plural(noScore, "day")}, left as breaks in the line.` : ""}`;
     /* the points the scrubber can stop on, for after() */
-    const pts = vals.map((v, i) => (v == null ? null : [r1(xs(i)), r1(ys(v)), v, ser[i].today ? "Today" : ser[i].label, out(v) ? 1 : 0])).filter(Boolean);
-    const valText = (p) => `${p[3]}: ${p[2]}, ${p[4] ? (p[2] > u[1] ? "above" : "below") : "within"} your usual range`;
+    const pts = vals.map((v, i) => (v == null ? null : [r1(xs(i)), r1(ys(v)), v, ser[i].today ? "Today" : ser[i].label, ser[i].flag ? 2 : out(v) ? 1 : 0])).filter(Boolean);
+    const valText = (p) => `${p[3]}: ${p[2]}, ${p[4] === 2 ? lower1(S.relation) : p[4] ? `${p[2] > u[1] ? "above" : "below"} your usual range` : "within your usual range"}`;
     const svg = `<svg class="ou-svg ou-chart" viewBox="0 0 ${W} ${H}" aria-hidden="true">
       <defs>${grad}</defs>
       <rect class="ou-band" x="0" y="${yU1}" width="${PR}" height="${r1(yU0 - yU1)}"/>
@@ -323,14 +334,14 @@
       ${dots}
       <g class="ou-scrub" data-x="${lx}">
         <line class="ou-scrub-l" x1="${lx}" x2="${lx}" y1="30" y2="${ly}"/>
-        <circle class="ou-now-halo${out(lv) ? " is-shift" : ""}" cx="${lx}" cy="${ly}" r="10"/>
-        <circle class="ou-now${out(lv) ? " is-shift" : ""}" cx="${lx}" cy="${ly}" r="5"/>
+        <circle class="ou-now-halo${!last.flag && out(lv) ? " is-shift" : ""}" cx="${lx}" cy="${ly}" r="10"/>
+        <circle class="ou-now${!last.flag && out(lv) ? " is-shift" : ""}" cx="${lx}" cy="${ly}" r="5"/>
         <g class="ou-pill" transform="translate(${px} 6)"><rect width="${pw}" height="24" rx="12"/><text x="${r1(pw / 2)}" y="16" text-anchor="middle">${esc(pillT)}</text></g>
       </g>
       ${xlab}
     </svg>`;
     return `<div class="ou-pane" data-span="${n}"${hidden ? " hidden" : ""}>
-      ${lead(x, num(within), `of ${nums.length} days within your usual range`, ans)}
+      ${lead(x, num(within), `of ${rd.length} days within your usual range`, ans)}
       <div class="ou-plot" tabindex="0" role="slider" aria-label="${esc(`FloraScore, day by day, last ${n} days`)}" aria-valuemin="0" aria-valuemax="${pts.length - 1}" aria-valuenow="${pts.length - 1}" aria-valuetext="${esc(valText(pts[pts.length - 1]))}" aria-describedby="${id}-d" data-pts="${esc(JSON.stringify(pts))}" data-w="${W}" data-pr="${PR}" data-hi="${u[1]}">${svg}</div>
       <p class="ou-vh" id="${id}-d">${esc(`${aria} The left and right arrow keys move from day to day.`)}</p>
       ${legend(x, [["line", "FloraScore"], ["band", `Your usual, ${u[0]} to ${u[1]}`], (above || below) && ["line-shift", "Outside your usual"], noScore && [null, "A break in the line: no FloraScore that day"]])}
@@ -343,7 +354,7 @@
         ${head(x, "FloraScore · trend")}
         ${hl(x, "Your line starts with your FloraScore")}
         <div class="ou-empty" aria-hidden="true"><span></span><span></span><span></span></div>
-        ${say(x, D.learning ? `Florin is learning your usual. Day ${D.learning.day} of ${D.learning.of}.` : "Log a BM and the line fills in.")}`);
+        ${say(x, D.learning ? `Florin is learning your usual. Day ${D.learning.day} of ${D.learning.of}.` : S.why || "")}`);
     }
     const has90 = S.series[90] && S.series[90].filter((s) => s.value != null).length > S.series[30].filter((s) => s.value != null).length;
     const seg = has90 ? `<div class="ou-seg" role="group" aria-label="${esc("How far back")}"><button type="button" data-ou-span="30" aria-pressed="true">30 days</button><button type="button" data-ou-span="90" aria-pressed="false">90 days</button></div>` : "";
@@ -366,7 +377,7 @@
     /* each block is its own BM: a late first BM marks the first block, a count outside your usual marks every block,
        and a form outside your usual marks that BM; a word that could be either is never Gold */
     const bmCls = (d, k, cls) => {
-      if (!D.form.usual || cls === "read" || !d.forms[k]) return cls;
+      if (!D.form.usual || cls === "read" || cls === "flag" || !d.forms[k]) return cls;
       const s = sideOf(D, d.forms[k]);
       return s === "looser" || s === "firmer" || d.inCount === false || (k === 0 && d.inWin === false) ? "shift" : s && s.indexOf("either") === 0 ? "either" : "usual";
     };
@@ -406,12 +417,12 @@
     const gaps = days.filter((d) => !d.logged && !d.pending);
     const aria = `This week, one block per BM. ${ans}${gaps.length ? ` Not logged on ${andList(gaps.map(dayName))}.` : ""} ${days.map((d) => `${d.dow}: ${dayState(d)[1]}${d.count != null && !d.pending ? `, ${d.count === 0 ? "no BM" : plural(d.count, "BM")}` : ""}`).join(". ")}.`;
     const has = (c) => days.some((d) => dayState(d)[0] === c);
-    const zeroK = ["shift", "usual", "read"].find((c) => drawn.has(`zero-${c}`));
+    const zeroK = ["shift", "usual", "flag", "read"].find((c) => drawn.has(`zero-${c}`));
     return card(x, "ou-week", "This week at a glance", `
       ${head(x, "This week", dateK(x, spanOf(days)))}
       ${learning ? (logged.length ? lead(x, num(logged.length), `of ${plural(days.length, "day")} logged`, ans) : lead(x, "Not yet", "", ans)) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, ans) : lead(x, "Not yet", "", ans)}
       <svg class="ou-svg ou-wk" viewBox="0 0 ${W} ${base + 20}" role="img" aria-label="${esc(aria)}">${band}<line class="ou-axis" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${cols}</svg>
-      ${legend(x, [drawn.has("usual") && ["usual", "Within your usual"], drawn.has("shift") && ["shift", "Shifted"], drawn.has("either") && ["either", "Could be either"], drawn.has("read") && ["read", "Logged"], zeroK && [`zero-${zeroK}`, "No BM logged"], has("nocount") && ["nocount", "Logged, no BMs said"], has("gap") && ["gap", "Not logged"], days.some((d) => d.sym.length) && ["sym", "Symptoms"], ou && ["band", bandAt ? "Your usual count" : `Your usual count, ${rng(ou)} a day`]])}
+      ${legend(x, [drawn.has("usual") && ["usual", "Within your usual"], drawn.has("shift") && ["shift", "Shifted"], drawn.has("either") && ["either", "Could be either"], drawn.has("flag") && ["flag", "Noted for a clinician"], drawn.has("read") && ["read", "Logged"], zeroK && [`zero-${zeroK}`, "No BM logged"], has("nocount") && ["nocount", "Logged, no BMs said"], has("gap") && ["gap", "Not logged"], days.some((d) => d.sym.length) && ["sym", "Symptoms"], ou && ["band", bandAt ? "Your usual count" : `Your usual count, ${rng(ou)} a day`]])}
       ${learning ? "" : afterChange(D, x)}`);
   }
 
@@ -439,7 +450,7 @@
       : `<text class="ou-xt" x="${r1(x0)}" y="${base + 18}" text-anchor="start">${esc(first.label)}</text><text class="ou-xt${lastD.today ? " is-today" : ""}" x="${W}" y="${base + 18}" text-anchor="end">${lastD.today ? "Today" : esc(lastD.label)}</text>`;
     const cnt = (k) => days.filter((d) => dayState(d)[0] === k).length;
     const logged = days.filter((d) => d.logged).length;
-    const ROWS = [["usual", "Within your usual"], ["shift", "Shifted"], ["either", "Could be either"], ["read", "Logged"], ["nocount", "Logged, no BMs said"], ["gap", "Not logged"], ["pending", "Not logged yet today"]];
+    const ROWS = [["usual", "Within your usual"], ["shift", "Shifted"], ["either", "Could be either"], ["flag", "Noted for a clinician"], ["read", "Logged"], ["nocount", "Logged, no BMs said"], ["gap", "Not logged"], ["pending", "Not logged yet today"]];
     const present = ROWS.map(([k, t]) => [k, t, cnt(k)]).filter((r) => r[2]);
     const maxN = Math.max(...present.map((r) => r[2]));
     const zones = present.map(([k, t, c], i) => `<li class="ou-zr" style="--i:${i}"><span class="ou-zr-b"><i class="ou-zr-f is-${k}" style="--w:${pct(c, 0, maxN)}%"></i></span><b>${esc(t)}</b><span class="ou-zr-v">${esc(plural(c, "day"))}</span></li>`).join("");
@@ -490,8 +501,9 @@
       : t && t.count === 0 ? "You logged no BM today" : "No BM logged yet today";
     /* how far into the window, or past it, in minutes as shown */
     const mins = (h) => { const m = Math.round(Math.abs(h) * 60); return m >= 60 ? `${plural(Math.floor(m / 60), "hour")}${m % 60 ? ` ${plural(m % 60, "minute")}` : ""}` : plural(m, "minute"); };
-    const fromWin = (d) => (!u ? "" : d.inWin === true ? (Math.round((d.first - u[0]) * 60) === 0 ? ", just as your window opened" : `, ${mins(d.first - u[0])} after your window opened`) : d.first > u[1] ? `, ${mins(d.first - u[1])} after your window closed` : `, ${mins(u[0] - d.first)} before your window opened`);
-    const sentence = tf ? `Today at ${tf.firstText}${fromWin(tf)}.` : `Latest, ${newest.label}, at ${newest.firstText}${fromWin(newest)}.`;
+    const fromWin = (d) => (!u || d.flag ? "" : d.inWin === true ? (Math.round((d.first - u[0]) * 60) === 0 ? ", just as your window opened" : `, ${mins(d.first - u[0])} after your window opened`) : d.first > u[1] ? `, ${mins(d.first - u[1])} after your window closed` : `, ${mins(u[0] - d.first)} before your window opened`);
+    /* a flagged today: its time, and why it isn't read */
+    const sentence = tf ? `Today at ${tf.firstText}${fromWin(tf)}.${tf.flag && D.flagLine ? ` ${D.flagLine}` : ""}` : `Latest, ${newest.label}, at ${newest.firstText}${fromWin(newest)}.`;
     const later = u ? pts.filter((d) => d.inWin === false && d.first > u[1]).length : 0, earlier = u ? pts.filter((d) => d.inWin === false && d.first < u[0]).length : 0;
     const aria = `First BM each morning, ${D.learning ? "so far" : "the last 30 days"}, on a curved clock from ${hourLbl(t0)} to ${hourLbl(t1)}. ${u ? `${tm.inWin30} of ${tm.mornings30} mornings in your usual window, ${tm.usualText}${later || earlier ? `; ${andList([later && `${later} later`, earlier && `${earlier} earlier`].filter(Boolean))}` : ""}. ` : ""}${big}. ${sentence}`;
     const svg = `<svg class="ou-svg ou-clock" viewBox="0 0 ${W} 128" role="img" aria-label="${esc(aria)}">
@@ -543,8 +555,9 @@
     const steps = Array.from({ length: top + 1 }, (_, i) => i);
     const ticks = steps.map((s) => (s === top ? `${s}+` : String(s)));
     const tc = t && !t.pending && t.logged ? t.count : null;
-    const st = tc != null && u ? vs(tc, u) : null;
-    const [kind, stText] = learning ? ["learn", "Still learning"] : t && t.pending ? ["none", ""] : t && t.logged && tc == null ? ["none", "No BMs said yet"] : st ? VS[st] : ["none", ""];
+    /* a flagged today: its count, noted for a clinician, read against nothing */
+    const st = tc != null && u && !t.flag ? vs(tc, u) : null;
+    const [kind, stText] = learning ? ["learn", "Still learning"] : t && t.pending ? ["none", ""] : t && t.logged && tc == null ? ["none", "No BMs said yet"] : t && t.flag ? ["ctx", "Noted for a clinician"] : st ? VS[st] : ["none", ""];
     const v1 = vital(x, {
       label: "BMs today", kind, stateText: stText,
       big: tc != null ? num(tc, 0, 700) : "Not yet", unit: tc != null ? "so far" : "",
@@ -552,7 +565,7 @@
       marks: tc != null ? [{ a: Math.min(tc, top), b: Math.min(tc, top), cls: st && st !== "within" ? "is-shift" : "" }] : []
     });
     const avg = (ds) => { const k = ds.filter((d) => d.count != null); return k.length ? +(k.reduce((s, d) => s + d.count, 0) / k.length).toFixed(1) : null; };
-    const wk = avg(D.days[7]), mo = o.avg30;
+    const wk = avg(D.days[7].filter((d) => !d.flag)), mo = o.avg30;
     const kOf = (v) => (v == null ? "read" : !u ? "read" : v < u[0] || v > u[1] ? "shift" : "usual");
     const bandP = u ? [pct(u[0], 0, top), r1(pct(u[1], 0, top) - pct(u[0], 0, top))] : null;
     const rows = [
@@ -561,11 +574,11 @@
     ];
     if (learning) rows.shift();
     if (u) rows.push({ label: "Your usual", value: o.usualText, segs: [{ k: "uband", w: bandP[1], x: bandP[0] }], thin: false });
-    const known = days.filter((d) => d.count != null);
+    const known = days.filter((d) => d.count != null && !d.flag);
     const inR = u ? known.filter((d) => d.count >= u[0] && d.count <= u[1]).length : null;
     const zeros = known.filter((d) => d.count === 0).length, gaps = days.filter((d) => d.count == null && !d.pending).length;
     const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} not logged`].filter(Boolean);
-    const ans = u ? `In the last 30 days, ${inR} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.` : `${known.length ? `${plural(known.length, "day")} logged so far.` : "Nothing logged yet."} Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
+    const ans = u ? `In the last 30 days, ${inR} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.${t && t.flag && D.flagLine ? ` ${D.flagLine}` : ""}` : `${known.length ? `${plural(known.length, "day")} logged so far.` : "Nothing logged yet."} Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
     return card(x, "ou-often", "How often", `
       ${head(x, "How often", u ? chip(x, "usual", o.usualText) : chip(x, "learn", "Learning"))}
       ${v1}
@@ -587,7 +600,7 @@
     tf.forEach((f) => { const a = idx(Math.min(...f.steps)), b = idx(Math.max(...f.steps)), key = `${a}-${b}`, s = sideOf(D, f); (groups[key] = groups[key] || { a, b, n: 0, cls: s === "looser" || s === "firmer" ? "is-shift" : s && s.indexOf("either") === 0 ? "is-either" : "" }).n++; });
     const sides = tf.map((f) => sideOf(D, f));
     const anyOut = sides.some((s) => s === "looser" || s === "firmer"), anyEither = sides.some((s) => s && s.indexOf("either") === 0);
-    const [kind, stText] = !u ? ["learn", "Still learning"] : !tf.length ? (t && t.pending ? ["none", ""] : ["none", t && t.count === 0 ? "No BM today" : "No BMs said yet"]) : anyOut ? ["shift", sides.includes("looser") && sides.includes("firmer") ? "Outside your usual" : sides.includes("looser") ? "Looser than your usual" : "Firmer than your usual"] : anyEither ? ["either", "Could be either"] : ["usual", "Within your usual"];
+    const [kind, stText] = !u ? ["learn", "Still learning"] : !tf.length ? (t && t.pending ? ["none", ""] : ["none", t && t.count === 0 ? "No BM today" : "No BMs said yet"]) : t.flag ? ["ctx", "Noted for a clinician"] : anyOut ? ["shift", sides.includes("looser") && sides.includes("firmer") ? "Outside your usual" : sides.includes("looser") ? "Looser than your usual" : "Firmer than your usual"] : anyEither ? ["either", "Could be either"] : ["usual", "Within your usual"];
     const big = tf.length === 1 ? esc(tf[0].name) : tf.length ? `${num(tf.length, 0, 700)}` : t && t.count === 0 ? "No BM" : "Not yet";
     const v1 = vital(x, {
       label: "Form today", kind, stateText: stText, big, unit: tf.length > 1 ? "BMs" : "", stack: true,
@@ -600,7 +613,8 @@
       const c = (k) => s.filter((v) => v === k).length;
       return { fi: c("firmer"), el: c("either-lo"), in: c("in"), eh: c("either-hi"), lo: c("looser"), n: forms.length };
     };
-    const wkF = D.days[7].flatMap((d) => d.forms), moF = D.days[30].flatMap((d) => d.forms);
+    /* the days read: a flagged today's BMs are in neither bar */
+    const wkF = D.days[7].filter((d) => !d.flag).flatMap((d) => d.forms), moF = D.days[30].filter((d) => !d.flag).flatMap((d) => d.forms);
     const bar = (label, forms) => {
       const c = count(forms);
       if (!c.n) return { label, value: "No BMs logged", segs: [] };

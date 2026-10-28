@@ -113,7 +113,7 @@
      a food check, a meal by voice), its count-ups use their decimals, and nothing names the check-in while it's off.
      A teaser (Free) keeps only the picture: no buttons, nothing to focus */
   const tpl = document.createElement("template");
-  const FOOD_MSG = `A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, good days too, then shows what tends to follow. It comes with the next pass.`;
+  const FOOD_MSG = `A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, ordinary days too, then shows what tends to follow. It comes with the next pass.`;
   /* a heading one level up, same class and attributes: the library sets a look's cards under a row's h2, the app under
      the screen's h1, so a card's h3 is an h2 here and its h4 an h3 (refresh-looks.css keeps the few tag rules) */
   const promote = (h, tag) => {
@@ -353,6 +353,7 @@
     const u = M.usual;
     let tone = "plain", word, line = "";
     if (f.pending) { word = "Nothing yet"; line = "Today isn't over."; }
+    else if (f.state === "flag") { tone = "info"; word = "Noted for a clinician"; line = RU.FLAG_DAY; }
     else if (f.state === "none") { word = "Not logged"; line = "Left out, never counted as a zero."; }
     else if (f.state === "nocount") { word = "No BMs said"; line = "Symptoms or meals logged, nothing about BMs, so it isn't counted either way."; }
     else if (f.state === "logged") { word = "Logged"; line = !f.count ? "No BM, logged." : `${plural(f.count, "BM")}${f.first == null ? "" : f.count === 1 ? `, at ${T(f.first)}` : `, the first at ${T(f.first)}`}.`; }
@@ -368,7 +369,10 @@
   function daysOf(M, mode, range) {
     const u = M.usual, learning = !u;
     const n = learning ? 7 : L.RANGES.includes(+range) ? +range : 30;
-    const F = L.span(M, n, mode), live = F.filter((f) => !f.pending);
+    /* today with a flag or an alarm feature logged is noted for a clinician and read against nothing, as on the
+       week card (RU.flagToday) */
+    const flagT = !!u && RU.flagToday && RU.flagToday(M);
+    const F = L.span(M, n, mode).map((f) => (flagT && f.today && f.logged ? Object.assign({}, f, { state: "flag" }) : f)), live = F.filter((f) => !f.pending);
     const from = Math.max(M.start, L.TODAY - n + 1);
     const span = from === L.TODAY ? dateText(L.TODAY) : RU.spanText(from, L.TODAY);
     const o = { u, learning, n, F, live, span, sinceStart: from === M.start };
@@ -378,7 +382,7 @@
       return o;
     }
     o.within = F.filter((f) => f.state === "usual"); o.sh = F.filter((f) => f.state === "shifted"); o.un = F.filter((f) => f.state === "unsure");
-    o.noc = F.filter((f) => f.state === "nocount" && !f.today); o.none = live.filter((f) => f.state === "none");
+    o.noc = F.filter((f) => f.state === "nocount" && !f.today); o.none = live.filter((f) => f.state === "none"); o.flag = F.filter((f) => f.state === "flag");
     o.known = o.within.length + o.sh.length;
     return o;
   }
@@ -409,6 +413,7 @@
       const listed = n <= 7 ? F.slice().reverse() : F.filter((f) => f.state === "shifted" || f.state === "unsure").reverse();
       const rest = n <= 7 ? "" : `<p class="rlk-days-rest">${esc(`${plural(within.length, "other day")} sat within your usual${none.length ? `, ${none.length} not logged` : ""}${noc.length ? `, and ${noc.length} had no BMs said` : ""}.`)}</p>`;
       body = `${fig}${tabs}<section class="ap-sect" data-a><h3>${esc(n <= 7 ? "Day by day" : un.length ? "The days that shifted or could be either" : "The days that shifted")}</h3>${listed.length ? `<ol class="rlk-days">${listed.map((f) => dayRow(M, f, mode)).join("")}</ol>` : `<p>${esc("No day in this stretch shifted.")}</p>`}${rest}</section>`;
+      if (X.flag.length && n > 7) body += `<section class="ap-sect" data-a><h3>Noted for a clinician</h3><p>${esc(RU.FLAG_DAY)}</p></section>`;
       if (un.length) body += `<section class="ap-sect" data-a><h3>Could be either</h3><p>${esc(`${plural(un.length, "day")} had a BM logged as a word that covers two forms, one inside your usual and one outside, so ${un.length === 1 ? "it isn't" : "they aren't"} counted either way.`)}</p></section>`;
     }
     const how = `<section class="ap-sect" data-a><h3>How a day is read</h3><p>${esc("A day is within your usual when the first BM came in your usual window, the count was a usual one and every BM was one of your usual forms. Something outside any of the three makes it a shifted day, either way. A day with nothing logged is left out, and No BM counts as a zero.")}</p></section>`;
@@ -585,9 +590,9 @@
   /* ---------- Oura is dark first: every Oura screen Will sent is dark ----------
      While the phone draws Oura (so not with the Easy version on, which draws Easy read) and nobody has picked a theme,
      the phone turns dark through api.set, so the Theme toggle and the Demo summary say Dark too. When it stops drawing
-     Oura, the theme it had comes back, so no other style is left on a dark ground nobody chose. A theme set from
-     anywhere else (the Theme toggle, Profile's chips, the page following the system theme) is the viewer's pick and is
-     kept from then on. Sets before the load ends (the page settling its theme) aren't a pick: nobody can click yet */
+     Oura, the theme it had comes back, so no other style is left on a dark ground nobody chose. A theme set by the
+     viewer (the Theme toggle, Profile's chips) is their pick and is kept from then on. The page following the system
+     theme (EXT.themeAuto) isn't a pick, and neither are sets before the load ends: nobody can click yet */
   const TH = { picked: false, mine: null, self: false, booted: false };
   const themeTo = (api, v) => { TH.self = true; try { api.set("theme", v); } finally { TH.self = false; } };
   function follow(api) {
@@ -619,7 +624,9 @@
      dismissed cards */
   EXT.onSet.push((k, v, api) => {
     if (k === "theme") {
-      if (!TH.self && TH.booted) { TH.picked = true; TH.mine = null; }
+      if (!TH.self && TH.booted && !EXT.themeAuto) { TH.picked = true; TH.mine = null; }
+      /* the page followed the system while Oura held the theme: that's the theme to give back */
+      else if (EXT.themeAuto && TH.mine) TH.mine = v;
       api.root.querySelectorAll(".rlk-look").forEach((n) => n.setAttribute("data-theme", v));
     }
     if (k === "look" || k === "easy") follow(api);

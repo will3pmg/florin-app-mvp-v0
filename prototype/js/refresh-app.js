@@ -767,7 +767,8 @@
         case "i-ck": ins("ck"); break;
         case "i-pat": ins("pat"); break;
         case "i-pattern": { const f = L.patterns(S.M, S.form).found; ins(f.length ? `pattern:${(f.find((p) => p.kind !== "late") || f[0]).id}` : "pat"); break; }
-        case "ask": S.askCtx = null; go("ask"); break;
+        /* a module that keeps a chat says how a fresh one opens (the Ask module: no chat left over from a seeded screen) */
+        case "ask": S.askCtx = null; go("ask"); if (EXT.opens.ask) safe(EXT.opens.ask, api); break;
         case "ask-about": S.askCtx = { k: "timing", range: S.ins.range }; go("ask"); break;
         case "ck-card": go("today"); { const c = layer.querySelector(".ap-ckc"); if (c) layer.scrollTop = Math.max(0, c.offsetTop - 64); } break;
         case "today": go("today"); break;
@@ -848,8 +849,8 @@
   const abWeek = (M) => {
     if (!M.usual) return null;
     const W = { A: RU.week(M, "A"), B: RU.week(M, "B"), C: RU.week(M, "C") };
-    const diff = W.A.bms.filter((b) => L.inForms(M, b, "A") !== L.inForms(M, b, "B"));
-    return { W, diff, n: W.A.bms.length };
+    const diff = W.A.rbms.filter((b) => L.inForms(M, b, "A") !== L.inForms(M, b, "B"));
+    return { W, diff, n: W.A.rbms.length };
   };
   const abLine = (M, f = "C") => {
     const m = f === "B" ? "C" : f;
@@ -960,7 +961,7 @@
       open: [
         "One line for the day loses meal times, so the later-dinner pattern can't be read from it. Keep the one-meal sheet a tap away for people who want times, or drop times altogether?",
         M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.mealDays} of the ${plural(PR.loggedDays, "day")} logged in the last ${PR.window} days, so Insights holds patterns back and offers the food check.` : `With meals every day, ${M.P.name}'s logs find ${PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}. Switch Meal logs to Rough days only to see what happens when people log only when things feel off.`) : "",
-        "Food check: 14 days, one line a day, good days too, then Insights reads it. Membership, or for everyone?"
+        "Food check: 14 days, one line a day, ordinary days too, then Insights reads it. Membership, or for everyone?"
       ].filter(Boolean),
       res: ["Oura shows a Discovery only after a tag is used about 5 to 40 times.", "Logging only on rough days can make ordinary foods look like triggers: every meal day is a rough day. In testing, Sarah's logs named toast this way."]
     };
@@ -1038,7 +1039,7 @@
         ["Today's five-word logs", "Carry over as one or two steps: Hard is 1 or 2, Loose is 5 or 6"],
         ["Four sliders, odor and ten pills", "Seven tiles, the extras under them, symptoms on their own"]
       ],
-      open: ["Recommended. Send the Rome Foundation one request covering a licensed export and IBS-SSS for the NSF study arm.", "Ask counsel to read C's words, lines and marks next to the scale before it ships. They describe the same seven forms in our own words; whether that needs the licence is their call.", abLine(M, f), EXTRAS_Q],
+      open: ["Send the Rome Foundation one request now, covering a licensed export and IBS-SSS for the NSF study arm?", "Ask counsel to read C's words, lines and marks next to the scale before it ships. They describe the same seven forms in our own words; whether that needs the licence is their call.", abLine(M, f), EXTRAS_Q],
       res: ["Throne: record the type number. C stores it, and shows a word.", "A clinical reviewer criticised Bowelle's own 1 to 5 scale for not matching the 1 to 7. C matches it step for step."]
     }),
     guide: (M, f) => ({
@@ -1146,7 +1147,7 @@
       lede: "The studio's FloraScore detail on manual logs: today on the ring with the usual range, where today sits in the last 90 days, the trend, what moved it this week, the four parts, and how it works, with the line that it isn't a medical score.",
       ba: [
         ["A score from gas readings only, or no score at all", "Four parts from what people log: timing 30%, how often 25%, form 25%, comfort 20%, the studio's weights"],
-        ["A day without logs scored as zero", "Left out. Fewer than 2 logged days in the last 3 means no score that day, said in words"],
+        ["A day without logs scored as zero", "Left out. No score that day unless a BM, or No BM, is logged on 2 of the last 3 days, said in words"],
         ["Optimal, Good, Fair, Pay attention", "Within, a little above, or below your usual range. No grades, no red"]
       ],
       open: [M.usual ? `The option changes the score through Form: ${["A", "B", "C"].map((m) => `${m} ${(L.score(M, L.TODAY, m) || {}).value}`).join(", ")} today for ${M.P.name}. Fine, or score Form on steps only?` : "", "Comfort counts a symptom logged without a strength like the lightest one. Right?", "When Florin One ships, gas readings join as a fifth part. Keep the four weights as they are, or rebalance then?"].filter(Boolean),
@@ -1567,9 +1568,13 @@
     [left, right].forEach((el) => {
       if (isM() || getComputedStyle(el).position !== "sticky") { el.style.maxHeight = ""; return; }
       const t = Math.max(0, el.getBoundingClientRect().top);
-      el.style.maxHeight = `${Math.max(240, Math.floor(window.innerHeight - t - 16))}px`;
+      /* while Read the note shows at the foot of the toggles, the toggles end above it, so it never covers a row */
+      const foot = el === left && jump && !jump.hidden ? Math.max(16, Math.ceil(window.innerHeight - jump.getBoundingClientRect().top) + 12) : 16;
+      el.style.maxHeight = `${Math.max(240, Math.floor(window.innerHeight - t - foot))}px`;
     });
   }
+  /* the button shows and hides from many places: the toggles follow it */
+  try { new MutationObserver(() => sizeSides()).observe(jump, { attributes: true, attributeFilter: ["hidden"] }); } catch (e) { /* no observer: the next scroll or resize sizes them */ }
   /* scale the phone to the space it has, never above 1: the whole phone fits under the header, tab bar included */
   function fit() {
     const f = stage.querySelector(".rx-fit");
@@ -1680,7 +1685,9 @@
      screen), so the toggles, the stored decisions, the Screens list and the notes always match the phone */
   function onSet(k, v) {
     if (!P.ph || k === "full") return;
-    if (k === "theme") { if (v !== appTheme()) P.themeSet = v; }
+    /* a theme the same as the page's own (the system's, or the page's toggle) is no pick: the phone goes on following
+       the page. So the Oura style turning the phone dark and giving the theme back leaves nothing stored */
+    if (k === "theme") P.themeSet = v === pageTheme() ? null : v;
     else if (DEC[k]) {
       if (DEC[k].opts.some(([o]) => o === v)) { P[k] = v; store.set(k, v); }
       if (k === "checkin") renderNav();
@@ -1796,7 +1803,9 @@
   });
 
   /* follow the viewer's theme unless the demo picks one */
-  const followTheme = () => { if (!P.themeSet && P.ph) { P.ph.set("theme", pageTheme()); syncControls(); } };
+  /* EXT.themeAuto marks the set as the page following, not the viewer picking, so a module (the Oura style's dark first)
+     can tell the two apart */
+  const followTheme = () => { if (!P.themeSet && P.ph) { EXT.themeAuto = true; try { P.ph.set("theme", pageTheme()); } finally { EXT.themeAuto = false; } syncControls(); } };
   if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", followTheme);
   new MutationObserver(followTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 

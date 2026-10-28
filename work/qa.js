@@ -158,6 +158,16 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
       return { shown: true, hit: !(r.right <= q.left || r.left >= q.right || r.bottom <= q.top || r.top >= q.bottom), r: [Math.round(r.left), Math.round(r.right)], q: [Math.round(q.left), Math.round(q.right)] };
     });
     if (j.shown && j.hit) note(`${w}x${h}: Read the note covers the phone (button ${j.r.join(" to ")}, stage ${j.q.join(" to ")})`);
+    /* final-fix: nor any toggle: the toggles column ends above it, so the last row, brought into view, is its own */
+    const cov = await p.evaluate(() => {
+      const jb = document.querySelector(".rx-jump"), rows = [...document.querySelectorAll(".rx-side--l [data-rx][data-v]")].filter((x) => x.dataset.rx !== "screen" && x.offsetParent);
+      if (!jb || jb.hidden || !rows.length) return null;
+      const last = rows[rows.length - 1];
+      last.scrollIntoView({ block: "nearest" });
+      const q = last.getBoundingClientRect(), hit = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+      return hit && hit.closest(".rx-jump") ? `${last.dataset.rx}=${last.dataset.v}` : null;
+    });
+    if (cov) note(`${w}x${h}: Read the note covers the toggle ${cov}`);
     await p.evaluate(() => document.querySelector('[data-rx="home"][data-v="score"]').click());
     await ctx.close();
   }

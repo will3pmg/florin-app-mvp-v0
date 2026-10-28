@@ -221,6 +221,8 @@
 .ap.ap--easy :is(.ap-ask-body p, .ap-ask-me p, .ap-askx-facts li, .ap-askx-try, .ap-askx-in) { font-size: 18px; line-height: 1.5; }
 .ap.ap--easy :is(.ap-askx-src, .ap-askx-note) { font-size: 16px; line-height: 1.5; color: var(--ap-ink); }
 .ap.ap--easy .ap-askx-in { height: 56px; }
+/* the chat's Send carries its word, so the arrow goes: at 360 wide the box keeps room for "Ask about your logs" */
+.ap.ap--easy .ap-askx-send .ic { display: none; }
 /* Profile and onboarding (refresh-profile.js), the calendar (refresh-variants.js), a data style's days (refresh-looks.js) */
 .ap.ap--easy :is(.pf-you-m em, .pf-count, .vr-sc-l, .vr-cal-w span) { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
 .ap.ap--easy :is(.pf-pts b, .rlk-day-h b) { font-size: 18px; }
@@ -242,6 +244,10 @@
 .ap-ez-prof { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px 0 8px; border-radius: 999px; background: var(--ap-card); box-shadow: var(--ap-shadow), inset 0 0 0 1.5px var(--ap-line); font-size: 18px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
 .ap-ez-av { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ap-card2); font-size: 18px; font-weight: 500; }
 .ap-ez-say { font-size: 28px; line-height: 1.3; font-weight: 400; letter-spacing: -.01em; color: var(--ap-ink); text-wrap: pretty; }
+/* a flag or an alarm feature today: the sign and primary care as the Teal note, never read against the usual */
+.ap-ez-say.ap-ez-flag { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-radius: 16px; font-size: 24px; background: var(--ap-info-bg); box-shadow: inset 4px 0 0 var(--ap-teal); }
+.ap-ez .ap-ez-flag .ic { flex: none; width: 24px; height: 1.3em; color: var(--ap-teal); }
+.ap-ez .ap-ez-flag > span { min-width: 0; }
 .ap-ez-score .ez-unit { color: var(--ap-ink); }
 
 /* the big buttons: an icon tile, the words, sometimes a line under them */

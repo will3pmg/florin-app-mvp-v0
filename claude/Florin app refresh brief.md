@@ -302,49 +302,172 @@ Five reviewers read the third pass. What the core changed:
   charts lost their dashed lines; a day not logged is its struck date. The faintest inks, in the app and on the page,
   clear 4.5:1 in light. These two token changes, and the chart kit's dashes, are for the studio to take back.
 
-**The calls for Will, from every note**
+**Closing the hand-offs (Oct 28)**
 
-Where our recommendation and a module's note now disagree, both are named.
+The fixers worked in parallel, each in its own files, and left what belonged to another's. Closed in one pass:
 
-- *Home.* The deck and the Home note now both recommend Score first, for Will to confirm, and Score first's sentence
-  leads on the most notable log, ranked as Day first ranks it (built in the core, Oct 28). On a flag day the score
-  keeps its number but isn't read against the usual, on both options: right? Also: should a strong symptom outrank a shift
-  in what stands out? Is a small ring by the date enough to tie Florin to the score people know from Oura? Day first
-  puts the BM tiles on Today as well as on plus: keep both? Does the day's sentence say enough, or too much?
-- *History.* A day with a flag is marked for a clinician and not read against the usual: right, or show both? On
-  Free the calendar reads only the last 7 days against the usual: or should History, which is free, read every day?
-  Keep a List and Calendar switch on History itself? Start the calendar on today, or on the last day with a log?
-- *Data style.* Ours: Oura for Today and the score, Field journal's figures for the detail pages, Easy read for the
-  larger-text setting, one style per screen. Mix by surface like that, or one style everywhere? Keep the Oura week's
-  tags going onto that week's check-in? Insights in a style shows 30 days without range tabs: enough? On Free, the
-  style's cut (the score, the week and the check-in) is less than As built's free plan: keep it, or match? Your days:
-  list every day at 30 and 90, or only the shifted ones?
-- *Easy version.* A setting in Profile (recommended), or a version of its own? Offer it once in onboarding, or turn
-  it on when the phone's own text size is large? Keep the one-tap save in Easy, since a tremor brings mis-taps? Fold
-  Insights into Today, or keep a tab? Keep the calendar in Easy (days about 49px wide), or the list? FloraScore on
-  Easy's Today at all? "Something feels off" and "What I ate" as the words? Auto-advance after a pick, or a Next
-  button? The nearest hour, or minutes? Easy leaves out straining, didn't feel finished, burning, how long and the
-  note: enough? Which cards earn a place in Your weeks?
-- *Onboarding.* Which questions earn a place on day 1 (the short flow's 8 are the proposal)? Research consent as a
-  step, or only in Profile? Age range and sex at all, or only for a clinician report? Is a BM reminder worth a step on
-  day 1? What should "what brings you" change on day 1? Ask the rest in context (eating with the first meal, foods to
-  watch with the first food check, medicines and conditions with the first report)? Should foods to watch count from
-  day 1, or wait for 5 logs? The full survey has no reminder step: add the short flow's? The sign note on onboarding:
-  once on the step, or back on Today on day 1? Fever, vomiting that won't stop and weight loss aren't on the survey's
-  list (the shipping survey left them out): add them?
-- *Profile.* Turn the check-in off here as well as change its day? Logging repeats BM logging and the meal sheet as a
-  person's own setting: theirs to pick, or one for everyone? Connected apps for this version (Apple Health first)?
-  Export: a file for the person, the clinician report, or both? Offer Larger text again after a few days? On day 1,
-  the answers lead Profile until there's a usual: right order? A changed answer (periods, say): offer to change what
-  it feeds right there?
-- *Ask Florin.* The deck recommends one free answer a week on Free and never locking the clinician question; the
-  prototype keeps Ask locked on Free (and Make a report on Free opens the membership sheet), so this is open. Claude
-  runs on the viewer's own usage here; the shipping app needs its own model account and a privacy review before any
-  log leaves the phone. Show Claude's answer only once checked, at the cost of a pause? Thumbs and memories the person
-  can see and delete? Should the card's question go in the box, or wait as a chip? Once the report is built, offer it
-  in the clinician answer? An urgent-care number for the person's country, from Profile?
-- *Weekly check-in, BM logging, consistency, meals, membership, FloraScore, integrations, messaging.* As on the
-  deck's last slide and in each decision's note: ship C once counsel has read it and drop B; Quick tiles with a When
-  row in the saved toast (Just now, 30 min ago, 1 hr ago, Earlier), recommended and for Will to confirm, not built; one box and the mic with a free 14-day food check; the check-in on and free; the report and the food check's
-  start free, under $10 a month; FloraScore's four parts and weights; integrations now or later; how we describe the
-  app before Florin One. The report for a clinician is still a placeholder everywhere it's offered.
+- *One wording for no score.* The model holds the rule (`L.NO_SCORE`): "it needs a BM, or No BM, logged on 2 of your
+  last 3 days". Score first's hero, Day first, Easy, Ask and every data style now say it that way.
+- *One count for meals.* Ask says "36 of the 85 days you logged in the last 90 days", as Insights and the looks do.
+  "Good days" is gone from every screen: ordinary days.
+- *A flagged today reads nothing, anywhere on Today.* Every week card (As built, the five styles, Easy) leaves today
+  out of its counts, marks it with the calendar's Teal ring and says why; the styles' score cards keep the number and
+  say "Not read against your usual today", as the hero and Day first's chip do. Oura leads with the primary care note.
+- *Score first says what the log did.* With membership its sentence goes on (Sarah's day with a Watery BM at 7:40 PM:
+  "Without it, FloraScore would be 83."). Free stops at the lead, as Day first does. The Home note says what's built.
+- *The page.* After Oura turns the phone dark and gives it back, the page follows the system theme again. Screens, then
+  Ask Florin, opens a fresh chat. Strength not said is a hollow square on the week card, as on the calendar.
+- *Craft.* Easy's Ask box keeps "Ask about your logs" whole at 360 wide. The library page gets the darker light ink.
+
+**The last fixes (Oct 28)**
+
+A fresh read of the pass found a flagged today still read in places, and a few smaller things. Fixed:
+
+- *A flagged today reads nothing, anywhere.* The model now does it: today with a flag or an alarm feature has its own
+  state, "flag", and reads on no side, so every count leaves it out. Easy's Today leads with the sign and primary care
+  as the Teal note; FloraScore's detail says "Not read against your usual today" with the sign under it; Insights' score
+  card, its day counts, timing, how often and form leave today out and say why, and the charts draw it as a Teal ring;
+  every data style's trend, timing, often and form cards do the same; Ask Florin's week and score answers say why and
+  point to primary care. The score keeps its number. On the week card the line now sits under the two BM rows it's
+  about, and each symptom's label carries its own strength ("bloating, mild; gas, strength not said").
+- *FloraScore's detail* gives the week's change in points ("3 points above last week, on average"), where it said
+  "Steadier than last week".
+- *Meals by voice* plays only the meals not logged yet that day ("Pizza for dinner."), so no food is counted twice.
+  Ask's meals answer names the coverage the gate reads.
+- *The page.* Read the note no longer covers the last toggle at 1000 wide: the toggles end above it. After the page
+  follows the system theme, Oura is dark first again. The library's selector says Consistency.
+- *The deck.* The Home mock shows what membership adds to the sentence; Rings and Oura use the app's blend wording;
+  Profile lists Delete my account and the phone's "Set from your logs" wording; Easy's answer sizes match the note.
+
+**The calls for Will**
+
+One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the
+line says so.
+
+*Home*
+- Confirm Score first: the deck and the Home note both recommend it, and its sentence now says what the log did.
+- On a flag day the score keeps its number but isn't read against the usual, on both options: keep it, or hide it?
+- Should a strong symptom outrank a shift in what stands out?
+- On an ordinary day a mild symptom leads the sentence: should it, or only moderate and strong ones?
+- Should the hero keep "+2 vs last week" on a rough evening?
+- Is a small ring by the date (Day first) enough to tie Florin to the score people know from Oura?
+- Day first puts the BM tiles on Today as well as on plus: keep both, or only Today's?
+- Does the day's sentence say enough, or too much?
+- One log moves the score by about a third of what it would alone (it blends 3 days): say so on the score's detail?
+- The check-in card sits second on the evening it's due, then folds to one line: right place?
+
+*History and the week*
+- A flagged day is marked for a clinician and not read against the usual: right, or show both?
+- Should every surface mark a flagged past day, as the calendar does? Today's own surfaces now leave today unread.
+- On Free the calendar reads only the last 7 days against the usual: or should History, which is free, read every day?
+- Keep a List and Calendar switch on History itself?
+- Does History stay a tab, or move under Today?
+- Start the calendar on today, or on the last day with a log?
+- Mild symptoms at 65% on the week card and the calendar (3.16:1 on the picked day), or both at 70%?
+- What should a Teal dot mean across the app? Rings uses it for symptoms, the calendar for meals.
+
+*Data style*
+- Mix styles by surface (ours: Oura for Today, Field journal for details, Easy read for larger text), or one style?
+- Should picking Oura make the whole app dark first, with light as a setting, or is that only a demo convenience?
+- With Easy on, picking Oura leaves the theme alone: right, or should Easy read follow a dark preference?
+- Keep the Oura week's tags going onto that week's check-in?
+- Insights in a style shows 30 days without range tabs: enough?
+- On Free, a style's cut (the score, the week, the check-in) is less than As built's free plan: keep it, or match?
+- Your days: list every day at 30 and 90 days, or only the shifted ones?
+- With only a symptom or meal today, the styles say today isn't counted and Insights says nothing: should both say it?
+- Rings says "1 of 3 check-ins saved" before the first three: is that the way to put it?
+- Bento's usual days now have a Plum edge on light, so a usual month looks busier: acceptable?
+- Rings and Oura lead with a big 0 ("0 of 4 like your first weeks") when every answer moved: follow Easy read?
+
+*Easy version*
+- A setting in Profile (recommended), or a version of its own?
+- Offer it once in onboarding, or turn it on when the phone's own text size is large?
+- Larger text is offered on Welcome, on Ready and in Profile: enough, or offer it again after a few days?
+- Keep the one-tap save in Easy, since a tremor brings mis-taps?
+- Fold Insights into Today, or keep a tab? And which cards earn a place in Your weeks?
+- History in Easy: the calendar (days about 49px wide at 390, 45px at 360), or the list, one big row a day?
+- FloraScore on Easy's Today at all?
+- "Something feels off" and "What I ate" as the words?
+- Auto-advance after a pick, or a Next button? The nearest hour, or minutes?
+- Easy leaves out straining, didn't feel finished, burning, how long and the note: enough?
+- Easy's Today drops the next step card, since its three buttons are the next step: right?
+
+*Onboarding*
+- Which questions earn a place on day 1? The short flow's 8 are the proposal.
+- Research consent as a step, or only in Profile? Age range and sex at all, or only for a clinician report?
+- Is a BM reminder worth a step on day 1? The full survey has none: add the short flow's?
+- What should "what brings you" change on day 1?
+- Ask the rest in context: eating with the first meal, foods to watch with the first food check, the rest with a report?
+- Should foods to watch count from day 1, or wait for 5 logs?
+- The sign note on onboarding: once on the step, or back on Today on day 1?
+- Fever, vomiting that won't stop and weight loss aren't on the survey's list of signs: add them?
+- Should a person be able to leave set-up at Welcome and finish it later?
+
+*Profile*
+- Turn the check-in off from Profile, as well as change its day?
+- Logging repeats BM logging and the meal sheet as the person's own setting: theirs to pick, or one for everyone?
+- Connected apps in this version (Apple Health first), or later?
+- Export: a file for the person, the clinician report, or both?
+- On day 1 the answers lead Profile until there's a usual: right order?
+- A changed answer (periods, say): offer to change what it feeds right there?
+- Deleting the account may not cancel an app store membership: should the delete sheet say so for a member?
+
+*Ask Florin*
+- On Free: locked, as built, or one answered question a week and the clinician question never locked, as the deck says?
+- Claude runs on the viewer's own account here; shipping needs Florin's own model account and a privacy review first.
+- Show Claude's answer only once it's checked, at the cost of a pause?
+- Thumbs, and memories the person can see and delete?
+- A card's question: straight into the box, or waiting as a chip?
+- Once the report is built, offer it in the clinician answer? And an urgent-care number for the person's country?
+- A mucus question gets the flag note's line and primary care, but no Teal banner (it isn't an alarm): add the banner?
+- "Can I still eat pizza?" gets the food redirect: should "still eat" questions get a line of their own?
+- The check fails any Claude answer that says good or bad, even "a good time to log": strict enough to keep?
+- A question naming a condition is redirected, even about the app ("What conditions does Florin cover?"): acceptable?
+
+*Alarm words*
+- On a BM's note "pink" and "very dark" count as signs, "dark green" and "dark brown" don't: is that the line?
+- "It's 39 degrees" is read as weather and stays quiet: acceptable?
+
+*Logging, consistency, meals, check-in, membership, FloraScore, integrations, messaging*
+- BM logging: Quick tiles, with a When row in the saved toast (Just now, 30 min, 1 hr, Earlier)? Recommended, not built.
+- Consistency: ship C once counsel has read it, and drop B?
+- Meals: one box and the mic, with a 14-day food check: free, or with membership?
+- Weekly check-in: on, and free?
+- Membership: the report and the food check's start free, under $10 a month?
+- FloraScore: the four parts and their weights (timing 30, how often 25, form 25, comfort 20)?
+- Integrations now or later? And how we describe the app before Florin One?
+- The report for a clinician is still a placeholder everywhere it's offered: when does it get built, and what should it
+  hold for a first visit?
+
+*Logging a BM and symptoms*
+- Which BM extras stay? All show under the form (Will, Oct 14); ours: keep the flag and Sudden urge to go, and drop
+  Burning and Didn't feel finished first if the form feels long. Also on the deck's asks slide.
+- Should a person's first two weeks always open the form, while Florin learns their usual, rather than the first 5 BMs?
+- A one-tap log has no details (urgency, straining, how long, the flag): enough for the people who need them most?
+- The tiles on the plus menu card, or only inside Log a BM? And the check-in in plus every week, with a dot only when due?
+- Send the Rome Foundation one request now, covering a licensed export and IBS-SSS for the NSF study arm?
+- Is this the right six symptoms: Bloating, Belly pain, Cramping, Gas, Nausea and Low energy?
+
+*Meals and the weekly check-in*
+- Keep meal times at all, or drop them with the one-meal sheet?
+- With the check-in off, nothing asks how the week felt: is the week card on Today enough?
+- The first check-in is due on the first Sunday evening, even on the day someone joins: or after their first full week?
+- A skipped check-in stays skipped, and stays in plus: or should it move to the next day?
+- A weekly report, Oura style, beyond the check-in's own result?
+
+*Insights and FloraScore*
+- A day is within your usual when the first BM landed in the window, the count was usual and every form was within the
+  usual; a B word either side, or a day with only symptoms or meals, counts on neither. Right definition? Also on the
+  deck's asks slide.
+- Symptoms' usual is how often they came up (about 1 day in 3 for Sarah): enough, or no usual for symptoms at all?
+- Score Form on steps only, so the consistency option can't change the score?
+- Comfort counts a symptom logged without a strength like the lightest one: right?
+- When gas readings join as a fifth part, keep the four weights, or rebalance then?
+- Today counts as far as it has gone: or leave it out of averages until it ends?
+- Form: the first BM of the day only, or every BM (built)?
+- Name a food at Showing up often (5 or more), or wait for Consistent (8 or more)?
+- What you could try never says avoid: the right tone for a food the person enjoys?
+- A Next button through the detail pages, or swipe like Oura?
+- Symptoms over 7 days as cells, over 30 and 90 as dot rows: keep both, or dot rows everywhere?
+- A flagged today is now left out of every count, on Today, Insights, the styles and Ask, and said once on each card:
+  keep that, or name it once per screen?

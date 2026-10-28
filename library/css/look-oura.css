@@ -91,6 +91,8 @@
 /* the one big thing: Lora, the editorial voice */
 .lk-oura .ou-hl { font-family: var(--serif); font-size: 21px; line-height: 1.25; letter-spacing: -.005em; text-wrap: balance; color: var(--ou-ink); }
 .lk-oura .ou-hl.is-centre { text-align: center; font-size: 22px; }
+/* a flag today: the primary care sentence as the Teal note, never read against the usual */
+.lk-oura .ou-hl.is-flag { font-family: var(--sans); font-size: 16px; line-height: 1.4; text-align: left; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--teal) 42%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 70%, transparent); }
 .lk-oura .ou-state + .ou-hl { margin-top: -8px; }
 .lk-oura .ou-say { font-size: 14px; line-height: 1.5; color: var(--ou-ink2); text-wrap: pretty; }
 .lk-oura .ou--hero .ou-say { text-align: center; }
@@ -114,6 +116,8 @@
 .lk-oura .ou-sw--shift { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-shift); }
 .lk-oura .ou-sw--either { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-ink3); }
 .lk-oura .ou-sw--read { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-read); }
+.lk-oura .ou-sw--flag { width: 16px; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--ou-ctx) 24%, transparent); box-shadow: inset 0 0 0 1.5px var(--ou-ctx); }
+.lk-oura .ou-sw--zero-flag { width: 16px; height: 3px; border-radius: 2px; background: var(--ou-ctx); }
 .lk-oura .ou-sw--ctx { width: 8px; height: 8px; background: var(--ou-ctx); }
 .lk-oura .ou-sw--sym { width: 6px; height: 6px; background: var(--ou-ctx); }
 .lk-oura .ou-sw--tick { width: 2px; height: 12px; border-radius: 2px; background: var(--ou-read); }
@@ -254,6 +258,8 @@
 .lk-oura .ou-blk { fill: var(--ou-read); }
 .lk-oura .ou-blk.is-usual { fill: var(--ou-usual); }
 .lk-oura .ou-blk.is-shift { fill: var(--ou-shift); }
+/* today with a flag: noted for a clinician, never read. Teal, the colour of the primary care note */
+.lk-oura .ou-blk.is-flag { fill: color-mix(in srgb, var(--ou-ctx) 24%, transparent); stroke: var(--ou-ctx); stroke-width: 1.5; }
 .lk-oura .ou-blk.is-either { fill: var(--ou-ink3); }
 .lk-oura .ou-blk.is-read { fill: var(--ou-read); }
 .lk-oura .ou-svg .ou-wk-d { fill: var(--ou-ink2); }
@@ -275,6 +281,7 @@
 .lk-oura .ou-zr-f { position: absolute; left: 0; top: 0; bottom: 0; width: max(4px, var(--w)); border-radius: 4px; background: var(--ou-read); transform-origin: left center; }
 .lk-oura .ou-zr-f.is-usual { background: var(--ou-usual); }
 .lk-oura .ou-zr-f.is-shift { background: var(--ou-shift); }
+.lk-oura .ou-zr-f.is-flag { background: color-mix(in srgb, var(--ou-ctx) 24%, transparent); box-shadow: inset 0 0 0 1.5px var(--ou-ctx); }
 .lk-oura .ou-zr-f.is-either, .lk-oura .ou-zr-f.is-nocount { background: var(--ou-ink3); }
 .lk-oura .ou-zr-f.is-gap, .lk-oura .ou-zr-f.is-pending { background: transparent; box-shadow: inset 0 0 0 1px var(--ou-ink3); }
 .lk-oura .ou-zr-v { font-family: var(--mono); font-size: 11.5px; color: var(--ou-ink2); white-space: nowrap; }

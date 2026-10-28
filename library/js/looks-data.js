@@ -24,13 +24,18 @@
     const mode = o.mode || "C";
     const M = o.M || L.build(persona, o.data || "est", { meals: o.meals || "all" });
     const u = M.usual;
+    /* today, with a flag or an alarm feature logged, is noted for a clinician and never read against the usual, as
+       Today's score and week card treat it (RU.flagToday): its state is "flag" in every stretch, and a look draws it
+       with its own flag mark and reads nothing of it */
+    const flagT = !!(u && RU && RU.flagToday && RU.flagToday(M));
     const day = (f) => ({
       d: f.d, label: short(f.d), dow: dow(f.d), date: L.dateOf(f.d).getDate(), today: f.today,
-      logged: f.logged && !f.pending, pending: f.pending, state: f.state, first: f.first, firstText: f.first != null ? T(f.first) : null,
+      logged: f.logged && !f.pending, pending: f.pending, state: flagT && f.today && f.logged ? "flag" : f.state, flag: flagT && f.today && f.logged, first: f.first, firstText: f.first != null ? T(f.first) : null,
       inWin: f.inWin, count: f.count, inCount: f.inCount,
       /* steps: the one step a BM sits on, or the two a B word covers when read in A or C. level is the step (A and C),
          or the word (B); a two-step word reads at the middle of its steps, so it never lands in a one-step bin */
-      forms: f.bms.map((b) => ({ t: b.t, name: L.formName(b, mode), steps: mode === "B" ? [L.wordKey(b)] : L.stepsOf(b), level: mode === "B" ? L.wordKey(b) : Ut.mean(L.stepsOf(b)), within: u ? L.inForms(M, b, mode) : null })),
+      /* a flagged today's BMs keep their names and steps for drawing, flag: true, and are in none of the readings */
+      forms: f.bms.map((b) => ({ t: b.t, name: L.formName(b, mode), steps: mode === "B" ? [L.wordKey(b)] : L.stepsOf(b), level: mode === "B" ? L.wordKey(b) : Ut.mean(L.stepsOf(b)), within: u && !(flagT && f.today) ? L.inForms(M, b, mode) : null, flag: flagT && f.today })),
       sym: Object.entries(f.sym).map(([name, s]) => ({ name, strength: s, word: s ? L.STRENGTH[s - 1] : "Strength not said" })),
       meals: f.meals.length,
       score: (L.score(M, f.d, mode) || {}).value == null ? null : L.score(M, f.d, mode).value
@@ -50,18 +55,25 @@
       for (let x = Math.max(BASE[0], M.start); x <= BASE[1]; x++) { const s = L.score(M, x, mode); if (s && s.value != null) base.push(s.parts); }
       return Object.fromEntries(L.SCORE_PARTS.map(([k]) => { const v = base.map((p) => p[k]); return [k, v.length >= 7 ? [Math.round(Ut.pct(v, 0.15)), Math.round(Ut.pct(v, 0.85))] : null]; }));
     })();
+    /* a flag today: the score keeps its number but is read against nothing, as Today's hero and Day first's chip say */
+    const flagS = flagT && !!sNow && sNow.value != null;
     const score = u ? {
       value: sNow ? sNow.value : null,
       usual: sU,
-      relation: !sNow || sNow.value == null || !sU ? null : sNow.value < sU[0] ? (sU[0] - sNow.value >= 6 ? "Below your usual range" : "A little below your usual range") : sNow.value > sU[1] ? "A little above your usual range" : "Within your usual range",
+      flag: flagS,
+      relation: flagS ? "Not read against your usual today" : !sNow || sNow.value == null || !sU ? null : sNow.value < sU[0] ? (sU[0] - sNow.value >= 6 ? "Below your usual range" : "A little below your usual range") : sNow.value > sU[1] ? "A little above your usual range" : "Within your usual range",
       /* the change is the difference of the two averages as shown, so "84, up 8 on 76" always adds up */
       weekAvg: mv ? Math.round(mv.wk) : null, lastWeekAvg: mv ? Math.round(mv.lw) : null,
       delta: mv ? Math.round(mv.wk) - Math.round(mv.lw) : null,
       parts: mv ? mv.parts.map((p) => ({ key: p.key, label: NAMES[p.key].label, desc: NAMES[p.key].desc, weight: p.weight, now: p.now, before: p.before, delta: +p.delta.toFixed(1), usual: partsUsual ? partsUsual[p.key] : null })) : [],
-      series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value }))])),
+      /* a series point's flag: today's, on a flag day, keeps its value and is read against nothing (no within, above or
+         below, and in no count of them) */
+      series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value, flag: flagS && s.d === L.TODAY }))])),
       /* today's four parts, each against its own usual range (partsUsual). Empty when today has no FloraScore */
       partsToday: !sNow || sNow.value == null || !sNow.parts ? [] : L.SCORE_PARTS.map(([k, l, d]) => ({ key: k, label: l, desc: d, weight: L.SCORE_W[k], value: Math.round(sNow.parts[k]), usual: partsUsual ? partsUsual[k] : null })),
-      how: "FloraScore blends your last 3 days that have logs and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.",
+      how: "FloraScore blends the days among your last 3 that have a BM, or No BM, logged, and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.",
+      /* the no-score rule in the model's one wording (L.NO_SCORE), for a look to say when today has no FloraScore */
+      why: `${cap(L.NO_SCORE)}.`,
       learning: null
     } : { value: null, usual: null, partsToday: [], learning: { day: L.learnDay(M), of: L.LEARN_DAYS, line: `Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.` } };
 
@@ -84,7 +96,7 @@
        neither way, never as a shift: left says which, by name for a week and by count for a month */
     const tally = (F, named) => {
       const lg = F.filter((f) => f.logged), by = (s) => lg.filter((f) => f.state === s);
-      const within = by("usual"), shifted = by("shifted"), unsure = by("unsure"), noc = by("nocount");
+      const within = by("usual"), shifted = by("shifted"), unsure = by("unsure"), noc = by("nocount"), flag = by("flag");
       const nm = (f) => (f.today ? "today" : Ut.DOWL[L.dateOf(f.d).getDay()]);
       const who = (a) => cap(named ? andList(a.map(nm)) : plural(a.length, "day"));
       const notC = (a) => `so ${a.length === 1 ? "it isn't" : "they aren't"} counted`;
@@ -92,13 +104,15 @@
       const left = [
         unsure.length && `${who(unsure)} could be either, ${notC(unsure)}.`,
         past.length && `${who(past)} had nothing about BMs, ${notC(past)}.`,
-        now && "Today has nothing about BMs yet, so it isn't counted."
+        now && "Today has nothing about BMs yet, so it isn't counted.",
+        flag.length && RU.FLAG_DAY
       ].filter(Boolean).join(" ");
-      return { logged: lg.length, within: within.length, shifted: shifted.length, unsure: unsure.length, nocount: noc.length, none: F.filter((f) => !f.logged && !f.pending).length, known: within.length + shifted.length, left };
+      return { logged: lg.length, within: within.length, shifted: shifted.length, unsure: unsure.length, nocount: noc.length, flag: flag.length, none: F.filter((f) => !f.logged && !f.pending).length, known: within.length + shifted.length, left };
     };
     const scale = scaleOf(mode);
     const formUsual = !u ? null : mode === "B" ? [u.wLo, u.wHi] : [u.fLo, u.fHi];
-    const allForms = F30.flatMap((f) => f.forms);
+    /* every reading over the days read: a flagged today's BMs are noted for a clinician, in none of these counts */
+    const allForms = F30.filter((f) => !f.flag).flatMap((f) => f.forms);
     /* one bin per step (A and C) or word (B). A B word read in A or C that covers two steps goes in spans instead, so
        the bins plus the spans always add up to total30 */
     const bins = scale.map((s) => ({ label: s.label, k: s.k, count: allForms.filter((x) => x.steps.length === 1 && x.steps[0] === s.k).length, inUsual: formUsual ? s.k >= formUsual[0] && s.k <= formUsual[1] : null }));
@@ -174,8 +188,13 @@
       score,
       days: { 7: F7, 30: F30, 90: F90 },
       tally: { 7: tally(F7, true), 30: tally(F30, false) },
-      timing: { usual: u ? [u.tLo, u.tHi] : null, usualText: u ? `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}` : null, inWin30: u ? F30.filter((f) => f.inWin).length : null, mornings30: F30.filter((f) => f.first != null).length },
-      often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })() },
+      /* the sentence for today with a flag (RU.FLAG_DAY), or "" */
+      flagLine: flagT && RU.FLAG_DAY ? RU.FLAG_DAY : "",
+      /* flagToday: today has a log noted for a clinician, so the mornings and days counted against the usual leave it out
+         (mornings30 and read30 count the days read) */
+      flagToday: flagT,
+      timing: { usual: u ? [u.tLo, u.tHi] : null, usualText: u ? `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}` : null, inWin30: u ? F30.filter((f) => f.inWin).length : null, mornings30: F30.filter((f) => f.first != null && !f.flag).length },
+      often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null && !f.flag); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })(), inCount30: u ? F30.filter((f) => f.inCount).length : null, read30: F30.filter((f) => f.count != null && !f.flag).length },
       /* usualWeeks: the days the usual forms were learned from, so a look can show what share of BMs they held */
       form: { scale, usual: formUsual, usualText: u ? L.usualFormsText(M, mode) : null, bins, spans, firmer, looser, either, within30: allForms.filter((x) => x.within === true).length, total30: allForms.length, usualWeeks: u ? BASE.slice() : null },
       symptoms: { usualText: symUsual, rows: symRows, withSym30: F30.filter((f) => f.sym.length).length, logged30: F30.filter((f) => f.logged).length },

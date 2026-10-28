@@ -70,6 +70,7 @@
 .lk-rings .rg-sw--shift { background: var(--rg-shift); }
 .lk-rings .rg-sw--shiftring { background: var(--ap-shift-bg); box-shadow: inset 0 0 0 2.5px var(--rg-shift); }
 .lk-rings .rg-sw--unsure { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-ink3); }
+.lk-rings .rg-sw--flag { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-teal); }
 .lk-rings .rg-sw--empty { background: transparent; box-shadow: inset 0 0 0 2.5px var(--rg-empty); }
 .lk-rings .rg-sw--gap { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
 .lk-rings .rg-sw--gapline { width: 16px; height: 1px; border-radius: 0; background: var(--ap-ink3); }
@@ -208,6 +209,8 @@
 .lk-rings .rg-day.is-usual .rg-day-ring { stroke: var(--ap-usual-ink); }
 .lk-rings .rg-day.is-shift .rg-day-ring { stroke: var(--rg-shift); }
 .lk-rings .rg-day.is-unsure .rg-day-ring { stroke: var(--ap-ink3); }
+/* today with a flag: noted for a clinician, never read. Teal, the colour of the primary care note */
+.lk-rings .rg-day.is-flag .rg-day-ring { stroke: var(--ap-teal); }
 .lk-rings .rg-wd:has(.is-none, .is-pending, .is-nocount) b, .lk-rings .rg-md:has(.is-none, .is-pending, .is-nocount) b { color: var(--rg-ink2); font-weight: 400; }
 
 .lk-rings .rg-cal { display: flex; flex-direction: column; gap: 8px; }

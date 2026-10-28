@@ -186,6 +186,24 @@
   /* the signs as one line: "Blood and a fever" */
   L.signText = (ss) => ss.map((x, i) => (i ? x.charAt(0).toLowerCase() + x.slice(1) : x)).reduce((a, x, i, all) => (i === 0 ? x : i === all.length - 1 ? `${a} and ${x}` : `${a}, ${x}`), "");
   L.alarmIn = (text) => { const ss = L.alarmsIn(text); return ss.length ? L.signText(ss) : null; };
+  /* one entry's flag or alarm feature, or null: a BM's flag (blood, mucus, black or tar-like) or a sign named in its
+     note (read with the BM net), or a sign named in a symptom log. Never read, only routed to primary care. The core
+     calls it RU.alarmOf; L.facts uses it to leave a flagged today unread */
+  const FLAG_SIGN = { blood: "Blood in your stool", mucus: "Mucus in your stool", black: "A black or tar-like stool" };
+  L.alarmOf = (e) => {
+    if (!e) return null;
+    if (e.kind === "bm") {
+      const f = L.FLAGS.filter(([k]) => e.flags && e.flags[k]).map(([k]) => k);
+      if (f.length) return { flags: f, sign: f.length === 1 ? FLAG_SIGN[f[0]] : f.includes("black") ? "A black stool, and more" : "Blood and mucus in your stool", serious: f.includes("blood") || f.includes("black") };
+      const s = L.alarmsIn(e.note || "", { bm: true });
+      return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
+    }
+    if (e.kind === "sym") {
+      const s = L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`);
+      return s.length ? { signs: s, sign: L.signText(s), serious: true, typed: true } : null;
+    }
+    return null;
+  };
   /* "No BM today" is an end-of-day fact: offered from 5 PM on the day itself, any time for an earlier day */
   L.LATE = 17;
   L.isLate = () => L.NOW >= L.LATE;
@@ -227,13 +245,19 @@
   /* what someone might say into the mic for a day: that day's meals, in order, as one sentence. The prototype can't use
      the microphone, so the quick log plays this back as if dictated */
   const DINNER_SAY = { sarah: "pizza", marcus: "chicken curry with rice", alex: "salmon, rice and greens" };
+  /* a meal already logged that day (its own entry, or named in a quick log's line) is left out, so saying the day never
+     logs a food twice and L.foodCounts counts each meal once */
   L.mealSay = (M, d) => {
-    const parts = ((M.seedMeals && M.seedMeals[d]) || []).map((m) => [m.meal, m.text]);
-    if (d === TODAY && L.NOW >= 18 && !parts.some(([k]) => k === "dinner")) parts.push(["dinner", DINNER_SAY[M.P.id] || "pasta"]);
-    if (!parts.length) parts.push(["dinner", DINNER_SAY[M.P.id] || "pasta"]);
+    const x = L.day(M, d), logged = ((x && x.entries) || []).filter((e) => e.kind === "meal");
+    const done = (k, t) => logged.some((e) => e.meal === k || (e.meal === "day" && String(e.text || "").toLowerCase().includes(String(t).toLowerCase())));
+    const dinner = DINNER_SAY[M.P.id] || "pasta";
+    const parts = ((M.seedMeals && M.seedMeals[d]) || []).filter((m) => !done(m.meal, m.text)).map((m) => [m.meal, m.text]);
+    if (d === TODAY && L.NOW >= 18 && !parts.some(([k]) => k === "dinner") && !done("dinner", dinner)) parts.push(["dinner", dinner]);
+    if (!parts.length) parts.push(done("dinner", dinner) ? ["other", "Green tea"] : ["dinner", dinner]);
     const said = (t) => t.replace(/, (coffee|a glass of wine)$/i, " and $1");
     const low = (t) => t.charAt(0).toLowerCase() + t.slice(1);
-    const bits = parts.map(([k, t], i) => `${i ? low(said(t)) : said(t)} ${k === "other" ? "as a snack" : `for ${k}`}`);
+    const up = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+    const bits = parts.map(([k, t], i) => `${i ? low(said(t)) : up(said(t))} ${k === "other" ? "as a snack" : `for ${k}`}`);
     return bits.length === 1 ? `${bits[0]}.` : `${bits.slice(0, -1).join(", ")}, and ${bits[bits.length - 1]}.`;
   };
 
@@ -511,8 +535,14 @@
      window, a usual number of BMs and every form within the usual forms. A BM logged in B whose word covers steps on
      both sides of the usual can't be placed: that day is "unsure", counted on neither side. A day logged with only
      symptoms or meals says nothing about BMs: "nocount", a gap on How often, never a zero. Symptoms are counted on
-     their own. */
+     their own.
+     Today, with a flag or an alarm feature logged (L.flagToday), is noted for a clinician and read against nothing:
+     its state is "flag", flag is true, and inWin, inCount and formsIn are null, so it counts on neither side of any
+     reading. raw keeps what the logs would have read, for FloraScore, which keeps its number on a flag day (Today's
+     hero says "Not read against your usual today"). Every Insights card, Ask Florin and the data looks read days
+     through here, so a flagged today is left out of their counts the way the week card leaves it out. */
   L.RANGES = [7, 30, 90];
+  L.flagToday = (M) => { const x = L.day(M, TODAY); return !!x && x.entries.some((e) => !!L.alarmOf(e)); };
   L.facts = (M, x, mode) => {
     const pending = x.d === TODAY && !x.entries.length;
     const logged = !!x.logged && !pending;
@@ -533,7 +563,9 @@
     const fi = u && bms.length ? bms.map((b) => L.inForms(M, b, mode)) : null;
     const formsIn = !fi ? null : fi.includes(false) ? false : fi.includes(null) ? null : true;
     const state = !logged ? "none" : count == null ? "nocount" : !u ? "logged" : count > 0 && inWin && inCount ? (formsIn ? "usual" : formsIn === false ? "shifted" : "unsure") : "shifted";
-    return { d: x.d, date: x.date, dow: x.dow, today: x.d === TODAY, pending, logged, bms, nobm, count, first, sym, unrated, nsym: Object.keys(sym).length, meals: es.filter((e) => e.kind === "meal"), inWin, inCount, formsIn, state };
+    const out = { d: x.d, date: x.date, dow: x.dow, today: x.d === TODAY, pending, logged, bms, nobm, count, first, sym, unrated, nsym: Object.keys(sym).length, meals: es.filter((e) => e.kind === "meal"), inWin, inCount, formsIn, state, flag: false, raw: { inWin, inCount, formsIn, state } };
+    if (u && logged && x.d === TODAY && es.some((e) => !!L.alarmOf(e))) Object.assign(out, { flag: true, state: "flag", inWin: null, inCount: null, formsIn: null });
+    return out;
   };
   L.span = (M, n, mode) => { const d0 = Math.max(M.start, TODAY - n + 1); return M.days.filter((x) => x.d >= d0).map((x) => L.facts(M, x, mode)); };
   /* the stretch just before, for "more or less often". 90 days compares your last 30 with your first 30 */
@@ -626,6 +658,11 @@
      A symptom logged without a strength weighs like the lightest one in Comfort, and is never called mild. Every number
      is read against the person's own usual range, never as a grade. */
   L.SCORE_W = { timing: 0.3, often: 0.25, form: 0.25, comfort: 0.2 };
+  /* the blend: the last 3 days, of which 2 need a BM, or No BM, logged. L.NO_SCORE is the rule in words, the one
+     wording every screen uses when there's no score today ("No FloraScore today: it needs ...") */
+  L.BLEND = 3;
+  L.BLEND_MIN = 2;
+  L.NO_SCORE = `it needs a BM, or No BM, logged on ${L.BLEND_MIN} of your last ${L.BLEND} days`;
   L.SCORE_PARTS = [
     ["timing", "Timing", "How close your first BM came to your usual window"],
     ["often", "How often", "BMs a day compared with your usual"],
@@ -637,7 +674,8 @@
   L.dayParts = (M, x, mode) => {
     const u = M.usual;
     if (!u || !x) return null;
-    const f = L.facts(M, x, mode);
+    /* the score reads the logs as logged, a flagged today too (its raw reading): it keeps its number, read against nothing */
+    const f0 = L.facts(M, x, mode), f = Object.assign({}, f0, f0.raw);
     if (!f.logged || f.count == null) return null;
     const mid = (u.tLo + u.tHi) / 2;
     const timing = f.first == null ? 55 : f.inWin ? 100 - Math.abs(f.first - mid) * 7 : cl(88 - (f.first < u.tLo ? u.tLo - f.first : f.first - u.tHi) * 32, 40, 88);
@@ -654,8 +692,8 @@
        as it has gone */
     if (d !== TODAY && !L.dayParts(M, L.day(M, d), mode)) return { d, value: null, n: 0 };
     const P = [];
-    for (let k = d; k > d - 3 && k >= M.start; k--) { const p = L.dayParts(M, L.day(M, k), mode); if (p) P.push(p); }
-    if (P.length < 2) return { d, value: null, n: P.length };
+    for (let k = d; k > d - L.BLEND && k >= M.start; k--) { const p = L.dayParts(M, L.day(M, k), mode); if (p) P.push(p); }
+    if (P.length < L.BLEND_MIN) return { d, value: null, n: P.length };
     const parts = {};
     Object.keys(L.SCORE_W).forEach((k) => (parts[k] = Ut.mean(P.map((p) => p[k]))));
     const raw = Object.keys(L.SCORE_W).reduce((s, k) => s + L.SCORE_W[k] * parts[k], 0);
