@@ -1,4 +1,4 @@
-/* Florin app refresh: the data style decision (V.look). When it isn't As built, the phone draws its data in one of the
+/* Florin app refresh: the data style decision (V.look). When it isn't Florin charts ("built"), the phone draws its data in one of the
    data looks library's looks (library/js/look-*.js, loaded before this file): Insights becomes that look's cards and
    Today's FloraScore and week become its score and week cards. Every card is drawn from the phone's live model
    (FLD.build with M), so a BM logged on the phone redraws it. The Easy version always draws Easy read.
@@ -9,12 +9,12 @@
      the days behind the week and month cards), and RU.askContext, for that page's Ask about this
    - RU.lookOf(V), RU.lookCards(M, V, keys, o) and RU.lookAfter(el), so another module (the Easy version) can draw
      cards in a look through RU
-   - EXT.built.look, EXT.decisions.look (the notes for Will), EXT.notes for its screens, EXT.screens, EXT.opens,
+   - EXT.decisions.look (the decision's note for Will), EXT.notes for its screens, EXT.screens, EXT.opens,
      EXT.keys, EXT.acts and EXT.onSet (theme, look, rebuilds). Oura is dark first: while the phone draws it and the
      viewer hasn't picked a theme, the module sets the phone dark through api.set (also once at load, for a stored
      Oura pick), and gives the theme back when the phone stops drawing Oura. The acts: a voice meal from a card;
      idetail and iback, wrapped, so a detail opens on its card's range and Back lands on that card; rlk-week, Today's
-     See the week on Insights; ck-start and ck-tag, wrapped, so tags set on an Oura card reach this week's check-in
+     See these days on Insights; ck-start and ck-tag, wrapped, so tags set on an Oura card reach this week's check-in
    Copy rules hold here as everywhere: no em or en dashes, no exclamation points, everything read against the
    person's own usual. */
 (function () {
@@ -48,7 +48,7 @@
   /* ---------- which look, if any ---------- */
   const looks = () => (window.FLOOKS || []).filter((l) => l && l.id && l.components);
   const lookById = (id) => looks().find((l) => l.id === id) || null;
-  const NAMES = { built: "As built", rings: "Rings", journal: "Field journal", bento: "Bento", oura: "Oura", easy: "Easy read" };
+  const NAMES = { built: "Florin charts", rings: "Rings", journal: "Field journal", bento: "Bento", oura: "Oura", easy: "Easy read" };
   const nameOf = (id) => (lookById(id) && lookById(id).name) || NAMES[id] || id;
   /* the look the phone draws in: Easy read whenever the Easy version is on, else the data style; As built draws none */
   const lookIdOf = (V) => (!V ? null : V.easy ? "easy" : V.look && V.look !== "built" ? V.look : null);
@@ -173,7 +173,9 @@
     try {
       const f = look.components[k];
       if (!f) return "";
-      const html = f(D, ctxOf(look));
+      /* on Today a card sits under FloraScore's big number, so a look that can says its answer as a line (Easy read's
+         week, answerLine) and Today carries one big number */
+      const html = f(D, Object.assign(ctxOf(look), o.today ? { answerLine: true } : {}));
       return html ? fit(html, Object.assign({ M, V }, o)) : "";
     } catch (e) { warn(`${look.id}.${k} failed to draw`, e); return ""; }
   }
@@ -305,7 +307,7 @@
       /* while Florin is learning, the free plan's hero has nowhere to go, as the core's doesn't */
       go = D.learning && free ? "" : free ? `<button type="button" class="ap-link rlk-go" data-act="pay" data-pay="score">${ic("lock")}<span>Why it moved, with membership</span></button>`
         : `<button type="button" class="ap-link rlk-go" data-act="idetail" data-k="score" data-range="30" data-rlk>${D.learning ? "How FloraScore works" : "Why it moved"}${ic("chev")}</button>`;
-    } else go = `<button type="button" class="ap-link rlk-go" data-act="rlk-week" data-tab="insights" data-range="7">See the week on Insights${ic("chev")}</button>`;
+    } else go = `<button type="button" class="ap-link rlk-go" data-act="rlk-week" data-tab="insights" data-range="7">See these days on Insights${ic("chev")}</button>`;
     schedule(rid);
     return `<section class="rlk-card rlk-today" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}" data-rlk-r="${rid}" data-a>${wrap(look, html)}${go}</section>`;
   }
@@ -322,68 +324,51 @@
     } catch (e) { warn("lookCards failed", e); return ""; }
   };
 
-  /* ---------- the days page: the week and the month cards' detail ----------
-     Which days sat within your usual, and why each other one didn't, in the app's standard parts. 7 days lists every
-     day; 30 and 90 list the days that shifted or could be either */
+  /* ---------- Your days: the week and the month cards' detail ----------
+     Which days sat within your usual, and why each other one didn't (claude/Florin data viz.md, row 26): the count over
+     the days read, as Insights' summary and Today's card count it (L.tally), a bar of those days (within, outside), the
+     days not counted and the days with nothing logged in words under it, then each day with its mark (RU.dayMark, the
+     one day mark every screen draws) and its one line (L.dayWhy). 7 days lists every day; 30 and 90 list the days that
+     weren't within your usual. Every word is the app's shared one: never "shifted" or "not logged" */
   const plural = (k, one, many) => `${k} ${k === 1 ? one : many || one + "s"}`;
   const join = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
-  const chip = (text, tone = "plain") => `<span class="ap-chip ap-chip--${tone}">${esc(text)}</span>`;
   const RANGE_NAME = { 7: "Last 7 days", 30: "Last 30 days", 90: "Last 90 days" };
   const winText = (u) => `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}`;
-  /* which side of the usual forms a BM sits, the way the cards read it */
-  const sideOf = (M, b, mode) => {
-    const u = M.usual;
-    if (mode === "B") { const k = L.wordKey(b); return k < u.wLo ? "firmer" : k > u.wHi ? "looser" : null; }
-    const s = L.stepsOf(b);
-    return Math.max(...s) < u.fLo ? "firmer" : Math.min(...s) > u.fHi ? "looser" : null;
-  };
-  const whyOf = (M, f, mode) => {
-    const u = M.usual, out = [];
-    if (f.first != null && f.inWin === false) out.push(f.first > u.tHi ? `first BM at ${T(f.first)}, later than your window` : `first BM at ${T(f.first)}, earlier than your window`);
-    if (f.count != null && f.inCount === false) out.push(f.count === 0 ? "no BM" : f.count > u.nHi ? `${plural(f.count, "BM")}, more than usual` : `${plural(f.count, "BM")}, fewer than usual`);
-    if (f.formsIn === false) {
-      const sides = f.bms.filter((b) => L.inForms(M, b, mode) === false).map((b) => sideOf(M, b, mode)).filter(Boolean);
-      const fi = sides.filter((s) => s === "firmer").length, lo = sides.filter((s) => s === "looser").length;
-      out.push(join([fi ? `${plural(fi, "firmer BM")}` : "", lo ? `${plural(lo, "looser BM")}` : ""].filter(Boolean)) || "a form outside your usual");
-    }
-    return out;
-  };
-  const dayLabel = (d) => { const x = L.dateOf(d); return `${d === L.TODAY ? "Today" : Ut.DOW[x.getDay()]}, ${Ut.MON[x.getMonth()]} ${x.getDate()}`; };
+  const dayLabel = (d) => { const x = L.dateOf(d); return `${d === L.TODAY ? "Today" : Ut.DOWL[x.getDay()]}, ${Ut.MON[x.getMonth()]} ${x.getDate()}`; };
+  /* the day's mark, as every screen draws it (RU.dayMark). The row names the day and says its line, so the mark has no
+     Today under it and no symptom square (the line doesn't speak of symptoms, and a colour always has its word), and a
+     screen reader hears the row's own words, not the mark's again */
+  const markOf = (f, W, name) => { try { return RU.dayMark ? RU.dayMark(f, { why: W, name, sym: false, todayWord: false }) : ""; } catch (e) { warn("a day mark failed to draw", e); return ""; } };
+  /* one day: its mark, its name, its word, and its line. A day within your usual says what it held; a day with nothing
+     logged says it stays a gap */
   function dayRow(M, f, mode) {
-    const u = M.usual;
-    let tone = "plain", word, line = "";
-    if (f.pending) { word = "Nothing yet"; line = "Today isn't over."; }
-    else if (f.state === "flag") { tone = "info"; word = "Noted for a clinician"; line = RU.FLAG_DAY; }
-    else if (f.state === "none") { word = "Not logged"; line = "Left out, never counted as a zero."; }
-    else if (f.state === "nocount") { word = "No BMs said"; line = "Symptoms or meals logged, nothing about BMs, so it isn't counted either way."; }
-    else if (f.state === "logged") { word = "Logged"; line = !f.count ? "No BM, logged." : `${plural(f.count, "BM")}${f.first == null ? "" : f.count === 1 ? `, at ${T(f.first)}` : `, the first at ${T(f.first)}`}.`; }
-    else if (f.state === "usual") { tone = "usual"; word = "Within your usual"; line = `First BM at ${T(f.first)}, ${plural(f.count, "BM")}, your usual forms.`; }
-    else if (f.state === "unsure") { word = "Could be either"; line = "A BM logged as a word that sits either side of your usual forms, so it isn't counted either way."; }
-    else { tone = "shift"; word = "Shifted"; const w = whyOf(M, f, mode); line = w.length ? `${w.join("; ").charAt(0).toUpperCase()}${w.join("; ").slice(1)}.` : "Something sat outside your usual."; }
-    return `<li class="rlk-day"><div class="rlk-day-h"><b>${esc(dayLabel(f.d))}</b>${chip(word, tone)}</div><p>${esc(line)}</p></li>`;
+    const W = L.dayWhy(M, f, mode, { name: dayLabel(f.d) });
+    let line = W.say;
+    if (W.state === "usual") line = `First BM at ${T(f.first)}, ${plural(f.count, "BM")}, in your usual forms.`;
+    else if (W.state === "none") line = "It stays a gap, never a zero.";
+    else if (W.state === "pending") line = "Today isn't over yet.";
+    else if (W.state === "logged") line = f.count == null ? "Symptoms or meals logged, nothing about BMs." : !f.count ? "No BM, logged." : `${plural(f.count, "BM")}${f.count === 1 ? `, at ${T(f.first)}` : `, the first at ${T(f.first)}`}.`;
+    return `<li class="rlk-day" data-state="${esc(W.state)}"><div class="rlk-day-h"><span class="rlk-day-mk" aria-hidden="true">${markOf(f, W, dayLabel(f.d))}</span><b>${esc(dayLabel(f.d))}</b><span class="rlk-day-w">${esc(W.word)}</span></div><p>${esc(line)}</p></li>`;
   }
-  /* the days behind the week and the month cards, counted once for the page and for Ask about this. While Florin is
-     learning it's the week so far, counted the way the week card counts it: days with something logged, of every
-     day in the stretch, today included */
+  /* the days behind the week and the month cards, counted once for the page and for Ask about this (L.tally). While
+     Florin is learning it's the week so far: days with something logged, of every day in the stretch, today included */
   const dateText = (d) => { const x = L.dateOf(d); return `${Ut.MON[x.getMonth()]} ${x.getDate()}`; };
   function daysOf(M, mode, range) {
     const u = M.usual, learning = !u;
     const n = learning ? 7 : L.RANGES.includes(+range) ? +range : 30;
-    /* today with a flag or an alarm feature logged is noted for a clinician and read against nothing, as on the
-       week card (RU.flagToday) */
-    const flagT = !!u && RU.flagToday && RU.flagToday(M);
-    const F = L.span(M, n, mode).map((f) => (flagT && f.today && f.logged ? Object.assign({}, f, { state: "flag" }) : f)), live = F.filter((f) => !f.pending);
+    /* L.facts already reads a flagged today against nothing (state "flag"), as every screen does */
+    const F = L.span(M, n, mode), live = F.filter((f) => !f.pending);
     const from = Math.max(M.start, L.TODAY - n + 1);
     const span = from === L.TODAY ? dateText(L.TODAY) : RU.spanText(from, L.TODAY);
-    const o = { u, learning, n, F, live, span, sinceStart: from === M.start };
+    const o = { u, learning, n, F, live, span, sinceStart: from === M.start, tally: L.tally(F, n <= 7) };
     if (learning) {
       o.logged = F.filter((f) => f.logged).length;
       o.bms = F.reduce((s, f) => s + f.bms.length, 0);
       return o;
     }
-    o.within = F.filter((f) => f.state === "usual"); o.sh = F.filter((f) => f.state === "shifted"); o.un = F.filter((f) => f.state === "unsure");
-    o.noc = F.filter((f) => f.state === "nocount" && !f.today); o.none = live.filter((f) => f.state === "none"); o.flag = F.filter((f) => f.state === "flag");
-    o.known = o.within.length + o.sh.length;
+    o.within = F.filter((f) => f.state === "usual"); o.out = F.filter((f) => f.state === "shifted"); o.un = F.filter((f) => f.state === "unsure");
+    o.noc = F.filter((f) => f.state === "nocount"); o.none = live.filter((f) => f.state === "none"); o.flag = F.filter((f) => f.state === "flag");
+    o.known = o.tally.known;
     return o;
   }
   function daysPage(M, V, st) {
@@ -394,29 +379,31 @@
     let hero, body = "";
     if (learning) {
       const { logged, bms } = X;
-      const chips = `<div class="ap-chips">${chip(`Learning your usual · day ${L.learnDay(M)} of ${L.LEARN_DAYS}`, "usual")}</div>`;
-      const after = `From day ${L.LEARN_DAYS}, each day is read against your usual: first BM in your window, a usual count, your usual forms.`;
+      const after = `Days show as logged until Florin knows your usual, on day ${L.LEARN_DAYS}. From then, each day is read against your usual: first BM in your window, a usual count, your usual forms.`;
       const k0 = `${X.sinceStart ? "So far" : RANGE_NAME[n]} · ${span}`;
       /* nothing logged yet (day 1, say): said in words, never "0 of 1 day" */
       hero = logged
-        ? `<div class="ap-dhero" data-a><span class="ap-k">${esc(k0)}</span><b class="ap-big">${logged}<small>of ${plural(F.length, "day")} logged</small></b>${chips}<p class="ap-idt-lede">${esc(`Days with something logged, ${plural(bms, "BM")} in all. ${after}`)}</p></div>`
-        : `<div class="ap-dhero" data-a><span class="ap-k">${esc(k0)}</span><h2 class="ap-idt-h">Nothing logged yet</h2>${chips}<p class="ap-idt-lede">${esc(`Each day you log shows here, BMs, symptoms and meals alike. ${after}`)}</p></div>`;
+        ? `<div class="ap-dhero" data-a><span class="ap-k">${esc(k0)}</span><b class="ap-big">${logged}<small>of ${plural(F.length, "day")} logged</small></b><p class="ap-idt-lede">${esc(`${plural(bms, "BM")} in all, day ${L.learnDay(M)} of ${L.LEARN_DAYS}. ${after}`)}</p></div>`
+        : `<div class="ap-dhero" data-a><span class="ap-k">${esc(k0)}</span><h2 class="ap-idt-h">Nothing logged yet</h2><p class="ap-idt-lede">${esc(`Each day you log shows here, BMs, symptoms and meals alike. ${after}`)}</p></div>`;
       body = `<section class="ap-sect" data-a><h3>Day by day</h3><ol class="rlk-days">${F.slice().reverse().map((f) => dayRow(M, f, mode)).join("")}</ol></section>`;
     } else {
-      const { within, sh, un, noc, none, known } = X;
-      const why = [[sh.filter((f) => f.inWin === false).length, "a first BM outside your window"], [sh.filter((f) => f.formsIn === false).length, "a form outside your usual"], [sh.filter((f) => f.inCount === false).length, "an unusual count"]].filter(([k]) => k);
-      const note = sh.length ? `Shifted days: ${join(why.map(([k, t]) => `${k} with ${t}`))}. A day can have more than one.` : known ? "Every day you logged with a BM count sat within your usual." : "No day in this stretch has a BM count logged yet.";
-      hero = `<div class="ap-dhero" data-a><span class="ap-k">${esc(`${RANGE_NAME[n]} · ${span}`)}</span><b class="ap-big">${within.length}<small>of ${known}</small></b><p class="ap-idt-lede">${esc(`Days within your usual: first BM in your window, ${winText(u)}; ${u.nLo === u.nHi ? u.nLo : `${u.nLo} to ${u.nHi}`} a day; your usual forms, ${L.usualFormsText(M, mode)}.`)}</p></div>`;
-      const seg = C && C.seg ? C.seg([{ v: within.length, label: "Within your usual", cls: "is-usual" }, { v: sh.length, label: "Something shifted", cls: "is-shift" }, { v: none.length, label: "Not logged", cls: "is-none" }]) : "";
-      const legend = `<div class="ap-legend"><span><i class="sw sw--usual"></i>${plural(within.length, "day")} within</span><span><i class="sw sw--shift"></i>${sh.length} shifted</span>${none.length ? `<span><i class="sw sw--none"></i>${none.length} not logged</span>` : ""}</div>`;
-      const fig = `<figure class="ap-fig" data-a><figcaption class="ap-figcap"><b>${esc(`${within.length} of ${known} days within your usual`)}</b><span>${esc(RANGE_NAME[n])}</span></figcaption>${seg}${legend}<p class="ap-sum-note">${esc(note)}</p></figure>`;
-      const listed = n <= 7 ? F.slice().reverse() : F.filter((f) => f.state === "shifted" || f.state === "unsure").reverse();
-      const rest = n <= 7 ? "" : `<p class="rlk-days-rest">${esc(`${plural(within.length, "other day")} sat within your usual${none.length ? `, ${none.length} not logged` : ""}${noc.length ? `, and ${noc.length} had no BMs said` : ""}.`)}</p>`;
-      body = `${fig}${tabs}<section class="ap-sect" data-a><h3>${esc(n <= 7 ? "Day by day" : un.length ? "The days that shifted or could be either" : "The days that shifted")}</h3>${listed.length ? `<ol class="rlk-days">${listed.map((f) => dayRow(M, f, mode)).join("")}</ol>` : `<p>${esc("No day in this stretch shifted.")}</p>`}${rest}</section>`;
-      if (X.flag.length && n > 7) body += `<section class="ap-sect" data-a><h3>Noted for a clinician</h3><p>${esc(RU.FLAG_DAY)}</p></section>`;
-      if (un.length) body += `<section class="ap-sect" data-a><h3>Could be either</h3><p>${esc(`${plural(un.length, "day")} had a BM logged as a word that covers two forms, one inside your usual and one outside, so ${un.length === 1 ? "it isn't" : "they aren't"} counted either way.`)}</p></section>`;
+      const { within, out, none, tally } = X;
+      const known = tally.known;
+      const answer = known ? `${within.length} of ${plural(known, "day")} within your usual` : "No day here can be read against your usual yet";
+      hero = `<div class="ap-dhero" data-a><span class="ap-k">${esc(`${RANGE_NAME[n]} · ${span}`)}</span>${known ? `<b class="ap-big">${within.length}<small>of ${plural(known, "day")} within your usual</small></b>` : `<h2 class="ap-idt-h">${esc(answer)}</h2>`}<p class="ap-idt-lede">${esc(`A day within your usual: first BM in your window, ${winText(u)}; ${u.nLo === u.nHi ? u.nLo : `${u.nLo} to ${u.nHi}`} a day; your usual forms, ${L.usualFormsText(M, mode)}.`)}</p></div>`;
+      /* the bar's whole is the days read, within and outside, so it always matches the count over it; the days not
+         counted and the days with nothing logged are said in words under it, never drawn as a part of it */
+      const seg = known && C && C.seg ? C.seg([{ v: within.length, label: "Within your usual", cls: "is-usual" }, { v: out.length, label: "Outside your usual", cls: "is-shift" }]) : "";
+      const legend = known ? `<div class="ap-legend"><span><i class="sw sw--usual"></i>${esc(`${plural(within.length, "day")} within your usual`)}</span>${out.length ? `<span><i class="sw sw--shift"></i>${esc(`${plural(out.length, "day")} outside your usual`)}</span>` : ""}</div>` : "";
+      const words = [tally.left, none.length ? `Nothing logged on ${plural(none.length, "day")}: ${none.length === 1 ? "it stays a gap" : "they stay gaps"}, never a zero.` : ""].filter(Boolean).join(" ");
+      const fig = known ? `<figure class="ap-fig" data-a><figcaption class="ap-figcap"><b>${esc(`The ${plural(known, "day")} counted`)}</b><span>${esc(RANGE_NAME[n])}</span></figcaption>${seg}${legend}${words ? `<p class="ap-sum-note">${esc(words)}</p>` : ""}</figure>` : words ? `<p class="ap-sum-note" data-a>${esc(words)}</p>` : "";
+      /* 7 days: every day, today first. 30 and 90: the days that weren't within your usual */
+      const listed = n <= 7 ? F.slice().reverse() : F.filter((f) => f.logged && f.state !== "usual").reverse();
+      const rest = n <= 7 ? "" : `<p class="rlk-days-rest">${esc(`The other ${plural(within.length, "day")} sat within your usual${none.length ? `, and nothing was logged on ${plural(none.length, "day")}` : ""}.`)}</p>`;
+      const h = n <= 7 ? "Day by day" : "The days not within your usual";
+      body = `${fig}${tabs}<section class="ap-sect" data-a><h3>${esc(h)}</h3>${listed.length ? `<ol class="rlk-days">${listed.map((f) => dayRow(M, f, mode)).join("")}</ol>` : `<p>${esc("Every day you logged here sat within your usual.")}</p>`}${rest}</section>`;
     }
-    const how = `<section class="ap-sect" data-a><h3>How a day is read</h3><p>${esc("A day is within your usual when the first BM came in your usual window, the count was a usual one and every BM was one of your usual forms. Something outside any of the three makes it a shifted day, either way. A day with nothing logged is left out, and No BM counts as a zero.")}</p></section>`;
+    const how = `<section class="ap-sect" data-a><h3>How a day is read</h3><p>${esc("A day is within your usual when the first BM came in your usual window, the count was a usual one and every BM was one of your usual forms. Outside any of the three, either way, the day is outside your usual. A day that could be either, or with nothing about BMs, isn't counted. A day with nothing logged is left out, and No BM counts as a zero.")}</p></section>`;
     const next = `<button type="button" class="ap-idt-next" data-act="idetail" data-k="timing" data-a><span><em>Next</em><b>Timing</b></span>${ic("chev")}</button>`;
     return `<div class="ap-scr ap-idt rlk-days-page">
       ${nav}
@@ -465,10 +452,12 @@
         facts: [`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`, X.logged ? `Something logged on ${X.logged} of ${plural(X.F.length, "day")}, ${plural(X.bms, "BM")} in all` : "Nothing logged yet"],
         qs: ["What should I log, and when?", "How does Florin learn my usual?", "Why does a gap not count as zero?"]
       };
+      /* the days' own counts, in the page's words (L.tally) */
+      const T0 = X.tally;
       return {
         title: `Your days · ${RANGE_NAME[X.n].toLowerCase()}`,
-        facts: [`${X.within.length} of ${plural(X.known, "day")} within your usual`, `${plural(X.sh.length, "day")} shifted`, X.none.length ? `${plural(X.none.length, "day")} not logged` : "Every day has something logged"],
-        qs: ["Which days shifted, and why?", "Why does a gap not count as zero?", "How is my usual worked out?"]
+        facts: [T0.known ? `${T0.within} of ${plural(T0.known, "day")} within your usual` : "No day here can be read against your usual yet", `${plural(T0.shifted, "day")} outside your usual`, T0.unsure + T0.nocount ? `${plural(T0.unsure + T0.nocount, "day")} not counted` : "", X.flag.length ? L.FLAG_DAY || RU.FLAG_DAY : "", X.none.length ? `Nothing logged on ${plural(X.none.length, "day")}` : "Every day has something logged"].filter(Boolean),
+        qs: ["Which days were outside my usual, and why?", "Why does a gap not count as zero?", "How is my usual worked out?"]
       };
     } catch (e) { warn("Your days' Ask context failed, so Ask opens without it", e); return null; }
   };
@@ -513,7 +502,7 @@
     });
     return r;
   };
-  /* See the week on Insights, from Today: Insights opens on the week card, not at the top */
+  /* See these days on Insights, from Today: Insights opens on the week card, not at the top */
   EXT.acts["rlk-week"] = (b, api) => {
     api.act("tab", b);
     requestAnimationFrame(() => {
@@ -561,7 +550,7 @@
 
   /* ============================== THE PAGE: screens, keys, notes ============================== */
   const active = (V) => !!lookOf(V);
-  const builtToast = "The data style is As built. Pick Rings, Field journal, Bento, Oura or Easy read on the left to draw it here.";
+  const builtToast = "The data style is Florin charts. Pick Rings, Field journal, Bento, Oura or Easy read on the left to draw it here.";
   EXT.screens.push(["Data style", [["look-insights", "Data style: Insights"], ["look-today", "Data style: Today"], ["i-days", "Your days, the detail"]]]);
   EXT.opens["look-insights"] = (api) => {
     api.S.tab = "insights"; api.S.ins.k = null; api.renderTab(true); api.layer.scrollTop = 0;
@@ -584,8 +573,6 @@
     if (S && !S.easy && active(S)) return "look-today";
     return prevKeyToday ? prevKeyToday(o) : null;
   };
-  /* every option this module draws, as long as its look loaded */
-  EXT.built.look = ["rings", "journal", "bento", "oura", "easy"].filter((id) => !!lookById(id));
 
   /* ---------- Oura is dark first: every Oura screen Will sent is dark ----------
      While the phone draws Oura (so not with the Easy version on, which draws Easy read) and nobody has picked a theme,
@@ -634,77 +621,41 @@
     if (k === "persona" || k === "data" || k === "meals") resetMem();
   });
 
-  /* ---------- the notes for Will: each style, what it's good and bad at, and our recommendation ---------- */
-  const GOOD_BAD = {
-    built: ["The studio's chart kit, as on the phone now: the Forest score card, bars from zero, morning strips and dot rows, with 7, 30 and 90 day tabs and Ask about this on every card.", "Proven on every detail page, and every card works the same way.", "Every card is the same shape, so nothing leads; dense for a first look."],
-    rings: [null, "The one dark hero ring with your usual on its own track reads at a glance, and day rings make a week easy to count.", "Rings everywhere make values hard to compare across cards (an angle, not a length), and a ring a day gets small over 30 days."],
-    journal: [null, "Straight axes, direct labels and a one-line caption under each figure: the most exact of the five, and a shift is explained in one sentence. Suits detail pages and a clinician report.", "The most reading, with small mono captions and hairlines that are hard for older eyes; it feels less like a home screen."],
-    bento: [null, "Glanceable tiles, each answer split into a few numbers: the most like home-screen widgets, so it suits Today and a widget later.", "Splitting an answer into tiles hides how the parts relate, many small numbers compete, and tiles crowd at large text sizes."],
-    oura: [null, "The open arc with your usual on its track, one Lora line about today and Contributors rows that open what each part is: the clearest score and parts.", "Dark first and the most to learn (a 30 and 90 day switch, a scrubber, rows to open). It reads as Oura's, so it needs Florin's own marks to stay ours."],
-    easy: [null, "One big number and one plain sentence a card, in large type, with the words written on every picture: the easiest for anyone with reading glasses or little patience for charts.", "Leaves out most of the shape of the data (ranges, day by day), so it's thin as the only style for someone who wants depth."]
+  /* ---------- the notes for Will. Oct 28: the decision in the decision sheet's shape (refresh-app.js, THE
+     DECISIONS, has the fields; the page gives the question and what it decides), and plain screen notes ---------- */
+  const STYLES = {
+    built: { is: "The dark green FloraScore card with the usual range as a bar, the last 7 days as one circle per day, and plain bar and dot charts.", why: "Each card says the person's usual in words and gives a count before the chart, and every card works the same way.", not: "It's the most text of the six, with small charts on every card." },
+    rings: { is: "FloraScore as a ring that fills up, with the person's usual range marked on it, and each day of the week as its own small ring.", why: "Rings read at a glance, and a ring for each day makes a week easy to count.", not: "Rings are hard to compare across cards, and a ring a day gets small over 30 days." },
+    journal: { is: "The numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption.", why: "It's the most exact, so it suits detail pages and a clinician report.", not: "It's the most reading, and its small captions are hard for older eyes." },
+    bento: { is: "Tiles of different sizes, one number each.", why: "Easy to take in at a glance, like phone widgets.", not: "Tiles show numbers but not how they connect, and they crowd when text is large." },
+    oura: { is: "A dark screen with FloraScore as a large round gauge, one line about today, and a small ring for each part of the score: Timing, How often, Form and Comfort.", why: "It shows the score and what it's made from most clearly, in a layout Oura users already know.", not: "It looks like Oura's app, so it needs Florin's own colours and shapes, or it reads as a copy." },
+    easy: { is: "One big number and one plain sentence on each card, in large type.", why: "The easiest to read, for anyone with reading glasses or little patience for charts.", not: "It leaves out the shape of the data, so it's thin for someone who wants depth." }
   };
-  const low = (t) => t.charAt(0).toLowerCase() + t.slice(1);
-  /* ck: the check-in is on, so a note may name it; with it off, nothing in a note does. ez: the Easy version is on, so
-     picking Oura draws Easy read and leaves the theme alone */
-  const OURA_DARK = "Picking it turns the phone dark, as Oura's own screens are, unless a theme has been picked; Theme, under Demo, shows it on light too.";
-  const optText = (id, ck, ez) => {
-    const g = GOOD_BAD[id];
-    if (!g) return "";
-    const what = g[0] || (lookById(id) && lookById(id).idea) || "";
-    const dark = id === "oura" ? ` ${ez ? `With the Easy version off, ${low(OURA_DARK)}` : OURA_DARK}` : "";
-    const good = id === "oura" && ck ? `${g[1]} On Insights, the week asks about a shifted day with the check-in's tags.` : g[1];
-    return `${what}${dark} Good at: ${low(good)} Less good: ${low(g[2])}`;
-  };
-  const recOf = (ck) => `Ours, for Will to confirm: Oura's arc and Contributors for Today and FloraScore; Field journal's straight-axis figures for the detail pages; Easy read as the larger-text setting, which the Easy version uses whatever is picked here. One style for the data cards on a screen, never two; the timeline${ck ? ", the check-in card" : ""} and the next step stay the app's own. In every style Plum is your usual (Ray on dark), Gold a shift and Teal context; no red, no green.`;
-  /* what the free plan keeps in a style, said with or without the check-in */
-  const freeKeeps = (ck) => (ck ? "the score, the week and the check-in" : "the score and the week");
-  EXT.decisions.look = (M, P) => {
-    const ck = RU.ckOn(P);
-    const drawnList = EXT.built.look.map(nameOf);
-    return {
-      t: "Data style",
-      lede: `How the numbers are drawn on Today and Insights. In a style, Insights is that look's cards in order (the score, its parts, the trend, the week, the month, timing, how often, form, symptoms${ck ? ", the check-in" : ""} and patterns), each with a link to its detail, and Today's FloraScore and week are its score and week cards. Every card is drawn from the phone's own logs, so a BM logged here redraws it. Detail pages stay as built, with one new page, Your days, behind the week and the month cards. On the phone: As built, ${drawnList.join(", ")}.${P && P.easy ? " The Easy version is on, so the phone draws Easy read whatever is picked here." : ""}`,
-      opts: ["built", "rings", "journal", "bento", "oura", "easy"].map((id) => [id, optText(id, ck, !!(P && P.easy))]),
-      rec: recOf(ck),
-      open: [
-        "Oura on Today and the score, Field journal on the details: mix by surface like this, or one style everywhere?",
-        ck ? "On Insights, the Oura week asks about a shifted day with the check-in's tags, and a tag goes on that week's check-in. Keep that, or a separate tag log?" : "",
-        "Insights in a style shows the last 30 days without range tabs (the Oura trend keeps its 30 and 90 switch). Enough, or bring the tabs back?",
-        `Free: ${freeKeeps(ck)} in the style, then one membership card for the rest. That's less than As built's free plan, which also keeps FloraScore's 30-day line, and timing, how often, form and symptoms at 7 days. Keep the style's cut, or match As built?`
-      ].filter(Boolean),
-      res: ["Oura's Vitals: one card per metric, the personal baseline, and a side arrow into the detail.", ck ? "Oura asks about a night when the score moved, with tags." : "", "Function opens on summary counts in plain terms."].filter(Boolean)
-    };
-  };
+  EXT.decisions.look = () => ({
+    aside: "Two of the six are the real contenders: Oura and Field journal, which we recommend using together. The other four are there to compare.",
+    opts: ["built", "rings", "journal", "bento", "oura", "easy"].map((v) => Object.assign({ v, name: nameOf(v) }, STYLES[v])),
+    rec: { v: ["oura", "journal"], text: "We recommend the Oura style on Today and FloraScore, Field journal on detail pages, and Easy read only in the Easy version.", why: "Oura shows the score and its parts most clearly, and Field journal is the most exact where people go for detail." },
+    open: "Mix styles by screen like this, or one style everywhere?",
+    try: "Switch it, then look at the Today and Insights tabs. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. To see every style on every card, use the link at the top of the page: Every data style, side by side."
+  });
   /* the screens' own notes, while a style is drawn */
-  const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn as ${nameOf(lookIdOf(P) || "built")}.`);
+  const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn in the ${nameOf(lookIdOf(P) || "built")} style.`);
   EXT.notes["look-insights"] = (M, P) => {
     if (!active(P)) return null;
-    const id = lookIdOf(P), g = GOOD_BAD[id] || [];
-    const free = P.plan === "free";
     return {
-      t: `Insights, in ${nameOf(id)}`,
-      lede: `${pickedLine(P)} ${free ? `On the free plan: ${freeKeeps(RU.ckOn(P))}, then one card for the rest, over a blur of the person's own numbers, that opens the paywall.` : `The look's cards in order, each with a link into its detail (the week and the month open Your days).`} The range tabs give way to one label. Every card reads the phone's live logs.`,
-      ba: [["7, 30 and 90 day tabs on every card", "One label, Last 30 days; the detail pages keep the tabs"], ["The studio's chart kit", `The ${nameOf(id)} look from the data looks library`]],
-      open: [g[2] ? `${nameOf(id)}, less good: ${low(g[2])}` : "", "Should a card open its detail anywhere you tap it, or only from its link?"].filter(Boolean),
-      res: ["Oura's Vitals: one card per metric, the personal baseline, and a side arrow into the detail."]
+      t: `Insights, in ${nameOf(lookIdOf(P))}`,
+      lede: `${pickedLine(P)} ${P.plan === "free" ? `On Free: the score and the week${RU.ckOn(P) ? ", and the check-in" : ""}, then one card for the rest that opens membership.` : "The style's cards in order, each opening its detail."} Every card is drawn from the same logs as every other style, so only the drawing changes.`
     };
   };
   EXT.notes["look-today"] = (M, P) => {
     if (!active(P)) return null;
-    const id = lookIdOf(P);
     return {
-      t: `Today, in ${nameOf(id)}`,
-      lede: `${pickedLine(P)} FloraScore and the week are the look's score and week cards; the timeline${RU.ckOn(P) ? ", the check-in card" : ""} and the next step stay as built.${RU.ckOn(P) && lookIdOf(P) === "oura" ? " The Oura week's tag card stays on Insights, so Today asks for the check-in once." : ""} Why it moved opens FloraScore's detail${P.plan === "free" ? " (with membership)" : ""}, and See the week on Insights opens Insights at the week card.`,
-      ba: [["The Forest score card with the ring", `${nameOf(id)}'s score card`], ["Three strips for the week", `${nameOf(id)}'s week card`]],
-      open: ["Score first, then today's logs: or the day first and the score under it (the Home decision)?"],
-      res: ["Oura opens on the day's score, with contributors a tap away."]
+      t: `Today, in ${nameOf(lookIdOf(P))}`,
+      lede: `${pickedLine(P)} FloraScore and the week are drawn in this style; today's logs${RU.ckOn(P) ? ", the check-in card" : ""} and the next step stay the same.`
     };
   };
-  EXT.notes["i-days"] = (M, P) => ({
+  EXT.notes["i-days"] = () => ({
     t: "Your days, the detail",
-    lede: "Behind the week and the month cards: how many days sat within the usual, a bar for within, shifted and not logged, then the days themselves. Seven days lists every day; 30 and 90 list the days that shifted or could be either, each with what shifted. A day with nothing logged stays a gap. While Florin is learning, it counts the days logged the way the week card does, and Ask about this opens Ask Florin with these counts loaded.",
-    ba: [["A summary card with no detail behind it", "Its own page, with the reason each day shifted"]],
-    open: ["List every day at 30 and 90 too, or only the ones that shifted (built: only those)?"],
-    res: ["Function opens on summary counts in plain terms."]
+    lede: "How many of the days read sat within the person's usual, then each day with its line. Seven days lists every day; 30 and 90 list the days outside the usual, each saying what was different. A day with nothing logged stays a gap."
   });
 })();

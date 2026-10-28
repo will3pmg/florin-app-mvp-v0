@@ -43,12 +43,11 @@
 .rx-btn:hover { background: var(--line-2); }
 .rx-btn--line { background: transparent; }
 
-/* left: Decisions, Demo, Screens. Middle: the phone, live. Right: notes. The workshop sits under the phone */
-.rx-main { display: grid; grid-template-columns: 320px minmax(0, 1fr) 320px; grid-template-areas: "side stage notes" "side under notes"; gap: 24px 32px; align-items: start; }
+/* left: Decisions, Demo, Screens. Middle: the phone, live. Right: notes */
+.rx-main { display: grid; grid-template-columns: 320px minmax(0, 1fr) 320px; grid-template-areas: "side stage notes"; gap: 24px 32px; align-items: start; }
 .rx-side--l { grid-area: side; }
 .rx-center { grid-area: stage; min-width: 0; }
 .rx-side--r { grid-area: notes; }
-.rx-under { grid-area: under; min-width: 0; }
 /* each side bar scrolls on its own when it's taller than the window. refresh-app.js sets its height from where it sits
    (under the header, then at the top as the page scrolls), so its end is always in reach */
 .rx-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 32px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: 24px; }
@@ -62,7 +61,7 @@
 .rx-dec > .rx-ctl-l { grid-area: l; }
 .rx-dec > .rx-seg, .rx-dec > .rx-chips { grid-area: c; }
 .rx-dec > .rx-info { grid-area: i; }
-.rx-dec--wide { grid-template-areas: "l . i" "c c c"; row-gap: 4px; }
+.rx-dec--wide { grid-template-areas: "l l i" "c c c"; row-gap: 4px; }
 /* under Home and Data style while the Easy version is on: what the phone draws instead */
 .rx-dec > .rx-dec-shadow { grid-column: 1 / -1; color: var(--ink-2); }
 .rx-info { position: relative; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
@@ -70,10 +69,12 @@
 .rx .rx-info .ic { width: 18px; height: 18px; }
 .rx-info:hover { color: var(--ink); background: var(--line-2); }
 .rx-info[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
-/* the demo controls fold to one line that says what's showing */
+/* the demo controls fold to one line that says what's showing. A plain line under the name says they change the demo
+   person, not the app, folded or open */
 .rx-panel--demo { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
 .rx-panel--demo > .rx-h { margin: 0; }
-.rx-panel--demo > .rx-demo, .rx-panel--demo > .rx-demo-sum { grid-column: 1 / -1; }
+.rx-panel--demo > .rx-demo, .rx-panel--demo > .rx-demo-sum, .rx-panel--demo > .rx-demo-lede { grid-column: 1 / -1; }
+.rx-demo-lede { margin-top: 4px; }
 .rx-demo-sum { margin-top: 8px; color: var(--ink-2); }
 .rx-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 8px 0 12px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); font: 500 13px/1 var(--sans); cursor: pointer; }
 .rx-fold:hover { color: var(--ink); background: var(--line-2); }
@@ -81,6 +82,7 @@
 .rx .rx-fold[aria-expanded="true"] .ic { transform: rotate(-90deg); }
 .rx-demo { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin-top: 12px; }
 .rx-demo-f { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 4px; }
+.rx-demo-r { display: flex; align-items: center; gap: 8px; }
 /* the screens to jump to */
 .rx-nav, .rx-nav ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .rx-nav { gap: 16px; }
@@ -101,20 +103,44 @@
 .rx-note h2 { font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: -.015em; margin: 8px 0; text-wrap: balance; }
 .rx-note-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); margin: 0; }
 .rx-h3 { font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 24px 0 8px; }
-.rx-ba, .rx-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.rx-ba li { display: flex; flex-direction: column; gap: 4px; padding-block: 12px; border-top: 1px solid var(--line-2); }
-.rx-ba s { font-size: 13px; line-height: 1.4; color: var(--ink-3); text-decoration-color: color-mix(in srgb, var(--ink-3) 60%, transparent); }
-.rx-ba b { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.rx-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .rx-opts { gap: 4px; }
 .rx-opts li { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line-2); }
 .rx-opts li.is-on { box-shadow: inset 0 0 0 1.5px var(--ink); }
-.rx-opts b { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; font-size: 14px; font-weight: 500; line-height: 1.3; }
-.rx-opts span { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
-.rx-opts .rx-on { padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; line-height: 20px; }
-.rx-rec { margin: 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink); }
-.rx-q, .rx-res { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+/* a decision's option, as a block: its name, then What it is, Why do it and Why not. The one we recommend is outlined
+   and tagged */
+.rx-opts { gap: 8px; }
+.rx-opt-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin: 0; }
+.rx-opt-h b { font-size: 14.5px; font-weight: 500; line-height: 1.3; }
+.rx-opts dl { display: flex; flex-direction: column; margin: 0; }
+.rx-opts dt { margin-top: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.rx-opts dd { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-opts li.is-rec { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.rx-tag { padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; line-height: 20px; }
+.rx-rec { margin: 16px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-rec b { font-weight: 500; color: var(--ink); }
+/* the top label's second line: what we recommend, on a line of its own, in Ink (the separator is for the text alone) */
+.rx-eb-sep { display: none; }
+.rx-eb-rec { display: block; margin-top: 4px; color: var(--ink); }
+.rx-answer { margin: 12px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-answer b { font-weight: 500; color: var(--ink); }
+.rx-about-l { margin-bottom: 8px; }
+.rx-q.rx-about-m { margin-top: 12px; font-size: 13.5px; }
+/* Still open, Try it, and a demo control's why: one plain paragraph each */
+.rx-line { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-line + .rx-line { margin-top: 8px; }
+/* a line under the question: Easy draws its own here; the meal sheet isn't the demo's meals */
+.rx-note-easy, .rx-aside { margin: 12px 0 0; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-note-easy { color: var(--ink); }
+/* a name and its line: the check-in's questions, a demo control's options */
+.rx-pairs { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.rx-h3 + .rx-pairs { margin-top: 0; }
+.rx-pairs li { display: flex; flex-direction: column; gap: 4px; padding-block: 8px; border-top: 1px solid var(--line-2); }
+.rx-pairs b { font-size: 14px; font-weight: 500; line-height: 1.35; }
+.rx-pairs span { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-pairs + .rx-line { margin-top: 8px; }
+.rx-q { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .rx-q li::marker { color: var(--ink); }
-.rx-res { font-size: 13.5px; }
 .rx-lint { display: flex; gap: 8px; align-items: flex-start; margin: 24px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
 .rx-lint .ic { width: 16px; height: 16px; }
 .rx-lint.is-hit { background: color-mix(in srgb, var(--gold) 26%, transparent); color: var(--ink); }
@@ -132,7 +158,7 @@
 }
 /* narrower: the notes and the workshop go under the phone; the toggles keep their bar */
 @media (max-width: 1020px) {
-  .rx-main { grid-template-columns: 320px minmax(0, 1fr); grid-template-areas: "side stage" "side notes" "side under"; }
+  .rx-main { grid-template-columns: 320px minmax(0, 1fr); grid-template-areas: "side stage" "side notes"; }
   .rx-side--r { position: static; max-height: none; overflow: visible; }
   .rx-head { grid-template-columns: minmax(0, 1fr); }
 }
@@ -409,12 +435,40 @@
 .ap-rx .ap-hero-flag { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; color: var(--ap-hero-ink); background: color-mix(in srgb, var(--teal) 42%, transparent); box-shadow: inset 3px 0 0 oklch(from var(--teal) calc(l + .27) calc(c * .91) h); }
 .ap-rx .ap-hero-flag .ic { width: 16px; height: 16px; transform: translateY(1px); color: oklch(from var(--teal) calc(l + .36) calc(c * .7) h); }
 .ap-rx .ap-hero-flag > span { min-width: 0; }
-.ap-rx .ap-hero-spark, .ap-rx .ap-hero-legend, .ap-rx .ap-hero-top, .ap-rx .ap-hero-mid { position: relative; z-index: 1; }
-.ap-rx .ap-hero-spark { display: block; }
-.ap-rx .ap-hero-legend { opacity: 1; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); font-size: 11px; }
-.ap-rx .ap-hero-none { font-size: 18px !important; letter-spacing: 0 !important; text-align: center; line-height: 1.2; }
-.ap-rx .ap-hero-learn { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
-.ap-rx .ap-hero-learn small { font-size: 12px; letter-spacing: 0; font-family: var(--mono); opacity: .86; }
+/* build-core (claude/Florin data viz.md, section 4): the label with the FloraScore glyph, the number with no count-up,
+   your usual range as a bar with today's dot, the sentence. Learning: Day 5 of 14 over 14 steps. The glyph is a plain
+   circle that names FloraScore and holds no value */
+.ap-rx .ap-hero-top, .ap-rx .ap-hero-n, .ap-rx .ap-sbar, .ap-rx .ap-hero-copy, .ap-rx .ap-hero-go { position: relative; z-index: 1; }
+.ap-rx .ap-hero-name { display: inline-flex; align-items: center; gap: 8px; }
+.ap-rx .c-ring.c-ring--glyph { display: block; width: auto; height: auto; flex: none; overflow: visible; }
+.ap-rx .c-ring-glyph { fill: none; stroke: currentColor; }
+.ap-rx .ap-hero .c-ring--glyph { color: var(--ray); }
+.ap-rx .ap-hero-n { display: block; margin-top: 4px; font-size: 64px; font-weight: 300; line-height: 1; letter-spacing: -.04em; color: var(--ap-hero-ink); }
+.ap-rx .ap-hero-n.ap-hero-none { font-size: 32px; letter-spacing: -.02em; }
+.ap-rx .ap-hero-day { margin-top: 8px !important; font-size: 32px; font-weight: 300; line-height: 1.1; letter-spacing: -.02em; color: var(--ap-hero-ink); }
+.ap-rx .ap-hero-steps { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; margin: 12px 0 8px; }
+.ap-rx .ap-hero-steps i { height: 8px; border-radius: 2px; background: color-mix(in srgb, var(--ap-hero-ink) 20%, transparent); }
+.ap-rx .ap-hero-steps i.is-on { background: var(--ap-hero-ink); }
+.ap-rx .ap-hero--learn { display: flex; flex-direction: column; gap: 4px; }
+.ap-rx .ap-hero-go { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; color: var(--ray); }
+/* FloraScore against its usual range: the band labelled with its numbers above it, the axis ends (or the last 90
+   days' lowest and highest) under it, today's dot never Gold. On the hero, Ray at 16% and a Cream dot ringed in the
+   hero's own surface, so it never sits Ray on Ray */
+.ap-sbar { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+.ap-sbar-u, .ap-sbar-ax { position: relative; height: 16px; font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
+.ap-sbar-u span { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--ap-usual-ink); font-weight: 700; }
+.ap-sbar-trk { position: relative; height: 8px; border-radius: 999px; background: var(--ap-card2); }
+.ap-sbar-band { position: absolute; top: -4px; bottom: -4px; border-radius: 2px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
+.ap-sbar-dot { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--ap-chart); box-shadow: 0 0 0 2px var(--ap-card); }
+.ap-sbar-tick { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--ap-ink3); }
+.ap-sbar-ax span { position: absolute; white-space: nowrap; }
+.ap-sbar-lo { transform: translateX(0); }
+.ap-sbar-hi { transform: translateX(-100%); }
+.ap-sbar--hero .ap-sbar-u span { color: var(--ray); }
+.ap-sbar--hero .ap-sbar-ax { color: color-mix(in srgb, var(--ap-hero-ink) 80%, transparent); }
+.ap-sbar--hero .ap-sbar-trk { background: color-mix(in srgb, var(--ap-hero-ink) 13%, transparent); }
+.ap-sbar--hero .ap-sbar-band { background: color-mix(in srgb, var(--ray) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ray) 40%, transparent); }
+.ap-sbar--hero .ap-sbar-dot { background: var(--ap-hero-ink); box-shadow: 0 0 0 2px var(--ap-hero); }
 
 /* the check-in card */
 .ap-ckc { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
@@ -459,25 +513,52 @@
 .ap-tl-nobm b { font-size: 14.5px; font-weight: 500; }
 .ap-tl-nobm em { font-style: normal; font-size: 12.5px; color: var(--ap-ink3); }
 
-/* this week so far */
-.ap-wk-dots { display: inline-flex; gap: 4px; vertical-align: middle; }
-.ap-wk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-ink2); vertical-align: middle; }
-.ap-wk-dot.is-usual { background: var(--ap-usual-ink); }
-/* a shift is a hollow Gold ring: a shape cue as well as a colour, so it holds in dark next to Ray */
-.ap-wk-dot.is-shift { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-shift); }
-.ap-wk-gap { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--ap-ink3); opacity: .6; vertical-align: middle; }
-.ap-wk-no { display: inline-block; width: 12px; height: 2px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
-.ap-wk-sq { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: var(--ap-card2); vertical-align: middle; }
-/* symptom strength in neutral ink, never the reading colour (Ray in dark means "your usual") */
-/* every strength reads at 3:1 or more against the card, in order: mild, moderate, strong. Hollow stays "not said" */
-.ap-wk-sq--1 { background: color-mix(in srgb, var(--ap-ink2) 65%, transparent); }
-.ap-wk-sq--2 { background: color-mix(in srgb, var(--ap-ink2) 82%, transparent); }
-.ap-wk-sq--3 { background: var(--ap-ink2); }
-.ap-wk-n { font-family: var(--mono); font-size: 11px; color: var(--ap-info-ink); }
-.ap-wk-legend { margin-top: 4px; }
-.ap-wk-legend .ap-wk-sq { width: 9px; height: 9px; border-radius: 2px; }
-/* the flag's ring sits outside its box, so the key gives it room on both sides */
-.ap-wk-legend .ap-wk-flag { margin-inline: 4px; }
+/* ---------- build-core: a day, as a mark (RU.dayMark), and Your last 7 days (claude/Florin data viz.md, sections 1 and 3)
+   One renderer for a day everywhere: the week card, History's day headers, the calendar, Your days and Easy. Shape says
+   what it is, colour how it read against your usual, a word says it again. Within: a Plum circle (Ray on dark). Outside:
+   a Gold circle, its 1.5px Shift Ink edge in light (light Gold is 2.37:1 on the card; the edge is 7.13:1). Logged, not
+   counted: an Ink 3 circle. Nothing logged: the date alone in Ink 3. A flagged today: a Teal ring with the info glyph.
+   Today, logged: a 2px Ink ring 2px out. A symptom: one Teal square under the day. The date inside a filled circle is
+   4.5:1 or more on its fill: Cream on Plum, Cream on the darker light Ink 3, Forest on Gold; on dark, the card colour */
+.ap-rx { --ap-day-on: var(--cream); --ap-day-on-shift: var(--forest); --ap-day-edge: var(--ap-shift-ink); --ap-day-gap: var(--ap-card); }
+.ap-rx[data-theme="dark"] { --ap-day-on: var(--ap-card); --ap-day-on-shift: var(--ap-card); --ap-day-edge: transparent; }
+/* app.css has a studio .ap-day (a day section with a top rule); this one takes none of it */
+.ap-day { --ap-day-d: 28px; display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ap-day--lg { --ap-day-d: 32px; }
+.ap-day-w { font-family: var(--mono); font-size: 10px; line-height: 1.2; letter-spacing: .02em; color: var(--ap-ink3); }
+.ap-day-c { display: grid; place-items: center; flex: none; width: var(--ap-day-d); height: var(--ap-day-d); margin-block: 4px; border-radius: 50%; font-size: 12px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ap-ink3); }
+.ap-day--lg .ap-day-c { font-size: 14px; }
+.ap-day--usual .ap-day-c { background: var(--ap-signal); color: var(--ap-day-on); }
+.ap-day--shift .ap-day-c { background: var(--ap-shift); color: var(--ap-day-on-shift); box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-day--quiet .ap-day-c { background: var(--ap-ink3); color: var(--ap-day-on); }
+.ap-day--none .ap-day-c, .ap-day--before .ap-day-c { font-weight: 400; }
+.ap-day--flag .ap-day-c { box-shadow: inset 0 0 0 2px var(--ap-teal); color: var(--ap-teal); }
+.ap-rx .ap-day--flag .ap-day-c .ic { width: 16px; height: 16px; stroke-width: 2; }
+.ap-day.is-today .ap-day-c { box-shadow: 0 0 0 2px var(--ap-day-gap), 0 0 0 4px var(--ap-ink); }
+.ap-day--shift.is-today .ap-day-c { box-shadow: inset 0 0 0 1.5px var(--ap-day-edge), 0 0 0 2px var(--ap-day-gap), 0 0 0 4px var(--ap-ink); }
+.ap-day-s { flex: none; width: 8px; height: 8px; border-radius: 2px; }
+.ap-day-s.is-on { background: var(--ap-teal); }
+.ap-day-t { font-size: 11px; font-weight: 500; line-height: 1.2; color: var(--ap-ink); }
+.ap-day--lg .ap-day-t { font-size: 13px; }
+/* the small mark a line starts with, so the lines are the legend: the same fills, 12px */
+.ap-day-k { display: inline-grid; place-items: center; flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.ap-day-k--usual { background: var(--ap-signal); }
+.ap-day-k--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-day-k--quiet { background: var(--ap-ink3); }
+.ap-day-k--flag { box-shadow: inset 0 0 0 2px var(--ap-teal); }
+.ap-day-k--sym, .ap-day-k--none { border-radius: 0; }
+.ap-day-k--sym::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
+.ap-day-k .ic { display: none; }
+/* Your last 7 days: the answer, a row of seven day marks ending on today, a line for each day not within the usual */
+.ap-wk { display: flex; flex-direction: column; gap: 16px; }
+.ap-wk-a { display: flex; align-items: center; gap: 8px; font-size: 20px; line-height: 1.25; letter-spacing: -.01em; color: var(--ap-ink); }
+.ap-wk-a b { font-weight: 500; }
+.ap-days { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: start; }
+.ap-days > li { display: flex; justify-content: center; min-width: 0; }
+.ap-wk-ls { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--ap-line); display: flex; flex-direction: column; gap: 8px; }
+.ap-wk-ls li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+.ap-wk-ls .ap-day-k { margin-top: 4px; }
+.ap-wk-ls li.is-plain { grid-template-columns: minmax(0, 1fr); }
 .ap-wk-go { align-self: flex-start; }
 .ap-learn-bar { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
 /* learning has no usual yet, so the bar is neutral ink, never the usual colour */
@@ -492,9 +573,14 @@
 .ap-hist-f { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; padding-block: 8px; margin-block: -8px; }
 .ap-hist-f::-webkit-scrollbar { display: none; }
 .ap-hd-none { padding-inline: 4px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+/* build-core: a day's header carries its mark (RU.dayMark) and one line on how it sat against the usual (L.dayWhy) */
+.ap-hd-h { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 0 4px; margin-bottom: 8px; }
+.ap-hd-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-top: 8px; }
+.ap-hd-t h2 { font-size: 17px; font-weight: 500 !important; line-height: 1.2; letter-spacing: -.01em; }
+.ap-hd-why { font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-hd-h > .ap-k { padding-top: 12px; white-space: nowrap; }
 
 /* ---------- Insights ---------- */
-.ap-rx { --dv-nock: color-mix(in srgb, var(--ap-ink) 7%, transparent); }
 .ap-top--ins .ap-chip { align-self: flex-end; }
 .ap-sum-top .ap-big small { font-size: 18px; white-space: nowrap; }
 .ap-dhero .ap-big small { white-space: nowrap; }
@@ -563,16 +649,11 @@
 .ap-rx .ap-table[open] summary::after { transform: translateY(2px) rotate(-135deg); /* grid-exempt: a chevron drawn in CSS */ }
 .ap-shaped-b p { font-family: var(--serif); font-size: 14.5px; line-height: 1.5; color: var(--ap-ink2); }
 .ap-idt .ap-ckr-list { margin: 0; }
-.ap-units { display: flex; flex-direction: column; gap: 16px; padding: 0 4px; }
-.ap-unit { display: flex; flex-direction: column; gap: 8px; }
-.ap-unit-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.ap-unit-h b { font-size: 13px; font-weight: 500; }
-.ap-unit-h span { font-family: var(--mono); font-size: 11px; color: var(--ap-ink2); white-space: nowrap; }
-.ap-unit--other .dv-cd { opacity: .55; }
 .ap-waits { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .ap-wait { display: grid; grid-template-columns: 88px minmax(0, 1fr) 48px; gap: 8px; align-items: center; font-size: 13px; }
 .ap-wait i { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
-.ap-wait i b { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-usual-ink); }
+/* a food on its way to 5 logs: a count, so neutral ink, never Plum (your usual) */
+.ap-wait i b { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-ink2); }
 .ap-wait strong { font-family: var(--mono); font-size: 11px; font-weight: 400; text-align: right; color: var(--ap-ink2); }
 
 /* Ask Florin: the hand-off from a card */
@@ -592,80 +673,98 @@
 .ap-askbar-b { width: 40px; height: 40px; border-radius: 50%; background: var(--ap-ink); color: var(--ap-bg); display: grid; place-items: center; flex: none; }
 .ap-askbar-b .ic { width: 18px; height: 18px; stroke-width: 2; }
 
-/* chart marks from the data vis board (board-dataviz.css), scoped to the app */
+/* chart marks, scoped to the app. build-core, Oct 28 (claude/Florin data viz.md, section 1): the reading colour within
+   your usual, Gold edged in Shift Ink (light) outside it, Ink 3 for could be either and for later BMs, a Teal ring with
+   nothing inside for a flagged today, Teal for context (symptoms, a late dinner), the newest ringed in Ink. No hatch,
+   no faint gap columns, no struck dates: nothing logged is nothing drawn */
 .ap-rx .dv-chart text { font-family: var(--sans); font-size: 10px; fill: var(--ap-ink3); }
 .ap-rx .dv-chart .dv-ax { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-chart .dv-ax.is-usual { fill: var(--ap-usual-ink); font-weight: 700; }
 .ap-rx .dv-grid { stroke: var(--ap-grid); stroke-width: 1; }
 .ap-rx .dv-base { stroke: var(--ap-line); stroke-width: 1; }
 .ap-rx .dv-tick { stroke: var(--ap-ink3); stroke-width: 1; opacity: .6; }
 .ap-rx .dv-band-edge, .ap-rx .dv-bandbox { stroke: var(--ap-band-edge); stroke-width: 1; }
 .ap-rx .dv-chart .dv-bandlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-usual-ink); }
 .ap-rx .dv-chart .dv-newlbl { font-size: 11px; font-weight: 500; fill: var(--ap-ink); }
-.ap-rx .dv-new { fill: var(--ap-card); stroke: var(--ap-chart); stroke-width: 2; }
-.ap-rx .dv-new.is-shift { stroke: var(--ap-shift); }
+.ap-rx .dv-ring { fill: none; stroke: var(--ap-ink); stroke-width: 2; }
+.ap-rx .dv-line { fill: none; stroke: var(--ap-chart); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .ap-rx .dv-dot { fill: var(--ap-chart); }
-.ap-rx .dv-dot.is-shift { fill: var(--ap-shift); }
+.ap-rx .dv-dot--line { stroke: var(--ap-card); stroke-width: 2; }
+.ap-rx .dv-dot.is-hit { fill: transparent; stroke: none; }
 .ap-rx .dv-dot.is-dim { opacity: .45; }
-.ap-rx .dv-dot.is-new { fill: var(--ap-card); stroke: var(--ap-chart); stroke-width: 2; }
-.ap-rx .dv-dot.is-new.is-shift { stroke: var(--ap-shift); }
-/* a word logged in B whose steps sit on both sides of the usual: hollow, never Gold */
-.ap-rx .dv-dot.is-maybe { fill: var(--ap-card); stroke: var(--ap-ink3); stroke-width: 1.5; }
-/* a flagged today on Insights' charts: noted for a clinician, a Teal ring, never read (the week card's mark) */
-.ap-rx .dv-dot.is-flag, .ap-rx .dv-new.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 2; }
-.ap-rx .dv-bar.is-flag { fill: var(--ap-info-bg); stroke: var(--ap-teal); stroke-width: 1.5; }
-.ap-rx .c-visit.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 1.5; opacity: 1; }
-.ap-rx .ap-legend .sw--clin { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-teal); }
-.ap-rx .dv-ctx { fill: var(--ap-teal); }
+.ap-rx .dv-dot.is-maybe, .ap-rx .dv-dot.is-later { fill: var(--ap-ink3); }
+.ap-rx :is(.dv-dot, .dv-bar, .dv-wbar).is-shift { fill: var(--ap-shift); stroke: var(--ap-day-edge); stroke-width: 1.5; }
+/* a flagged today: noted for a clinician, a Teal ring with nothing inside, read against nothing */
+.ap-rx .dv-dot.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 2; }
+.ap-rx .dv-bar, .ap-rx .dv-wbar { fill: var(--ap-chart); }
+.ap-rx .dv-wbar.is-ctx, .ap-rx .dv-sq, .ap-rx .dv-tick-ctx, .ap-rx .dv-ctx { fill: var(--ap-teal); }
 .ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink2); }
-.ap-rx .dv-bar { fill: var(--ap-chart); }
-.ap-rx .dv-bar.is-shift { fill: var(--ap-shift); }
-.ap-rx .dv-bar.is-out { fill: var(--ap-ink3); opacity: .42; }
-.ap-rx .dv-zero { fill: var(--ap-card); stroke: var(--ap-shift); stroke-width: 1.8; }
-/* before there's a usual, No BM is just a reading: no Gold */
-.ap-rx .dv-zero.is-plain { stroke: var(--ap-ink2); }
 .ap-rx .dv-chart .dv-val { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
 .ap-rx .dv-med { stroke: var(--ap-ink); stroke-width: 2.2; stroke-linecap: round; }
 .ap-rx .dv-chart .dv-medlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-ink); }
 .ap-rx .dv-chart .dv-glbl { font-size: 11px; fill: var(--ap-ink2); }
 .ap-rx .dv-chart .dv-rowlbl { font-size: 11.5px; fill: var(--ap-ink2); }
-.ap-rx .dv-nock { fill: var(--dv-nock); }
-.ap-rx .dv-sym, .ap-rx .dv-cell { fill: var(--ap-chart); }
-.ap-rx .dv-sym.s1 { opacity: .5; } .ap-rx .dv-sym.s2 { opacity: .75; }
-.ap-rx .dv-cell.s1 { opacity: .3; } .ap-rx .dv-cell.s2 { opacity: .6; }
-.ap-rx .dv-cell-none { fill: var(--ap-line); }
+.ap-rx .dv-chart .dv-rowlbl.is-gap { fill: var(--ap-ink3); }
 .ap-rx .dv-brk { fill: none; stroke: var(--ap-usual-ink); stroke-width: 1.2; }
 .ap-rx .dv-lead { stroke: var(--ap-ink3); stroke-width: 1; opacity: .7; }
-.ap-rx .dv-cdots { display: block; overflow: visible; }
-.ap-rx .dv-cd.is-hit { fill: var(--ap-plum); }
-.ap-rx .dv-cd.is-miss { fill: none; stroke: var(--ap-plum); stroke-width: 1.2; }
-/* the studio's day rows: a late dinner is context, so Teal (Plum is your usual); a day not logged has a dashed base */
+/* the studio's day rows, where a module still draws them: a late dinner is context, so Teal; a day not logged has no
+   base line. Charts never use dashed lines (DESIGN.md), so the kit's dashed average and waterfall connectors are solid
+   hairlines here */
 .ap-rx .c-row-flag { fill: var(--ap-teal); }
-/* a day not logged: no base line, and its date struck, as the week card and the calendar mark a gap. Charts never
-   use dashed lines (DESIGN.md), so the kit's dashed average and waterfall connectors are solid hairlines here */
 .ap-rx .c-row.is-gap .c-row-base { stroke: none; }
-.ap-rx .c-row.is-gap .c-row-lbl { text-decoration: line-through; }
 .ap-rx .c-avg { stroke: color-mix(in srgb, var(--ap-plum) 62%, transparent); stroke-width: 1; stroke-dasharray: none; }
-/* the average's own label, haloed in the card so it reads where the score line crosses it */
-.ap-rx .c-avg-lbl { font-family: var(--mono); font-size: 9.5px; fill: var(--ap-plum); paint-order: stroke; stroke: var(--ap-card); stroke-width: 4px; stroke-linejoin: round; }
 .ap-rx .c-wf-conn { stroke: var(--ap-ink3); stroke-width: 1; stroke-dasharray: none; opacity: .6; }
-.ap-rx .ap-legend .sw--avg { height: 1px; border-radius: 0; background: color-mix(in srgb, var(--ap-plum) 62%, transparent); }
+/* the range bar: a Gold dot gets its Shift Ink edge in light, as every Gold mark does */
+.ap-rx .c-range.is-shift .c-range-dot { box-shadow: inset 0 0 0 1.5px var(--ap-day-edge), 0 0 0 2.5px var(--ap-card); }
+.ap-rx .c-seg-part.is-shift { box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
 /* legend swatches for those marks */
-.ap-rx .ap-legend .sw--flag { background: var(--ap-teal); }
-.ap-rx .ap-legend .sw--ring { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-chart); }
+.ap-rx .ap-legend .sw--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-rx .ap-legend .sw--clin { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-teal); }
+.ap-rx .ap-legend .sw--maybe, .ap-rx .ap-legend .sw--later { background: var(--ap-ink3); box-shadow: none; opacity: 1; }
+.ap-rx .ap-legend .sw--tick { width: 2px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
+.ap-rx .ap-legend .sw--avg { height: 1px; border-radius: 0; background: color-mix(in srgb, var(--ap-plum) 62%, transparent); }
 .ap-rx .ap-legend .sw--ctxbar { width: 10px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
-.ap-rx .ap-legend .sw--zero { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-shift); }
-.ap-rx .ap-legend .sw--zero.sw--plain { box-shadow: inset 0 0 0 2px var(--ap-ink2); }
-.ap-rx .ap-legend .sw--out { background: var(--ap-ink3); opacity: .42; }
-.ap-rx .ap-legend .sw--maybe { background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
-.ap-rx .ap-legend .sw--sym1 { width: 5px; height: 5px; opacity: .5; }
-.ap-rx .ap-legend .sw--sym2 { width: 7px; height: 7px; opacity: .75; }
-.ap-rx .ap-legend .sw--sym3 { width: 9px; height: 9px; }
-.ap-rx .ap-legend .sw--c1, .ap-rx .ap-legend .sw--c2, .ap-rx .ap-legend .sw--c3 { border-radius: 2px; }
-.ap-rx .ap-legend .sw--c1 { opacity: .3; } .ap-rx .ap-legend .sw--c2 { opacity: .6; }
-.ap-rx .ap-legend .sw--nock { width: 8px; height: 12px; border-radius: 2px; background: var(--dv-nock); box-shadow: inset 0 0 0 1px var(--ap-line); }
-.ap-rx .ap-legend .sw--held { background: var(--ap-plum); }
-.ap-rx .ap-legend .sw--miss { background: transparent; box-shadow: inset 0 0 0 1.2px var(--ap-plum); }
-.ap-rx .ap-legend .ap-lg-gap { font-style: normal; font-family: var(--mono); font-size: 9.5px; color: var(--ap-ink2); text-decoration: line-through; }
+/* what moved FloraScore: a bar a part from a centre line, in whole points, in the reading colour either way */
+.ap-moved { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+.ap-moved-sum { padding: 0 4px 8px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-moved-r { display: grid; grid-template-columns: 72px minmax(0, 1fr) 32px; grid-template-areas: "n t v" "w w w"; column-gap: 8px; row-gap: 4px; align-items: center; }
+.ap-moved-n { grid-area: n; font-size: 13px; font-weight: 500; }
+.ap-moved-t { grid-area: t; position: relative; height: 12px; }
+.ap-moved-t::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--ap-ink3); }
+.ap-moved-t b { position: absolute; top: 0; bottom: 0; width: var(--w); background: var(--ap-chart); }
+.ap-moved-t b.is-up { left: 50%; border-radius: 0 2px 2px 0; }
+.ap-moved-t b.is-down { right: 50%; border-radius: 2px 0 0 2px; }
+.ap-moved-r strong { grid-area: v; font-family: var(--mono); font-size: 12px; font-weight: 400; text-align: right; color: var(--ap-ink); }
+.ap-moved-r em { grid-area: w; font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-comp .ap-comp-v { margin: 0 !important; font-size: 13px; color: var(--ap-ink); }
+/* a pattern's two shares: each bar as long as its share, from none to every time, the counts written on them */
+.ap-share { display: flex; flex-direction: column; gap: 12px; padding: 0 4px 4px; }
+.ap-share-r { display: flex; flex-direction: column; gap: 4px; }
+.ap-share-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ap-share-h b { font-size: 13px; font-weight: 500; }
+.ap-share-h span { font-family: var(--mono); font-size: 11px; white-space: nowrap; color: var(--ap-ink); }
+.ap-share-t { display: block; height: 12px; border-radius: 2px; background: var(--ap-card2); overflow: hidden; }
+.ap-share-t b { display: block; height: 100%; width: var(--w); border-radius: 2px; background: var(--ap-chart); }
+.ap-share-ax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
+/* the check-in card: each question, this week's answer and one chip */
+.ap-ic-ck li { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--ap-line); }
+.ap-ic-ck-m { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ap-ic-ck-m b { font-size: 14px; font-weight: 500; }
+/* the picked pattern tier: outlined in Ink, never Plum (which means only your usual) */
+.ap-rx .ap-sure span.is-on { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+.ap-rx .ap-hbar { grid-template-columns: 70px minmax(0, 1fr) 56px; }
+.ap-rx .ap-hbar strong { font-family: var(--mono); font-size: 11px; font-weight: 400; }
+.ap-dhero--sc .ap-big { font-size: 64px; }
+.ap-dhero-day { font-size: 32px; font-weight: 300; line-height: 1.1; letter-spacing: -.02em; }
+.ap-ic-moved { padding-top: 4px; }
+/* Plum (Ray on dark) means only your usual: the "what you could try" card and the score's callout are neutral */
+.ap-rx .ap-sect--try, .ap-rx[data-theme] .ap-sect--try { background: var(--ap-card2); box-shadow: none; }
+.ap-rx[data-theme] .ap-sect--try h3 { color: var(--ap-ink); }
+.ap-rx .ap-callout { border-left-color: var(--ap-ink3); }
+/* a pattern's tier meter is how sure, not your usual: Ink, never Plum */
+.ap-rx .c-meter[data-k="1"] i:nth-child(1), .ap-rx .c-meter[data-k="2"] i:nth-child(-n+2), .ap-rx .c-meter[data-k="3"] i { background: var(--ap-ink); }
+/* a pattern's icon is context, never Plum (which means only your usual) */
+.ap-rx .ap-pat-ic, .ap-rx[data-theme] .ap-pat-ic { background: var(--ap-card2); color: var(--ap-ink); }
 
 /* dark: the scrim has to dim a dark screen, the toast inverts, sheets get a hairline (as in the studio) */
 .ap-rx[data-theme="dark"] .ap-o-scrim { background: oklch(from var(--forest) calc(l - .22) c h / .6); }
@@ -680,28 +779,42 @@
 .ap-rx.is-full .ap-ck-h { padding-top: 16px; }
 .ap-rx.is-full .ap-o--sheet .ap-o-p, .ap-rx.is-full .ap-o--full .ap-o-p { max-height: calc(100% - 16px); }
 .ap-rx.is-full .ap-o--full .ap-o-p { height: calc(100% - 16px); }
-/* the page's bottom bar sits under the app and takes the safe area, so the app's own bottom edge needs none */
+/* full screen, the app ends above the home indicator (the page's .rx-mount takes the safe area), so its own bottom
+   edge needs no more than a real phone's */
 .ap-rx.is-full .ap-tb { bottom: 16px; }
 .ap-rx.is-full .ap-psh, .ap-rx.is-full .ap-fsh-f { padding-bottom: 24px; }
 
+/* the safe areas, as variables, so a check can stand in for a phone's (Chromium reports none) */
+:root { --rx-sat: env(safe-area-inset-top, 0px); --rx-sab: env(safe-area-inset-bottom, 0px); --rx-sal: env(safe-area-inset-left, 0px); --rx-sar: env(safe-area-inset-right, 0px); }
 @media (max-width: 759px) {
   .rx { padding-inline: 0; padding-block: 0; }
-  .rx-head, .rx-side, .rx-under, .rx-foot { display: none !important; }
+  .rx-head, .rx-side, .rx-foot { display: none !important; }
   .rx-main, .rx-center, .rx-stage, .rx-ph { display: block; }
-  /* the app fills the screen above the bottom bar */
-  .rx-fit { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); width: auto !important; height: auto !important; }
+  /* Will, Oct 28: the page's bar sat over the app's tab bar. The page's controls are a slim bar at the top now, so the
+     app keeps its own tab bar at the bottom, as on a real phone. The app fills the screen under the bar */
+  .rx-fit { position: fixed; top: calc(48px + var(--rx-sat)); left: 0; right: 0; bottom: 0; width: auto !important; height: auto !important; }
   .rx-dev { width: 100%; height: 100%; transform: none !important; }
   .rx-dev .apx-phone { display: none; }
   .rx-dev .apx-screen { inset: 0; border-radius: 0; }
-  /* the bottom bar: Toggles (the decisions, the demo and the screens) and Notes, each a sheet */
-  .rx-mbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 100; display: flex; align-items: center; gap: 8px; height: calc(56px + env(safe-area-inset-bottom, 0px)); padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px)); background: var(--bg); box-shadow: 0 -1px 0 var(--line); }
+  /* the app ends above the home indicator, so everything it pins to its bottom (the tab bar, a toast, a sheet's
+     buttons) stays clear of it; the strip under it is the app's own ground, drawn by the app's shadow */
+  .rx-mount { bottom: var(--rx-sab); }
+  .rx-mount > .ap { box-shadow: 0 var(--rx-sab) 0 var(--ap-bg); }
+  /* the bar: Toggles (the decisions, the demo and the screens) and Notes, each a sheet, with what's showing between */
+  .rx-mbar { position: fixed; left: 0; right: 0; top: 0; z-index: 100; box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: calc(48px + var(--rx-sat)); padding: var(--rx-sat) max(8px, var(--rx-sar)) 0 max(8px, var(--rx-sal)); background: var(--bg); box-shadow: 0 1px 0 var(--line); }
   .rx-mbar-t { flex: 1; min-width: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rx-mbar-b { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; }
+  /* compact buttons, 36px on screen, each with a 44px target */
+  .rx-mbar-b { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; }
+  .rx-mbar-b::after { content: ""; position: absolute; inset: -4px 0; }
   .rx-sheet:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 200; }
   .rx-sheet-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 45%, transparent); }
-  .rx-sheet-p { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: var(--bg); animation: apSheet .4s var(--ap-ease, ease) both; }
+  .rx-sheet-p { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 0 16px calc(24px + var(--rx-sab)); border-radius: 24px 24px 0 0; background: var(--bg); animation: apSheet .4s var(--ap-ease, ease) both; }
   .rx-sheet-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; font-size: 15px; background: var(--bg); }
   .rx-sheet-b { display: flex; flex-direction: column; gap: 12px; }
+  .rx-sheet-h:has(.rx-sheet-now:not([hidden])) { flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); }
+  .rx-sheet-now:not([hidden]) { flex: 1 0 100%; display: flex; flex-direction: column; gap: 8px; }
+  .rx-sheet-now p { margin: 0; color: var(--ink); }
+  .rx-sheet-now-b { display: flex; flex-wrap: wrap; gap: 8px; }
   .rx-x { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
   .rx-sheet :is(.rx-seg button, .rx-chips button, .rx-nav-b, .rx-btn, .rx-fold) { min-height: 44px; }
 
@@ -722,10 +835,6 @@
 .ap-chs--week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .ap-rx .ap-chs.ap-chs--week > .ap-ch { min-width: 0; padding-inline: 0; }
 .ap-rx .ap-chs.ap-chs--week > .ap-ch::after { inset: -4px -2px; }
-/* a symptom logged without a strength: present, strength not said. Hollow, as History's calendar draws it */
-.ap-wk-sq--0 { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-ink2); }
-/* a day with a flag or an alarm feature: noted for a clinician, never read. The calendar's mark, a dot in a Teal ring */
-.ap-wk-flag { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ap-ink2); outline: 2px solid var(--ap-teal); outline-offset: 2px; vertical-align: middle; }
 /* small controls keep their size on screen and get a finger-sized hit area (44px or more) */
 .ap-rx .ap-ch, .ap-rx .ap-gd-b, .ap-rx .ap-hi-filter, .ap-rx .ap-avatar { position: relative; }
 .ap-rx .ap-ch::after { content: ""; position: absolute; inset: -4px 0; }
@@ -750,32 +859,6 @@
 
 /* Today: the hero is one sentence */
 .ap-hl { gap: 8px; }
-/* the week so far: a day header, then three rows of a count over a seven-day strip */
-.ap-wk { display: flex; flex-direction: column; gap: 12px; }
-.ap-wk-days, .ap-wk-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.ap-wk-days span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.ap-wk-days b { font-family: var(--mono); font-size: 10px; font-weight: 400; color: var(--ap-ink2); }
-.ap-wk-days em { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-style: normal; font-size: 12px; font-weight: 500; color: var(--ap-ink); }
-.ap-wk-days .is-today em { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
-/* before the person started: the strip dims; the day letters stay readable */
-.ap-wk-strip .is-before { opacity: .4; }
-.ap-wk-days .is-before :is(b, em) { color: var(--ap-ink2); font-weight: 400; }
-.ap-wk-days .is-gap em { color: var(--ap-ink2); text-decoration: line-through; text-decoration-thickness: 1px; }
-.ap-wk-m { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
-.ap-wk-m p { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
-.ap-wk-m p b { font-weight: 500; color: var(--ap-ink); }
-.ap-wk-l { font-weight: 500; color: var(--ap-ink); }
-.ap-wk-l::after { content: " ·"; color: var(--ap-ink3); }
-.ap-wk-strip { list-style: none; margin: 0; padding: 0; min-height: 24px; align-items: center; }
-.ap-wk-strip li { display: grid; place-items: center; min-height: 24px; }
-.ap-wk-strip li.is-gap { background: repeating-linear-gradient(135deg, var(--ap-card2) 0 2px, transparent 2px 6px); border-radius: 4px; }
-.ap-wk-meals { font-size: 13.5px; color: var(--ap-ink2); padding-top: 12px; border-top: 1px solid var(--ap-line); }
-/* the line naming a flagged day, so the counts above it add up */
-.ap-wk-fl { font-size: 13.5px; color: var(--ap-ink2); }
-.ap-wk-gapday { display: inline-grid; place-items: center; min-width: 16px; height: 16px; font-style: normal; font-size: 11px; font-weight: 500; color: var(--ap-ink2); text-decoration: line-through; text-decoration-thickness: 1px; }
-.ap-learn-st { display: flex; flex-direction: column; gap: 8px; }
-.ap-learn-st p { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
-.ap-learn-st b { font-weight: 500; color: var(--ap-ink); }
 /* a secondary button: Forest on light, a Cream line on dark. Ray stays on logging */
 .ap-btn--2 { background: var(--forest); color: var(--cream); }
 .ap-rx[data-theme="dark"] .ap-btn--2 { background: transparent; color: var(--cream); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 60%, transparent); }
@@ -802,25 +885,6 @@
 .ap-ckc-day { min-height: 44px; }
 .ap-rx .ap-tst-b { position: relative; }
 .ap-rx .ap-tst-b::after { content: ""; position: absolute; inset: -4px 0; }
-
-/* ---------- the workshop panel, under the phone (and in the Notes sheet on a phone) ---------- */
-.rx-ws { box-sizing: border-box; width: 100%; max-width: 920px; margin: 0 auto; background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: inset 0 0 0 1px var(--line-2); }
-.rx-ws--m { max-width: none; padding: 16px; }
-.rx-ws-h h2 { font-weight: 400; font-size: 28px; line-height: 1.1; letter-spacing: -.02em; margin: 8px 0; text-wrap: balance; }
-.rx-ws-h > p:last-child { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; margin: 0; }
-.rx-ws-cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px; }
-.rx-ws--m .rx-ws-cols { grid-template-columns: minmax(0, 1fr); gap: 0; }
-.rx-ws-calls { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.rx-ws-calls li { display: flex; flex-direction: column; gap: 4px; padding-block: 12px; border-top: 1px solid var(--line-2); }
-.rx-ws-calls b { font-size: 14.5px; font-weight: 500; line-height: 1.35; }
-.rx-ws-calls p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
-.rx-ws-st { align-self: flex-start; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
-/* a call that still needs Will: a Ray highlighter band with Forest text */
-.rx-ws-st.is-you { padding: 0 8px; border-radius: 999px; background: var(--ray); color: var(--forest); }
-.rx-ws-g { padding-block: 12px; border-top: 1px solid var(--line-2); }
-.rx-ws-g b { font-size: 14px; font-weight: 500; }
-.rx-ws-g ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
-@media (max-width: 1020px) { .rx-ws-cols { grid-template-columns: minmax(0, 1fr); gap: 0; } }
 
 /* History: the report for a clinician, first */
 .ap-hist-rep { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
@@ -883,13 +947,12 @@
 
 /* ---------- Insights charts draw in: bars grow, dots pop, the newest point lands last ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .ap-anim .dv-bar { transform-box: fill-box; transform-origin: 50% 100%; animation: cGrowY .7s .12s var(--ap-ease) both; }
-  .ap-anim :is(.dv-dot, .dv-sym, .dv-cell, .dv-cd, .dv-zero) { transform-box: fill-box; transform-origin: center; animation: cPop .45s .2s var(--ap-ease) both; }
+  .ap-anim :is(.dv-bar, .dv-wbar) { transform-box: fill-box; transform-origin: 50% 100%; animation: cGrowY .7s .12s var(--ap-ease) both; }
+  .ap-anim :is(.dv-dot, .dv-sq) { transform-box: fill-box; transform-origin: center; animation: cPop .45s .2s var(--ap-ease) both; }
   .ap-anim .dv-dot:nth-child(3n) { animation-delay: .28s; } .ap-anim .dv-dot:nth-child(3n + 1) { animation-delay: .36s; }
-  .ap-anim .dv-new { transform-box: fill-box; transform-origin: center; animation: cPop .5s .7s var(--ap-ease) both; }
+  .ap-anim .dv-ring { transform-box: fill-box; transform-origin: center; animation: cPop .5s .7s var(--ap-ease) both; }
   .ap-anim :is(.dv-newlbl, .dv-bandlbl, .dv-val) { animation: apFadeOnly .5s .8s both; }
   .ap-anim .c-band, .ap-anim .dv-bandbox { animation: apFadeOnly .6s both; }
-  .ap-anim .ap-comps i b { transform-origin: left; animation: cGrowX .8s .2s var(--ap-ease) both; }
   .ap-anim .ap-sum-counts b, .ap-anim .ap-big { animation: apFade .5s .1s var(--ap-ease) both; }
 }
 
@@ -908,7 +971,7 @@
 .ap-pay-hero { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
 .ap-pay-hero h2 { font-size: 26px; font-weight: 300; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; max-width: 15ch; }
 .ap-pay-hero p { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
-.ap-pay-ring { position: absolute; right: 16px; top: 16px; width: 88px; height: 88px; opacity: .9; }
+.ap-pay-ring { position: absolute; right: 16px; top: 16px; color: var(--ray); opacity: .9; }
 .ap-pay-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .ap-pay-list li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; }
 .ap-pay-list li > span:last-child { display: flex; flex-direction: column; gap: 4px; }
@@ -921,6 +984,5 @@
 .ap-pay h2:focus-visible { outline: 2px solid var(--ray); outline-offset: 4px; border-radius: 4px; }
 @media (prefers-reduced-motion: no-preference) {
   .ap-pay .ap-pay-list li { animation: apFade .5s calc(var(--i) * 70ms + .15s) var(--ap-ease) both; }
-  .ap-pay .c-ring-arc { animation: cRing 1.4s .2s var(--ap-ease) both; }
   .ap-tease-b { animation: apFade .5s .3s var(--ap-ease) both; }
 }

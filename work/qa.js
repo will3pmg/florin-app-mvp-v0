@@ -113,8 +113,8 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
         });
         const tag = `${tagR} ${id}`;
         if (o.overflow) note(`${tag}: page scrolls sideways`);
-        if (o.lint && !/passes all/.test(o.lint)) note(`${tag}: ${o.lint.trim()}`);
-        if (!o.lint) note(`${tag}: no claims line in the notes`);
+        /* the notes' claims line shows only when a screen fails a rule: no line is a pass */
+        if (o.lint) note(`${tag}: ${o.lint.trim()}`);
         if (/\bundefined\b|\bNaN\b/.test(o.text)) note(`${tag}: reads undefined or NaN`);
         if (r.checkin === "false" && /check-in|check in\b(?! with a clinician)/i.test(o.text + " " + o.tabs)) note(`${tag}: mentions the check-in while it's off`);
         if (o.small.length) note(`${tag}: small targets: ${[...new Set(o.small)].slice(0, 6).join("; ")}`);

@@ -9,6 +9,8 @@
    - sideways overflow: the page, the phone's live screen, or anything drawn past the phone's edge
    - a mention of the check-in while it's off (the phone and the demo time line)
    - a screen that renders blank, or a sheet that doesn't open
+   - a decision note out of the decision sheet's shape (a block per option with What it is, Why do it and Why not, a
+     recommendation), with a badge, or without Easy's line on Home and Data style while Easy is on
    NODE_PATH=$(npm root -g) node work/sweep.js [out.json] [--workers 4] [--only form,look] [--limit 20] [--plan free] [--width 390]
    Pairs that set the same decisions are run once (95 settings, 380 runs with the themes and logs). */
 const { chromium } = require("playwright");
@@ -90,12 +92,16 @@ async function worker(browser, runs, wi, problems, counts) {
         if (/\bundefined\b|\bNaN\b|\bnull\b|\[object Object\]/.test(t)) out.push(`${b.dataset.v}: junk text`);
         if (/[—–]/.test(t)) out.push(`${b.dataset.v}: a dash`);
         if (/next pass|still to be drawn/i.test(t)) out.push(`${b.dataset.v}: says it comes later`);
-        /* fix-core: with the Easy version on, Home and Data style are picked but Easy draws its own Today, so their
-           notes say so; every other picked option reads On the phone */
-        const badge = (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "";
-        const easyOn = (document.querySelector('[data-rx="easy"][data-v="true"]') || {}).getAttribute && document.querySelector('[data-rx="easy"][data-v="true"]').getAttribute("aria-pressed") === "true";
-        if (easyOn && ["home", "look"].includes(b.dataset.v)) { if (badge !== "Picked; Easy draws its own") out.push(`${b.dataset.v}: with Easy on, the picked option doesn't say Easy draws its own`); }
-        else if (!/On the phone/.test(badge)) out.push(`${b.dataset.v}: the picked option doesn't read On the phone`);
+        /* notes-page (Oct 28): every note in the decision sheet's shape, with no badge; with the Easy version on, Home
+           and Data style say in one plain line that Easy has its own Today and charts */
+        const N = document.querySelector("#rxNotes .rx-note");
+        if (/On the phone|\bPicked\b|Was, now|From the research/.test(t)) out.push(`${b.dataset.v}: a badge, was and now, or research`);
+        const blocks = [...N.querySelectorAll(".rx-opt")];
+        if (!blocks.length || blocks.some((o) => [...o.querySelectorAll("dt")].map((x) => x.textContent).join("|") !== "What it is|Why do it|Why not")) out.push(`${b.dataset.v}: an option without What it is, Why do it and Why not`);
+        if (!N.querySelector(".rx-opt.is-rec") || !/^We recommend /.test((N.querySelector(".rx-rec") || {}).textContent || "")) out.push(`${b.dataset.v}: no recommendation`);
+        const easyOn = document.querySelector('[data-rx="easy"][data-v="true"]').getAttribute("aria-pressed") === "true";
+        const line = (N.querySelector(".rx-note-easy") || {}).textContent || "";
+        if (easyOn && ["home", "look"].includes(b.dataset.v) ? !/^Easy has its own/.test(line) : !!line) out.push(`${b.dataset.v}: the Easy line ${line ? "shows when it shouldn't" : "is missing"}`);
       }
       return out;
     });
@@ -130,8 +136,9 @@ async function worker(browser, runs, wi, problems, counts) {
         clone.querySelectorAll(".ap-fine, [data-disclaimer], svg").forEach((n) => n.remove());
         const hits = (window.FLORIN_REFRESH_CHECK || (() => []))(clone.textContent.replace(/\s+/g, " "));
         hits.forEach((h) => bad("claims", `"${h.text}" (${h.rule.id}: ${h.rule.why})`));
+        /* the notes' claims line shows only when the screen fails a rule (fix-notes, Oct 28): no line is a pass */
         const lint = (document.querySelector("#rxNotes .rx-lint") || {}).textContent || "";
-        if (!/passes all/.test(lint)) bad("claims", `the notes' check: ${lint.trim().slice(0, 200) || "no claims line"}`);
+        if (lint) bad("claims", `the notes' check: ${lint.trim().slice(0, 200)}`);
         if (ckOff) {
           const CK = /check-in|check in\b(?! with a clinician)|\bcheckin\b/i;
           const tabs = ph.querySelector(".ap-layer").textContent;

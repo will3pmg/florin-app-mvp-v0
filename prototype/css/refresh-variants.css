@@ -4,12 +4,12 @@
    a shift, Teal context; no Ray Deep, no red, no green. */
 
 /* ============================== DAY FIRST ============================== */
-/* the score chip under the date: the Forest of the FloraScore card, its Ray ring, at the compact app button height */
+/* the score chip under the date: the Forest of the FloraScore card, the FloraScore glyph in Ray (a name, holding no
+   value, as on the card), at the compact app button height */
 .vr-sc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 4px; margin-top: -8px; }
 .vr-sc { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px 0 8px; border-radius: 999px; background: var(--ap-hero); color: var(--ap-hero-ink); }
 .vr-sc::after { content: ""; position: absolute; inset: -4px 0; }
-.vr-sc-ring { display: block; width: 24px; height: 24px; flex: none; }
-.vr-sc-ring .c-ring-trk { stroke: color-mix(in srgb, var(--cream) 22%, transparent); }
+.vr-sc-ring { display: block; width: 16px; height: 16px; flex: none; color: var(--ray); }
 .vr-sc-l { font-family: var(--mono); font-size: 10.5px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; color: var(--ray); }
 .vr-sc b { font-size: 20px; font-weight: 300; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .vr-sc .ic { width: 14px; height: 14px; color: var(--ray); }
@@ -17,9 +17,10 @@
    one word or a number onto a line of its own beside the chip; a sentence that wraps never leaves one word alone */
 .vr-sc-w { flex: 1 1 100%; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); text-wrap: pretty; }
 
-/* today's logs: the one that stood out carries a chip and an edge in its tone (Teal a flag, Gold a shift, ink a symptom) */
+/* today's logs: the one that stood out carries a chip and an edge in its tone (Teal a flag or a symptom, as symptoms are
+   Teal on every chart, Gold a shift) */
 .vr-mk { position: relative; }
-.vr-mk::before { content: ""; position: absolute; left: -16px; top: 12px; bottom: 12px; width: 3px; border-radius: 0 2px 2px 0; background: var(--ap-ink2); }
+.vr-mk::before { content: ""; position: absolute; left: -16px; top: 12px; bottom: 12px; width: 3px; border-radius: 0 2px 2px 0; background: var(--ap-teal); }
 .vr-mk--shift::before { background: var(--ap-shift); }
 .vr-mk--info::before { background: var(--ap-teal); }
 .vr-mk .vr-mk-c { margin-bottom: 4px; }
@@ -50,44 +51,24 @@
 .vr-cal-w span { text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
 .vr-cal-g { row-gap: 4px; }
 
-/* a day: its date, its mark, then its ticks, keyed on what the day shows (data-shown). Shared with As built's week card
-   (refresh.css .ap-wk-dot): Plum filled within the usual (Ray in dark), a hollow Gold ring for a shift (a shape cue as
-   well as a colour, so it holds in dark next to Ray), a neutral dot for could be either or logged. The calendar's own:
-   a short dash for a day with logs but nothing on BMs (the week card's dash is a No BM log), a neutral dot in a Teal
-   ring for a day noted for a clinician (Teal is context, never a reading). A gap has no mark: its date is struck through, as on the week card. No mark before the first log, today
-   with nothing yet, or outside the logs. The legend draws the same markup, so the two can't drift */
-.vr-cal-d { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; min-height: 56px; padding: 8px 0 4px; border-radius: 12px; color: var(--ap-ink); }
-.vr-cal-n { font-size: 13px; font-weight: 500; line-height: 16px; font-variant-numeric: tabular-nums; }
-.vr-cal-mk { display: grid; place-items: center; width: 16px; height: 8px; flex: none; }
-.vr-cal-mk::before { content: ""; display: block; width: 8px; height: 8px; border-radius: 999px; }
-[data-shown="usual"] > .vr-cal-mk::before { background: var(--ap-usual-ink); }
-[data-shown="shifted"] > .vr-cal-mk::before { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-shift); }
-:is([data-shown="unsure"], [data-shown="logged"]) > .vr-cal-mk::before { background: var(--ap-ink2); }
-[data-shown="nocount"] > .vr-cal-mk::before { width: 12px; height: 2px; border-radius: 2px; background: var(--ap-ink2); }
-[data-shown="flag"] > .vr-cal-mk::before { width: 6px; height: 6px; background: var(--ap-ink2); outline: 2px solid var(--ap-teal); outline-offset: 2px; }
-[data-shown="gap"] > .vr-cal-n { color: var(--ap-ink2); font-weight: 400; text-decoration: line-through; text-decoration-thickness: 1px; }
-.vr-cal-d:is(.is-plain, .is-out) .vr-cal-n { color: var(--ap-ink3); font-weight: 400; }
+/* a day: one button holding the app's one day mark (RU.dayMark, refresh.css .ap-day), so a day here looks as it does
+   on Today's card, in History's day headers and in Your days: a Plum circle within the usual (Ray in dark), a Gold
+   circle outside it, an Ink 3 circle logged but not counted, the date alone for nothing logged, a Teal ring for a day
+   noted for a clinician, today ringed with Today under it, and one Teal square under a day with symptoms. Before the
+   first log, or outside the logs, the date alone, never named. The button is 44px or more each way */
+.vr-cal-d { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-width: 0; min-height: 56px; padding: 4px 0; border-radius: 12px; color: var(--ap-ink); }
+.vr-cal-d .ap-day { pointer-events: none; }
 .vr-cal-d.is-out { cursor: default; }
-.vr-cal-d.is-today { box-shadow: inset 0 0 0 2px var(--ap-ink); }
+/* a day still to come is no reading at all: its date steps back further than a day with nothing logged, so the two
+   never look alike (no future day is ever drawn as a mark) */
+.vr-cal-d.is-later .ap-day { opacity: .45; }
 .vr-cal-d[aria-pressed="true"] { background: var(--ap-card2); }
-.vr-cal-d[aria-pressed="true"] .vr-cal-n { font-weight: 600; }
+.vr-cal-d[aria-pressed="true"] .ap-day { --ap-day-gap: var(--ap-card2); }
 .vr-cal-d.is-dim > * { opacity: .3; }
-/* a symptom tick is the only visual mark of a symptom day, so every strength holds 3:1 against the card and the picked
-   day in both themes: mild Ink 2 at 65%, moderate at 82%, strong solid, all filled, the scale of the week card's
-   squares (refresh.css .ap-wk-sq), so a strength looks the same on Today and in History. A day whose symptoms were all
-   logged without a strength is the only hollow tick (an Ink 2 edge), so it never reads as mild */
-.vr-cal-ts { display: flex; gap: 4px; height: 8px; align-items: center; }
-.vr-t { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
-.vr-t--s0 { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-ink2); }
-.vr-t--s1 { background: color-mix(in srgb, var(--ap-ink2) 65%, transparent); }
-.vr-t--s2 { background: color-mix(in srgb, var(--ap-ink2) 82%, transparent); }
-.vr-t--meal { border-radius: 999px; background: var(--ap-teal); }
 
-/* the legend: the same marks, in words */
+/* the legend: the marks drawn, in the shared words, each with its own mark (RU.dayKey) */
 .vr-cal-lg { margin-top: 0; }
-.vr-cal-lg .vr-cal-mk { width: 12px; }
-.vr-cal-lg [data-shown="gap"] > .vr-cal-n { font-size: 11px; line-height: 1; }
-.vr-lg-today { display: inline-block; width: 12px; height: 12px; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--ap-ink); }
+.vr-cal-lg > span { display: inline-flex; align-items: center; gap: 8px; }
 /* on Free, what membership adds to the month */
 .vr-cal-pay { align-self: flex-start; min-height: 44px; }
 
@@ -96,17 +77,8 @@
 .vr-cal-day > .ap-hd { align-self: stretch; }
 .vr-cal-add { margin-left: 4px; }
 
-/* the Easy version restyles the app, and owns the calendar's type (refresh-easy.css: the date, the weekday letters,
-   the month summary, the month buttons). This file owns the marks, which grow with it, legend included, and the state
-   colours of a date: Easy sets every date in Ink, so a plain day or a gap steps back to Ink 2 here (never Ink 3) */
+/* the Easy version restyles the app, and owns the calendar's type and its day marks' size (refresh-easy.css: the
+   weekday letters, the month summary, the month buttons, a day at 32px with every word 16px or more). The day
+   buttons grow to hold them */
 .ap.ap--easy .vr-cal-d { min-height: 64px; }
-.ap.ap--easy .vr-cal-mk { width: 20px; height: 12px; }
-.ap.ap--easy .vr-cal-mk::before { width: 12px; height: 12px; }
-.ap.ap--easy [data-shown="shifted"] > .vr-cal-mk::before { box-shadow: inset 0 0 0 3px var(--ap-shift); }
-.ap.ap--easy [data-shown="nocount"] > .vr-cal-mk::before { width: 16px; height: 3px; }
-.ap.ap--easy [data-shown="flag"] > .vr-cal-mk::before { width: 8px; height: 8px; }
-.ap.ap--easy .vr-cal-ts { height: 10px; }
-.ap.ap--easy .vr-t { width: 10px; height: 10px; }
-.ap.ap--easy .vr-lg-today { width: 16px; height: 16px; }
-.ap.ap--easy :is(.vr-cal-d:is(.is-plain, .is-out), [data-shown="gap"]) > .vr-cal-n { color: var(--ap-ink2); }
 .ap.ap--easy .vr-cal-w, .ap.ap--easy .vr-cal-g { margin-inline: -16px; }

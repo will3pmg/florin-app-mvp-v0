@@ -1,9 +1,9 @@
-<section id="style-bento" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:32px;">
-  <div style="display:flex; flex-direction:column; gap:12px;">
-    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Data styles · 4 of 6</p>
-    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Data style: Bento</h2>
+<section id="style-bento" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:16px;">
+  <div style="display:flex; flex-direction:column; gap:6px; padding:0 0 4px;">
+    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Decision 7 of 9 · Data style</p>
+    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Bento</h2>
   </div>
-  <x-embed style="position:absolute; left:128px; top:280px; width:536px; height:640px;"><!doctype html>
+  <x-embed style="position:absolute; left:128px; top:256px; width:536px; height:640px;"><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Bento: FloraScore tiles</title>
 <style>
 *{box-sizing:border-box}
@@ -20,7 +20,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .k{font-size:24px;color:#EEFFA3;margin-bottom:6px}
 .pill{align-self:flex-start;font-size:24px;padding:8px 18px;border-radius:18px;background:rgba(249,247,242,.12);border:2px solid rgba(249,247,242,.22)}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1}
-.tile{background:#FFFEFB;border-radius:28px;padding:20px 22px;box-shadow:0 0 0 2px #E6E2D8;display:flex;flex-direction:column;gap:6px}
+.tile{background:#FFFEFB;border-radius:28px;padding:20px 22px;box-shadow:inset 0 0 0 2px #E6E2D8;display:flex;flex-direction:column;gap:6px}
 .tile .mono{font-size:24px;color:#3E5A52}
 .v{font-size:64px;font-weight:300;line-height:1}
 .v small{font-size:24px;color:#3E5A52;margin-left:8px}
@@ -94,7 +94,7 @@ function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classL
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
-  <x-embed style="position:absolute; left:696px; top:280px; width:536px; height:640px;"><!doctype html>
+  <x-embed style="position:absolute; left:696px; top:256px; width:536px; height:640px;"><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Bento: this week</title>
 <style>
 *{box-sizing:border-box}
@@ -139,31 +139,20 @@ function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classL
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
-  <div style="position:absolute; left:1296px; top:280px; width:496px; height:640px; display:flex; flex-direction:column; gap:28px;">
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">THE IDEA</p>
-      <p style="font-size:28px; line-height:1.4;">Tiles of different sizes, with one glass hero over a Forest, Teal and Plum glow.</p>
+  <div style="position:absolute; left:1264px; top:256px; width:528px; height:640px; display:flex; flex-direction:column; gap:16px;">
+    <div style="background:#EFECE4; border-radius:28px; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> Tiles of different sizes, one number each.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> Easy to take in at a glance, like phone widgets.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> Tiles show numbers but not how they connect, and they crowd when text is large.</p>
     </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">STRENGTH</p>
-      <p style="font-size:28px; line-height:1.4;">Scans fast, and the tile grid is the review’s ask: a two-by-two summary, full cards one tap away.</p>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">COST</p>
-      <p style="font-size:28px; line-height:1.4;">Glass over a gradient breaks DESIGN.md’s “glass only over photography” rule, which needs amending if chosen.</p>
-    </div>
+    <p style="font-size:24px; line-height:1.25; color:#3E5A52;"><b>Here to compare.</b> We recommend Oura on Today and the FloraScore page, and Field journal on detail pages.</p>
   </div>
   <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
-    <p style="font-size:24px; color:#3E5A52;">Florin app refresh · Decisions · Oct 27</p>
-    <p style="font-size:24px; color:#3E5A52;">17</p>
+    <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Decisions › Data style › Bento</p>
+    <p style="font-size:24px; color:#3E5A52;">14</p>
   </div>
-  <aside>Bento lays the numbers out as tiles of different sizes. The FloraScore hero is a glass panel over an atmosphere made from the brand tokens (a Forest, Teal and Plum glow), with standard tiles around it.
-
-The FloraScore card: the glass hero with a Ray ring at 83 of 100, its usual range of 74 to 82 drawn on a thin outer track, “A little above your usual range”, and “This week, up 3 on last week”. Under it, two small tiles: the week’s average, 83, on a range strip against last week’s 80, and the last 7 days of FloraScore over the usual band, with Oct 8 left as a gap. In the app the glass rises in, the ring sweeps and the tiles follow.
-
-The chart: this week as seven day tiles that fill from the bottom, one dot per BM. On 4 of 6 logged days her BMs were within her usual; on 2 (Wednesday and Friday) they shifted; Thursday has no logs and stays an outline. Today is ringed. Eight BMs on six days.
-
-Strength: it scans fast, and its tile grid is what the review asked for to open Insights: a two-by-two summary (timing, how often, form, symptoms) with the full cards one tap away. Cost: DESIGN.md says glass only over photography. Bento puts glass over a gradient, so the rule needs amending if Bento is chosen. Our read also: tiles tend to repeat the same number in two places.
-
-Sources: the model at commit 475f259 (Sarah, C: L.scoreMoved, L.scoreSeries over 7 days, L.span over 7 days), and look-bento.js in the data looks library.</aside>
+  <aside>Bento. What it is: tiles of different sizes, one number each. Why do it: easy to take in at a glance, like phone widgets. Why not: tiles show numbers but not how they connect, and they crowd when text is large.
+Here to compare. We recommend Oura on Today and the FloraScore page, and Field journal on detail pages.
+The two cards here are its FloraScore tiles and the week as day tiles, drawn from the same logs as every other style.
+Try it: Decisions, Data style, Bento, then the Today and Insights tabs. The demo shows one style at a time, and detail pages don’t change. To see every style on every card, open the style gallery: https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
 </section>

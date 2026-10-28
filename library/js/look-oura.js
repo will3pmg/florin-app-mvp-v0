@@ -67,8 +67,8 @@
 
   /* the state of a day, as a class and a word */
   /* flag: today with a flag or an alarm feature logged, noted for a clinician and never read (Teal) */
-  const DAY = { usual: ["usual", "Within your usual"], shifted: ["shift", "Shifted"], unsure: ["either", "Could be either"], flag: ["flag", "Noted for a clinician"], logged: ["read", "Logged"], nocount: ["nocount", "Logged, no BMs said"], none: ["gap", "Not logged"] };
-  const dayState = (d) => (d.pending ? ["pending", "Not logged yet"] : DAY[d.state] || DAY.none);
+  const DAY = { usual: ["usual", "Within your usual"], shifted: ["shift", "Outside your usual"], unsure: ["either", "Could be either"], flag: ["flag", "Noted for a clinician"], logged: ["read", "Logged"], nocount: ["nocount", "Logged, no BMs said"], none: ["gap", "Nothing logged"] };
+  const dayState = (d) => (d.pending ? ["pending", "Nothing logged yet"] : DAY[d.state] || DAY.none);
 
   /* one BM's side of your usual forms: in, firmer, looser or either (a word that covers steps on both sides of an edge).
      In B the usual is a run of words and a BM's step is its word, so the same comparison holds */
@@ -413,16 +413,16 @@
     if (learning) ans = `${logged.length ? "" : "Nothing logged yet. "}Days show as logged while Florin learns your usual.`;
     else if (!T.logged) ans = "Nothing logged this week yet.";
     else if (!shifted.length) ans = (!T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged shifted." : "Every day you logged sat within your usual.") + leftT;
-    else ans = (shifted.length <= 2 ? shifted.map((d) => `${d.today ? "Today" : `On ${dayName(d)}`}, ${andList(whyShift(D, d))}.`).join(" ") : `Shifted on ${andList(shifted.map(dayName))}.`) + leftT;
+    else ans = (shifted.length <= 2 ? shifted.map((d) => `${d.today ? "Today" : `On ${dayName(d)}`}, ${andList(whyShift(D, d))}.`).join(" ") : `Outside your usual on ${andList(shifted.map(dayName))}.`) + leftT;
     const gaps = days.filter((d) => !d.logged && !d.pending);
-    const aria = `This week, one block per BM. ${ans}${gaps.length ? ` Not logged on ${andList(gaps.map(dayName))}.` : ""} ${days.map((d) => `${d.dow}: ${dayState(d)[1]}${d.count != null && !d.pending ? `, ${d.count === 0 ? "no BM" : plural(d.count, "BM")}` : ""}`).join(". ")}.`;
+    const aria = `This week, one block per BM. ${ans}${gaps.length ? ` Nothing logged on ${andList(gaps.map(dayName))}.` : ""} ${days.map((d) => `${d.dow}: ${dayState(d)[1]}${d.count != null && !d.pending ? `, ${d.count === 0 ? "no BM" : plural(d.count, "BM")}` : ""}`).join(". ")}.`;
     const has = (c) => days.some((d) => dayState(d)[0] === c);
     const zeroK = ["shift", "usual", "flag", "read"].find((c) => drawn.has(`zero-${c}`));
     return card(x, "ou-week", "This week at a glance", `
       ${head(x, "This week", dateK(x, spanOf(days)))}
       ${learning ? (logged.length ? lead(x, num(logged.length), `of ${plural(days.length, "day")} logged`, ans) : lead(x, "Not yet", "", ans)) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, ans) : lead(x, "Not yet", "", ans)}
       <svg class="ou-svg ou-wk" viewBox="0 0 ${W} ${base + 20}" role="img" aria-label="${esc(aria)}">${band}<line class="ou-axis" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${cols}</svg>
-      ${legend(x, [drawn.has("usual") && ["usual", "Within your usual"], drawn.has("shift") && ["shift", "Shifted"], drawn.has("either") && ["either", "Could be either"], drawn.has("flag") && ["flag", "Noted for a clinician"], drawn.has("read") && ["read", "Logged"], zeroK && [`zero-${zeroK}`, "No BM logged"], has("nocount") && ["nocount", "Logged, no BMs said"], has("gap") && ["gap", "Not logged"], days.some((d) => d.sym.length) && ["sym", "Symptoms"], ou && ["band", bandAt ? "Your usual count" : `Your usual count, ${rng(ou)} a day`]])}
+      ${legend(x, [drawn.has("usual") && ["usual", "Within your usual"], drawn.has("shift") && ["shift", "Outside your usual"], drawn.has("either") && ["either", "Could be either"], drawn.has("flag") && ["flag", "Noted for a clinician"], drawn.has("read") && ["read", "Logged"], zeroK && [`zero-${zeroK}`, "No BM logged"], has("nocount") && ["nocount", "Logged, no BMs said"], has("gap") && ["gap", "Nothing logged"], days.some((d) => d.sym.length) && ["sym", "Symptoms"], ou && ["band", bandAt ? "Your usual count" : `Your usual count, ${rng(ou)} a day`]])}
       ${learning ? "" : afterChange(D, x)}`);
   }
 
@@ -450,7 +450,7 @@
       : `<text class="ou-xt" x="${r1(x0)}" y="${base + 18}" text-anchor="start">${esc(first.label)}</text><text class="ou-xt${lastD.today ? " is-today" : ""}" x="${W}" y="${base + 18}" text-anchor="end">${lastD.today ? "Today" : esc(lastD.label)}</text>`;
     const cnt = (k) => days.filter((d) => dayState(d)[0] === k).length;
     const logged = days.filter((d) => d.logged).length;
-    const ROWS = [["usual", "Within your usual"], ["shift", "Shifted"], ["either", "Could be either"], ["flag", "Noted for a clinician"], ["read", "Logged"], ["nocount", "Logged, no BMs said"], ["gap", "Not logged"], ["pending", "Not logged yet today"]];
+    const ROWS = [["usual", "Within your usual"], ["shift", "Outside your usual"], ["either", "Could be either"], ["flag", "Noted for a clinician"], ["read", "Logged"], ["nocount", "Logged, no BMs said"], ["gap", "Nothing logged"], ["pending", "Nothing logged yet today"]];
     const present = ROWS.map(([k, t]) => [k, t, cnt(k)]).filter((r) => r[2]);
     const maxN = Math.max(...present.map((r) => r[2]));
     const zones = present.map(([k, t, c], i) => `<li class="ou-zr" style="--i:${i}"><span class="ou-zr-b"><i class="ou-zr-f is-${k}" style="--w:${pct(c, 0, maxN)}%"></i></span><b>${esc(t)}</b><span class="ou-zr-v">${esc(plural(c, "day"))}</span></li>`).join("");
@@ -463,7 +463,7 @@
       ${learning ? (logged ? lead(x, num(logged), `of ${plural(n, "day")} logged`, "") : lead(x, "Not yet", "", "Nothing logged yet.")) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, T.left) : lead(x, "Not yet", "", `No day in the last 30 days has a BM count logged yet.${T.left ? ` ${T.left}` : ""}`)}
       <svg class="ou-svg ou-mo" viewBox="0 0 ${W} ${base + 22}" role="img" aria-label="${esc(aria)}"><line class="ou-axis" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${cols}${xl}</svg>
       <ul class="ou-zones" aria-hidden="true">${zones}</ul>
-      ${legend(x, [[null, "A bar's height is the BMs that day, up to 4"], zeroK && [`zero-${zeroK}`, "A short bar: no BM logged"], cnt("gap") && ["gap", "Not logged: a gap, never a zero"]])}`);
+      ${legend(x, [[null, "A bar's height is the BMs that day, up to 4"], zeroK && [`zero-${zeroK}`, "A short bar: no BM logged"], cnt("gap") && ["gap", "Nothing logged: a gap, never a zero"]])}`);
   }
 
   /* ---------- timing: the morning as a curved clock, your usual window as a band on it, today as a dot ---------- */
@@ -569,15 +569,15 @@
     const kOf = (v) => (v == null ? "read" : !u ? "read" : v < u[0] || v > u[1] ? "shift" : "usual");
     const bandP = u ? [pct(u[0], 0, top), r1(pct(u[1], 0, top) - pct(u[0], 0, top))] : null;
     const rows = [
-      { label: "This week", value: wk == null ? "Not logged" : `${wk.toFixed(1)} a day`, segs: wk == null ? [] : [{ k: kOf(wk), w: pct(wk, 0, top) }], band: bandP },
-      { label: learning ? "So far" : "Last 30 days", value: mo == null ? "Not logged" : `${mo.toFixed(1)} a day`, segs: mo == null ? [] : [{ k: kOf(mo), w: pct(mo, 0, top) }], band: bandP }
+      { label: "This week", value: wk == null ? "Nothing logged" : `${wk.toFixed(1)} a day`, segs: wk == null ? [] : [{ k: kOf(wk), w: pct(wk, 0, top) }], band: bandP },
+      { label: learning ? "So far" : "Last 30 days", value: mo == null ? "Nothing logged" : `${mo.toFixed(1)} a day`, segs: mo == null ? [] : [{ k: kOf(mo), w: pct(mo, 0, top) }], band: bandP }
     ];
     if (learning) rows.shift();
     if (u) rows.push({ label: "Your usual", value: o.usualText, segs: [{ k: "uband", w: bandP[1], x: bandP[0] }], thin: false });
     const known = days.filter((d) => d.count != null && !d.flag);
     const inR = u ? known.filter((d) => d.count >= u[0] && d.count <= u[1]).length : null;
     const zeros = known.filter((d) => d.count === 0).length, gaps = days.filter((d) => d.count == null && !d.pending).length;
-    const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} not logged`].filter(Boolean);
+    const extra = [zeros && `${zeros} with no BM`, gaps && `${gaps} with nothing logged`].filter(Boolean);
     const ans = u ? `In the last 30 days, ${inR} of ${known.length} days within your usual${extra.length ? `, ${andList(extra)}` : ""}.${t && t.flag && D.flagLine ? ` ${D.flagLine}` : ""}` : `${known.length ? `${plural(known.length, "day")} logged so far.` : "Nothing logged yet."} Florin learns your usual count by day ${D.learning ? D.learning.of : ""}.`;
     return card(x, "ou-often", "How often", `
       ${head(x, "How often", u ? chip(x, "usual", o.usualText) : chip(x, "learn", "Learning"))}
@@ -646,7 +646,7 @@
       ${habit(x, rows.map((r) => ({ ...r, segs: r.segs })))}
       <p class="ou-dir" aria-hidden="true"><span>Firmer</span><span>Looser</span></p>
       ${say(x, ans)}
-      ${legend(x, [u && ["usual", "Within your usual forms"], (anyOut || firmer || looser) && ["shift", "Outside them, firmer or looser"], (anyEither || either) && ["either", "Could be either"], tf.length > 0 && [anyOut && !sides.includes("in") && !anyEither ? "now-shift" : "now", "Today, one marker per BM"]])}`);
+      ${legend(x, [u && ["usual", "Within your usual forms"], (anyOut || firmer || looser) && ["shift", "Outside your usual forms, firmer or looser"], (anyEither || either) && ["either", "Could be either"], tf.length > 0 && [anyOut && !sides.includes("in") && !anyEither ? "now-shift" : "now", "Today, one marker per BM"]])}`);
   }
 
   /* ---------- symptoms: which came up, as Contributors rows split by strength ---------- */

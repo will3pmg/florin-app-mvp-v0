@@ -18,7 +18,6 @@
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
   const andList = (a, last = "and") => (a.length < 2 ? a[0] || "" : `${a.slice(0, -1).join(", ")} ${last} ${a[a.length - 1]}`);
   const uniq = (a) => a.filter((x, i) => a.indexOf(x) === i);
-  const signed = (v) => (v > 0 ? `+${v.toFixed(1)}` : v < 0 ? `−${Math.abs(v).toFixed(1)}` : "0.0");
   const ptsWord = (v) => { const a = Math.abs(v), s = Number.isInteger(a) ? String(a) : a.toFixed(1); return `${s} ${a === 1 ? "point" : "points"}`; };
   const shortWeek = (s) => String(s).replace(/^Week of /, "");
   /* "k of n", or "all n" when every one counts */
@@ -159,12 +158,19 @@
     if (D.learning) return shell("parts", { kicker: "What makes up the score", meta: `Day ${D.learning.day} of ${D.learning.of}`, lede: `The parts of your FloraScore appear on day ${D.learning.of}, once Florin knows your usual.`, fig: learnFig(D, ctx), cap: learnCap(D) });
     const P = S.parts || [];
     if (!P.length) return shell("parts", { kicker: "What makes up the score", meta: "This week", lede: "There aren't enough logs across the last two weeks to compare the parts." });
-    const top = P.slice().sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
-    const moved = (p) => Math.abs(p.delta) >= 0.5;
+    /* what each part did to FloraScore, in whole points that add up to the change shown (pts, from L.scoreMoved): never
+       a decimal of a point. A tie names every part that moved most */
+    const pt = (p) => (p.pts != null ? p.pts : Math.round(p.delta));
+    const most = Math.max(...P.map((p) => Math.abs(pt(p))));
+    const tops = P.filter((p) => most && Math.abs(pt(p)) === most), top = tops[0] || P[0];
+    const moved = (p) => !!pt(p);
+    const whole = (v) => (v > 0 ? `+${v}` : v < 0 ? `−${Math.abs(v)}` : "0");
     /* this card compares two weeks, not your usual, so it carries no usual and no shift colour */
-    const lede = !moved(top)
-      ? `All ${P.length} parts of your FloraScore were about the same as last week.`
-      : `${e(top.label)} moved your FloraScore most this week, ${top.delta > 0 ? "adding" : "taking off"} ${ptsWord(top.delta)}.`;
+    const lede = !most
+      ? `No part moved your FloraScore since last week.`
+      : tops.length > 1 && tops.every((p) => Math.sign(pt(p)) === Math.sign(pt(top)))
+        ? `${e(andList(tops.map((p) => p.label)))} moved your FloraScore most this week, ${pt(top) > 0 ? "adding" : "taking off"} ${ptsWord(most)} each.`
+        : `${e(top.label)} moved your FloraScore most this week, ${pt(top) > 0 ? "adding" : "taking off"} ${ptsWord(most)}.`;
     const vals = P.flatMap((p) => [p.now, p.before]);
     const lo = Math.max(0, Math.floor((Math.min(...vals) - 4) / 10) * 10), hi = 100;
     const x0 = 128, x1 = 266, X = lin(lo, hi, x0, x1), top0 = 26, rowH = 50;
@@ -175,12 +181,12 @@
     /* direct labels on the row whose two weeks sit furthest apart */
     const wide = P.reduce((m, p, i) => (Math.abs(p.now - p.before) > Math.abs(P[m].now - P[m].before) ? i : m), 0);
     P.forEach((p, i) => {
-      const y = yc(i), xb = X(p.before), xn = X(p.now), isTop = p === top && moved(p);
+      const y = yc(i), xb = X(p.before), xn = X(p.now), isTop = tops.includes(p) && moved(p);
       b += `<text class="tl${isTop ? " tl--b" : ""}" x="0" y="${y + 1}">${e(p.label)}</text>` + tx(0, y + 17, `${Math.round(p.weight * 100)}% OF SCORE`);
       b += ln(x0, y, x1, y, "jr-grid");
       if (Math.abs(xn - xb) > 1) b += `<path class="jr-db jr-draw" pathLength="1" d="M${f1(xb)},${y}L${f1(xn)},${y}" style="--d:${200 + i * 90}ms;--dur:700ms"/>`;
       b += dot(xb, y, 4.5, "jr-open-ink") + dot(xn, y, 5.5, "jr-read jr-pop", i, "90ms", "--d0:550ms");
-      b += `<text class="tm${isTop ? " tb" : ""}" x="${W}" y="${y + 4}" text-anchor="end">${signed(p.delta)}</text>`;
+      b += `<text class="tm${isTop ? " tb" : ""}" x="${W}" y="${y + 4}" text-anchor="end">${whole(pt(p))}</text>`;
       if (i === wide) {
         const gap = Math.abs(xn - xb), dir = p.now >= p.before;
         if (gap >= 6) {
@@ -191,7 +197,7 @@
         } else b += tx(xn, y - 12, "BOTH WEEKS", "jr-halo", "middle");
       }
     });
-    const aria = `${P.map((p) => `${p.label} ${p.before} last week, ${p.now} this week, ${signed(p.delta).replace("−", "minus ")} points`).join("; ")}.`;
+    const aria = `${P.map((p) => `${p.label} ${p.before} last week, ${p.now} this week, ${pt(p) ? `${pt(p) > 0 ? "added" : "took"} ${ptsWord(Math.abs(pt(p)))}` : "didn't move the score"}`).join("; ")}.`;
     return shell("parts", {
       kicker: "What makes up the score", meta: "This week vs last", lede,
       fig: svg(ctx, axisY + 12, aria, b),
@@ -211,7 +217,7 @@
     const lede = `Your FloraScore sat ${mk("within your usual range", "usual")} on ${inN === rv.length ? `all ${rv.length} days` : `${inN} of ${rv.length} days`}.${fl && D.flagLine ? ` ${ctx.esc(D.flagLine)}` : ""}`;
     const dmin = Math.floor((Math.min(...vs, u[0]) - 3) / 5) * 5, dmax = Math.ceil((Math.max(...vs, u[1]) + 3) / 5) * 5;
     const left = 26;
-    /* the days above and below the band are counted at its right end, in Gold, so the colour has its word */
+    /* the days above and below the band are counted at its right end, in words: FloraScore is a reading, never Gold */
     const lA = ab ? `ABOVE, ${ab}` : null, lB = be ? `BELOW, ${be}` : null, gut = endLabels([lA, lB]);
     const pr = W - (gut || 8);
     const X = lin(0, n - 1, left + 6, pr - (gut ? 8 : 4));
@@ -227,8 +233,8 @@
     b += ln(left, Y(u[1]), pr, Y(u[1]), "jr-bandedge") + ln(left, Y(u[0]), pr, Y(u[0]), "jr-bandedge");
     b += tx(left, 10, lbl, "tu") + leader(left, 14, Y(u[1]), "tu-s");
     if (gut) b += ln(pr + 6, Y(u[1]), W, Y(u[1]), "jr-bandedge") + ln(pr + 6, Y(u[0]), W, Y(u[0]), "jr-bandedge");
-    if (lA) b += tx(W, Y(u[1]) - 5, lA, "ts", "end");
-    if (lB) b += tx(W, Y(u[0]) + 13, lB, "ts", "end");
+    if (lA) b += tx(W, Y(u[1]) - 5, lA, "", "end");
+    if (lB) b += tx(W, Y(u[0]) + 13, lB, "", "end");
     /* day ticks along the base, longer on Mondays */
     ser.forEach((s, i) => { b += ln(X(i), bot + 3, X(i), bot + (s.dow === "Mon" ? 9 : 6), "jr-tick"); });
     const mid = Math.floor((n - 1) / 2);
@@ -239,7 +245,8 @@
     ser.forEach((s, i) => { if (s.value == null) { if (cur.length) runs.push(cur); cur = []; } else cur.push([X(i), Y(s.value)]); });
     if (cur.length) runs.push(cur);
     runs.forEach((r) => { if (r.length > 1) b += `<path class="jr-trace jr-draw" pathLength="1" d="${path(r)}" style="--d:200ms"/>`; });
-    ser.forEach((s, i) => { if (s.value != null) b += dot(X(i), Y(s.value), 3.2, `${!s.flag && (s.value < u[0] || s.value > u[1]) ? "jr-shift" : "jr-read"} jr-pop`, i); });
+    /* FloraScore is a reading, never a day's state: every point in the reading colour, inside the band or not */
+    ser.forEach((s, i) => { if (s.value != null) b += dot(X(i), Y(s.value), 3.2, "jr-read jr-pop", i); });
     /* the lowest point and the newest, labelled directly */
     const minV = Math.min(...vs), mi = ser.findIndex((s) => s.value === minV);
     if (minV < u[0]) {
@@ -268,7 +275,8 @@
   const stateRole = (s) => ({ usual: "usual", shifted: "shift", unsure: "either", flag: "flag", nocount: "nocount", logged: "read", none: "open" }[s] || "open");
   const ROLE_ORDER = ["usual", "shift", "either", "flag", "nocount", "read", "open"];
   const rolesIn = (days) => ROLE_ORDER.filter((r) => days.some((f) => stateRole(f.state) === r));
-  const STATE_WORD = { usual: "within your usual", shift: "shifted", either: "could be either", flag: "noted for a clinician", nocount: "logged without a BM count", read: "logged", open: "not logged" };
+  /* the app's shared words for a day (claude/Florin data viz.md, section 1): never "shifted" or "not logged" */
+  const STATE_WORD = { usual: "within your usual", shift: "outside your usual", either: "could be either", flag: "noted for a clinician", nocount: "logged without a BM count", read: "logged", open: "nothing logged" };
   function why(D, f) {
     const r = [], tu = D.timing.usual, ou = D.often.usual;
     if (f.inWin === false && tu) r.push(`First BM at ${f.firstText}, ${f.first > tu[1] ? "later" : "earlier"} than your usual window`);
@@ -302,9 +310,11 @@
     else if (!lg.length) lede = "Nothing is logged this week yet.";
     else {
       const sh = by("shifted").map(nm), un = by("unsure").map(nm), nc = by("nocount").map(nm);
-      /* a flagged today is left out of the days read, and said once after */
-      lede = `This week, ${ofAll(by("usual").length, lg.length - by("flag").length, "days you logged")} sat ${mk("within your usual", "usual")}`;
-      if (sh.length) lede += `, and ${andList(sh)} ${mk("shifted", "shift")}`;
+      /* counted over the days read, within or outside your usual, as Today's card and Insights count them (D.tally): a
+         day that could be either, one with nothing about BMs and a flagged today are named, never counted */
+      const T7 = D.tally[7];
+      lede = !T7.known ? "This week, no day you logged can be read against your usual yet" : `This week, ${ofAll(T7.within, T7.known, T7.known === 1 ? "day counted" : "days counted")} sat ${mk("within your usual", "usual")}`;
+      if (sh.length) lede += `, and ${andList(sh)} ${sh.length === 1 ? "was" : "were"} ${mk("outside it", "shift")}`;
       if (un.length) lede += `; ${andList(un)} could be either`;
       if (nc.length) lede += `; ${andList(nc)} ${nc.length === 1 ? "was" : "were"} logged without a BM count`;
       lede += ".";
@@ -319,7 +329,7 @@
     b += ln(0, 78, W, 78, "jr-grid") + (hasScore ? ln(0, 168, W, 168, "jr-grid") + tx(0, yScore, "SCORE", "") : "");
     b += tx(0, yDisc + 3.5, "THE DAY", "") + rows.map(([l, y]) => tx(0, y + 3.5, up(l), "")).join("");
     const role3 = (ok) => (ok === true ? "usual" : ok === false ? "shift" : "open");
-    let nil = false;
+    let nil = false, flagRows = false;
     const dash = (x, y) => { nil = true; return ln(x - 3, y, x + 3, y, "jr-nil"); };
     days.forEach((f, i) => {
       const x = cx(i), st = "50ms";
@@ -330,6 +340,7 @@
       if (!f.logged) return;
       /* a flagged today reads nothing: its timing, count and forms drawn as logged, never within or shifted */
       const read = learning || role === "flag";
+      if (role === "flag" && (f.first != null || f.count != null || f.forms.length)) flagRows = true;
       const tRole = read ? (f.first != null ? "read" : "open") : f.first == null ? "open" : role3(f.inWin);
       const cRole = read ? (f.count != null ? "read" : "open") : f.count == null ? "open" : role3(f.inCount);
       const fw = f.forms.map((x) => x.within);
@@ -340,13 +351,14 @@
       if (f.score != null) b += tx(x, yScore, f.score, f.today ? "tk" : "", "middle");
     });
     const notes = learning ? [] : days.filter((f) => f.state === "shifted").map((f) => [f.today ? "Today" : f.dow, why(D, f)]).filter((x) => x[1].length);
-    const foot = notes.length ? `<ul class="jr-notes" aria-label="Why a day shifted">${notes.slice(0, 3).map(([d, r]) => `<li><b>${e(d)}</b><span>${e(r.join(". "))}.</span></li>`).join("")}${notes.length > 3 ? `<li><b></b><span>${plural(notes.length - 3, "more shifted day")}.</span></li>` : ""}</ul>` : "";
+    const foot = notes.length ? `<ul class="jr-notes" aria-label="Why a day was outside your usual">${notes.slice(0, 3).map(([d, r]) => `<li><b>${e(d)}</b><span>${e(r.join(". "))}.</span></li>`).join("")}${notes.length > 3 ? `<li><b></b><span>${plural(notes.length - 3, "more day")} outside your usual.</span></li>` : ""}</ul>` : "";
     const roles = rolesIn(days);
     const aria = days.map((f) => `${f.today ? "Today" : DOWL[f.dow]}: ${STATE_WORD[stateRole(f.state)]}${f.score != null ? `, FloraScore ${f.score}` : ""}`).join(". ") + ".";
     return shell("week", {
       kicker: "This week", meta: e(span(days)), lede,
       fig: svg(ctx, yScore + 10, aria, b),
-      cap: roles.map((r) => key(r, STATE_WORD[r])).join("") + (nil ? key("nil", "nothing to read") : ""),
+      /* a flagged today's timing, count and form are drawn but never read, and the key says so */
+      cap: roles.map((r) => key(r, STATE_WORD[r])).join("") + (flagRows && !roles.includes("read") ? key("read", "today's logs, not read against your usual") : "") + (nil ? key("nil", "nothing to read") : ""),
       foot
     });
   }
@@ -360,9 +372,12 @@
     if (learning) lede = `${!lg.length ? "Nothing is logged yet" : n === 1 ? "You logged your first day" : `You logged ${lg.length} of your first ${n} days`}; Florin learns your usual over your first ${D.learning.of} days.`;
     else if (!lg.length) lede = "Nothing is logged this month yet.";
     else if (nu === lg.length) lede = `All ${lg.length} days you logged sat ${mk("within your usual", "usual")}.`;
+    else if (!nu && !ns) lede = "No day you logged this month can be read against your usual yet.";
     else {
-      const bits = [`${nu} sat ${mk("within your usual", "usual")}`, ns ? mk(`${ns} shifted`, "shift") : "", nE ? `${nE} could be either` : "", nN ? `${nN} ${nN === 1 ? "was" : "were"} logged without a BM count` : "", nF ? "today is noted for a clinician, so it isn't read" : ""].filter(Boolean);
-      lede = `Of the ${lg.length} days you logged, ${andList(bits)}.`;
+      /* counted over the days read, within or outside your usual (D.tally); the rest are named after */
+      const read = [`${nu} sat ${mk("within your usual", "usual")}`, ns ? mk(`${ns} sat outside it`, "shift") : ""].filter(Boolean);
+      const rest = [nE ? `${nE} could be either` : "", nN ? `${nN} ${nN === 1 ? "was" : "were"} logged without a BM count` : "", nF ? "today, noted for a clinician" : ""].filter(Boolean);
+      lede = `Of the ${plural(nu + ns, "day")} counted, ${andList(read)}.${rest.length ? ` Not counted: ${andList(rest)}.` : ""}`;
     }
     const cw = 37, r = 14, top = 28, rh = 38;
     /* weeks run Monday to Sunday, one row each */
@@ -378,7 +393,7 @@
     for (let rw = 0; rw < nRows; rw++) {
       if (rw) b += ln(0, cy(rw) - rh / 2, W, cy(rw) - rh / 2, "jr-grid");
       const rc = cells.filter((c) => c.row === rw), rl = rc.filter((c) => c.f.logged);
-      const t = learning ? `${rl.length} of ${rc.length}` : `${rc.filter((c) => c.f.state === "usual").length} of ${rl.length}`;
+      const t = learning ? `${rl.length} of ${rc.length}` : `${rc.filter((c) => c.f.state === "usual").length} of ${rc.filter((c) => c.f.state === "usual" || c.f.state === "shifted").length}`;
       perWeek.push(t);
       if (counts) b += `<text class="tm" x="${W}" y="${f1(cy(rw) + 4)}" text-anchor="end">${t}</text>`;
     }
@@ -391,7 +406,7 @@
     });
     const roles = rolesIn(days);
     const byWeek = counts && perWeek.length > 1 ? ` ${learning ? "Logged" : "Within your usual"} by week, Monday to Sunday: ${perWeek.join(", ")}.` : "";
-    const aria = (learning ? (lg.length ? `${lg.length} of ${plural(n, "day")} logged.` : "Nothing logged yet.") : `${nu} of ${lg.length} logged days within your usual, ${ns} shifted${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} not logged.`) + byWeek;
+    const aria = (learning ? (lg.length ? `${lg.length} of ${plural(n, "day")} logged.` : "Nothing logged yet.") : `${nu} of ${plural(nu + ns, "day")} counted within your usual, ${ns} outside it${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} with nothing logged.`) + byWeek;
     return shell("month", {
       kicker: learning ? "Your first days" : "The last month", meta: span(days), lede,
       fig: svg(ctx, H, aria, b),
@@ -725,7 +740,7 @@
     b += tx(left, yA, up(days[0].label), "t3") + tx(W - right + 2, yA, "TODAY", "tk", "end");
     return svg(ctx, yA + 4, R.map(([l, on]) => `${l} on ${days.filter(on).length} of ${n} days`).join("; ") + ".", b);
   }
-  const MEALS = ["Meals logged", (f) => f.meals > 0, "jr-ctx"], SHIFTED = ["Shifted days", (f) => f.state === "shifted", "jr-shift"];
+  const MEALS = ["Meals logged", (f) => f.meals > 0, "jr-ctx"], SHIFTED = ["Days outside your usual", (f) => f.state === "shifted", "jr-shift"];
   const SYMPTOM = ["With a symptom", (f) => f.logged && f.sym.length > 0, "jr-symbar"];
   const mic = `<svg class="jr-mic" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg>`;
   function pattern(D, ctx) {
@@ -742,7 +757,7 @@
           /* ordinary days too: meals logged only on rough days pick out ordinary foods by selection, so the model holds
              every meal pattern back until meals cover most days you log */
           deck: "Meals are optional. Say what you ate on ordinary days as well as rough ones, and Florin can start to look.",
-          fig: rug(D, ctx, [SHIFTED]), cap: capT(`Shifted days, last ${n} days`),
+          fig: rug(D, ctx, [SHIFTED]), cap: capT(`Days outside your usual, last ${n} days`),
           foot: foot(`<button type="button" class="jr-btn">${mic}Log a meal by voice</button>`)
         });
       }

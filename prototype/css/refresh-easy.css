@@ -228,7 +228,19 @@
 .ap.ap--easy :is(.pf-pts b, .rlk-day-h b) { font-size: 18px; }
 .ap.ap--easy .vr-cal-nav { width: 56px; height: 56px; }
 .ap.ap--easy .vr-cal-nav .ic { width: 24px; height: 24px; }
-.ap.ap--easy :is(.pf-pts em, .pf-us .ap-ea-m em, .pf-words li, .vr-sc-w, .vr-cal-sum, .vr-cal-n, .rlk-lock-p, .rlk-day p, .rlk-days-rest) { font-size: 16px; line-height: 1.45; color: var(--ap-ink); }
+.ap.ap--easy :is(.pf-pts em, .pf-us .ap-ea-m em, .pf-words li, .vr-sc-w, .vr-cal-sum, .rlk-lock-p, .rlk-day p, .rlk-day-w, .rlk-days-rest) { font-size: 16px; line-height: 1.45; color: var(--ap-ink); }
+/* a day, wherever it's drawn (RU.dayMark: History's day headers, the calendar, Your days): 32px, as Easy's week draws
+   it, every word on it 16px or more, and the small mark a line starts with at 16px. Easy reads Ink 3 as Ink 2 */
+.ap.ap--easy .ap-day { --ap-day-d: 32px; }
+.ap.ap--easy .ap-day-c { font-size: 16px; }
+.ap.ap--easy .ap-day-w { font-family: var(--sans); font-size: 16px; line-height: 1.2; font-weight: 500; letter-spacing: 0; color: var(--ap-ink); }
+.ap.ap--easy .ap-day-t { font-size: 16px; white-space: nowrap; }
+.ap.ap--easy .ap-day-s { width: 12px; height: 12px; }
+.ap.ap--easy .ap-day-k { width: 16px; height: 16px; }
+.ap.ap--easy .ap-day-k--sym::before { width: 12px; height: 12px; }
+.ap.ap--easy .rlk-day { grid-template-columns: 40px minmax(0, 1fr); }
+/* History's day headers say how each day sat, in a line under the day's name */
+.ap.ap--easy .ap-hd-why { font-size: 16px; line-height: 1.45; color: var(--ap-ink); }
 
 /* ====================================================================== */
 /* EASY'S OWN SCREENS                                                      */

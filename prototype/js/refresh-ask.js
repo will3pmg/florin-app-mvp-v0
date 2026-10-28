@@ -1162,45 +1162,25 @@
     } catch (e) { warn("following a change to the phone", e); }
   });
 
-  /* ---------- notes for Will ---------- */
-  const engineNow = () => (ASK.off ? "In this view Claude was turned down or isn't on the account, so every answer is computed from the logs." : ASK.state === "ready" ? "In this view Claude is available, so answers come from Claude on the viewer's own Claude account, checked on the phone, with the computed answer as the fallback." : "In this view there's no Claude (a local file, a test page, or a host that doesn't offer it), so every answer is computed from the logs.");
-  const GUARD = "Four steps, in order: alarm words get the clinician answer and are never sent, and so does mucus, led by the flag note's own line; a request to diagnose, name a condition, prescribe, dose, predict, or say what to cut out or still eat gets a fixed redirect; then Claude, given a rules turn and a facts packet from the model; then a check on the answer: the 22 claims rules, Ask's own (no forecast, trigger or food behind a change, condition, medicine, food to skip, reassurance, judgement of the gut or score, comparison with other people or humour, none of normal, good, bad, regular or resolved, no emoji or list, 2 to 4 sentences) and a numbers check (every number, and every \"5 of 6\", has to be one the facts state). A failed check swaps in the computed answer, marked Checked against Florin's rules, or the clinician answer when Claude had pointed to primary care.";
-  const RES = ["Oura Advisor: answers from the person's own data, small charts in answers, memories the person can see and delete.", "Oura admits Advisor's numbers may not always match the app. Here every number in an answer is checked against the model the screens draw from."];
-  const OPEN = [
-    "One free question a week on the Free plan, so people see an answer from their own numbers before paying? Still your call; Free keeps the lock for now.",
-    "In this prototype Claude runs on the viewer's own Claude usage, and the first question in a view asks the viewer to allow it. The shipping app needs its own model account, and a privacy review before any log leaves the phone.",
-    "An answer from Claude streams in before it's checked, and is swapped out if it fails. Show it only once checked, at the cost of a pause?",
-    "Thumbs up and down under each answer, and memories the person can see and delete, as the brief asks?"
-  ];
+  /* ---------- notes for Will. Oct 28: plain, about 80 words at most, with at most one open question ---------- */
+  const engineNow = () => (ASK.state === "ready" && !ASK.off ? "In this view, answers come from Claude on your own account, checked before they show." : "In this view, every answer is worked out from the logs.");
+  const ASK_WAYS = "A warning sign gets the see-a-clinician answer, a request to diagnose, dose or predict gets a fixed reply, and every other answer is checked against Florin's rules and the numbers before it shows.";
   EXT.notes["ask-chat"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, a conversation",
-    lede: `A working chat on the person's own logs, seeded here with one computed exchange. The chips come from the logs: why FloraScore moved, what tends to come before rougher days, this week's timing, how to bring the logs to a clinician. Each answer lists the numbers it used under From your logs. ${GUARD} ${engineNow()}`,
-    ba: [["Three starting questions, each a toast saying answers come later", "A text box, Send, Stop while an answer streams, and chips worked out from the logs"], ["A coach that could say any number", "Every number in an answer checked against the facts the screens draw from"]],
-    rec: "Keep both paths: Claude where the viewer has it, the computed answers everywhere else, with the same claims and numbers check on both, so chat can't drift from the screens.",
-    open: OPEN, res: RES
+    lede: `A chat on the person's own logs. Questions to start come from the logs, and each answer lists the numbers it used. ${ASK_WAYS} ${engineNow()}`
   });
   EXT.notes["ask-alarm"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, a sign that needs a clinician",
-    lede: "A question that names an alarm feature (blood, a black or tar-like stool, a fever, vomiting, weight loss, waking at night to go) gets the When to see a clinician answer: the Teal banner with the sign in bold and one line, then primary care first, the urgent-care line and a report to bring. Florin names the sign and never reads past it, and the question never goes to Claude. It runs the same check a log's note uses (L.alarmsIn), which hears how people write a sign as well as the words: my stool was black, I have a temperature, I lost 5 kg, up most nights to go, being sick. A hedge (\"not sure if that was blood\") still counts; \"no blood\" and blood pressure don't.",
-    ba: [["Left to the coach to notice", "Caught on the phone, before anything is sent"], ["A red warning", "Teal, never red: no sources and no options, as DESIGN.md has it. The one question offered after it is how to bring the logs to a clinician"]],
-    rec: "Keep it on the phone and first in line, for answers from Claude and computed ones alike.",
-    open: ["Once the clinician report is built, should this answer offer it right there?", "An urgent-care number for the person's country, from Profile?"],
-    res: ["DESIGN.md, Alarm banner: the turn opens with the banner, sends the person to primary care first, with a report to bring."]
+    lede: "A question that names a warning sign, such as blood, a black stool, a fever or waking at night to go, gets the see-a-clinician answer: the sign named, primary care first, and a report to bring. Florin never reads anything into the sign, and the question is never sent to Claude."
   });
   EXT.notes.ask = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin",
-    lede: `Its own tab, now a working chat. Questions to start come from the person's logs, the box takes anything, and Ask about this on any Insights card brings that card's numbers in. ${GUARD} ${engineNow()}`,
-    ba: [["Starting questions and a composer that toasted", "A chat that answers from the logs, with Stop while Claude writes"], ["A coach with a doctor's title", "Ask Florin, never a doctor's title"]],
-    rec: "Ship the computed answers as the floor, and Claude on top where the account allows it.",
-    open: OPEN, res: RES
+    lede: `A chat on the person's own logs. Questions to start come from the logs, and Ask about this on any Insights card brings that card's numbers in. ${ASK_WAYS} ${engineNow()}`,
+    open: ["Give Free one answer a week, with questions about seeing a doctor always answered?"]
   });
   EXT.notes["ask-about"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask about this",
-    lede: "Every Insights card and detail has Ask about this. It opens Ask with the card as a chip over the box and the card's first question in the box, so one tap on Send asks it. The card's numbers join the facts packet, so the answer starts from the same figures as the chart, and its other questions wait as chips.",
-    ba: [["Chat that may not match the screen", "The card's numbers loaded with the question, and every number in the answer checked"]],
-    rec: "Keep the question in the box: it says what will be asked, and the person can change it before Send.",
-    open: ["Should the card's question go in the box, or wait as a chip until tapped?"],
-    res: ["Oura admits Advisor's data may not always match the app. Loading the card's numbers avoids that."]
+    lede: "Every Insights card and detail has Ask about this. It opens Ask Florin with the card's question in the box and its numbers loaded, so the answer starts from the same figures as the chart."
   });
 
   /* the engine, for work/behave.js and the notes: pure functions of the model, no DOM */

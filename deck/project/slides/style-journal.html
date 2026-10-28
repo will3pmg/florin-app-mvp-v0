@@ -1,9 +1,9 @@
-<section id="style-journal" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:32px;">
-  <div style="display:flex; flex-direction:column; gap:12px;">
-    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Data styles · 3 of 6</p>
-    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Data style: Field journal</h2>
+<section id="style-journal" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:16px;">
+  <div style="display:flex; flex-direction:column; gap:6px; padding:0 0 4px;">
+    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Decision 7 of 9 · Data style</p>
+    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Field journal</h2>
   </div>
-  <x-embed style="position:absolute; left:128px; top:280px; width:536px; height:640px;"><!doctype html>
+  <x-embed style="position:absolute; left:128px; top:256px; width:536px; height:640px;"><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore</title>
 <style>
 *{box-sizing:border-box}
@@ -70,7 +70,7 @@ function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classL
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
-  <x-embed style="position:absolute; left:696px; top:280px; width:536px; height:640px;"><!doctype html>
+  <x-embed style="position:absolute; left:696px; top:256px; width:536px; height:640px;"><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore over time</title>
 <style>
 *{box-sizing:border-box}
@@ -99,7 +99,7 @@ svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#3E5A52}
   <div class="top"><b>FloraScore over time</b><span>30 days</span></div>
   <h1>Your FloraScore sat <span class="ul">within your usual range</span> on <span data-n="15">15</span> of 29 days.</h1>
   <svg id="ch" viewBox="0 0 472 340" width="100%" height="340" style="flex:none" aria-hidden="true"></svg>
-  <div class="fig"><b>Fig. 3</b>&nbsp; FloraScore, last 30 days</div>
+  <div class="fig"><b>Fig. 2</b>&nbsp; FloraScore, last 30 days</div>
 </div>
 <script>
 /* Sarah, Sep 12 to Oct 11 (L.scoreSeries, C). null is Oct 8, no logs: a gap, never a zero. Usual range 74 to 82 */
@@ -129,31 +129,23 @@ function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classL
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
-  <div style="position:absolute; left:1296px; top:280px; width:496px; height:640px; display:flex; flex-direction:column; gap:28px;">
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">THE IDEA</p>
-      <p style="font-size:28px; line-height:1.4;">A science notebook: straight axes, numbered figures, and a sentence that states the finding first.</p>
+  <div style="position:absolute; left:1264px; top:256px; width:528px; height:640px; display:flex; flex-direction:column; gap:16px;">
+    <div style="background:#EFECE4; border:3px solid #4F2641; border-radius:28px; padding:21px; display:flex; flex-direction:column; gap:20px; flex:1;">
+      <div style="background:#4F2641; border-radius:20px; padding:2px 12px; align-self:flex-start;"><p style="font-size:24px; color:#F9F7F2; white-space:nowrap;">We recommend</p></div>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> The numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> It’s the most exact, so it suits detail pages and a clinician report.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> It’s the most reading, and its small captions are hard for older eyes.</p>
     </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">STRENGTH</p>
-      <p style="font-size:28px; line-height:1.4;">Exact reading: values, ranges and counts can be checked against the axis, the way Alex reads.</p>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">COST</p>
-      <p style="font-size:28px; line-height:1.4;">Quiet and dense on a phone, with less of the glance and motion that Today needs.</p>
+    <div style="background:#4F2641; border-radius:20px; padding:12px 28px;">
+      <p style="font-size:28px; line-height:1.25; color:#F9F7F2;"><b>We recommend Field journal on detail pages.</b></p>
     </div>
   </div>
   <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
-    <p style="font-size:24px; color:#3E5A52;">Florin app refresh · Decisions · Oct 27</p>
-    <p style="font-size:24px; color:#3E5A52;">16</p>
+    <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Decisions › Data style › Field journal</p>
+    <p style="font-size:24px; color:#3E5A52;">13</p>
   </div>
-  <aside>Field journal reads like a science notebook: a sentence that states the finding, a number with its unit, straight axes, numbered and captioned figures, and the usual drawn as a band.
-
-The FloraScore card: “Today sits a little above your usual range of 74 to 82.” The big 83 out of 100, a dial with ticks and the usual range marked, then this week’s average, 83, up 3 on last week’s 80. In the app the dial draws, the highlight sweeps in under the phrase that matters, and the numbers count up.
-
-The chart: FloraScore over the last 30 days on a straight axis, with her usual range as the band. Her score sat within the usual range on 15 of 29 days with a score, above it on 11 and below it on 3; the lowest was 70, on Sep 22. Oct 8 had no logs, so the line breaks there: a gap, never a zero. Today, 83, is ringed. In the app the line draws left to right and each day’s point lands as it passes.
-
-Strength: exact reading. Values, ranges and counts can be checked against the axis, which is how Alex reads (he rated the detail pages and the FloraScore detail 5 in the review). Cost, our read: quiet and dense on a phone, with less of the glance and motion that Today needs. That is why our pick uses it for detail pages, not for Today.
-
-Sources: the model at commit 475f259 (Sarah, C, L.scoreSeries over 30 days; counts against her usual range of 74 to 82) and look-journal.js in the data looks library.</aside>
+  <aside>Field journal. What it is: the numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption. Why do it: it’s the most exact, so it suits detail pages and a clinician report. Why not: it’s the most reading, and its small captions are hard for older eyes.
+We recommend Field journal on detail pages, next to the Oura style on Today and the FloraScore page.
+The two cards here are its FloraScore card and FloraScore over the last 30 days, drawn from the same logs as every other style.
+Try it: Decisions, Data style, Field journal, then the Today and Insights tabs. The demo shows one style at a time, and detail pages don’t change. To see every style on every card, open the style gallery: https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
 </section>

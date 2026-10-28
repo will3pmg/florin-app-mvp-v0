@@ -36,8 +36,14 @@
     return out;
   };
 
-  /* ---------- Ring ---------- */
+  /* ---------- Ring ----------
+     o.glyph: the FloraScore glyph, a plain circle that names FloraScore and holds no value: no arc, no band, nothing
+     filling toward 100 (Oct 28, the refresh: a ring filling toward 100 reads as a grade). For the studio to take back */
   C.ring = (o) => {
+    if (o.glyph) {
+      const z = o.size || 16, w = o.stroke || 1.6, rr = n1(z / 2 - w / 2);
+      return `<svg class="c-ring c-ring--glyph ${o.cls || ""}" viewBox="0 0 ${z} ${z}" width="${z}" height="${z}" aria-hidden="true"><circle class="c-ring-glyph" cx="${z / 2}" cy="${z / 2}" r="${rr}" stroke-width="${w}"/></svg>`;
+    }
     const size = o.size || 132, sw = o.stroke || 11, r = (size - sw) / 2 - (o.band ? 8 : 1), c = size / 2;
     return `<svg class="c-ring ${o.cls || ""}" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="${esc(o.aria || `Score ${o.value} out of 100`)}">
       <circle class="c-ring-trk" cx="${c}" cy="${c}" r="${r}" stroke-width="${sw}"/>
@@ -64,12 +70,13 @@
     </svg>`;
   };
 
-  /* ---------- Range bar (HTML): where a value sits against a usual range ---------- */
+  /* ---------- Range bar (HTML): where a value sits against a usual range ----------
+     A null value draws the band with no dot (no score today, or a flagged today read against nothing) */
   C.range = (o) => {
     const p = (v) => Math.max(0, Math.min(100, ((v - o.min) / (o.max - o.min)) * 100));
-    const lo = p(o.lo), hi = p(o.hi), v = p(o.value);
+    const lo = p(o.lo), hi = p(o.hi), has = o.value != null, v = has ? p(o.value) : 0;
     return `<div class="c-range ${o.state ? "is-" + o.state : ""}" role="img" aria-label="${esc(o.aria || "")}">
-      <div class="c-range-trk"><i class="c-range-band" style="left:${n1(lo)}%;width:${n1(hi - lo)}%"></i><i class="c-range-dot" style="left:${n1(v)}%"></i></div>
+      <div class="c-range-trk"><i class="c-range-band" style="left:${n1(lo)}%;width:${n1(hi - lo)}%"></i>${has ? `<i class="c-range-dot" style="left:${n1(v)}%"></i>` : ""}</div>
       ${o.ticks === false ? "" : `<div class="c-range-lbl"><span class="c-range-mid" style="left:${n1(Math.max(28, Math.min(72, (lo + hi) / 2)))}%">${esc(o.fmt ? o.fmt(o.lo) : o.lo)} to ${esc(o.fmt ? o.fmt(o.hi) : o.hi)}${o.unit ? " " + esc(o.unit) : ""}</span></div>`}
     </div>`;
   };
@@ -261,10 +268,11 @@
     return `<svg class="c-chart c-waterfall ${o.cls || ""}" viewBox="0 0 ${w} ${H}" role="img" aria-label="${esc(o.aria || "")}">${conn}${bars}<line class="c-base" x1="${left}" x2="${w - right}" y1="${top + plotH}" y2="${top + plotH}"/></svg>`;
   };
 
-  /* ---------- Segmented bar (HTML) ---------- */
+  /* ---------- Segmented bar (HTML) ----------
+     The tooltip gives the count a person logged, never a percent of it (the refresh, Oct 28) */
   C.seg = (parts, o = {}) => {
     const total = parts.reduce((s, p) => s + p.v, 0) || 1;
-    return `<div class="c-seg ${o.cls || ""}" role="img" aria-label="${esc(parts.map((p) => `${p.label} ${p.v}`).join(", "))}">${parts.map((p, i) => (p.v ? `<i class="c-seg-part ${p.cls || ""}" style="--w:${n1((p.v / total) * 100)}%;--i:${i}" data-tip="${esc(`${p.label}: ${p.v} (${Math.round((p.v / total) * 100)}%)`)}"></i>` : "")).join("")}</div>`;
+    return `<div class="c-seg ${o.cls || ""}" role="img" aria-label="${esc(o.aria || parts.map((p) => `${p.label} ${p.v}`).join(", "))}">${parts.map((p, i) => (p.v ? `<i class="c-seg-part ${p.cls || ""}" style="--w:${n1((p.v / total) * 100)}%;--i:${i}" data-tip="${esc(`${p.label}: ${p.v}`)}" title="${esc(`${p.label}: ${p.v}`)}"></i>` : "")).join("")}</div>`;
   };
 
   /* ---------- Strength meter (HTML) ---------- */

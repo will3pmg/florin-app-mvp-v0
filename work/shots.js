@@ -113,6 +113,7 @@ const pick = (page, k, v) => page.evaluate(([k, v]) => { const b = document.quer
   fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify({ errors, report }, null, 2));
   console.log(`${report.length} shots, ${errors.length} console errors`);
   errors.forEach((e) => console.log("ERR", e));
-  report.filter((r) => !/passes all/.test(r.lint)).forEach((r) => console.log("LINT", r.state, r.screen, r.lint));
+  /* the notes' claims line shows only when a screen fails a rule: no line is a pass */
+  report.filter((r) => r.lint).forEach((r) => console.log("LINT", r.state, r.screen, r.lint));
   await browser.close();
 })();

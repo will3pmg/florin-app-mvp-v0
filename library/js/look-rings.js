@@ -83,15 +83,15 @@
   /* the state of one day, in words and as a class */
   const STATE = {
     usual: ["is-usual", "Within your usual"],
-    shifted: ["is-shift", "Shifted"],
+    shifted: ["is-shift", "Outside your usual"],
     unsure: ["is-unsure", "Could be either"],
     logged: ["is-logged", "Logged"],
     nocount: ["is-nocount", "Logged, no BMs said"],
     /* today with a flag or an alarm feature logged: noted for a clinician, never read (a Teal ring) */
     flag: ["is-flag", "Noted for a clinician"],
-    none: ["is-none", "Not logged"]
+    none: ["is-none", "Nothing logged"]
   };
-  const stateOf = (d) => (d.pending ? ["is-pending", "Not logged yet"] : STATE[d.state] || STATE.none);
+  const stateOf = (d) => (d.pending ? ["is-pending", "Nothing logged yet"] : STATE[d.state] || STATE.none);
   /* a small day ring. Its colour is the day's state and nothing else: a closed ring for a day read against your usual,
      an empty ring for a day logged with no BMs said, a 1px hairline for a day not logged (a gap, never a zero) */
   const dayRing = (x, d, size, swd) => {
@@ -107,8 +107,8 @@
   };
   /* the legend items for day rings, only for the states on show */
   const dayLegend = (has) => [
-    has("is-usual") && ["usual", "Within your usual"], has("is-shift") && ["shiftring", "Shifted"], has("is-unsure") && ["unsure", "Could be either"], has("is-flag") && ["flag", "Noted for a clinician"],
-    has("is-logged") && ["logged", "Logged"], has("is-nocount") && ["empty", "Logged, no BMs said"], (has("is-none") || has("is-pending")) && ["gap", "Not logged"]
+    has("is-usual") && ["usual", "Within your usual"], has("is-shift") && ["shiftring", "Outside your usual"], has("is-unsure") && ["unsure", "Could be either"], has("is-flag") && ["flag", "Noted for a clinician"],
+    has("is-logged") && ["logged", "Logged"], has("is-nocount") && ["empty", "Logged, no BMs said"], (has("is-none") || has("is-pending")) && ["gap", "Nothing logged"]
   ];
 
   /* ---------- FloraScore ---------- */
@@ -301,10 +301,10 @@
     const which = (st) => andList(days.filter((d) => d.logged && d.state === st).map((d) => (d.today ? "today" : DOWL[d.dow] || d.dow)));
     const ans = learning ? `${logged.length ? "" : "Nothing logged yet. "}Days show as logged while Florin learns your usual.`
       : !T.logged ? "Nothing logged this week yet."
-      : `${shifted ? `Shifted on ${which("shifted")}.` : !T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged shifted." : "Every day you logged sat within your usual."}${T.left ? ` ${T.left}` : ""}`;
+      : `${shifted ? `Outside your usual on ${which("shifted")}.` : !T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged was outside your usual." : "Every day you logged sat within your usual."}${T.left ? ` ${T.left}` : ""}`;
     const gaps = days.filter((d) => !d.logged && !d.pending);
     const symDays = days.filter((d) => d.sym.length).length;
-    const aria = `This week. ${ans}${gaps.length ? ` Not logged on ${andList(gaps.map((d) => DOWL[d.dow] || d.dow))}.` : ""}${symDays ? ` Symptoms on ${plural(symDays, "day")}.` : ""} ${days.map((d) => `${d.dow}: ${stateOf(d)[1]}${showScore(d) ? `, FloraScore ${d.score}` : ""}`).join(". ")}.`;
+    const aria = `This week. ${ans}${gaps.length ? ` Nothing logged on ${andList(gaps.map((d) => DOWL[d.dow] || d.dow))}.` : ""}${symDays ? ` Symptoms on ${plural(symDays, "day")}.` : ""} ${days.map((d) => `${d.dow}: ${stateOf(d)[1]}${showScore(d) ? `, FloraScore ${d.score}` : ""}`).join(". ")}.`;
     const has = (c) => days.some((d) => stateOf(d)[0] === c);
     return card(x, "rg-week", "This week at a glance", `
       ${head(x, "This week", dateK(x, spanOf(days)))}
@@ -330,7 +330,7 @@
       const turn = d.date === 1 && i > off ? ` data-mon="${esc(d.label.split(" ")[0])}"` : "";
       return `<li class="rg-md${d.today ? " is-today" : ""}${turn ? " is-first" : ""}"${turn} style="--i:${i}" title="${esc(`${d.dow} ${d.label}: ${word}`)}">${dayRing(x, d, 34, 3.6)}<b>${d.date}</b></li>`;
     }).join("");
-    const parts2 = [shifted && `${plural(shifted, "day")} shifted`, gaps && `${gaps} not logged, left as ${gaps === 1 ? "a gap" : "gaps"}`].filter(Boolean);
+    const parts2 = [shifted && `${plural(shifted, "day")} outside your usual`, gaps && `${gaps} with nothing logged, left as ${gaps === 1 ? "a gap" : "gaps"}`].filter(Boolean);
     const aria = learning ? `Since you started. ${logged ? `${plural(logged, "day")} logged` : "Nothing logged yet"}. Days fill in against your usual once Florin knows it.`
       : `The last 30 days. ${within} of ${plural(T.known, "day")} within your usual.${parts2.length ? ` ${cap(andList(parts2))}.` : ""}${T.left ? ` ${T.left}` : ""}`;
     const has = (c) => days.some((d) => stateOf(d)[0] === c);
@@ -455,7 +455,7 @@
     const li = slots.map((d, i) => (d && d.count != null ? i : -1)).filter((i) => i >= 0).pop();
     const marks = slots.map((d, i) => {
       if (!d) return "";
-      if (d.count == null) return d.pending ? "" : `<path class="rg-ogap" d="${segOf(RL[2], i)}"><title>${esc(`${d.dow} ${d.label}: not logged`)}</title></path>`;
+      if (d.count == null) return d.pending ? "" : `<path class="rg-ogap" d="${segOf(RL[2], i)}"><title>${esc(`${d.dow} ${d.label}: nothing logged`)}</title></path>`;
       const out = !d.flag && outOf(d.count);
       const tip = `${d.dow} ${d.label}: ${d.count === 0 ? "No BM logged" : plural(d.count, "BM")}${!u ? "" : d.flag ? ", noted for a clinician" : out ? ", outside your usual" : ", within your usual"}`;
       /* the 1 lane keeps an empty slot on a logged day, so a day with no BM still shows as logged; lanes 2 and 3+ draw only when filled */
@@ -536,7 +536,7 @@
       ${head(x, "How often", u ? chip(x, "usual", o.usualText) : chip(x, "neutral", "Learning"))}
       ${svg}
       <p class="rg-ans">${esc(ans)}</p>
-      ${legend(x, [["read", "BMs that day, one lane each"], u && ["band", `Your usual, ${o.usualText}`], outPos && ["shift", "Outside your usual"], zeroOut && ["zero", "No BM logged"], zeroIn && ["zeroread", "No BM logged"], gaps && ["gapline", "Not logged"]])}`);
+      ${legend(x, [["read", "BMs that day, one lane each"], u && ["band", `Your usual, ${o.usualText}`], outPos && ["shift", "Outside your usual"], zeroOut && ["zero", "No BM logged"], zeroIn && ["zeroread", "No BM logged"], gaps && ["gapline", "Nothing logged"]])}`);
   }
 
   /* ---------- form: one ring per form on this option's own scale ---------- */

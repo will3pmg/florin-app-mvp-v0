@@ -118,9 +118,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI;
     const M = L.build("sarah", "new");
     L.add(M, { kind: "nobm", d: L.TODAY, t: 19 });
-    const html = RU.weekCard(M, "A");
-    const today = html.split('<ol class="ap-wk-strip"')[2] || "";
-    return /no BM, logged/.test(today) && !/Sunday, Oct 11: nothing logged/.test(today);
+    /* build-core: the week card is one row of day marks; today's is a logged (Ink 3) mark that says No BM */
+    const box = document.createElement("div"); box.innerHTML = RU.weekCard(M, "A");
+    const t = box.querySelector(`.ap-day[data-day="${L.TODAY}"]`);
+    return !!t && t.classList.contains("ap-day--quiet") && /logged, No BM/.test(t.textContent) && !/nothing logged/.test(t.textContent) && /No BM (logged )?today/.test(box.textContent);
   });
   ok(nobm, "a No BM day reads as logged, not as a gap");
 
@@ -212,7 +213,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, out = {};
     let M = L.build("sarah", "est");
     const s = L.score(M, L.TODAY, "C"), su = L.scoreUsual(M, "C");
-    out.hero = new RegExp(`data-count="${s.value}"`).test(RU.scoreHero(M, { form: "C", uid: 1 })) && su[0] < su[1];
+    /* build-core: the number with no count-up (no data-count), over the bar of its usual range */
+    const hb = document.createElement("div"); hb.innerHTML = RU.scoreHero(M, { form: "C", uid: 1 });
+    out.hero = (hb.querySelector(".ap-hero-n") || {}).textContent === String(s.value) && !hb.querySelector("[data-count]") && new RegExp(`Your usual ${su[0]} to ${su[1]}`).test(hb.textContent) && su[0] < su[1];
     /* a day with nothing logged changes nothing in the blend: it's skipped, not scored as zero */
     const before = L.score(M, 88, "C").value;
     L.day(M, 87).logged = false;
@@ -260,7 +263,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = L.build("sarah", "est");
     L.add(M, { kind: "sym", d: L.TODAY, t: 18, items: [{ name: "Nausea", s: 0 }], last: null, note: "" });
     const html = RU.idetail(M, { form: "C", uid: 98 }, { k: "sym", range: 7, y: 0 });
-    return /Nausea, strength not said/.test(html) && !/Nausea, mild/.test(html);
+    /* build-core: strength is in the table twin (Day, Symptom, Strength) and the squares' tips, never the mark */
+    return /<td>Nausea<\/td><td>Strength not said<\/td>/.test(html) && /nausea, strength not said/.test(html) && !/<td>Nausea<\/td><td>Mild/.test(html) && !/dv-sq s\d/.test(html);
   });
   ok(unrated, "a symptom without a strength reads as strength not said on Insights");
 
@@ -325,7 +329,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* a day with only a symptom logged: no BM said, so neither within nor a zero */
     let M = L.build("sarah", "est");
     L.day(M, 87).logged = true; L.add(M, { kind: "sym", d: 87, t: 12, items: [{ name: "Cramping", s: 2 }], last: 1, note: "" });
-    out.nocount = L.facts(M, L.day(M, 87), "C").state === "nocount" && /no BMs logged/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 })) && /but nothing about BMs/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 }));
+    /* build-core: nothing drawn for it on How often's count line, and the summary says it isn't counted */
+    const ins7 = RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 });
+    out.nocount = L.facts(M, L.day(M, 87), "C").state === "nocount" && !/Oct 8 · (No BM|\d BM)/.test(ins7) && /Thursday had nothing about BMs, so it isn(&#39;|&#x27;|')t counted/.test(ins7);
     /* the top symptom logged without a strength: no strength word for it */
     M = L.build("sarah", "est");
     for (let d = 84; d <= 89; d++) { const x = L.day(M, d); if (!x.logged) continue; x.entries = x.entries.filter((e) => e.kind !== "sym"); L.add(M, { kind: "sym", d, t: 12, items: [{ name: "Bloating", s: 0 }], last: null, note: "" }); }
@@ -335,11 +341,13 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     M = L.build("sarah", "new");
     M.days.forEach((x) => x.entries.forEach((e) => { if (e.kind === "bm") { e.form = null; e.word = 3; } }));
     const ins = RU.insights(M, { form: "A", uid: 1 }, { range: 7, k: null, y: 0 });
-    out.top = !/mostly Type 1|mostly Pellets/.test(ins) && /mostly Loose/.test(ins);
+    out.top = !/mostly Type 1|mostly Pellets/.test(ins) && /(all|mostly) Loose/.test(ins);
     /* before a usual, a No BM day is a plain ring, not Gold */
     M = L.build("sarah", "new");
     L.add(M, { kind: "nobm", d: 87, t: 21 });
-    out.plain = /dv-zero is-plain/.test(RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 }));
+    /* build-core: a dot on the No BM line in the reading colour, never Gold */
+    const insN = RU.insights(M, { form: "C", uid: 1 }, { range: 7, k: null, y: 0 });
+    out.plain = /<circle class="dv-dot" [^>]*><title>Oct 8 · No BM/.test(insN) && !/dv-dot is-shift/.test(insN);
     /* 90 days: the weekly cells start with the span, not on Jul 13 */
     M = L.build("sarah", "est");
     const sym = RU.idetail(M, { form: "C", uid: 1 }, { range: 90, k: "sym", y: 0 });
@@ -488,10 +496,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return {
         heads,
         phones: document.querySelectorAll(".ap-rx").length,
-        compare: !!document.querySelector('#rxCmp, [data-rx="compare"], [data-v="compare-bm"], .rx-cmpt') || /compare all three|side by side/i.test(document.body.textContent),
+        compare: !!document.querySelector('#rxCmp, [data-rx="compare"], [data-v="compare-bm"], .rx-cmpt') || /compare all three|side by side/i.test(document.body.textContent.replace((document.querySelector(".rx-head-links") || {}).textContent || "", "")),
         headSwitch: !!document.querySelector('.rx-head [data-rx]'),
-        decs: [...document.querySelectorAll(".rx-side--l .rx-dec")].map((x) => x.dataset.dec),
+        decs: [...document.querySelectorAll(".rx-side--l .rx-dec[data-dec]")].map((x) => x.dataset.dec),
         info: [...document.querySelectorAll('.rx-side--l [data-rx="dinfo"]')].length,
+        xinfo: [...document.querySelectorAll('.rx-side--l [data-rx="xinfo"]')].map((x) => x.dataset.v),
+        demoLine: (document.querySelector(".rx-panel--demo .rx-demo-lede") || {}).textContent || "",
         fits: r.bottom <= window.innerHeight && r.top >= 0,
         leftScrolls: getComputedStyle(l).overflowY === "auto" && getComputedStyle(l).position === "sticky" && parseFloat(getComputedStyle(l).maxHeight) <= window.innerHeight && l.scrollHeight > l.clientHeight
       };
@@ -499,15 +509,39 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(lay.heads[0] === "Decisions" && lay.heads.indexOf("Screens") > lay.heads.indexOf("Demo") && lay.heads.indexOf("Demo") > 0, `the left bar runs Decisions, Demo, then Screens (${lay.heads.join(", ")})`);
     ok(lay.phones === 1 && !lay.compare && !lay.headSwitch, "one phone, no compare mode, and no switches left in the header");
     ok(["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"].every((k) => lay.decs.includes(k)) && lay.info === lay.decs.length, `every decision has a toggle and an info button (${lay.decs.join(", ")})`);
+    /* notes-page (Oct 28): the Demo panel says, in one plain line, that it changes the demo person, not the app; every
+       demo control has its own info button */
+    ok(/demo person, not the app/.test(lay.demoLine) && lay.xinfo.join(",") === "persona,data,meals,plan,theme,reset", `the Demo panel's line says it changes the demo person, and every demo control has a note (${lay.xinfo.join(", ")})`);
     ok(lay.fits && lay.leftScrolls, "the whole phone fits under the header, and the left bar scrolls on its own");
     /* a decision's note shows when it changes, stays while the screen does, and gives way on the next screen */
     await d.click('[data-rx="bmUI"][data-v="full"]'); await d.waitForTimeout(400);
-    const n1 = await d.evaluate(() => ({ eb: document.querySelector("#rxNotes .rx-eyebrow").textContent, t: document.querySelector("#rxNotes h2").textContent, on: (document.querySelector("#rxNotes .rx-opts .is-on") || {}).textContent || "", rec: !!document.querySelector("#rxNotes .rx-rec") }));
-    ok(/Decision/.test(n1.eb) && /BM logging/.test(n1.t) && /Full form only/.test(n1.on) && n1.rec, `changing a decision shows its note, with the option on the phone and a recommendation (${n1.t})`);
+    /* notes-page (Oct 28): the decision sheet's shape. The question, what it decides, a block per option with What it is,
+       Why do it and Why not, the recommended one marked, We recommend under the blocks, and no badges */
+    const n1 = await d.evaluate(() => {
+      const N = document.querySelector("#rxNotes .rx-note");
+      return {
+        eb: N.querySelector(".rx-eyebrow").textContent, t: N.querySelector("h2").textContent,
+        blocks: [...N.querySelectorAll(".rx-opts .rx-opt")].map((o) => [o.querySelector(".rx-opt-h b").textContent, [...o.querySelectorAll("dt")].map((x) => x.textContent).join("|"), o.classList.contains("is-rec")]),
+        rec: (N.querySelector(".rx-rec") || {}).textContent || "", tag: [...N.querySelectorAll(".rx-tag")].map((x) => x.textContent).join(","),
+        badge: /On the phone|\bPicked\b/.test(N.textContent)
+      };
+    });
+    ok(/Decision/.test(n1.eb) && /BM logging/.test(n1.eb) && n1.t === "Should one tap on a tile save a BM?" && n1.blocks.length === 2 && n1.blocks.every((x) => x[1] === "What it is|Why do it|Why not") && n1.blocks.map((x) => x[0]).join("|") === "Quick tiles and form|Full form only" && n1.blocks[0][2] && !n1.blocks[1][2] && n1.tag === "Recommended" && /^We recommend Quick tiles and form/.test(n1.rec) && !n1.badge, `changing a decision shows its note in the sheet's shape: the question, a block per option, the recommended one marked, We recommend, no badge (${n1.t})`);
     await d.click('.rx-side [data-rx="screen"][data-v="insights"]'); await d.waitForTimeout(400);
-    ok(await d.evaluate(() => /On the phone now/i.test(document.querySelector("#rxNotes .rx-eyebrow").textContent) && /Insights/.test(document.querySelector("#rxNotes h2").textContent)), "the next screen change brings back that screen's notes");
+    ok(await d.evaluate(() => /This screen/i.test(document.querySelector("#rxNotes .rx-eyebrow").textContent) && /Insights/.test(document.querySelector("#rxNotes h2").textContent)), "the next screen change brings back that screen's notes");
     await d.click('[data-rx="dinfo"][data-v="checkin"]'); await d.waitForTimeout(300);
-    ok(await d.evaluate(() => /check-in/i.test(document.querySelector("#rxNotes h2").textContent) && document.querySelector('[data-rx="dinfo"][data-v="checkin"]').getAttribute("aria-pressed") === "true"), "an info button shows its decision's note");
+    ok(await d.evaluate(() => /check-in/i.test(document.querySelector("#rxNotes .rx-eyebrow").textContent) && document.querySelector('[data-rx="dinfo"][data-v="checkin"]').getAttribute("aria-pressed") === "true"), "an info button shows its decision's note");
+    /* Will's question: what the check-in asks, in the note, every question from the model */
+    ok(await d.evaluate(() => { const t = document.querySelector("#rxNotes").textContent; return window.FLORIN_LOGS.CHECKIN.every((c) => t.includes(c.q)) && /We recommend On/.test(t); }), "the check-in note lists what the check-in asks, and recommends On");
+    /* a demo control's info button shows its note, which says it changes the demo person; Meal logs reads as the
+       demo person's history and explains the trap and the food check */
+    await d.evaluate(() => { const f = document.querySelector('[data-rx="fold"]'); if (f.getAttribute("aria-expanded") !== "true") f.click(); });
+    await d.click('[data-rx="xinfo"][data-v="meals"]'); await d.waitForTimeout(300);
+    const mn0 = await d.evaluate(() => ({ eb: document.querySelector("#rxNotes .rx-eyebrow").textContent, t: document.querySelector("#rxNotes h2").textContent, txt: document.querySelector("#rxNotes").textContent, labels: [...document.querySelectorAll('[data-rx="meals"]')].map((b) => b.textContent.trim()).join("|"), cover: Math.round(window.FLORIN_LOGS.MEAL_COVER * 10), days: window.FLORIN_LOGS.FOOD_CHECK_DAYS }));
+    ok(/Demo setting/.test(mn0.eb) && mn0.t === "Demo person's meals" && mn0.labels === "Every day|Only with symptoms|Never" && /not the app/.test(mn0.txt) && mn0.txt.includes(`${mn0.cover} in 10`) && mn0.txt.includes(`${mn0.days}-day food check`) && !/rough/i.test(mn0.txt), `the meals control's note: the demo person's history, the trap and the food check (${mn0.labels})`);
+    await d.click('[data-rx="meals"][data-v="rough"]'); await d.waitForTimeout(500);
+    ok(await d.evaluate(() => document.querySelector("#rxNotes h2").textContent === "Demo person's meals" && /Only with symptoms/.test(document.querySelector("[data-sum]").textContent + document.querySelector('[data-rx="meals"][aria-pressed="true"]').textContent)), "changing the meals control shows its note");
+    await d.click('[data-rx="meals"][data-v="all"]'); await d.waitForTimeout(400);
     await d.click('[data-rx="bmUI"][data-v="quick"]');
     ok(!de.length, `no page errors at 1440${de.length ? ": " + de[0] : ""}`);
     await d.close();
@@ -518,14 +552,33 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const bar = document.querySelector(".rx-mbar"), r = bar.getBoundingClientRect();
     const t = document.querySelector("#rxSheet-toggles"), n = document.querySelector("#rxSheet-notes");
     return {
-      bottom: Math.abs(r.bottom - window.innerHeight) < 2 && getComputedStyle(bar).position === "fixed",
+      top: Math.abs(r.top) < 2 && r.height <= 56 && getComputedStyle(bar).position === "fixed",
       btns: [...bar.querySelectorAll('[data-rx="sheet"]')].map((x) => x.textContent.trim()),
       heads: [...t.querySelectorAll(".rx-panel > .rx-h")].map((h) => h.textContent.trim()),
       notes: !!n.querySelector("#rxNotes"),
       full: document.querySelector(".rx-stage .ap-rx").classList.contains("is-full")
     };
   });
-  ok(mob.bottom && mob.btns.join("|") === "Toggles|Notes" && mob.full, `on a phone the app is full screen over a bottom bar of ${mob.btns.join(" and ")}`);
+  ok(mob.top && mob.btns.join("|") === "Toggles|Notes" && mob.full, `on a phone the app is full screen under a slim top bar of ${mob.btns.join(" and ")}`);
+  /* notes-page (Will, Oct 28): the page's bar sat over the app's tab bar on his phone. The bar is at the top now, and the
+     app's own tab bar is whole and tappable at 390 and 360, and with a phone's safe areas (a stand-in: Chromium has none) */
+  const tabsClear = () => p.evaluate(() => {
+    const bar = document.querySelector(".rx-mbar").getBoundingClientRect(), tb = document.querySelector(".rx-stage .ap-rx .ap-tb");
+    const r = tb.getBoundingClientRect(), sab = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rx-sab")) || 0;
+    const tabs = [...tb.querySelectorAll(".ap-tb-b, .ap-tb-plus")];
+    const hit = tabs.every((t) => { const q = t.getBoundingClientRect(), at = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !!at && t.contains(at); });
+    const labels = [...tb.querySelectorAll(".ap-tb-b span")].every((x) => { const q = x.getBoundingClientRect(), at = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return q.height > 0 && q.bottom <= window.innerHeight - sab && !!at && x.parentElement.contains(at); });
+    return { ok: r.top > bar.bottom && r.bottom <= window.innerHeight - sab && hit && labels && tabs.length === 5, w: window.innerWidth, gap: Math.round(window.innerHeight - r.bottom) };
+  });
+  const tc = [await tabsClear()];
+  await p.setViewportSize({ width: 360, height: 780 }); await wait(400); tc.push(await tabsClear());
+  await p.evaluate(() => { document.documentElement.style.setProperty("--rx-sat", "47px"); document.documentElement.style.setProperty("--rx-sab", "34px"); }); await wait(200);
+  const tcs = await tabsClear();
+  const barSafe = await p.evaluate(() => { const b = document.querySelector('.rx-mbar [data-v="toggles"]').getBoundingClientRect(); return b.top >= 47; });
+  tc.push(tcs);
+  await p.evaluate(() => { document.documentElement.style.removeProperty("--rx-sat"); document.documentElement.style.removeProperty("--rx-sab"); });
+  await p.setViewportSize({ width: 390, height: 844 }); await wait(400);
+  ok(tc.every((x) => x.ok) && barSafe, `the app's tab bar is whole and tappable under the page's top bar: ${tc.map((x) => `${x.w} wide, ${x.gap}px clear of the bottom`).join("; ")} (the last with a stand-in safe area of 47 top and 34 bottom)`);
   ok(mob.heads.join("|") === "Decisions|Demo|Screens" && mob.notes, `the Toggles sheet holds ${mob.heads.join(", ")}; the Notes sheet the notes`);
   await p.click('.rx-mbar [data-v="toggles"]'); await wait(300);
   ok(await p.evaluate(() => !document.querySelector("#rxSheet-toggles").hidden && document.activeElement && document.activeElement.matches("#rxSheet-toggles .rx-x")), "Toggles opens its sheet, focus on Close");
@@ -564,7 +617,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   await open("history"); await open("today");
   await p.click(`${ph} .ap-avatar`); await wait(300);
   const av = await p.evaluate(() => { const a = document.querySelector(".rx-stage .ap-rx .ap-avatar"), r = a.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), l: a.getAttribute("aria-label"), t: document.querySelector(".rx-stage .ap-rx .ap-tst").textContent }; });
-  ok(av.w === 44 && av.h === 44 && av.l === "Profile" && /profile/i.test(av.t) && /this pass/.test(av.t), `without a module, the 44px Profile avatar says the profile comes in this pass (${av.w}x${av.h})`);
+  ok(av.w === 44 && av.h === 44 && av.l === "Profile" && /profile/i.test(av.t) && /this version of the demo/.test(av.t), `without a module, the 44px Profile avatar says Profile isn't in this version of the demo (${av.w}x${av.h})`);
 
   /* 36. Weekly check-in off: gone from Today, plus, Insights, History and the Screens list; nothing else breaks */
   const score0 = await p.evaluate(() => (window.FLORIN_EXT.api.M() && window.FLORIN_LOGS.score(window.FLORIN_EXT.api.M(), window.FLORIN_LOGS.TODAY, "C") || {}).value);
@@ -653,7 +706,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   for (const [k, v] of [["checkin", "true"], ["bmUI", "quick"], ["persona", "sarah"], ["data", "est"], ["plan", "member"]]) await pick(k, v);
   await putDecisions(before39);
 
-  /* 40. the Oct 28 review: the page follows every phone.set, Picked until an option is drawn, arrows stay off the
+  /* 40. the Oct 28 review: the page follows every phone.set, every decision note in the sheet's shape, arrows stay off the
      toggles, a meal sheet switch keeps what's typed, the time line counts logs, a broken overlay never opens, the left
      bar folds its Demo panel and reaches its end, and the note under the phone is pointed to */
   {
@@ -673,29 +726,48 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(await pressed("checkin") === "false" && off.dis && !/check-in/i.test(off.time + off.lede), "a module's set(checkin, false) moves the toggle, the Screens list, the time line and the notes");
     await api(() => window.FLORIN_EXT.api.set("checkin", true)); await api(() => window.FLORIN_EXT.api.set("plan", "free")); await api(() => window.FLORIN_EXT.api.set("persona", "marcus")); await api(() => window.FLORIN_EXT.api.set("history", "calendar")); await dw();
     ok(await pressed("checkin") === "true" && await pressed("plan") === "free" && await pressed("persona") === "marcus" && await pressed("history") === "calendar" && await d.evaluate(() => localStorage.getItem("florin-refresh:history") === '"calendar"' && /Marcus/.test(document.querySelector("[data-sum]").textContent) && /Free/.test(document.querySelector("[data-sum]").textContent)), "and set(plan), set(persona) and set(history) do too, stored and summed up in the Demo line");
-    /* integrate: every option of every decision is drawn by the core or a module, so each reads On the phone, and no
-       decision note says anything comes in the next pass. The Picked path stays for an option nobody claims */
-    const allOn = await d.evaluate(async () => {
-      const out = { off: [], later: [] }, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    /* notes-page (Will, Oct 28: "Make it simple"): with every option of every decision picked in turn, the note is the
+       decision sheet's shape. The question in ten words or fewer, one sentence on what it decides, a block per option
+       with What it is, Why do it and Why not (each one sentence), the recommended block marked, one We recommend, at
+       most one Still open and a Try it. No badge (On the phone, Picked), no build status, no was and now, no research
+       list, no persona name */
+    const shape = await d.evaluate(async () => {
+      const out = { bad: [] }, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       const keys = [...new Set([...document.querySelectorAll('[data-rx="dinfo"]')].map((b) => b.dataset.v))];
+      const one = (t) => (t.match(/[.?](\s|$)/g) || []).length <= 1;
       for (const k of keys) {
-        const btns = [...document.querySelectorAll(`[data-rx="${k}"]`)], was = btns.find((b) => b.getAttribute("aria-pressed") === "true");
+        const btns = [...document.querySelectorAll(`.rx-side [data-rx="${k}"]`)], was = btns.find((b) => b.getAttribute("aria-pressed") === "true");
         for (const b of btns) {
           b.click(); await sleep(60);
-          const on = (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "";
-          if (on !== "On the phone") out.off.push(`${k}=${b.dataset.v} (${on || "no option lit"})`);
-          if (/next pass|in this pass|being drawn|still to be drawn/i.test(document.querySelector("#rxNotes .rx-note").textContent)) out.later.push(`${k}=${b.dataset.v}`);
+          /* the note as it reads, without its buttons (Show it on the phone is an action, not a badge) */
+          const N = document.querySelector("#rxNotes .rx-note").cloneNode(true), tag = `${k}=${b.dataset.v}`;
+          N.querySelectorAll("button").forEach((x) => x.remove());
+          const q = N.querySelector("h2").textContent, what = (N.querySelector(".rx-note-lede") || {}).textContent || "";
+          const blocks = [...N.querySelectorAll(".rx-opts .rx-opt")];
+          const h3 = [...N.querySelectorAll(".rx-h3")].map((x) => x.textContent);
+          if (q.split(/\s+/).length > 10 || !/\?$/.test(q)) out.bad.push(`${tag}: the question "${q}"`);
+          if (!what || !one(what)) out.bad.push(`${tag}: what it decides isn't one sentence`);
+          if (blocks.length !== btns.length) out.bad.push(`${tag}: ${blocks.length} blocks for ${btns.length} options`);
+          blocks.forEach((o) => {
+            const dts = [...o.querySelectorAll("dt")].map((x) => x.textContent).join("|");
+            if (dts !== "What it is|Why do it|Why not") out.bad.push(`${tag}: a block reads ${dts || "nothing"}`);
+            [...o.querySelectorAll("dd")].forEach((x) => { if (!one(x.textContent)) out.bad.push(`${tag}: "${x.textContent.slice(0, 40)}" isn't one sentence`); });
+          });
+          if (!N.querySelector(".rx-opt.is-rec .rx-tag")) out.bad.push(`${tag}: no block marked Recommended`);
+          if (N.querySelectorAll(".rx-rec").length !== 1 || !/^We recommend /.test(N.querySelector(".rx-rec").textContent)) out.bad.push(`${tag}: no We recommend`);
+          if (h3.filter((x) => /Still open/i.test(x)).length > 1) out.bad.push(`${tag}: more than one open question`);
+          if (!h3.some((x) => /Try it/i.test(x))) out.bad.push(`${tag}: no Try it`);
+          /* the badges by their own capitals (a Try it may say "unless you've picked a theme"), the rest in any case */
+          const BAD = [/On the phone|\bPicked\b|Was, now|From the research|\b(Sarah|Marcus|Alex)\b/, /next pass|in this pass|being drawn|still to be drawn|\bas built\b/i];
+          BAD.forEach((rx) => { const m = N.textContent.match(rx); if (m) out.bad.push(`${tag}: ${m[0]}`); });
+          if (/[\u2014\u2013!]/.test(N.textContent)) out.bad.push(`${tag}: a dash or an exclamation point`);
         }
         if (was) was.click(); await sleep(60);
       }
       out.n = keys.length;
       return out;
     });
-    ok(allOn.n === 9 && !allOn.off.length && !allOn.later.length, `every option of every decision reads On the phone, and no decision note says it comes in the next pass (${allOn.n} decisions${allOn.off.length ? "; not on: " + allOn.off.join(", ") : ""}${allOn.later.length ? "; later: " + allOn.later.join(", ") : ""})`);
-    const hadCal = await api(() => { const had = window.FLORIN_EXT.built.history; window.FLORIN_EXT.built.history = []; return had; });
-    await d.click('[data-rx="history"][data-v="calendar"]'); await dw();
-    ok(await d.evaluate(() => document.querySelector("#rxNotes .rx-opts .is-on .rx-on").textContent === "Picked"), "an option no module claims in EXT.built would read Picked");
-    await api((had) => { window.FLORIN_EXT.built.history = had; }, hadCal); await d.click('[data-rx="history"][data-v="list"]'); await dw();
+    ok(shape.n === 9 && !shape.bad.length, `every decision's note, with each option picked, is in the decision sheet's shape (${shape.n} decisions${shape.bad.length ? "; " + shape.bad.slice(0, 6).join("; ") : ""})`);
     await api(() => { window.FLORIN_EXT.api.set("plan", "member"); window.FLORIN_EXT.api.set("persona", "sarah"); }); await dw();
     /* the arrow keys step Screens from the list, never from a toggle */
     await dclick('[data-rx="screen"][data-v="insights"]'); await dw();
@@ -759,10 +831,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const ORDER = ["score", "parts", "trend", "week", "month", "timing", "often", "form", "symptoms", "checkin", "pattern"];
     const DK = { score: "score", parts: "score", trend: "score", week: "days", month: "days", timing: "timing", often: "often", form: "form", symptoms: "sym", checkin: "ck", pattern: "pat" };
     const LOOKS = ["rings", "journal", "bento", "oura", "easy"];
-    /* the options this module draws are On the phone, and the note carries the recommendation for Will */
+    /* the note: a block per style, Oura and Field journal marked, and the recommendation in the sheet's words */
     await lpick("look", "oura");
-    const dn = await q.evaluate(() => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", opts: document.querySelectorAll("#rxNotes .rx-opts li").length, built: (window.FLORIN_EXT.built.look || []).join(",") }));
-    ok(dn.on === "On the phone" && dn.built === "rings,journal,bento,oura,easy" && dn.opts === 6 && /Oura's arc/.test(dn.rec) && /Field journal/.test(dn.rec) && /Easy read/.test(dn.rec) && /Will to confirm/.test(dn.rec), `data style: every look is claimed On the phone, and the note recommends Oura, Field journal and Easy read for Will to confirm (${dn.on})`);
+    const dn = await q.evaluate(() => ({ rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", opts: [...document.querySelectorAll("#rxNotes .rx-opts .rx-opt .rx-opt-h b")].map((x) => x.textContent).join(","), marked: [...document.querySelectorAll("#rxNotes .rx-opt.is-rec .rx-opt-h b")].map((x) => x.textContent).join(",") }));
+    ok(dn.opts === "Florin charts,Rings,Field journal,Bento,Oura,Easy read" && dn.marked === "Field journal,Oura" && /^We recommend the Oura style on Today and FloraScore, Field journal on detail pages, and Easy read only in the Easy version\./.test(dn.rec), `data style: a block per style, Oura and Field journal marked, and the sheet's recommendation (${dn.marked})`);
     for (const id of LOOKS) {
       await lpick("look", id);
       for (const theme of ["light", "dark"]) {
@@ -806,8 +878,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await q.click(`${ph} [data-rlk-k="week"] .rlk-go`); await lw();
     const dp = await q.evaluate(() => ({ t: document.querySelector(".rx-stage .ap-rx .ap-nav-t").textContent, rows: document.querySelectorAll(".rx-stage .ap-rx .rlk-day").length, range: window.FLORIN_EXT.api.S.ins.range, bad: /\bNaN\b|\bundefined\b/.test(document.querySelector(".rx-stage .ap-rx .ap-layer").textContent) }));
     await q.click(`${ph} [data-act="irange"][data-v="30"]`); await lw();
-    const dp30 = await q.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .rlk-day .ap-chip")].map((c) => c.textContent));
-    ok(dp.t === "Your days" && dp.range === 7 && dp.rows === 7 && !dp.bad && dp30.length > 0 && dp30.every((w) => w === "Shifted" || w === "Could be either"), `data style: Your days lists every day of the week, and on 30 days only the ones that shifted (${dp.rows} rows, then ${dp30.length})`);
+    /* build-modules: each row carries its day's word in the app's shared words; on 30 days only the days not within */
+    const dp30 = await q.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .rlk-day .rlk-day-w")].map((c) => c.textContent));
+    ok(dp.t === "Your days" && dp.range === 7 && dp.rows === 7 && !dp.bad && dp30.length > 0 && dp30.every((w) => w === "Outside your usual" || w === "Not counted" || w === "Noted for a clinician"), `data style: Your days lists every day of the week, and on 30 days only the ones not within your usual (${dp.rows} rows, then ${dp30.length})`);
     await q.click(`${ph} .ap-back`); await lw();
     /* the Oura look's own controls work in the phone: the 30 and 90 switch, a Contributors row, and a tag that goes on
        this week's check-in and stays pressed after a redraw */
@@ -915,7 +988,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
           for (const scr of ["look-insights", "look-today"]) {
             await lopen(scr);
             const lint = await q.evaluate(() => (document.querySelector("#rxNotes .rx-lint") || {}).textContent || "");
-            if (!/passes all/.test(lint)) bad.push(`${plan} ${id} ${scr}: ${lint.slice(0, 120)}`);
+            if (lint) bad.push(`${plan} ${id} ${scr}: ${lint.slice(0, 120)}`);
           }
         }
       }
@@ -980,10 +1053,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       await q.click(`${ph} .ap-back`); await lw();
     }
     await lpick("data", "est"); await lpick("form", "C");
-    /* the Easy version draws Easy read whatever the style; As built draws the core's screens */
+    /* the Easy version draws Easy read whatever the style; Florin charts (built) draws the core's screens */
     ok(await q.evaluate(() => window.FLORIN_RUI.lookOf({ easy: true, look: "oura" }) === "easy" && window.FLORIN_RUI.lookOf({ easy: false, look: "built" }) === null && /lk-easy/.test(window.FLORIN_RUI.lookCards(window.FLORIN_EXT.api.M(), Object.assign(window.FLORIN_EXT.api.V(), { easy: true }), ["score"]))), "data style: the Easy version draws Easy read whatever the style, through RU.lookOf and RU.lookCards");
     await lpick("look", "built"); await lopen("look-insights");
-    ok(!(await q.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .rlk-ins"))) && await q.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .ap-ic")) && /As built/.test(await q.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-tst").textContent)), "data style As built: Insights is the core's, and its screen says to pick a style");
+    ok(!(await q.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .rlk-ins"))) && await q.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .ap-ic")) && /Florin charts/.test(await q.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-tst").textContent)), "data style Florin charts: Insights is the core's, and its screen says to pick a style");
     ok(!le.length, `data style: no console errors or module warnings${le.length ? ": " + le.slice(0, 2).join(" | ") : ""}`);
     await lc.close();
   }
@@ -1022,7 +1095,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const s2 = await thState(q), n2 = await q.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .rlk-look.lk-oura").length);
       ok(s0 === "light" && s1 === "dark" && s2 === "dark" && n2 > 0, `fix-looks: on a light page, picking Oura turns the phone, the Theme toggle, the Demo summary and every Oura card dark (before ${s0}, Today ${s1}, Insights ${s2})`);
       const note = await q.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="look"]'); if (b2.getAttribute("aria-pressed") !== "true") b2.click(); return [...document.querySelectorAll("#rxNotes .rx-opts li")].map((x) => x.textContent).find((t) => /^Oura/.test(t.trim())) || ""; });
-      ok(/Picking it turns the phone dark/.test(note) && /Theme, under Demo, shows it on light too/.test(note) && !/[–—!]/.test(note), "fix-looks: the Oura option's note says picking it turns the phone dark, and where light is");
+      const tryIt = await q.evaluate(() => [...document.querySelectorAll("#rxNotes .rx-line")].map((x) => x.textContent).join(" "));
+      ok(/^\s*Oura/.test(note) && /Picking Oura turns the demo dark, unless you've picked a theme or Easy is on/.test(tryIt) && !/[–—!]/.test(note + tryIt), "fix-looks: the Data style note's Try it says picking Oura turns the demo dark, unless a theme is picked or Easy is on");
       await pick("look", "rings");
       const s3 = await thState(q);
       ok(s3 === "light", `fix-looks: leaving Oura for Rings puts the light theme back (${s3})`);
@@ -1129,15 +1203,18 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return { ok: line.includes(want) && effect && !partWord, line, without: w && w.value };
     });
     /* every month from the first to now, every day of it: its state is L.facts' state, its label is the full date, a day
-       outside the logs is disabled, a gap after the first log is struck through, before the first log a day is plain.
+       outside the logs is disabled, a gap after the first log is the date alone, before the first log a day is plain.
        What the mark shows is worked out here on its own: a flag or an alarm feature is marked for a clinician (never
        within the usual, and said in the label), on Free a day before the last 7 shows only as logged, else the state.
-       Within the usual is a filled mark and a shift a hollow ring, so the two differ in shape, not colour alone */
+       build-modules: the mark is the app's one day mark (RU.dayMark): a filled circle within the usual and a filled Gold
+       one outside it, an Ink 3 circle logged but not counted, the date alone for a gap (never struck through), a Teal
+       ring for a flag, the date alone before the first log */
     const vcal = () => v.evaluate(() => {
       const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, U = window.FLORIN_APP.util;
       const free = api.V().plan === "free";
       const alarmIn = (e) => (e.kind === "bm" && (L.FLAGS.some(([k]) => e.flags && e.flags[k]) || L.alarmsIn(e.note || "", { bm: true }).length)) || (e.kind === "sym" && L.alarmsIn(`${e.items.map((i) => i.name).join(". ")}. ${e.note || ""}`).length);
-      const before = (el) => getComputedStyle(el.querySelector(".vr-cal-mk"), "::before");
+      const circ = (el) => getComputedStyle(el.querySelector(".ap-day-c"));
+      const kind = (el) => { const m = el.querySelector(".ap-day"); return m ? (m.className.match(/ap-day--(usual|shift|quiet|none|flag|before)/) || [])[1] : null; };
       const clear = (c) => /rgba\(0, 0, 0, 0\)|transparent/.test(c);
       const lay = document.querySelector(".rx-stage .ap-rx .ap-layer");
       const ym = (d) => { const x = L.dateOf(d); return x.getFullYear() * 12 + x.getMonth(); };
@@ -1168,10 +1245,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
           if (el.dataset.shown !== shown) bad.push(`${dt.toDateString()}: shows ${el.dataset.shown} not ${shown}`);
           const lab = el.getAttribute("aria-label") || "";
           if (flag && (!/noted for a clinician/.test(lab) || /your usual/.test(lab))) bad.push(`${dt.toDateString()}: flag label ${lab}`);
-          if (shown === "usual" && (clear(before(el).backgroundColor) || /inset/.test(before(el).boxShadow))) bad.push(`${dt.toDateString()}: usual is not a filled mark`);
-          if (shown === "shifted" && (!clear(before(el).backgroundColor) || !/inset/.test(before(el).boxShadow))) bad.push(`${dt.toDateString()}: a shift is not a hollow ring`);
-          if (shown === "flag" && before(el).outlineStyle !== "solid") bad.push(`${dt.toDateString()}: no Teal ring on a flag`);
-          if (shown === "gap" && !/line-through/.test(getComputedStyle(el.querySelector(".vr-cal-n")).textDecorationLine)) bad.push(`${dt.toDateString()}: a gap's date isn't struck`);
+          const want2 = { usual: "usual", shifted: "shift", unsure: "quiet", nocount: "quiet", logged: "quiet", flag: "flag", gap: "none", pending: "none", plain: "before", out: "before" }[shown];
+          if (kind(el) !== want2) bad.push(`${dt.toDateString()}: drawn ${kind(el)} not ${want2}`);
+          if ((shown === "usual" || shown === "shifted") && clear(circ(el).backgroundColor)) bad.push(`${dt.toDateString()}: ${shown} is not a filled circle`);
+          if (shown === "flag" && (!/inset/.test(circ(el).boxShadow) || !el.querySelector(".ap-day-c svg"))) bad.push(`${dt.toDateString()}: no Teal ring with the info glyph on a flag`);
+          if ((shown === "gap" || shown === "plain" || shown === "out") && (!clear(circ(el).backgroundColor) || /line-through/.test(circ(el).textDecorationLine))) bad.push(`${dt.toDateString()}: a ${shown} day isn't the date alone`);
         });
         months++;
         const prev = lay.querySelector('[data-act="vr-cal-m"][data-v="-1"]');
@@ -1185,22 +1263,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return { ok: !bad.length, bad: bad.slice(0, 4), months, n };
     });
 
-    /* the decisions: both options this module draws read On the phone, with a recommendation each */
-    const dec = async (k, val) => { await vpick(k, val); return v.evaluate(() => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", lede: (document.querySelector("#rxNotes .rx-note-lede") || {}).textContent || "" })); };
+    /* the decisions, in the decision sheet's words (notes-page, Oct 28): Home recommends Score first, History Calendar */
+    const dec = async (k, val) => { await vpick(k, val); return v.evaluate(() => ({ q: document.querySelector("#rxNotes h2").textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", marked: [...document.querySelectorAll("#rxNotes .rx-opt.is-rec .rx-opt-h b")].map((x) => x.textContent).join(","), n: document.querySelectorAll("#rxNotes .rx-opt").length })); };
     const dh = await dec("home", "day"), dc = await dec("history", "calendar");
-    const built = await v.evaluate(() => ({ home: (window.FLORIN_EXT.built.home || []).join(","), history: (window.FLORIN_EXT.built.history || []).join(",") }));
-    /* fix-variants: the Home note recommends Score first, as the deck does, with the hero's sentence leading on the most
-       notable log (and, with membership, what it did to FloraScore, as the hero says it), for Will to confirm; it no longer claims Oura's Today puts the score second. The research line says
-       what Will's screenshots show: shortcuts, then the main score as a big arc, then a timeline */
-    await vpick("home", "day");
-    const dhn = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="home"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return { rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", res: [...document.querySelectorAll("#rxNotes .rx-res li")].map((l) => l.textContent).join(" "), q: [...document.querySelectorAll("#rxNotes .rx-q li")].map((l) => l.textContent).join(" "), hl: (() => { const RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), V = api.V(), H = RU.highlightOf(M, V.form), fx = V.plan === "free" || H.alarm ? "" : RU.scoreEffect(M, V.form, H.N); return fx ? `${H.text} ${fx}` : H.text; })() }; });
-    ok(dh.on === "On the phone" && built.home === "day" && /^Score first, with the hero's sentence leading on the most notable thing logged today and saying what it did to FloraScore/.test(dh.rec) && /Will to confirm\.$/.test(dh.rec) && !/October 2025|Day first keeps that order/.test(dh.rec + dhn.res) && /a row of small score shortcuts, then the main score as a big arc/.test(dhn.res) && dhn.q.includes(`"${dhn.hl}"`) && !/next pass/.test(dh.lede), `Day first: claimed in EXT.built and On the phone; the note recommends Score first for Will to confirm, quotes Score first's sentence now, and reads Oura's Today as the screenshots show it (${dh.on})`);
-    /* end fix-variants */
-    const vtotal = await v.evaluate(() => window.FLORIN_EXT.api.M().days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0));
-    ok(dc.on === "On the phone" && built.history === "calendar" && /^Calendar\./.test(dc.rec) && /answers the designer's "endless scroll"/.test(dc.rec) && dc.rec.includes(`${vtotal} entries`) && !/next pass/.test(dc.lede), `Calendar: claimed in EXT.built, On the phone, and the note recommends it, quoting "endless scroll" with the computed ${vtotal} entries (${dc.on})`);
-    /* the list's figure in the note: 14 days shown, 14 more a tap, so the first day takes ceil((days - 14) / 14) taps */
-    const vtaps = await v.evaluate(() => { const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M(); return Math.ceil((L.TODAY - M.start + 1 - 14) / 14); });
-    ok(dc.rec.includes(`the first day, takes ${vtaps} taps of Show earlier days`), `Calendar note: reaching the first day takes ${vtaps} taps of Show earlier days, computed`);
+    ok(dh.q === "What does Today show first?" && dh.n === 2 && dh.marked === "Score first" && /^We recommend Score first\. FloraScore is the centre of Florin/.test(dh.rec), `Home: the sheet's question, both options as blocks, and Score first recommended (${dh.marked})`);
+    ok(dc.q === "How should History show past days?" && dc.n === 2 && dc.marked === "Calendar" && /^We recommend Calendar\. One screen a month replaces a long scroll/.test(dc.rec), `History: the sheet's question, both options as blocks, and Calendar recommended (${dc.marked})`);
     await vpick("home", "score"); await vpick("history", "list");
     /* the two screens set their decision, and the page follows: the toggle, the key and the note */
     await vopen("home-day");
@@ -1374,7 +1441,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     });
     const cf = await vcal();
     ok(vfd.shown === "flag" && /^[A-Za-z]+, [A-Za-z]+ \d+: blood noted for a clinician/.test(vfd.label) && !/your usual/.test(vfd.label) && /Noted for a clinician/.test(vfd.legend) && /1 noted for a clinician/.test(vfd.sum) && cf.ok, `Calendar: a blood flag on a past day is noted for a clinician, in the label, the legend and the month, and never read (${vfd.label})${cf.bad.length ? ": " + cf.bad.join("; ") : ""}`);
-    ok(vfd.gap == null || (vfd.gshown === "nocount" && /Nothing logged on BMs/.test(vfd.legend)), `Calendar: a day with only a symptom logged gets its own mark, Nothing logged on BMs (${vfd.gshown})`);
+    /* build-modules: a day with only a symptom is logged but not counted, an Ink 3 circle, in the legend's shared words */
+    ok(vfd.gap == null || (vfd.gshown === "nocount" && /Not counted/.test(vfd.legend)), `Calendar: a day with only a symptom logged is drawn as not counted, and the legend says Not counted (${vfd.gshown})`);
     /* the filter chips stay: a filter dims the days without that kind of log */
     await vopen("hist-cal");
     await v.click(`${vph} .ap-hi-filter[data-v="sym"]`); await vw();
@@ -1392,7 +1460,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         api.renderTab(true);
         return { s2: days[0] ? days[0].d : null, s0: days[1] ? days[1].d : null };
       });
-      /* every strength's tick against the card and against the picked day (Card 2 over the card), composited on a canvas */
+      /* build-modules: a symptom day is one Teal square under the day (RU.dayMark), whatever the strength: the square
+         holds 3:1 on the card and on the picked day, every square is the same colour, and the strength is said in the
+         day's label, a symptom logged without one as "no strength said", never mild */
       const vtk = (tkd) => v.evaluate((tkd) => {
         const cv = document.createElement("canvas"); cv.width = cv.height = 1; const g = cv.getContext("2d", { willReadFrequently: true });
         const px = (...fills) => { g.clearRect(0, 0, 1, 1); fills.forEach((f) => { g.fillStyle = f; g.fillRect(0, 0, 1, 1); }); const d = g.getImageData(0, 0, 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; };
@@ -1400,26 +1470,18 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const cr = (a, c) => { const x = lum(a), y = lum(c); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
         const lay = document.querySelector(".rx-stage .ap-rx .ap-layer"), card = getComputedStyle(lay.querySelector(".vr-cal")).backgroundColor;
         const picked = getComputedStyle(lay.querySelector('.vr-cal-d[aria-pressed="true"]')).backgroundColor;
-        const out = {};
-        for (const k of [0, 1, 2, 3]) {
-          let t = lay.querySelector(`.vr-cal-g .vr-t--s${k}`), tmp = null;
-          if (!t) { tmp = document.createElement("i"); tmp.className = `vr-t vr-t--sym vr-t--s${k}`; lay.querySelector(".vr-cal-ts").appendChild(tmp); t = tmp; }
-          const cs = getComputedStyle(t), clear = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor);
-          const edge = (cs.boxShadow.match(/^([a-z-]+\([^)]*\))/) || [])[1] || null;
-          const c = clear ? edge : cs.backgroundColor;
-          const onCard = c ? cr(px(card, c), px(card)) : 0, onPicked = c ? cr(px(card, picked, c), px(card, picked)) : 0;
-          out[k] = { hollow: clear && !!edge, onCard: +onCard.toFixed(2), onPicked: +onPicked.toFixed(2) };
-          if (tmp) tmp.remove();
-        }
+        const sq = [...lay.querySelectorAll(".vr-cal-g .ap-day-s.is-on")].map((t) => getComputedStyle(t).backgroundColor);
+        const teal = (() => { const i = document.createElement("i"); i.style.background = "var(--ap-teal)"; lay.appendChild(i); const c = getComputedStyle(i).backgroundColor; i.remove(); return c; })();
+        const c = sq[0] || teal;
         const lab = (d) => (d == null ? "" : lay.querySelector(`.vr-cal-d[data-v="${d}"]`).getAttribute("aria-label"));
         const lg = lay.querySelector(".vr-cal-lg");
-        return { out, s0Label: lab(tkd.s0), s2Label: lab(tkd.s2), s0Grid: !!lay.querySelector(".vr-cal-g .vr-t--s0"), s0Legend: !!lg && !!lg.querySelector(".vr-t--s0") && /strength not said/.test(lg.textContent) };
+        return { n: sq.length, one: sq.every((x) => x === teal), onCard: +cr(px(card, c), px(card)).toFixed(2), onPicked: +cr(px(card, picked, c), px(card, picked)).toFixed(2), s0Label: lab(tkd.s0), s2Label: lab(tkd.s2), legend: !!lg && !!lg.querySelector(".ap-day-k--sym") && /Symptoms/.test(lg.textContent), old: !!lay.querySelector(".vr-t, .vr-cal-mk") };
       }, tkd);
       for (const theme of ["light", "dark"]) {
         await vpick("theme", theme); await vw(200);
-        const tk = await vtk(tkd), o = tk.out;
-        ok([1, 2, 3].every((k) => !o[k].hollow && o[k].onCard >= 3 && o[k].onPicked >= 3) && o[0].hollow && o[0].onCard >= 3 && o[0].onPicked >= 3, `Calendar, ${theme}: every symptom tick holds 3:1 on the card and the picked day, filled by strength, and only strength not said is hollow (${[0, 1, 2, 3].map((k) => `s${k} ${o[k].onCard}/${o[k].onPicked}${o[k].hollow ? " hollow" : ""}`).join(", ")})`);
-        if (theme === "light") ok((tkd.s0 == null || (tk.s0Grid && tk.s0Legend && /gas with no strength said/.test(tk.s0Label) && !/mild gas/.test(tk.s0Label))) && (tkd.s2 == null || /moderate cramping/.test(tk.s2Label)), `Calendar: a day's label says each symptom's strength, a symptom logged without one says so, and the legend shows the hollow tick for it (${tk.s0Label} | ${tk.s2Label})`);
+        const tk = await vtk(tkd);
+        ok(tk.n > 0 && tk.one && tk.onCard >= 3 && tk.onPicked >= 3 && tk.legend && !tk.old, `Calendar, ${theme}: every symptom day is one Teal square, whatever the strength, at 3:1 or more on the card and the picked day, named Symptoms in the legend (${tk.n} squares, ${tk.onCard}/${tk.onPicked})`);
+        if (theme === "light") ok((tkd.s0 == null || (/gas with no strength said/.test(tk.s0Label) && !/mild gas/.test(tk.s0Label))) && (tkd.s2 == null || /moderate cramping/.test(tk.s2Label)), `Calendar: a day's label says each symptom's strength in words, a symptom logged without one says so (${tk.s0Label} | ${tk.s2Label})`);
       }
       await vpick("theme", "light");
       /* the chip's sentence sits on its own line under the chip, for 12 weeks, day 5 and day 1 */
@@ -1430,8 +1492,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       }
       await vpick("data", "est");
       ok(under.every((x) => !x), `Day first: the chip's sentence takes its own line under the chip with 12 weeks of logs, on day 5 and on day 1${under.filter(Boolean).length ? ": " + under.filter(Boolean).join("; ") : ""}`);
-      /* the calendar's notes: which marks it shares with As built's week card and which are its own; with a data style or
-         the Easy version on, that Today's week is drawn in that style; with Rings, what a Teal dot means where */
+      /* the calendar's notes (notes-page, Oct 28: plain): each mark in a few words; with a data style or the Easy version
+         on, that Today's week is drawn in that style, so its marks differ. The decision's Calendar block names its marks */
       const calNote = async () => { await vopen("hist-cal"); return v.evaluate(() => (document.querySelector("#rxNotes .rx-note-lede") || {}).textContent || ""); };
       const nb = await calNote();
       await vpick("look", "rings"); const nr = await calNote();
@@ -1440,9 +1502,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const ne = await calNote();
       await v.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await vw();
       await vpick("history", "calendar");
-      const nd = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="history"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return (document.querySelector("#rxNotes .rx-note-lede") || {}).textContent || ""; });
-      const shared = (t) => /the marks As built's week card on Today uses: Plum filled within the usual \(Ray in dark\), a Gold ring outside it, and a struck-through date/.test(t) && /Two marks are the calendar's own: a dash for a day with logs but nothing on BMs/.test(t) && /a Teal ring for a day with a flag/.test(t) && !/the same marks as Today's week card/.test(t);
-      ok(shared(nb) && shared(nd) && !/drawn in that style/.test(nb) && /With the Rings data style on, Today's week is drawn in that style/.test(nr) && /In Rings a Teal dot under a day means symptoms; on the calendar a Teal dot means a meal/.test(nr) && /With the Easy version on, Today's week is drawn in that style/.test(ne) && !/Teal dot/.test(ne), "Calendar notes: the marks it shares with As built's week card and its own, and with a data style or Easy on, that Today's week is drawn in that style (Rings names the Teal dot)");
+      const nd = await v.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="history"]'); if (b2 && b2.getAttribute("aria-pressed") !== "true") b2.click(); return [...document.querySelectorAll("#rxNotes .rx-opt")].map((o) => o.textContent).find((t) => /^\s*Calendar/.test(t)) || ""; });
+      /* build-modules: the calendar's marks are Today's card's, said in the note's shared words */
+      const marks = (t) => /each day marked as on Today's card: a Plum circle within the person's usual, a Gold circle outside it, a grey circle for a day logged but not counted, and the date alone for a day with nothing logged\. A Teal ring marks a day noted for a clinician, and a Teal square a day with symptoms\./.test(t);
+      ok(marks(nb) && !/style/.test(nb) && /Today's week is in the Rings style, so its marks differ\./.test(nr) && /Today's week is in the Easy read style, so its marks differ\./.test(ne) && /a filled mark for a day within the person's usual, a ring for a day outside it, and a struck date for a day with nothing logged|Plum circle[^.]*within the person's usual[^.]*Gold circle[^.]*outside it[^.]*the date alone for a day with nothing logged/.test(nd), "Calendar notes: each mark in plain words, and with a data style or Easy on, that Today's week differs; the decision's Calendar block names its marks");
     }
     /* end fix-variants */
     /* both themes and Free */
@@ -1450,7 +1513,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const dk = await v.evaluate(() => ({ cal: !!document.querySelector(".rx-stage .ap-rx .vr-cal-g"), rep: (document.querySelector(".rx-stage .ap-rx .ap-hist-rep") || {}).dataset, sum: document.querySelector(".rx-stage .ap-rx .vr-cal-sum").textContent, pay: (document.querySelector('.rx-stage .ap-rx .vr-cal [data-act="pay"]') || {}).dataset }));
     /* Free reads the last 7 days against the usual, as Insights does; earlier days show only as logged */
     const fcal = await vcal();
-    ok(fcal.ok && /On Free, marks against your usual cover the last 7 days/.test(dk.sum) && dk.pay && dk.pay.pay === "range", `Calendar, Free and dark: days before the last 7 show only as logged, the month says so, and membership is one tap (${dk.sum})${fcal.bad.length ? ": " + fcal.bad.join("; ") : ""}`);
+    ok(fcal.ok && /On Free, days are read against your usual for the last 7 days/.test(dk.sum) && dk.pay && dk.pay.pay === "range", `Calendar, Free and dark: days before the last 7 show only as logged, the month says so, and membership is one tap (${dk.sum})${fcal.bad.length ? ": " + fcal.bad.join("; ") : ""}`);
     await vopen("home-day");
     const dk2 = await vline();
     ok(dk.cal && dk.rep && dk.rep.act === "pay" && dk2.ok, "Calendar and Day first, dark and Free: drawn, the clinician report behind membership");
@@ -1490,8 +1553,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const grp = await q.evaluate(() => { const g = [...document.querySelectorAll(".rx-nav-g")].find((x) => /Onboarding and profile/.test(x.textContent)); return g ? [...g.querySelectorAll('[data-rx="screen"]')].map((x) => x.dataset.v).join(",") : ""; });
     ok(grp === "onb-short,onb-full,onb-sign,profile,profile-day1", `profile: Screens has the Onboarding and profile group (${grp})`);
     await ppick("onboard", "full"); await ppick("onboard", "short");
-    const dn = await q.evaluate(() => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, t: document.querySelector("#rxNotes h2").textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", ba: document.querySelectorAll("#rxNotes .rx-ba li").length, built: (window.FLORIN_EXT.built.onboard || []).join(",") }));
-    ok(dn.on === "On the phone" && dn.built === "short,full" && /^Short, then ask the rest in context/.test(dn.rec) && dn.ba >= 6 && /Onboarding/.test(dn.t), `profile: the onboarding decision is On the phone, with what today's survey gets wrong and the recommendation (${dn.ba} was-now rows)`);
+    /* notes-page (Oct 28): the decision in the sheet's shape, with each flow's step count read from the flow */
+    const dn = await q.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", ba: document.querySelectorAll("#rxNotes .rx-ba li").length, blocks: [...document.querySelectorAll("#rxNotes .rx-opt")].map((o) => o.textContent) }));
+    ok(dn.t === "How much do we ask a new person?" && /^We recommend Short, and asking the rest when it matters/.test(dn.rec) && !dn.ba && dn.blocks.length === 2 && /\d+ steps in under two minutes/.test(dn.blocks[0]) && /survey in \d+ steps/.test(dn.blocks[1]), `profile: the onboarding decision in the sheet's shape, recommending Short (${dn.t})`);
 
     /* the Onboarding toggle shows its flow on the phone: from Today it opens, an open one moves to the other flow, and
        a Screens row opens exactly one */
@@ -1502,7 +1566,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const tg2 = await ptop();
     await popen("onb-full");
     const tg3 = await q.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-o--t-onb:not(.is-out)").length);
-    ok(tg1 && tg1.type === "onb" && tg1.step === "welcome" && /Full survey/.test(tg1.text) && tgN === 1 && /short, or the full survey/.test(tgNote) && /Getting started/.test(tg2.text) && tg3 === 1, `profile: the Onboarding toggle opens its flow on the phone with the decision's note beside it, switches an open one, and a Screens row opens one (${tgN}, ${tg3})`);
+    ok(tg1 && tg1.type === "onb" && tg1.step === "welcome" && /Full survey/.test(tg1.text) && tgN === 1 && tgNote === "How much do we ask a new person?" && /Getting started/.test(tg2.text) && tg3 === 1, `profile: the Onboarding toggle opens its flow on the phone with the decision's note beside it, switches an open one, and a Screens row opens one (${tgN}, ${tg3})`);
     /* switched part way, a flow lands on the next step the other flow has, never back on Welcome */
     { let k = 0; while ((await ptop()).step !== "usual" && k++ < 8) await ptap('[data-act="onb-skip"]', 150); }
     await ppick("onboard", "short");
@@ -1773,9 +1837,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       await ppick("theme", theme); await ppick("plan", plan); await ppick("data", data);
       for (const id of Object.keys(NOTE)) {
         await popen(id);
-        const r = await q.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, lint: document.querySelector("#rxNotes .rx-lint").textContent, text: document.querySelector(".rx-stage .ap-rx").textContent }));
+        const r = await q.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, lint: (document.querySelector("#rxNotes .rx-lint") || {}).textContent || "", text: document.querySelector(".rx-stage .ap-rx").textContent }));
         const want = id === "profile" && data === "fresh" ? "Profile on day 1" : NOTE[id];
-        if (r.t !== want || !/passes all/.test(r.lint) || /\bundefined\b|\bNaN\b/.test(r.text)) rd.push(`${theme}/${plan}/${data}/${id}: ${r.t}${/passes all/.test(r.lint) ? "" : " (claims)"}`);
+        if (r.t !== want || r.lint || /\bundefined\b|\bNaN\b/.test(r.text)) rd.push(`${theme}/${plan}/${data}/${id}: ${r.t}${r.lint ? " (claims)" : ""}`);
       }
     }
     ok(!rd.length, `profile and onboarding: every screen reads in both themes, Free and Member, new and just joined, with its own note and a clean claims check (${rd.slice(0, 3).join("; ") || "20 screens"})`);
@@ -1910,7 +1974,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const nOff = await q.evaluate(() => document.querySelector("#rxNotes").textContent);
       await popen("today"); await ppick("checkin", "true"); await popen("onb-short");
       const nOn = await q.evaluate(() => document.querySelector("#rxNotes").textContent);
-      ok(/kept for cycle context later/.test(nOff) && !/Period tag/.test(nOff) && /the Period tag on the check-in/.test(nOn) && /Welcome offers Larger text/.test(nOn) && /Welcome has Close/.test(nOn), "fix-profile: the short onboarding's note follows the check-in (Period tag only when it's on) and says Welcome offers larger text and can be closed");
+      ok(/a BM reminder/.test(nOff) && !/check-in/i.test(nOff) && /periods, reminders,/.test(nOn) && /Welcome and Ready offer larger text and simpler screens/.test(nOn + nOff), "fix-profile: the short onboarding's note follows the check-in (reminders only when it's on, a BM reminder when off) and says Welcome and Ready offer larger text");
       await popen("today"); await ppick("checkin", String(v0.checkin));
     }
     /* ===== end fix-profile ===== */
@@ -2043,7 +2107,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await aopen("ask-chat");
     ok(await ap.evaluate(() => { const ph = document.querySelector(".rx-stage .ap-rx"); return ph.querySelectorAll(".ap-askx-log > .ap-ask-me").length === 1 && ph.querySelectorAll(".ap-askx-a").length === 1 && !!ph.querySelector(".ap-askx-a .ap-askx-from") && document.querySelector("#rxNotes h2").textContent === "Ask Florin, a conversation" && document.querySelector('[data-rx="screen"][data-v="ask-chat"]').getAttribute("aria-current") === "true"; }), "Ask: Ask Florin, a conversation opens on one computed exchange, with its notes and its row lit");
     await aopen("ask-alarm");
-    ok(await ap.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .ap-askx-a .ap-ask-alarm") && /passes all/.test(document.querySelector("#rxNotes .rx-lint").textContent)), "Ask: the sign that needs a clinician opens on the Teal banner, and passes the claims check");
+    ok(await ap.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .ap-askx-a .ap-ask-alarm") && !!document.querySelector("#rxNotes .rx-note") && !document.querySelector("#rxNotes .rx-lint")), "Ask: the sign that needs a clinician opens on the Teal banner, and passes the claims check (no claims line)");
     await ap.evaluate(() => document.querySelector('[data-rx="plan"][data-v="free"]').click()); await aw();
     await aopen("ask");
     ok(await ap.evaluate(() => !document.querySelector(".rx-stage .ap-rx .ap-askx-in") && /Ask about your own numbers/.test(document.querySelector(".rx-stage .ap-rx .ap-layer").textContent)), "Ask: on Free the tab keeps the lock and the way into membership");
@@ -2397,10 +2461,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const z2 = await ez.evaluate(() => {
       const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M(), x = L.day(M, L.TODAY), bms = x.entries.filter((e) => e.kind === "bm"), root = document.querySelector(".rx-stage .ap-rx");
       const n = root.querySelector(".ap-ez-score .ez-n");
-      return { say: root.querySelector(".ap-ez-say").textContent, t: bms.length ? window.FLORIN_APP.util.fmtTime(bms[0].t) : "", v: (L.score(M, L.TODAY, "C") || {}).value, shown: n ? n.dataset.count : null, words: root.querySelector(".ap-ez-score .ez-ans").textContent, big: [...root.querySelectorAll(".ap-ez-do .ap-ez-big b")].map((b) => b.textContent).join("|"), week: !!root.querySelector(".ap-ez-today .lk-easy .ez-week"), rows: root.querySelectorAll(".ap-ez-tl [data-act='edit']").length, entries: x.entries.length, ck: !!root.querySelector(".ap-ez-ck") };
+      return { say: root.querySelector(".ap-ez-say").textContent, t: bms.length ? window.FLORIN_APP.util.fmtTime(bms[0].t) : "", v: (L.score(M, L.TODAY, "C") || {}).value, shown: n ? n.textContent : null, counts: n ? n.hasAttribute("data-count") : null, words: root.querySelector(".ap-ez-score .ez-ans").textContent, big: [...root.querySelectorAll(".ap-ez-do .ap-ez-big b")].map((b) => b.textContent).join("|"), week: !!root.querySelector(".ap-ez-today .lk-easy .ez-week"), rows: root.querySelectorAll(".ap-ez-tl [data-act='edit']").length, entries: x.entries.length, ck: !!root.querySelector(".ap-ez-ck") };
     });
     ok(z2.t && z2.say.includes(z2.t) && /within your usual time|later than your usual time|earlier than your usual time/.test(z2.say), `Today opens on one plain sentence from the logs (${z2.say})`);
-    ok(String(z2.v) === String(z2.shown) && /usual range/.test(z2.words), `FloraScore is the model's number, big, with its words (${z2.shown}: ${z2.words})`);
+    /* build-modules: the number never counts up (it sits beside its reading), so it is there as drawn */
+    ok(String(z2.v) === String(z2.shown) && z2.counts === false && /usual range/.test(z2.words), `FloraScore is the model's number, big, with its words, and never counts up (${z2.shown}: ${z2.words})`);
     ok(z2.big === "I had a BM|Something feels off|What I ate" && z2.week && z2.rows === z2.entries && z2.ck, "Today has the three big buttons, This week as the Easy read week card, today's logs as rows, and the check-in card when it's due");
     const mT = await zmeasure("today");
     ok(mT.minFont >= 16, `Easy Today: no text under 16px (smallest ${mT.minFont}px, "${mT.smallText}")`);
@@ -2581,8 +2646,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
 
     /* the Version note, and the screens in the list, which turn Easy on */
     await ez.evaluate(() => document.querySelector('[data-rx="dinfo"][data-v="easy"]').click()); await zw(300);
-    const vn = await ez.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "" }));
-    ok(vn.t === "Version: standard, or easy" && vn.on === "On the phone" && /Larger text and simpler screens/.test(vn.rec), `the Version note reads On the phone for Easy and recommends the Profile setting (${vn.on})`);
+    const vn = await ez.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, marked: [...document.querySelectorAll("#rxNotes .rx-opt.is-rec .rx-opt-h b")].map((x) => x.textContent).join(","), rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "" }));
+    ok(vn.t === "Should the app offer larger text and simpler screens?" && vn.marked === "Easy" && /^We recommend Easy as a setting anyone can turn on or off, "Larger text and simpler screens"/.test(vn.rec), `the Version note recommends Easy as a setting anyone can turn on (${vn.marked})`);
     await ez.keyboard.press("Escape"); await zw(300);
     await zset("easy", "false"); await zgo("today");
     await zgo("ez-today");
@@ -2689,7 +2754,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
           const F = L.span(M, n, "C"), w = F.filter((f) => f.state === "usual").length, kn = w + F.filter((f) => f.state === "shifted").length;
           ["rings", "oura", "easy"].forEach((id) => { if (!new RegExp(`(?<!\\d)${w}\\s*of ${kn} days within your usual`).test(o.t[`${id}.${k}`])) bad.push(`${id}.${k} not ${w} of ${kn}`); });
           if (!o.t[`bento.${k}`].includes(`On ${w} of ${kn} days`)) bad.push(`bento.${k} not ${w} of ${kn}`);
-          if (look4(F, k)) ["rings", "oura", "easy", "bento"].forEach((id) => { if (!o.t[`${id}.${k}`].includes(look4(F, k))) bad.push(`${id}.${k} names nothing left out`); });
+          /* build-modules: Easy read's week names a day not counted in its own line, as Today's card does (L.dayWhy) */
+          const easyWeek = () => F.filter((f) => f.logged && (f.state === "unsure" || f.state === "nocount")).map((f) => L.dayWhy(M, f, "C").line);
+          if (look4(F, k)) ["rings", "oura", "easy", "bento"].forEach((id) => { const want = id === "easy" && k === "week" ? easyWeek() : [look4(F, k)]; if (!want.length || !want.every((w) => o.t[`${id}.${k}`].includes(w))) bad.push(`${id}.${k} names nothing left out`); });
         });
         return bad;
       };
@@ -2855,8 +2922,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     });
     ok(!dl.length, `fix-core: for every person and option, the week's change is round(this week) minus round(last week)${dl.length ? ` (off: ${dl.join(", ")})` : ""}`);
     await cset("persona", "alex"); await cgo("i-score");
-    const al = await cp.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, mv = L.scoreMoved(api.M(), api.V().form); const t = document.querySelector(".rx-stage .ap-rx .ap-layer").textContent; return { mv: mv && [mv.lwR, mv.wkR, mv.delta], chip: t.includes(`+${mv.delta} vs last week`), wf: t.includes(`from ${mv.lwR} last week to ${mv.wkR} this week`) || !!document.querySelector(`.rx-stage .ap-rx [aria-label*="from ${mv.lwR} last week to ${mv.wkR} this week"]`) }; });
-    ok(al.mv && al.mv[2] === al.mv[1] - al.mv[0] && al.chip && al.wf, `fix-core: Alex's FloraScore detail: the chip says +${al.mv && al.mv[2]} beside ${al.mv && al.mv[0]} and ${al.mv && al.mv[1]}`);
+    /* build-core: the week is a neutral chip of the two averages, and What moved it says the same two numbers, its
+       whole-point rows adding up to the change */
+    const al = await cp.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, mv = L.scoreMoved(api.M(), api.V().form); const ly = document.querySelector(".rx-stage .ap-rx .ap-layer"), t = ly.textContent; const pts = [...ly.querySelectorAll(".ap-moved-r strong")].map((x) => +x.textContent.replace("−", "-")); return { mv: mv && [mv.lwR, mv.wkR, mv.delta], chip: t.includes(`This week ${mv.wkR} on average, last week ${mv.lwR}`), wf: t.includes(`${mv.lwR} last week to ${mv.wkR}, in points`) && pts.length === 4 && pts.reduce((a, b) => a + b, 0) === mv.delta }; });
+    ok(al.mv && al.mv[2] === al.mv[1] - al.mv[0] && al.chip && al.wf, `fix-core: Alex's FloraScore detail: the week chip says ${al.mv && al.mv[1]} and ${al.mv && al.mv[0]} on average, and What moved it adds up to ${al.mv && al.mv[2]}`);
     await cset("persona", "sarah");
     /* 5. meal coverage: counted over the days logged in the 90-day window, the same as the data looks */
     await cset("meals", "rough"); await cgo("i-pat");
@@ -2868,15 +2937,19 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     });
     ok(mc.said && mc.sparse && mc.gate && !mc.old && (!mc.fld || mc.fld.join() === mc.pr.join()), `fix-core: Possible patterns says meals on ${mc.pr[0]} of the ${mc.pr[1]} days logged in the last ${mc.pr[2]} days, the same counts the gate and the data looks use (${mc.fld ? mc.fld.join(" of ") : "looks not loaded"})`);
     await cp.evaluate(() => { const b2 = document.querySelector('[data-rx="dinfo"][data-v="mealUI"]'); b2.click(); }); await cw();
-    const mn = await cp.evaluate(() => [...document.querySelectorAll("#rxNotes .rx-q li")].map((l) => l.textContent).join(" "));
-    ok(/has meals on \d+ of the \d+ days logged in the last \d+ days, under 60%/.test(mn), `fix-core: the Meal sheet note states the same day counts (${(mn.match(/has meals on [^,]+/) || [""])[0]})`);
+    /* notes-page (Will, Oct 28: "I don't understand the rough days meal logging"): the Meal sheet note says the meals
+       control under Demo is the demo person's history, not this decision, with the gate and the food check from the model */
+    const mn = await cp.evaluate(() => ({ t: (document.querySelector("#rxNotes .rx-aside") || {}).textContent || "" }));
+    ok(mn.t === "Not the same as \u201cDemo person's meals\u201d under Demo, which only changes how often the demo person wrote meals down. Its note explains the trap.", `fix-notes: the Meal sheet note points to the meals control under Demo in one plain line, and leaves the trap to its note (${mn.t})`);
     await cp.evaluate(() => document.querySelector('[data-rx="dclose"]') && document.querySelector('[data-rx="dclose"]').click());
     await cset("meals", "all");
-    /* 6. the week card's legend samples the gap day's own struck date */
+    /* 6. build-core: the week card has no legend, no strips and no struck date: a day with nothing logged is its date
+       alone, named in a line */
     await cgo("today");
-    const gl = await cp.evaluate(() => { const g = document.querySelector(".rx-stage .ap-rx .ap-wk-days .is-gap em"), k = document.querySelector(".rx-stage .ap-rx .ap-wk-legend .ap-wk-gapday"); return { g: g && g.textContent, k: k && k.textContent }; });
-    ok(gl.g && gl.k === gl.g, `fix-core: the week legend's Nothing logged sample is the gap day's struck date (${gl.k}), not a stray letter`);
-    /* 7. every symptom strength on the week card is 3:1 or more against the card, in order, light and dark */
+    const gl = await cp.evaluate(() => { const c = document.querySelector(".rx-stage .ap-rx .ap-wk"), g = c.querySelector(".ap-day--none .ap-day-c"); return { legend: !!c.querySelector(".ap-legend, .ap-wk-strip"), struck: g ? /line-through/.test(getComputedStyle(g).textDecorationLine) : null, line: /Nothing logged on \w+day/.test(c.textContent) }; });
+    ok(!gl.legend && gl.struck === false && gl.line, "fix-core: the week card has no legend or strips; a day with nothing logged is its plain date, named in a line");
+    /* 7. build-core: every day mark is 3:1 or more against the card (Plum or Ray, Ink 3, the Teal square, the Teal ring,
+       and Gold's Shift Ink edge in light; dark Gold is its own fill), light and dark */
     const sq = [];
     for (const th of ["light", "dark"]) {
       await cset("theme", th);
@@ -2887,12 +2960,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const lum = (c) => { const a = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; };
         const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
         const card = document.querySelector(".rx-stage .ap-rx .ap-wk"), bg = rgb(getComputedStyle(card).backgroundColor);
-        const out = [1, 2, 3].map((k) => { const i = document.createElement("i"); i.className = `ap-wk-sq ap-wk-sq--${k}`; card.appendChild(i); const c = rgb(getComputedStyle(i).backgroundColor); i.remove(); return +ratio(over(c, bg), bg).toFixed(2); });
+        const sqr = (() => { const i = document.createElement("span"); i.className = "ap-day-s is-on"; card.appendChild(i); const c = rgb(getComputedStyle(i).backgroundColor); i.remove(); return +ratio(over(c, bg), bg).toFixed(2); })();
+        const html = (k) => { const w = document.createElement("span"); w.innerHTML = `<span class="ap-day ap-day--${k}"><span class="ap-day-c">5</span></span>`; return w.firstChild; };
+        const of = (k, prop) => { const el = html(k); card.appendChild(el); const cs = getComputedStyle(el.querySelector(".ap-day-c")); let c = cs.backgroundColor; if (prop === "edge") { const m = cs.boxShadow.match(/(rgba?\([^)]*\)|color\([^)]*\)|oklch\([^)]*\))/); c = m ? m[1] : "rgba(0,0,0,0)"; } el.remove(); return +ratio(over(rgb(c), bg), bg).toFixed(2); };
+        const out = [of("usual"), of("quiet"), sqr, of("flag", "edge"), th === "light" ? of("shift", "edge") : of("shift")];
         return { th, out };
       }, th));
     }
     await cset("theme", "light");
-    ok(sq.every((r) => r.out.every((v, i) => v >= 3 && (!i || v > r.out[i - 1]))), `fix-core: mild, moderate and strong squares are 3:1 or more on the card, in order (${sq.map((r) => `${r.th} ${r.out.join(", ")}`).join("; ")})`);
+    ok(sq.every((r) => r.out.every((v) => v >= 3)), `fix-core: every day mark is 3:1 or more on the card: within, not counted, the symptom square, the flag ring, Gold's edge in light and Gold on dark (${sq.map((r) => `${r.th} ${r.out.join(", ")}`).join("; ")})`);
     /* 8. the faintest inks clear 4.5:1 in light: the app's on the card, the page's on its panels and ground */
     const ink = await cp.evaluate(() => {
       const cv = document.createElement("canvas"); cv.width = cv.height = 1; const cx = cv.getContext("2d", { willReadFrequently: true });
@@ -2908,27 +2984,30 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* 9. the detail charts draw no dashed lines; a day not logged is its struck date */
     await cgo("i-score");
     const ds = await cp.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer .c-avg, .rx-stage .ap-rx .ap-layer .c-wf-conn")].map((x) => getComputedStyle(x).strokeDasharray).filter((v) => v && v !== "none"));
-    const avl = await cp.evaluate(() => (document.querySelector(".rx-stage .ap-rx .ap-layer .c-avg-lbl") || {}).textContent || "");
+    /* build-core: no average line at all now (DESIGN.md: two layers at most) */
+    const avl = await cp.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-layer .c-avg, .rx-stage .ap-rx .ap-layer .c-area, .rx-stage .ap-rx .ap-layer .c-avg-lbl").length);
     await cgo("i-timing");
     const dt = await cp.evaluate(() => {
       const L = document.querySelector(".rx-stage .ap-rx .ap-layer");
-      const dash = [...L.querySelectorAll(".c-row-base")].map((x) => getComputedStyle(x).strokeDasharray).filter((v) => v && v !== "none");
-      const gaps = [...L.querySelectorAll(".c-row.is-gap")].map((g) => ({ lbl: (g.querySelector(".c-row-lbl") || {}).textContent || "", struck: /line-through/.test(getComputedStyle(g.querySelector(".c-row-lbl")).textDecorationLine), base: getComputedStyle(g.querySelector(".c-row-base")).stroke }));
+      const dash = [...L.querySelectorAll(".dv-chart line, .dv-chart path, .dv-chart rect, .dv-chart circle")].map((x) => getComputedStyle(x).strokeDasharray).filter((v) => v && v !== "none");
+      /* build-core: a day with nothing logged is its date alone, in Ink 3, not struck, with no dots */
+      const gaps = [...L.querySelectorAll(".dv-rowlbl.is-gap")].map((g) => ({ lbl: g.textContent, struck: /line-through/.test(getComputedStyle(g).textDecorationLine), fill: getComputedStyle(g).fill }));
+      const ink3 = (() => { const t = L.querySelector(".dv-ax"); return t ? getComputedStyle(t).fill : ""; })();
       const lg = [...L.querySelectorAll(".ap-legend *")].some((x) => /dashed/.test(getComputedStyle(x).borderTopStyle));
-      return { dash, gaps, lg, key: (L.querySelector(".ap-legend .ap-lg-gap") || {}).textContent || "" };
+      return { dash, gaps, lg, ink3, strike: L.querySelectorAll(".ap-lg-gap").length };
     });
-    ok(!ds.length && /^Average \d+$/.test(avl) && !dt.dash.length && !dt.lg && dt.gaps.length && dt.gaps.every((g) => g.lbl && g.struck && g.base === "none") && dt.gaps.some((g) => g.lbl === dt.key), `fix-core: FloraScore and Timing draw no dashed lines; the average is labelled (${avl}), and a day not logged is its struck date, as in the legend (${dt.key})`);
-    /* 10. with the Easy version on, Home and Data style say Picked, Easy draws its own, with the line under each row */
+    ok(!ds.length && avl === 0 && !dt.dash.length && !dt.lg && !dt.strike && dt.gaps.length && dt.gaps.every((g) => g.lbl && !g.struck && g.fill === dt.ink3), `fix-core: FloraScore and Timing draw no dashed lines and no average line or area; a day with nothing logged is its date in Ink 3, not struck (${dt.gaps.map((g) => g.lbl).join(", ")})`);
+    /* 10. with the Easy version on, Home and Data style each get one plain line: Easy has its own Today and charts */
     await cset("easy", "true");
     const ez = {};
     for (const [k, v] of [["look", "oura"], ["home", "day"]]) {
       await cset(k, v);
-      ez[k] = await cp.evaluate((k) => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "", line: (() => { const x = document.querySelector(`[data-shadow="${k}"]`); return x && !x.hidden ? x.textContent : ""; })() }), k);
+      ez[k] = await cp.evaluate((k) => ({ on: (document.querySelector("#rxNotes .rx-note-easy") || {}).textContent || "", badge: /On the phone|\bPicked\b/.test(document.querySelector("#rxNotes").textContent), line: (() => { const x = document.querySelector(`[data-shadow="${k}"]`); return x && !x.hidden ? x.textContent : ""; })() }), k);
     }
     await cset("easy", "false");
     const ez0 = await cp.evaluate(() => [...document.querySelectorAll("[data-shadow]")].every((x) => x.hidden));
     await cset("look", "built"); await cset("home", "score");
-    ok(ez.look.on === "Picked; Easy draws its own" && ez.home.on === "Picked; Easy draws its own" && /Easy version draws Easy read/.test(ez.look.line) && /Easy version draws its own Today/.test(ez.home.line) && ez0, `fix-core: with Easy on, Oura and Day first read Picked; Easy draws its own, with a line under each row; Easy off takes the lines away (${ez.look.on})`);
+    ok(ez.look.on === ez.look.line && ez.home.on === ez.home.line && /^Easy has its own charts/.test(ez.look.line) && /^Easy has its own Today/.test(ez.home.line) && !ez.look.badge && !ez.home.badge && ez0, `notes-page: with Easy on, Data style and Home each get one plain line, under the row and in the note, and no badge; Easy off takes the lines away (${ez.home.line} / ${ez.look.line})`);
     /* 11. a row picked from the list shows that screen's note, even when the phone is already on it */
     await cgo("today"); await cset("history", "calendar");
     const n1 = await cp.evaluate(() => document.querySelector("#rxNotes h2").textContent);
@@ -2936,7 +3015,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const sb = await cp.evaluate(() => { const x = document.querySelector('#rxNotes [data-rx="show"]'); return x ? x.dataset.v : null; });
     await cp.evaluate(() => document.querySelector('#rxNotes [data-rx="show"]').click()); await cw();
     const sa = await cp.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), h: document.querySelector("#rxNotes h2").textContent, again: !!document.querySelector('#rxNotes [data-rx="show"]') }));
-    ok(/^History/.test(n1) && sb === "history" && sa.key === "hist-cal" && sa.h === n1 && !sa.again, `fix-core: History set to Calendar from Today: the note offers Show it on the phone, which opens the calendar and keeps the decision's note up (${sa.key})`);
+    ok(/History/.test(n1) && sb === "history" && sa.key === "hist-cal" && sa.h === n1 && !sa.again, `fix-core: History set to Calendar from Today: the note offers Show it on the phone, which opens the calendar and keeps the decision's note up (${sa.key})`);
     await cgo("today");
     const n2 = await cp.evaluate(() => ({ h: document.querySelector("#rxNotes h2").textContent, eyebrow: document.querySelector("#rxNotes .rx-eyebrow").textContent }));
     await cgo("today");
@@ -2946,7 +3025,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await cgo("today");
     const n4 = await cp.evaluate(() => ({ h: document.querySelector("#rxNotes h2").textContent, eyebrow: document.querySelector("#rxNotes .rx-eyebrow").textContent }));
     await cset("history", "list");
-    ok(n4.eyebrow === "On the phone now" && !/^History/.test(n4.h) && n3 === n2.h, `fix-core: a decision's note, then Today picked from the list while the phone is on Today: Today's note shows (${n4.h})`);
+    ok(n4.eyebrow === "This screen" && !/History/.test(n4.h) && n3 === n2.h, `fix-core: a decision's note, then Today picked from the list while the phone is on Today: Today's note shows (${n4.h})`);
     /* 12. the arrow keys walk the Screens list: every enabled row once, in order, from Plus menu */
     await cgo("plus");
     await cp.evaluate(() => { document.activeElement && document.activeElement.blur(); });
@@ -2971,7 +3050,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const inPh = await cp.evaluate(() => !!document.activeElement && !!document.activeElement.closest(".rx-stage .ap-rx"));
     const links = await cp.evaluate(() => [...document.querySelectorAll(".rx-head-links a")].map((a) => `${a.textContent}|${a.target}|${a.rel}|${a.href}`));
     ok(sk.t === "Skip to the phone" && sk.vis && inPh, `fix-core: the first Tab stop is Skip to the phone, shown on focus, and it takes focus into the phone`);
-    ok(links.length === 2 && links.every((l) => /\|_blank\|noopener\|https:\/\/claude\.ai\/artifact\//.test(l)) && /decisions, as slides.*2h5ikADR2eFCY1DZYbJEJU/.test(links[0]) && /data looks library.*FdsxDLSQqETo3HRCVmUZzL/.test(links[1]), "fix-core: the header links the decisions deck and the data looks library, each in a new tab");
+    ok(links.length === 2 && links.every((l) => /\|_blank\|noopener\|https:\/\/claude\.ai\/artifact\//.test(l)) && /decisions, as slides.*2h5ikADR2eFCY1DZYbJEJU/.test(links[0]) && /^Every data style, side by side\|.*FdsxDLSQqETo3HRCVmUZzL/.test(links[1]), "fix-core: the header links the decisions deck and every data style side by side, each in a new tab");
     ok(!ce.length, `fix-core: no console or page errors${ce.length ? ": " + ce.slice(0, 3).join(" | ") : ""}`);
     await cp.close();
   }
@@ -3066,17 +3145,21 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     });
     ok(!/FloraScore/.test(fxFree) && /^Your 7:40 PM BM was Watery/.test(fxFree), `consolidate: on Free it stops at the lead, as Day first does (${fxFree})`);
     await xset("plan", "member");
-    /* 6. the strength marks: the calendar's mild tick is the week card's mild square, and strength not said is hollow in both */
+    /* 6. the strength marks. build-modules: strength left the mark (claude/Florin data viz.md, section 1): the calendar,
+       the week card and every day mark draw one Teal square for a symptom day, the same for mild and for strength not
+       said, through RU.dayMark */
     const mk = await xp.evaluate(() => {
-      const root = document.querySelector(".rx-stage .ap-rx"), box = document.createElement("div");
-      box.innerHTML = '<i class="ap-wk-sq ap-wk-sq--1"></i><i class="vr-t vr-t--sym vr-t--s1"></i><i class="ap-wk-sq ap-wk-sq--0"></i><i class="vr-t vr-t--sym vr-t--s0"></i>';
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = window.FLORIN_EXT.api.M(), root = document.querySelector(".rx-stage .ap-rx"), box = document.createElement("div");
+      const f = L.facts(M, L.day(M, L.TODAY - 1), "C");
+      const day = (s) => Object.assign({}, f, { logged: true, sym: { Bloating: s }, nsym: 1, unrated: s ? {} : { Bloating: true } });
+      box.innerHTML = RU.dayMark(day(1), { M, mode: "C" }) + RU.dayMark(day(0), { M, mode: "C" });
       root.appendChild(box);
-      const c = [...box.children].map((x) => getComputedStyle(x));
-      const out = { mild: [c[0].backgroundColor, c[1].backgroundColor], hollow: [c[2].backgroundColor, c[3].backgroundColor] };
+      const c = [...box.querySelectorAll(".ap-day-s")].map((x) => getComputedStyle(x).backgroundColor);
+      const t = document.createElement("i"); t.style.background = "var(--ap-teal)"; box.appendChild(t); const teal = getComputedStyle(t).backgroundColor;
       box.remove();
-      return out;
+      return { c, teal };
     });
-    ok(mk.mild[0] === mk.mild[1] && mk.hollow.every((x) => /rgba\(0, 0, 0, 0\)|transparent/.test(x)), `consolidate: the calendar's mild tick matches the week card's mild square (${mk.mild[0]}), and strength not said is hollow in both`);
+    ok(mk.c.length === 2 && mk.c.every((x) => x === mk.teal), `consolidate: a symptom day is one Teal square, the same for mild and for strength not said (${mk.c.join(", ")})`);
     /* 7. Screens > Ask Florin after a seeded chat: a fresh chat, through EXT.opens.ask */
     const xgo = async (id) => { await xp.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await xw(900); };
     await xgo("ask-chat");
@@ -3148,7 +3231,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const t = document.querySelector(".rx-stage .ap-rx .ap-layer").innerText;
       return { t, w, k, flag: RU.FLAG_DAY, mor: F.filter((f) => f.first != null && !f.flag).length, inW: F.filter((f) => f.inWin).length };
     });
-    ok(/\d+, not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} mornings`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and ${ins.inW} of ${ins.mor} mornings without it, and says why`);
+    ok(/\d+, not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} days`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and the first BM in the window on ${ins.inW} of ${ins.mor} days without it, and says why`);
     /* 4. every data style's 30-day cards leave today out of their counts */
     const lookBad = [];
     for (const look of ["rings", "journal", "bento", "oura", "easy"]) {
@@ -3159,7 +3242,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         return { t: document.querySelector(".rx-stage .ap-rx .ap-layer").innerText.replace(/’/g, "'"), rd, all: ser.filter((s) => s.value != null).length, mor: D.timing.mornings30, flagLine: D.flagLine };
       });
       const bad = [];
-      if (new RegExp(`\\d+ of ${r.all} days(\\.| within your usual range)`).test(r.t) && r.all !== r.rd) bad.push("trend counts today");
+      if (new RegExp(`\\d+\\s*of ${r.all} days(\\.| within your usual range| with FloraScore in its usual range)`).test(r.t) && r.all !== r.rd) bad.push("trend counts today");
       if (/In your usual window|Inside your usual window|first BM today came in your usual window|Today[^.\n]*inside your window/.test(r.t)) bad.push("today's timing read");
       if (!r.t.includes(r.flagLine)) bad.push("no flag line");
       if (bad.length) lookBad.push(`${look}: ${bad.join(", ")}`);
@@ -3178,13 +3261,14 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const wc = await fp.evaluate(() => {
       const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, M = api.M();
       L.add(M, { kind: "sym", d: L.TODAY, t: 19.8, items: [{ name: "Gas", s: 0 }], last: null, note: "" });
+      /* build-core: today's mark is the Teal ring, its screen-reader words name each symptom with its own strength,
+         and the flag line (with its ring) comes after the day lines and before the symptom line */
       const box = document.createElement("div"); box.innerHTML = RU.weekCard(M, api.V().form);
-      const today = [...box.querySelectorAll('.ap-wk-strip[aria-label="Symptoms, by day"] .sr')].pop().textContent;
-      const ms = [...box.querySelector(".ap-wk").children].map((c) => c.className);
-      const fl = ms.indexOf("ap-wk-fl"), rows = ms.map((c, i) => (c === "ap-wk-m" ? i : -1)).filter((i) => i >= 0);
-      return { today, under: fl > rows[1] && fl < rows[2] };
+      const t = box.querySelector(`.ap-day[data-day="${L.TODAY}"]`), today = t ? t.querySelector(".sr").textContent : "";
+      const ls = [...box.querySelectorAll(".ap-wk-ls li")], fl = ls.findIndex((li) => li.textContent === RU.FLAG_DAY && !!li.querySelector(".ap-day-k--flag")), sy = ls.findIndex((li) => !!li.querySelector(".ap-day-k--sym"));
+      return { today, under: !!t && t.classList.contains("ap-day--flag") && fl >= 0 && fl === ls.length - 2 && sy === ls.length - 1 };
     });
-    ok(/bloating, mild; gas, strength not said$/.test(wc.today) && wc.under, `final-fix: the week card says each symptom's own strength ("${wc.today}") and puts the flag line under the BM rows`);
+    ok(/bloating, mild; gas, strength not said\.$/.test(wc.today) && wc.under, `final-fix: the week card says each symptom's own strength ("${wc.today}") and puts the flag line, with its Teal ring, after the day lines`);
     /* 8. the meal transcript leaves out the meals already logged that day */
     const ms = await fp.evaluate(() => { const L = window.FLORIN_LOGS, M = L.build("sarah", "est", { meals: "all" }), x = L.day(M, L.TODAY); return { say: L.mealSay(M, L.TODAY), logged: x.entries.filter((e) => e.kind === "meal").map((e) => e.meal) }; });
     ok(ms.logged.length && !ms.logged.some((k) => new RegExp(`for ${k}`).test(ms.say)) && /^[A-Z]/.test(ms.say), `final-fix: the played transcript leaves out today's ${ms.logged.join(" and ")} ("${ms.say}")`);
@@ -3206,6 +3290,541 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(s1 === "light" && s2 === "dark" && s3 === "light", `final-fix: after the page follows the system to light, Oura is dark first again and gives the theme back (${[s1, s2, s3].join(", ")})`);
   }
   /* ===== end final-fix ===== */
+
+  /* ===== build-modules: the modules' charts in the one set of marks (claude/Florin data viz.md, M1 to M6 and M8). The
+     calendar, Your days, the Easy version and Easy read draw a day with RU.dayMark and count days with L.tally, so each
+     number here is checked against the model, and each mark against its rule ===== */
+  {
+    const mc = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const m = await mc.newPage();
+    const me = [];
+    m.on("pageerror", (e) => me.push(e.message));
+    m.on("console", (x) => { if (x.type() === "error" || (x.type() === "warning" && /refresh-(variants|looks)|Easy version/.test(x.text()))) me.push(x.text()); });
+    await m.goto(PAGE); await m.waitForSelector(".ap-rx"); await m.waitForTimeout(500);
+    const mw = (ms = 500) => m.waitForTimeout(ms);
+    const mset = async (k, v) => { await m.evaluate(([k, v]) => window.FLORIN_EXT.api.set(k, v), [k, v]); await mw(300); };
+    const mopen = async (id) => { await m.evaluate((id) => window.FLORIN_EXT.api.open(id), id); await mw(); };
+    const RETIRED = /Something shifted|\bNo logs\b|Not logged|Outside them|Outside it(?!s)|Nothing logged on BMs/;
+
+    /* M1. the calendar: one day mark a day, no meal marks, no struck dates, the legend in the shared words in three lines
+       at most, and every day a 44 by 44 button, in both themes */
+    for (const theme of ["light", "dark"]) {
+      await mset("theme", theme); await mopen("hist-cal");
+      const c = await m.evaluate(() => {
+        const lay = document.querySelector(".ap-rx .ap-layer"), bs = [...lay.querySelectorAll(".vr-cal-d")];
+        const lg = lay.querySelector(".vr-cal-lg"), items = lg ? [...lg.children] : [];
+        const tops = [...new Set(items.map((x) => Math.round(x.getBoundingClientRect().top)))];
+        const small = bs.filter((x) => { const r = x.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).length;
+        const struck = [...lay.querySelectorAll(".vr-cal *")].some((x) => /line-through/.test(getComputedStyle(x).textDecorationLine));
+        return { n: bs.length, marks: bs.every((x) => x.querySelectorAll(".ap-day").length === 1), meal: !!lay.querySelector(".vr-t--meal, .vr-cal-ts") || /Meal logged/.test(lg ? lg.textContent : ""), lines: tops.length, legend: lg ? lg.textContent : "", small, struck };
+      });
+      ok(c.n >= 28 && c.marks && !c.meal && !c.struck && c.small === 0 && c.lines <= 3 && !RETIRED.test(c.legend), `build-modules, calendar ${theme}: one day mark in each of ${c.n} day buttons, every one 44 by 44 or more, no meal marks or struck dates, and a legend of ${c.lines} lines in the shared words (${c.legend})`);
+    }
+    /* the date inside a filled day mark is 4.5:1 or more on its fill, in both themes: Plum, Gold and Ink 3 */
+    const ratio = () => m.evaluate(() => {
+      /* any CSS colour (oklch, color-mix) to sRGB through a canvas pixel */
+      const cv = document.createElement("canvas"); cv.width = cv.height = 1; const g0 = cv.getContext("2d", { willReadFrequently: true });
+      const rgb = (c) => { g0.clearRect(0, 0, 1, 1); g0.fillStyle = c; g0.fillRect(0, 0, 1, 1); return [...g0.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+      const lum = (c) => { const [r, g, bb] = rgb(c).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * bb; };
+      const cr = (a, c) => { const x = lum(a), y = lum(c); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+      const out = {};
+      document.querySelectorAll(".ap-rx .ap-layer .ap-day:is(.ap-day--usual, .ap-day--shift, .ap-day--quiet) .ap-day-c").forEach((el) => {
+        const k = el.parentElement.className.match(/ap-day--(usual|shift|quiet)/)[1], cs = getComputedStyle(el);
+        const v = +cr(cs.color, cs.backgroundColor).toFixed(2);
+        out[k] = Math.min(out[k] || 99, v);
+      });
+      return out;
+    });
+    const rr = {};
+    for (const theme of ["light", "dark"]) { await mset("theme", theme); await mset("plan", "free"); await mopen("hist-cal"); rr[theme] = await ratio(); await mset("plan", "member"); }
+    ok(["light", "dark"].every((t) => ["usual", "shift", "quiet"].every((k) => rr[t][k] >= 4.5)), `build-modules: the date inside every filled day mark is 4.5:1 or more on its fill (light ${JSON.stringify(rr.light)}, dark ${JSON.stringify(rr.dark)})`);
+    await mset("theme", "light");
+    /* Day first: the symptom row's edge is Teal, as symptoms are everywhere; the chip carries the FloraScore glyph, a
+       name with no value, never a ring filled toward 100 */
+    await mopen("home-day");
+    const df = await m.evaluate(() => {
+      const row = document.querySelector('.ap-rx .vr-mk--plain'), svg = document.querySelector(".ap-rx .vr-sc-ring svg");
+      const t = document.createElement("i"); t.style.background = "var(--ap-teal)"; document.querySelector(".ap-rx .ap-layer").appendChild(t); const teal = getComputedStyle(t).backgroundColor; t.remove();
+      return { edge: row ? getComputedStyle(row, "::before").backgroundColor : null, teal, svg: svg ? svg.outerHTML : "" };
+    });
+    ok(df.edge === df.teal && !!df.svg && !/--v:\s*\d|c-ring-band/.test(df.svg), `build-modules, Day first: the marked symptom's edge is Teal (${df.edge}) and the chip's glyph holds no value`);
+    await mset("home", "score");
+
+    /* M2. Your days: the count is L.tally's over the last 7 days, the bar's parts add up to its "of", every row's mark
+       is its day's state and its word the shared one; Ask about this says the same count */
+    await mopen("i-days");
+    const yd = await m.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), V = api.V();
+      const T = L.tally(L.span(M, 7, V.form), true), lay = document.querySelector(".ap-rx .ap-layer");
+      const big = lay.querySelector(".ap-dhero .ap-big"), seg = lay.querySelector(".c-seg");
+      const parts = seg ? (seg.getAttribute("aria-label").match(/\d+/g) || []).map(Number) : [];
+      const K = { usual: "usual", shifted: "shift", unsure: "quiet", nocount: "quiet", logged: "quiet", none: "none", pending: "none", flag: "flag" };
+      const rows = [...lay.querySelectorAll(".rlk-day")].map((r) => ({ st: r.dataset.state, mk: ((r.querySelector(".ap-day") || {}).className || "").match(/ap-day--(\w+)/), w: (r.querySelector(".rlk-day-w") || {}).textContent }));
+      const ctx = RU.askContext(M, V, { k: "days", range: 7 });
+      return { big: big ? big.textContent.replace(/\s+/g, " ").trim() : "", want: `${T.within}of ${T.known} days within your usual`, sum: parts.reduce((s, v) => s + v, 0), known: T.known, rows: rows.length, marks: rows.every((r) => r.mk && r.mk[1] === K[r.st]), words: rows.map((r) => r.w).join("|"), fact: ctx && ctx.facts[0], factWant: `${T.within} of ${T.known} days within your usual`, text: lay.textContent };
+    });
+    ok(yd.big.replace(/\s/g, "") === yd.want.replace(/\s/g, "") && yd.sum === yd.known && yd.rows === 7 && yd.marks && yd.fact === yd.factWant && !RETIRED.test(yd.text) && !/\bShifted\b/.test(yd.words), `build-modules, Your days: ${yd.factWant} as L.tally counts it, a bar whose parts add up to ${yd.sum}, each day's own mark and word, and Ask about this says the same (${yd.fact})`);
+
+    /* M3. the Easy version's Today: the last 7 days counted as L.tally counts them, its answer a line under the one big
+       number, day marks at 32px, a Gold mark for every day named outside the usual, no count-up, FloraScore never Gold,
+       and nothing wider than the phone at 390 */
+    for (const theme of ["light", "dark"]) {
+      await mset("theme", theme); await mopen("ez-today");
+      const ez = await m.evaluate(() => {
+        const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), V = api.V(), T = L.tally(L.span(M, 7, V.form), true);
+        const root = document.querySelector(".ap-rx"), lay = root.querySelector(".ap-layer"), wk = lay.querySelector(".ez-week");
+        const gold = wk ? wk.querySelectorAll(".ez-days .ap-day--shift").length : -1;
+        const lines = wk ? [...wk.querySelectorAll(".ez-lines li")].filter((li) => li.querySelector(".ap-day-k--shift")) : [];
+        const named = lines.reduce((s, li) => s + (/^Also outside your usual: /.test(li.textContent) ? li.textContent.split(/, | and /).length : 1), 0);
+        const c = wk && wk.querySelector(".ap-day-c");
+        return { ans: wk ? wk.querySelector(".ez-ans--line").textContent.replace(/\s+/g, " ").trim() : "", want: `${T.within} of ${T.known} days within your usual`, big: lay.querySelectorAll(".ez-n").length, gold, named, d: c ? Math.round(c.getBoundingClientRect().width) : 0, wide: lay.scrollWidth > lay.clientWidth + 1, scoreGold: !!lay.querySelector(".ap-ez-score .ez-dot"), count: !!lay.querySelector("[data-count]") };
+      });
+      ok(ez.ans === ez.want && ez.big === 1 && ez.gold === ez.named && ez.d === 32 && !ez.wide && !ez.scoreGold && !ez.count, `build-modules, Easy Today ${theme}: "${ez.ans}" as L.tally counts it, one big number, ${ez.gold} Gold days each named in a line, 32px day marks, no count-up, FloraScore never Gold, nothing wider than the phone`);
+    }
+    await mset("theme", "light");
+    /* Your weeks: the trend in the score's own words, the parts as moves in whole points that add up to the change */
+    await m.evaluate(() => { const x = document.querySelector('.ap-rx [data-act="tab"][data-tab="insights"]'); x && x.click(); }); await mw();
+    const yw = await m.evaluate(() => {
+      const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, mv = L.scoreMoved(api.M(), api.V().form), lay = document.querySelector(".ap-rx .ap-layer");
+      const tr = (lay.querySelector(".ez-trend") || {}).textContent || "", pa = (lay.querySelector(".ez-parts") || {}).textContent || "";
+      return { tr, pa, pts: mv ? mv.parts.map((p) => p.pts) : [], delta: mv ? mv.delta : null, month: !!lay.querySelector(".ez-month .ez-cal-g .ap-day") };
+    });
+    ok(/with FloraScore in its usual range/.test(yw.tr) && !/within your usual range/.test(yw.tr) && yw.pts.reduce((s, v) => s + v, 0) === yw.delta && !/of 100/.test(yw.pa) && !/\d\.\d/.test(yw.pa) && yw.month, `build-modules, Your weeks: FloraScore's days in its own words, the month in day marks, and the parts as whole points (${yw.pts.join(", ")}) that add up to the change (${yw.delta})`);
+    await mset("easy", false);
+
+    /* M4. the data looks count, name and say the symptoms exactly as the app does */
+    const lk = await m.evaluate(() => {
+      const L = window.FLORIN_LOGS, out = [];
+      for (const [p, data] of [["sarah", "est"], ["marcus", "est"], ["alex", "est"], ["sarah", "new"]]) for (const mode of ["A", "B", "C"]) {
+        const M = L.build(p, data), D = window.FLD.build(p, { mode, M }), F = L.span(M, 7, mode);
+        const T = L.tally(F, true), why = D.days[7].map((d) => d.why && d.why.line).join("|"), want = F.map((f) => L.dayWhy(M, f, mode).line).join("|");
+        if (JSON.stringify(D.tally[7]) !== JSON.stringify(T) || D.symLine[7] !== L.symLine(F) || why !== want) out.push(`${p} ${data} ${mode}`);
+      }
+      return out;
+    });
+    ok(!lk.length, `build-modules: the data looks' counts (D.tally), lines (D.why) and symptom sentence (D.symLine) are the app's own, for every person and option${lk.length ? ": " + lk.join(", ") : ""}`);
+
+    /* M5, M6 and M8 on the library page: each look says where it stands in the app, every row asks its question, Easy
+       read's days are the app's day marks with a line for each day outside the usual, and Field journal counts over the
+       days read */
+    const LIB = "file://" + path.resolve(__dirname, "../library/_local.html");
+    for (const theme of ["light", "dark"]) {
+      const lp = await mc.newPage({ viewport: { width: 1440, height: 1000 } });
+      const le = [];
+      lp.on("pageerror", (e) => le.push(e.message));
+      lp.on("console", (x) => { if (x.type() === "error") le.push(x.text()); });
+      await lp.addInitScript((t) => { try { localStorage.setItem("florin-looks", JSON.stringify({ persona: "marcus", theme: t })); } catch (e) {} }, theme);
+      await lp.goto(LIB); await lp.waitForSelector(".lb-row"); await lp.waitForTimeout(600);
+      const lb = await lp.evaluate(() => {
+        const L = window.FLORIN_LOGS, D = window.FLD.build("marcus", { mode: "C" }), T = D.tally[7];
+        const looks = [...document.querySelectorAll(".lb-look")].map((x) => x.querySelector(".lb-eyebrow").textContent);
+        const rows = [...document.querySelectorAll(".lb-row-h")].map((h) => (h.querySelector("p") || {}).textContent || "");
+        const ez = document.querySelector('.lb-cell[data-look="easy"] .ez-week'), jr = document.querySelector('.lb-cell[data-look="journal"] .jr--week');
+        const sr = ez ? getComputedStyle(ez.querySelector(".ap-day .sr")).position : "";
+        const gold = ez ? ez.querySelectorAll(".ap-day--shift").length : -1, named = ez ? [...ez.querySelectorAll(".ez-lines li")].filter((li) => li.querySelector(".ap-day-k--shift")).length : 0;
+        return { looks, rows, marks: ez ? ez.querySelectorAll(".ez-days .ap-day").length : 0, sr, gold, named, jr: jr ? jr.querySelector(".jr-lede").textContent : "", want: `${T.within} of the ${T.known} days counted`, text: document.querySelector(".lb").textContent };
+      });
+      await lp.close();
+      ok(lb.looks.length === 5 && lb.looks.every(Boolean) && lb.rows.length === 11 && lb.rows.every((q) => /\?$/.test(q)) && lb.marks === 7 && lb.sr === "absolute" && lb.gold === lb.named && lb.jr.includes(lb.want) && !/\bShifted\b|Not logged/.test(lb.text) && !le.length, `build-modules, the library in ${theme}: every look says where it stands in the app (${lb.looks.join("; ")}), every row asks its question, Easy read's week is seven of the app's day marks with each Gold day named, and Field journal says "${lb.want}"${le.length ? ": " + le.slice(0, 2).join(" | ") : ""}`);
+    }
+    ok(!me.length, `build-modules: no console errors or module warnings${me.length ? ": " + me.slice(0, 3).join(" | ") : ""}`);
+    await mc.close();
+  }
+  /* ===== end build-modules ===== */
+
+  /* ===== build-core: the core charts in the one set of marks (claude/Florin data viz.md, C1 to C17). The model helpers
+     (L.tally, L.dayWhy, L.symLine, the whole-point parts), the week card, the hero, Insights' cards and details, History's
+     day headers, Ask's hand-off and the kit, each checked against the model and its rule ===== */
+  {
+    const kc = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const k = await kc.newPage();
+    const ke = [];
+    k.on("pageerror", (e) => ke.push(e.message));
+    k.on("console", (x) => { if (x.type() === "error") ke.push(x.text()); });
+    await k.goto(PAGE); await k.waitForSelector(".ap-rx"); await k.waitForTimeout(500);
+    const kw = (ms = 450) => k.waitForTimeout(ms);
+    const kset = async (key, v) => { await k.evaluate(([key, v]) => window.FLORIN_EXT.api.set(key, v), [key, v]); await kw(300); };
+    const kopen = async (id) => { await k.evaluate((id) => window.FLORIN_EXT.api.open(id), id); await kw(); };
+
+    /* C1. L.tally is the data looks' count, for every person, logs setting and option */
+    const t1 = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, bad = [];
+      for (const p of ["sarah", "marcus", "alex"]) for (const data of ["est", "new", "fresh"]) for (const mode of ["A", "B", "C"]) {
+        const M = L.build(p, data), D = window.FLD.build(p, { mode, M });
+        if (JSON.stringify(L.tally(L.span(M, 7, mode), true)) !== JSON.stringify(D.tally[7]) || JSON.stringify(L.tally(L.span(M, 30, mode), false)) !== JSON.stringify(D.tally[30])) bad.push(`${p} ${data} ${mode}`);
+      }
+      return bad;
+    });
+    ok(!t1.length, `build-core: L.tally over the last 7 and 30 days equals the data looks' D.tally, every person, logs setting and option${t1.length ? ": " + t1.join(", ") : ""}`);
+
+    /* C1. L.dayWhy: each day's one line, in the week card's order and words */
+    const dw = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, out = {}, line = (M, d, mode) => L.dayWhy(M, L.facts(M, L.day(M, d), mode), mode).line;
+      let M = L.build("marcus", "est");
+      out.wed = line(M, 86, "C"); out.fri = line(M, 88, "C"); out.thu = line(M, 87, "C"); out.sun = line(M, L.TODAY, "C");
+      /* only symptoms on a day with nothing else */
+      M = L.build("sarah", "est"); L.add(M, { kind: "sym", d: 87, t: 12, items: [{ name: "Cramping", s: 2 }], last: 1, note: "" }); out.sym = line(M, 87, "C");
+      /* a flag today */
+      M = L.build("sarah", "est"); L.add(M, { kind: "bm", d: L.TODAY, t: 19.5, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" }); out.flag = line(M, L.TODAY, "C");
+      /* No BM today, and three BMs today */
+      M = L.build("marcus", "est"); const x = L.day(M, L.TODAY); x.entries = x.entries.filter((e) => e.kind !== "bm"); L.add(M, { kind: "nobm", d: L.TODAY, t: 19.5 }); out.none = line(M, L.TODAY, "C");
+      M = L.build("marcus", "est"); [12, 15].forEach((t) => L.add(M, { kind: "bm", d: L.TODAY, t, form: 4, how: {}, dur: null, flags: {}, note: "" })); out.more = line(M, L.TODAY, "C");
+      /* a word logged in B that straddles the usual, read in A */
+      M = L.build("alex", "est"); const u = M.usual, w = L.WORDS.find((y) => y.types.length > 1 && y.types.some((s) => s >= u.fLo && s <= u.fHi) && y.types.some((s) => s < u.fLo || s > u.fHi));
+      L.add(M, { kind: "bm", d: L.TODAY, t: 12, form: null, word: w.k, how: {}, dur: null, flags: {}, note: "" }); out.either = line(M, L.TODAY, "A"); out.word = w.word;
+      out.flagWant = L.FLAG_DAY; out.n = `${M.usual.nLo} to ${M.usual.nHi}`;
+      return out;
+    });
+    const dwOk = /^Wednesday: your first BM came later than usual, at \d+:\d\d AM\.$/.test(dw.wed) && dw.fri === "Friday: one BM was Firm, firmer than your usual forms." && dw.thu === "Nothing logged on Thursday." && dw.sun === "Today: within your usual."
+      && dw.sym === "Thursday isn't counted: only symptoms were logged." && dw.flag === dw.flagWant && /^Today: No BM, fewer than your usual \d+( to \d+)? a day\.$/.test(dw.none) && /^Today: 3 BMs, more than your usual \d+ to \d+ a day\.$/.test(dw.more)
+      && dw.either === `Today isn't counted: a BM logged as ${dw.word} could be either side of your usual.`;
+    ok(dwOk, `build-core: L.dayWhy gives each day its line: later, firmer, nothing logged, within, only symptoms, a flag, No BM, more BMs and could be either (${[dw.wed, dw.fri, dw.none, dw.more, dw.either].join(" | ")})`);
+
+    /* C1. L.symLine: a tie names both, one log names its day, a stronger one is added, a strength not said is never mild */
+    const sl = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, T = L.TODAY;
+      const day = (d, sym, unrated) => ({ d, today: d === T, logged: true, nsym: Object.keys(sym).length, sym, unrated: unrated || {} });
+      return {
+        tie: L.symLine([day(86, { Bloating: 1 }), day(88, { Cramping: 1 })]),
+        one: L.symLine([day(86, { Bloating: 1 }), day(87, {})]),
+        strong: L.symLine([day(86, { Bloating: 1 }), day(T, { Bloating: 1, Cramping: 3 })]),
+        unsaid: L.symLine([day(86, { Bloating: 1 }), day(T, { Bloating: 0 }, { Bloating: true })]),
+        range: L.symLine([day(85, { Bloating: 1 }), day(86, { Bloating: 2 }), day(88, { Gas: 1 })]),
+        of: L.symLine([day(86, { Bloating: 1 }), day(T, { Bloating: 1 })], { of: 6 }),
+        none: L.symLine([day(86, {})])
+      };
+    });
+    ok(sl.tie === "Symptoms on 2 days: bloating and cramping, 1 day each." && sl.one === "Symptoms on Wednesday: mild bloating." && sl.strong === "Symptoms on 2 days: mild bloating both days, and strong cramping today." && sl.unsaid === "Symptoms on 2 days: bloating both days." && sl.range === "Symptoms on 3 days: mild to moderate bloating on 2 days." && sl.of === "Symptoms on 2 of 6 days you logged: mild bloating both days." && sl.none === "" && !/most often/.test(Object.values(sl).join(" ")), `build-core: L.symLine, the one symptom sentence: a tie, one day, a stronger one today, a strength not said, a range (${sl.strong} | ${sl.unsaid})`);
+
+    /* C1. what moved FloraScore, in whole points that add up to the change shown, every person and option, with No BM
+       today and three BMs today too */
+    const wp = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, bad = [];
+      const variants = [["as seeded", () => {}], ["No BM today", (M) => { const x = L.day(M, L.TODAY); x.entries = x.entries.filter((e) => e.kind !== "bm"); L.add(M, { kind: "nobm", d: L.TODAY, t: 19.5 }); }], ["3 BMs today", (M) => [12, 15].forEach((t) => L.add(M, { kind: "bm", d: L.TODAY, t, form: 4, how: {}, dur: null, flags: {}, note: "" }))]];
+      for (const p of ["sarah", "marcus", "alex"]) for (const mode of ["A", "B", "C"]) for (const [nm, f] of variants) {
+        const M = L.build(p, "est"); f(M); const mv = L.scoreMoved(M, mode);
+        if (!mv) continue;
+        const sum = mv.parts.reduce((s, x) => s + x.pts, 0);
+        if (sum !== mv.delta || !mv.parts.every((x) => Number.isInteger(x.pts)) || mv.parts.some((x) => Math.abs(x.delta) < 1e-9 && x.pts !== 0)) bad.push(`${p} ${mode} ${nm}: ${mv.parts.map((x) => x.pts).join(" ")} vs ${mv.delta}`);
+      }
+      return bad;
+    });
+    ok(!wp.length, `build-core: the parts of what moved FloraScore are whole points adding up to the change shown, a part that didn't move at 0, for every person and option, No BM today and 3 BMs today too${wp.length ? ": " + wp.slice(0, 3).join(" | ") : ""}`);
+
+    /* C2. the week card: its answer is Insights' 7 days and the data looks' count; every Gold day is named in a line; no
+       strips, hatch, struck dates, meal count or legend; drawn to a mid-week day it ends there and counts to there */
+    const wc = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, bad = [];
+      for (const p of ["sarah", "marcus", "alex"]) for (const mode of ["A", "B", "C"]) for (const end of [L.TODAY, 88, 86]) {
+        const M = L.build(p, "est"), T = L.tally(L.span(M, 7, mode, end), true), box = document.createElement("div");
+        box.innerHTML = RU.weekCard(M, mode, { end });
+        const ans = box.querySelector(".ap-wk-a").textContent.replace(/\s+/g, " ").trim(), days = [...box.querySelectorAll(".ap-days > li .ap-day")];
+        const gold = box.querySelectorAll(".ap-days .ap-day--shift").length;
+        const named = [...box.querySelectorAll(".ap-wk-ls li")].filter((li) => li.querySelector(".ap-day-k--shift")).reduce((s, li) => s + (/^Also outside your usual: /.test(li.textContent) ? li.textContent.split(/, | and /).length : 1), 0);
+        const D = end === L.TODAY ? window.FLD.build(p, { mode, M }).tally[7] : T;
+        const ins = end === L.TODAY ? (() => { const b2 = document.createElement("div"); b2.innerHTML = RU.insights(M, { form: mode, uid: 7, plan: "member" }, { range: 7, k: null, y: 0 }); const big = b2.querySelector(".ap-sum-top .ap-big"); return big ? big.textContent.replace(/\s+/g, " ").trim() : ""; })() : `${T.within} of ${T.known === 1 ? "1 day" : T.known + " days"}`;
+        const want = `${T.within} of ${T.known === 1 ? "1 day" : `${T.known} days`}`;
+        if (ans !== `${want} within your usual` || ins.replace(/\s/g, "") !== want.replace(/\s/g, "") || D.within !== T.within || D.known !== T.known) bad.push(`${p} ${mode} ${end}: ${ans} / ${ins}`);
+        if (days.length !== 7 || +days[6].dataset.day !== end || gold !== named) bad.push(`${p} ${mode} ${end}: ${days.length} days, last ${days[6] && days[6].dataset.day}, ${gold} Gold, ${named} named`);
+        if (box.querySelector(".ap-wk-strip, .ap-legend") || /\bmeals?\b/i.test(box.textContent) || /line-through|repeating-linear-gradient/.test(box.innerHTML)) bad.push(`${p} ${mode} ${end}: an old mark`);
+      }
+      return bad;
+    });
+    ok(!wc.length, `build-core: the week card counts the last 7 days as Insights and the data looks do, names every Gold day in a line, draws no strip, legend or meal count, and drawn to a mid-week day ends and counts there${wc.length ? ": " + wc.slice(0, 3).join(" | ") : ""}`);
+
+    /* C2 and C17. on the phone, in both themes: every Gold mark carries its Shift Ink edge in light (and every Gold
+       chart mark too), the date in each filled day circle is 4.5:1 or more, nothing is struck through */
+    const ratioOf = () => k.evaluate(() => {
+      const cv = document.createElement("canvas"); cv.width = cv.height = 1; const g0 = cv.getContext("2d", { willReadFrequently: true });
+      const rgb = (c) => { g0.clearRect(0, 0, 1, 1); g0.fillStyle = c; g0.fillRect(0, 0, 1, 1); return [...g0.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+      const lum = (c) => { const [r, g, bb] = rgb(c).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * bb; };
+      const cr = (a, c) => { const x = lum(a), y = lum(c); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+      const lay = document.querySelector(".ap-rx .ap-layer"), out = {};
+      lay.querySelectorAll(".ap-wk .ap-day:is(.ap-day--usual, .ap-day--shift, .ap-day--quiet) .ap-day-c").forEach((el) => { const kk = el.parentElement.className.match(/ap-day--(\w+)/)[1], cs = getComputedStyle(el); out[kk] = Math.min(out[kk] || 99, +cr(cs.color, cs.backgroundColor).toFixed(2)); });
+      const struck = [...lay.querySelectorAll(".ap-wk *")].some((x) => /line-through/.test(getComputedStyle(x).textDecorationLine));
+      return { out, struck };
+    });
+    const dc = {};
+    for (const theme of ["light", "dark"]) {
+      await kset("theme", theme);
+      await kset("persona", "marcus"); await kopen("today"); const a = await ratioOf();
+      await kset("data", "new"); await kopen("today"); const c = await ratioOf();
+      await kset("data", "est");
+      dc[theme] = { usual: a.out.usual, shift: a.out.shift, quiet: c.out.quiet, struck: a.struck || c.struck };
+    }
+    ok(["light", "dark"].every((t) => dc[t].usual >= 4.5 && dc[t].shift >= 4.5 && dc[t].quiet >= 4.5 && !dc[t].struck), `build-core: on the week card the date inside every filled circle is 4.5:1 or more, within, outside and logged, nothing struck (light ${JSON.stringify(dc.light)}, dark ${JSON.stringify(dc.dark)})`);
+    await kset("theme", "light");
+    await kopen("insights"); await k.evaluate(() => document.querySelector('.ap-rx .ap-seg--range [data-v="30"]').click()); await kw();
+    const edge = await k.evaluate(() => {
+      const lay = document.querySelector(".ap-rx .ap-layer"), t = document.createElement("i"); t.style.color = "var(--ap-shift-ink)"; lay.appendChild(t); const ink = getComputedStyle(t).color; t.remove();
+      const marks = [...lay.querySelectorAll(".dv-dot.is-shift, .dv-bar.is-shift, .dv-wbar.is-shift")];
+      const sws = [...lay.querySelectorAll(".ap-legend .sw--shift")];
+      return { ink, n: marks.length, bad: marks.filter((m) => getComputedStyle(m).stroke !== ink || parseFloat(getComputedStyle(m).strokeWidth) < 1.5).length, sw: sws.length, swBad: sws.filter((s) => !getComputedStyle(s).boxShadow.includes(ink)).length };
+    });
+    ok(edge.n > 0 && !edge.bad && edge.sw > 0 && !edge.swBad, `build-core: in light every Gold chart mark (${edge.n}) and legend swatch (${edge.sw}) carries the 1.5px Shift Ink edge (${edge.ink})`);
+
+    /* C3 and C4. the hero: the number with no count-up over its usual range, a Cream dot never Gold, no dot on a flagged
+       today; "Without it" never for a No BM log, on Score first or Day first; learning is Day 5 of 14 over 14 steps */
+    const hr = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, out = {}, V = { form: "C", uid: 3, plan: "member" };
+      const html = (M) => { const b2 = document.createElement("div"); b2.innerHTML = RU.scoreHero(M, V); return b2; };
+      let M = L.build("marcus", "est"); let h = html(M);
+      out.plain = !!h.querySelector(".ap-sbar-dot") && !h.querySelector(".is-shift, [data-count], .c-ring-arc, .c-spark, .ap-pill");
+      M = L.build("marcus", "est"); L.add(M, { kind: "bm", d: L.TODAY, t: 19.5, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" }); h = html(M);
+      out.flag = !h.querySelector(".ap-sbar-dot") && !!h.querySelector(".ap-sbar") && /Not read against your usual today/.test(h.textContent) && h.querySelector(".ap-hero-n").textContent === String(L.score(M, L.TODAY, "C").value);
+      M = L.build("marcus", "est"); const x = L.day(M, L.TODAY); x.entries = x.entries.filter((e) => e.kind !== "bm"); L.add(M, { kind: "nobm", d: L.TODAY, t: 19.5 });
+      const N = RU.standouts(M, "C")[0]; out.nobm = N && N.kind === "none" && RU.scoreEffect(M, "C", N) === "" && !/Without it/.test(html(M).textContent);
+      M = L.build("sarah", "new"); h = html(M); out.learn = /Day 5 of 14/.test(h.textContent) && h.querySelectorAll(".ap-hero-steps i").length === 14 && h.querySelectorAll(".ap-hero-steps i.is-on").length === 5 && !h.querySelector("[data-count]");
+      return out;
+    });
+    await kset("persona", "marcus");
+    await k.evaluate(() => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M(), x = L.day(M, L.TODAY); x.entries = x.entries.filter((e) => e.kind !== "bm"); L.add(M, { kind: "nobm", d: L.TODAY, t: 19.5 }); });
+    await kset("home", "day"); await kopen("home-day");
+    const dayFirst = await k.evaluate(() => document.querySelector(".ap-rx .ap-layer").textContent);
+    await kset("home", "score"); await kset("persona", "sarah");
+    ok(hr.plain && hr.flag && hr.nobm && hr.learn && !/Without it/.test(dayFirst), `build-core: the hero is the number over its usual range with a dot never Gold, no dot on a flagged today, no count-up, no ring or 30-day line; no "Without it" for a No BM log on Score first or Day first; learning is Day 5 of 14 over 14 steps`);
+
+    /* C5, C8, C9, C11, C13, C15 and C16 on the model */
+    const ins = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, C = window.FLC, AK = window.FLORIN_ASK, out = {};
+      const V = { form: "C", uid: 5, plan: "member", checkin: true };
+      const dom = (h) => { const b2 = document.createElement("div"); b2.innerHTML = h; return b2; };
+      let M = L.build("marcus", "est");
+      /* C5: the summary's bar is the days read: its parts add up to its "of" */
+      for (const n of [7, 30, 90]) { const d = dom(RU.insights(M, V, { range: n, k: null, y: 0 })), T = L.tally(L.span(M, n, "C"), n <= 7), seg = d.querySelector(".ap-sum .c-seg"), parts = [...seg.querySelectorAll(".c-seg-part")].map((p) => +p.getAttribute("title").match(/\d+$/)[0]); out[`seg${n}`] = parts.reduce((s, v) => s + v, 0) === T.known && ![...seg.querySelectorAll("[title], [data-tip]")].some((x) => /%/.test(x.getAttribute("title") + x.getAttribute("data-tip"))) && !/%/.test(seg.getAttribute("aria-label")); }
+      /* C8: a day with 4 BMs isn't clipped; a flagged today's average leaves it out, as Ask's does */
+      [12, 14, 16].forEach((t) => L.add(M, { kind: "bm", d: L.TODAY, t, form: 4, how: {}, dur: null, flags: {}, note: "" }));
+      const often = dom(RU.cardChart(M, V, "often", 7).chart), dot4 = [...often.querySelectorAll("circle.dv-dot")].find((c) => /4 BMs so far/.test(c.textContent));
+      out.four = !!dot4 && +dot4.getAttribute("cy") >= 18 && [...often.querySelectorAll(".dv-ax")].some((t) => t.textContent === "4");
+      M = L.build("marcus", "est"); L.add(M, { kind: "bm", d: L.TODAY, t: 19.5, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" });
+      const F7 = L.span(M, 7, "C").filter((f) => f.count != null && !f.flag), avg = (F7.reduce((s, f) => s + f.count, 0) / F7.length).toFixed(1);
+      const fact = RU.askContext(M, V, { k: "often", range: 7 }).facts[1], said = AK ? AK.textOf(AK.answer(M, V, "How often do I go?", { k: "often", range: 7 })) : `${avg} a day`;
+      out.avg = fact === `${avg} a day on average` && said.includes(`${avg} a day`); out.avgSaid = `${fact} / ${avg}`;
+      /* C9: the form bars' counts add up to the BMs read; in learning, 2 of 4 Formed is said as counts, never "mostly" */
+      M = L.build("marcus", "est");
+      const fb = dom(RU.cardChart(M, V, "form", 30).chart), read = L.span(M, 30, "C").filter((f) => !f.flag).reduce((s, f) => s + f.bms.length, 0);
+      out.bars = [...fb.querySelectorAll(".dv-val")].reduce((s, t) => s + +t.textContent, 0) === read && !/%/.test(fb.innerHTML);
+      M = L.build("sarah", "new"); const lf = dom(RU.insights(M, V, { range: 7, k: null, y: 0 })).querySelector('.ap-ic:has([data-k="form"]) .ap-ic-sum').textContent;
+      out.mostly = lf === "4 BMs so far: 2 Formed, 1 Soft and 1 Firm."; out.lf = lf;
+      /* C10: one Teal square per day per symptom, no strength in the mark */
+      M = L.build("marcus", "est"); const sq = dom(RU.cardChart(M, V, "sym", 30).chart);
+      out.sq = sq.querySelectorAll(".dv-sq").length > 0 && [...sq.querySelectorAll(".dv-sq")].every((r) => r.getAttribute("class") === "dv-sq" && r.getAttribute("width") === "8") && /Any symptom/.test(sq.textContent);
+      /* C11: a pattern's two bars are as long as their shares, the counts written on them, never Plum or Gold */
+      const PR = L.patterns(M, "C"), p = PR.found[0], sh = dom(RU.cardChart(M, V, "pattern:" + p.id, 90).chart);
+      const ws = [...sh.querySelectorAll(".ap-share-t b")].map((x) => parseFloat(x.style.getPropertyValue("--w")));
+      out.share = ws.length === 2 && Math.abs(ws[0] - (p.hit / p.n) * 100) < 0.2 && Math.abs(ws[1] - (p.oh / p.on) * 100) < 0.2 && sh.textContent.includes(`${p.hit} of ${p.n}`) && sh.textContent.includes(`${p.oh} of ${p.on}`) && (p.hit / p.n > p.oh / p.on) === (ws[0] > ws[1]);
+      /* C13: a question is offered only when the logs have something for it */
+      out.qs = [];
+      for (const who of ["sarah", "marcus", "alex"]) for (const n of [7, 30, 90]) {
+        const M2 = L.build(who, "est"), F = L.span(M2, n, "C"), u = M2.usual;
+        const looser = F.filter((f) => !f.flag).flatMap((f) => f.bms).filter((b2) => L.inForms(M2, b2, "C") === false && Math.min(...L.stepsOf(b2)) > u.fHi).length;
+        const busy = F.filter((f) => !f.flag && f.count != null && f.count > u.nHi).length;
+        const fq = RU.askContext(M2, V, { k: "form", range: n }).qs.join(" "), oq = RU.askContext(M2, V, { k: "often", range: n }).qs.join(" ");
+        if ((!looser && /looser/.test(fq)) || (!busy && /busier/.test(oq))) out.qs.push(`${who} ${n}`);
+      }
+      /* C15: Ask draws the card's own chart */
+      out.same = [];
+      for (const key of ["score", "timing", "often", "form", "sym"]) for (const n of [7, 30, 90]) {
+        const d = dom(RU.insights(M, V, { range: n, k: null, y: 0 })), fig = d.querySelector(`.ap-ic:has([data-k="${key}"]) .ap-ic-fig`);
+        if (!fig || fig.innerHTML.trim() !== dom(RU.cardChart(M, V, key, n).chart).innerHTML.trim()) out.same.push(`${key}@${n}`);
+      }
+      /* C16: the kit: a range with no value draws no dot; a segment's tip is a count, never a percent; the glyph holds no value */
+      out.kit = !/c-range-dot/.test(C.range({ min: 0, max: 10, lo: 2, hi: 4, value: null })) && /c-range-dot/.test(C.range({ min: 0, max: 10, lo: 2, hi: 4, value: 3 })) && ![...dom(C.seg([{ v: 3, label: "A" }, { v: 1, label: "B" }])).querySelectorAll(".c-seg-part")].some((x) => /%/.test(x.getAttribute("title") + x.getAttribute("data-tip"))) && !/c-ring-arc|--v/.test(C.ring({ glyph: true }));
+      return out;
+    });
+    ok(ins.seg7 && ins.seg30 && ins.seg90, "build-core: Insights' summary bar is the days read: its parts add up to its count, at 7, 30 and 90 days, with no percents");
+    ok(ins.four && ins.avg, `build-core: How often's axis reaches a day with 4 BMs, and with a flagged today the average leaves it out, as Ask Florin's does (${ins.avgSaid})`);
+    ok(ins.bars && ins.mostly, `build-core: the form bars' counts add up to the BMs read, and before a usual 2 of 4 is said as counts, never "mostly" (${ins.lf})`);
+    ok(ins.sq, "build-core: a symptom is one 8px Teal square a day, strength never in the mark, with an Any symptom row");
+    ok(ins.share, "build-core: a pattern's two bars are as long as their shares, with the counts on them");
+    ok(!ins.qs.length, `build-core: Ask about this offers looser or busier only when the logs have them${ins.qs.length ? ": " + ins.qs.join(", ") : ""}`);
+    ok(!ins.same.length, `build-core: RU.cardChart, the chart Ask draws, is each card's own chart at 7, 30 and 90 days${ins.same.length ? ": differs for " + ins.same.join(", ") : ""}`);
+    ok(ins.kit, "build-core: the kit: no dot on a range with no value, counts in a segment's tip, and a glyph with no value");
+
+    /* C6 and C12: FloraScore's card and detail: a line on the band with no area or average, today ringed and labelled */
+    for (const theme of ["light", "dark"]) {
+      await kset("theme", theme); await kopen("i-score");
+      const sd = await k.evaluate(() => {
+        const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, lay = document.querySelector(".ap-rx .ap-layer"), M = api.M(), V = api.V(), n = api.S.ins.range;
+        const ser = L.scoreSeries(M, n, V.form), su = L.scoreUsual(M, V.form), sc = ser.filter((s) => s.value != null), k2 = sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length;
+        const t = document.createElement("i"); t.style.color = "var(--ap-shift)"; lay.appendChild(t); const gold = getComputedStyle(t).color; t.remove();
+        const dot = lay.querySelector(".ap-sbar-dot");
+        return { area: lay.querySelectorAll(".c-area, .c-avg").length, ring: lay.querySelectorAll(".dv-ring").length, today: [...lay.querySelectorAll(".dv-newlbl")].some((x) => /^Today \d+$/.test(x.textContent)), cap: lay.textContent.includes(`In its usual range on ${k2} of ${sc.length} days`), gold: dot ? getComputedStyle(dot).backgroundColor === gold : true, count: !!lay.querySelector("[data-count]") };
+      });
+      ok(!sd.area && sd.ring >= 1 && sd.today && sd.cap && !sd.gold && !sd.count, `build-core, FloraScore detail ${theme}: no area or average line, today ringed and labelled, "In its usual range on N of M days" from the model, the dot never Gold, no count-up`);
+    }
+    await kset("theme", "light");
+
+    /* C14. History: each day's header has its mark and line, no chip inside an entry row, a flagged today reads FLAG_DAY */
+    await k.evaluate(() => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS; L.add(api.M(), { kind: "bm", d: L.TODAY, t: 19.6, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" }); });
+    await kopen("history");
+    const hs = await k.evaluate(() => {
+      const L = window.FLORIN_LOGS, lay = document.querySelector(".ap-rx .ap-layer"), hd = [...lay.querySelectorAll(".ap-hd")];
+      const first = hd[0], marks = hd.every((h) => !!h.querySelector(".ap-hd-h .ap-day"));
+      const chips = [...lay.querySelectorAll(".ap-tl-row .ap-chip")].filter((c) => !/^Noted: /.test(c.textContent)).length;
+      const gap = hd.find((h) => h.querySelector(".ap-hd-gap"));
+      return { marks, chips, flag: first && (first.querySelector(".ap-hd-why") || {}).textContent === L.FLAG_DAY && !!first.querySelector(".ap-day--flag"), gap: gap ? gap.querySelector(".ap-hd-none").textContent : "" };
+    });
+    ok(hs.marks && !hs.chips && hs.flag && hs.gap === "Nothing logged this day. It stays a gap, never a zero.", "build-core: History's day headers carry the day mark and its line, no reading chip inside an entry row, a flagged today reads FLAG_DAY, and a gap says it stays a gap");
+
+    /* C10 dark: the symptom squares stay Teal on dark (no Ray cells), and the check-in detail's dots are 8px */
+    await kset("theme", "dark"); await kopen("i-sym");
+    const sd2 = await k.evaluate(() => { const lay = document.querySelector(".ap-rx .ap-layer"), t = document.createElement("i"); t.style.color = "var(--ap-teal)"; lay.appendChild(t); const teal = getComputedStyle(t).color; t.remove(); const q = [...lay.querySelectorAll(".dv-sq")]; return { n: q.length, bad: q.filter((r) => getComputedStyle(r).fill !== teal).length }; });
+    await kset("theme", "light"); await kopen("i-ck");
+    const ckd = await k.evaluate(() => [...document.querySelectorAll(".ap-rx .ap-layer .ap-ckt-dot")].every((c) => +c.getAttribute("r") >= 4));
+    ok(sd2.n > 0 && !sd2.bad && ckd, `build-core: symptom squares are Teal on dark (${sd2.n}), and the check-in detail's dots are 8px or more`);
+    ok(!ke.length, `build-core: no console or page errors${ke.length ? ": " + ke.slice(0, 3).join(" | ") : ""}`);
+    await kc.close();
+  }
+  /* ===== end build-core ===== */
+
+  /* ===== fix-notes: the notes critic's findings, kept as checks (Will, Oct 28: "Make it simple"). Every decision's
+     top label numbers it and says what we recommend; the check-in note answers first; a new note opens at its top; the
+     claims line shows only on a fail; no was and now or research section can come back; the Person and Logs notes
+     are worked out from the logs; the top bar counts the safe area once; on a phone a changed decision says so at the
+     top of the Toggles sheet, and the meals control opens its note (prototype/js/refresh-app.js) ===== */
+  {
+    const fc = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+    const f = await fc.newPage();
+    const fe = [];
+    f.on("pageerror", (e) => fe.push(e.message));
+    f.on("console", (x) => { if (x.type() === "error") fe.push(x.text()); });
+    await f.goto(PAGE); await f.waitForSelector(".rx-stage .ap-rx"); await f.waitForTimeout(500);
+    const fw = (ms = 300) => f.waitForTimeout(ms);
+    const fclick = async (sel, ms) => { await f.evaluate((s) => document.querySelector(s).click(), sel); await fw(ms); };
+    const info = async (k) => { await f.evaluate((k) => { const x = document.querySelector(`[data-rx="dinfo"][data-v="${k}"]`); if (x.getAttribute("aria-pressed") !== "true") x.click(); }, k); await fw(250); };
+    const KEYS = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"];
+    const LABEL = { form: "Consistency", bmUI: "BM logging", home: "Home", history: "History", checkin: "Weekly check-in", mealUI: "Meal sheet", look: "Data style", easy: "Version", onboard: "Onboarding" };
+    const WANT = { form: "C", bmUI: "Quick tiles and form", home: "Score first", history: "Calendar", checkin: "On", mealUI: "Quick, voice or text", look: "Oura and Field journal", easy: "Easy, as a setting", onboard: "Short" };
+    /* 12. the top label: Decision n of 9, the decision, and what we recommend, in view at 1000 tall */
+    const eb = [];
+    for (let i = 0; i < KEYS.length; i++) {
+      await info(KEYS[i]);
+      const e = await f.evaluate(() => { const x = document.querySelector("#rxNotes .rx-eyebrow"); return { t: x.textContent, bottom: x.getBoundingClientRect().bottom }; });
+      if (e.t !== `Decision ${i + 1} of 9 · ${LABEL[KEYS[i]]} · We recommend ${WANT[KEYS[i]]}` || e.bottom > 1000) eb.push(`${KEYS[i]}: ${e.t}`);
+    }
+    ok(!eb.length, `fix-notes: every decision's top label reads Decision n of 9, its name and what we recommend, in view${eb.length ? ": " + eb.join("; ") : ""}`);
+    /* 6. the check-in note answers Will's question right under its opening sentence, then what the check-in is, in the
+       sheet's words, with every question and the day it's due from the model */
+    await info("checkin");
+    const ck = await f.evaluate(() => {
+      const N = document.querySelector("#rxNotes .rx-note"), kids = [...N.children], L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M();
+      const at = (sel) => kids.findIndex((x) => x.matches(sel));
+      const h3 = kids.find((x) => x.matches(".rx-h3") && /What the check-in is/.test(x.textContent));
+      const ans = N.querySelector(".rx-answer");
+      return {
+        order: at(".rx-note-lede") < at(".rx-answer") && at(".rx-answer") < kids.indexOf(h3) && kids.indexOf(h3) < at(".rx-opts"),
+        ans: ans ? ans.textContent : "",
+        qs: L.CHECKIN.every((c) => N.textContent.includes(c.q)),
+        more: N.querySelectorAll(".rx-about-m li").length,
+        due: N.textContent.includes(`(${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][M.ckDay.dow]} ${M.ckDay.when} to start)`),
+        rec: (N.querySelector(".rx-rec") || {}).textContent || "",
+        top: ans ? ans.getBoundingClientRect().bottom : 9999,
+        n: ["No", "One", "Two", "Three", "Four", "Five", "Six"][L.CHECKIN.length]
+      };
+    });
+    ok(ck.order && ck.ans === `Our answer: keep it. ${ck.n} one-tap questions a week, in our own words, not a licensed questionnaire. Free for everyone.` && ck.qs && ck.more === 3 && ck.due && ck.rec === "We recommend On, free on both plans. It takes a minute and is the app's one weekly reason to come back." && ck.top < 1000, `fix-notes: the check-in note answers first (in view, ${Math.round(ck.top)}px), then what the check-in is as the sheet's lines, and recommends On in the sheet's words`);
+    /* 7. a note about something else opens at its top */
+    await info("look");
+    await f.evaluate(() => { document.querySelector("#rxRight").scrollTop = 99999; }); await fw(100);
+    const s0 = await f.evaluate(() => document.querySelector("#rxRight").scrollTop);
+    await info("home");
+    const s1 = await f.evaluate(() => ({ top: document.querySelector("#rxRight").scrollTop, h: document.querySelector("#rxNotes h2").getBoundingClientRect().top }));
+    await f.evaluate(() => { document.querySelector("#rxRight").scrollTop = 99999; });
+    await fclick('#rxLeft [data-rx="history"][data-v="calendar"]', 400);
+    const s2 = await f.evaluate(() => ({ top: document.querySelector("#rxRight").scrollTop, t: document.querySelector("#rxNotes h2").textContent }));
+    await fclick('#rxLeft [data-rx="history"][data-v="list"]', 300);
+    ok(s0 > 200 && s1.top === 0 && s1.h > 0 && s2.top === 0 && s2.t === "How should History show past days?", `fix-notes: a new note opens at its top, from an info button and from a toggle (was ${s0}px down)`);
+    /* 13, 23. a screen that passes shows no claims line; a note's ba and res draw nothing */
+    await fclick('[data-rx="dclose"]');
+    await fclick('[data-rx="screen"][data-v="today"]', 400);
+    const cl = await f.evaluate(() => ({ lint: !!document.querySelector("#rxNotes .rx-lint"), t: document.querySelector("#rxNotes h2").textContent }));
+    const old = await f.evaluate(async () => {
+      const X = window.FLORIN_EXT, was = X.notes.today;
+      X.notes.today = () => ({ t: "Test", lede: "A note with old sections.", ba: [["Was", "Now"]], res: ["A study"] });
+      document.querySelector('[data-rx="screen"][data-v="today"]').click();
+      await new Promise((r) => setTimeout(r, 300));
+      const N = document.querySelector("#rxNotes").textContent, ba = !!document.querySelector("#rxNotes .rx-ba, #rxNotes .rx-res");
+      X.notes.today = was;
+      document.querySelector('[data-rx="screen"][data-v="today"]').click();
+      return { ba, t: /Was, now|From the research|A study/.test(N) };
+    });
+    await fw(300);
+    ok(!cl.lint && cl.t === "Today" && !old.ba && !old.t, "fix-notes: a screen that passes the claims check shows no claims line, and a note's was and now or research draws nothing");
+    /* 14 to 22, 24, 25: the plain words, on the page and in the notes */
+    const pg = await f.evaluate(() => ({
+      foot: document.querySelector(".rx-foot").textContent.trim(), lede: document.querySelector(".rx-dec-lede").textContent,
+      link: document.querySelectorAll(".rx-head-links a")[1].textContent, bm: [...document.querySelectorAll('[data-rx="bmUI"]')].map((x) => x.textContent.trim()).join("|"),
+      today: document.querySelector("#rxNotes .rx-note-lede").textContent
+    }));
+    ok(pg.foot === "Prototype only. Not for patients." && pg.lede === "Each one changes the app on the phone." && pg.link === "Every data style, side by side" && pg.bm === "Quick tiles|Full form" && /the last 7 days/.test(pg.today), `fix-notes: the footer, the Decisions line, the header link, the BM logging toggle and Today's note in plain words (${pg.bm})`);
+    const words = {};
+    for (const k of KEYS) { await info(k); words[k] = await f.evaluate(() => document.querySelector("#rxNotes .rx-note").textContent); }
+    ok(/FloraScore as a small chip at the top/.test(words.home) && /a Plum circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone/.test(words.history) && !/week card/.test(words.history + words.look) && /a small ring for each part of the score: Timing, How often, Form and Comfort/.test(words.look) && /the usual range as a bar, the last 7 days as one circle per day/.test(words.look) && !/being redrawn|; the other four/.test(words.look) && /The app as the rest of this demo shows it/.test(words.easy) && /Every data style, side by side/.test(words.look), "fix-notes: Home, History, Data style and Version describe what the phone draws, with no build status");
+    await fclick('[data-rx="dclose"]');
+    await f.evaluate(() => window.FLORIN_EXT.api.set("easy", true)); await fw(400);
+    const sh = await f.evaluate(() => [...document.querySelectorAll("[data-shadow]")].map((x) => x.textContent).join("|"));
+    await f.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await fw(400);
+    ok(sh === "Easy has its own Today. Turn Easy off to see this choice.|Easy has its own charts. Turn Easy off to see this choice.", `fix-notes: with Easy on, the lines under Home and Data style say how to see the choice (${sh})`);
+    /* 21, 22. the Person and Logs notes, worked out from each demo person's logs */
+    await f.evaluate(() => { const x = document.querySelector('[data-rx="fold"]'); if (x.getAttribute("aria-expanded") !== "true") x.click(); });
+    await fclick('[data-rx="xinfo"][data-v="persona"]');
+    const pn = await f.evaluate(() => {
+      const L = window.FLORIN_LOGS, mode = window.FLORIN_EXT.api.V().form;
+      const items = [...document.querySelectorAll("#rxNotes .rx-pairs li")].map((li) => [li.querySelector("b").textContent, li.querySelector("span").textContent]);
+      const bad = items.filter(([name, line]) => {
+        const id = name.toLowerCase(), M = L.build(id, "est"), u = M.usual;
+        return !line.includes(`usual forms ${L.usualFormsText(M, mode)}`) || !line.includes(`about 1 day in ${u.sym.every}`) || !/^First BM usually \d/.test(line) || !/Possible pattern: /.test(line);
+      });
+      return { n: items.length, bad: bad.map((x) => x[0]) };
+    });
+    await fclick('[data-rx="xinfo"][data-v="data"]');
+    const dn = await f.evaluate(() => { const L = window.FLORIN_LOGS, li = [...document.querySelectorAll("#rxNotes .rx-pairs li")].find((x) => /New/.test(x.querySelector("b").textContent)); return { t: li ? li.querySelector("span").textContent : "", day: L.learnDay(L.build(window.FLORIN_EXT.api.V().persona, "new")), learn: L.LEARN_DAYS }; });
+    ok(pn.n === 3 && !pn.bad.length && dn.t === `Day ${dn.day}. Florin is still learning their usual, so there's no FloraScore until day ${dn.learn}.`, `fix-notes: the Person note gives each person a line from their logs, and Logs says New is day ${dn.day}${pn.bad.length ? " (" + pn.bad.join(", ") + ")" : ""}`);
+    await fc.close();
+
+    /* 9, 10. on a phone: the top bar counts the safe area once, so the app's date line and avatar sit under it; a
+       decision changed in Toggles says so at the top of the sheet, with See it and Read the note; the meals control
+       opens its note */
+    const mc = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const m = await mc.newPage();
+    m.on("pageerror", (e) => fe.push(e.message));
+    await m.goto(PAGE); await m.waitForSelector(".rx-stage .ap-rx"); await m.waitForTimeout(500);
+    const mw = (ms = 350) => m.waitForTimeout(ms);
+    const mclick = async (sel, ms) => { await m.evaluate((s) => document.querySelector(s).click(), sel); await mw(ms); };
+    await m.evaluate(() => { document.documentElement.style.setProperty("--rx-sat", "47px"); document.documentElement.style.setProperty("--rx-sab", "34px"); }); await mw(250);
+    const sa = await m.evaluate(() => {
+      const bar = document.querySelector(".rx-mbar").getBoundingClientRect(), ly = document.querySelector(".rx-stage .ap-rx .ap-layer");
+      const av = ly.querySelector(".ap-avatar").getBoundingClientRect(), at = document.elementFromPoint(av.left + av.width / 2, av.top + av.height / 2);
+      const first = [...ly.querySelectorAll("p, h1, h2")].find((x) => x.getBoundingClientRect().height > 0);
+      return { h: Math.round(bar.height), avatar: av.top >= bar.bottom && !!at && !!at.closest(".ap-avatar"), first: first.getBoundingClientRect().top >= bar.bottom };
+    });
+    await m.evaluate(() => { document.documentElement.style.removeProperty("--rx-sat"); document.documentElement.style.removeProperty("--rx-sab"); }); await mw(250);
+    ok(sa.h === 95 && sa.avatar && sa.first, `fix-notes: with a stand-in safe area of 47, the top bar is ${sa.h}px (48 plus the inset, once), and the app's first line and avatar sit under it, the avatar tappable`);
+    await mclick('.rx-mbar [data-v="toggles"]');
+    await mclick('#rxSheet-toggles [data-rx="history"][data-v="calendar"]');
+    const ln = await m.evaluate(() => { const n = document.querySelector("[data-sheet-now]"), r = n.getBoundingClientRect(); return { on: !n.hidden, t: n.querySelector("p").textContent, b: [...n.querySelectorAll("button")].map((x) => `${x.textContent}:${x.dataset.rx}`).join("|"), inView: r.top >= 0 && r.bottom <= innerHeight }; });
+    await mclick('[data-sheet-now] [data-rx="now-note"]', 450);
+    const rn = await m.evaluate(() => ({ notes: !document.querySelector("#rxSheet-notes").hidden, h: document.querySelector("#rxNotes h2").textContent }));
+    await mclick("#rxSheet-notes .rx-x");
+    await mclick('.rx-mbar [data-v="toggles"]');
+    const gone = await m.evaluate(() => document.querySelector("[data-sheet-now]").hidden);
+    await mclick('#rxSheet-toggles [data-rx="history"][data-v="list"]');
+    await mclick('#rxSheet-toggles [data-rx="history"][data-v="calendar"]');
+    await mclick('[data-sheet-now] [data-rx="show"]', 500);
+    const si = await m.evaluate(() => ({ closed: document.querySelector("#rxSheet-toggles").hidden, key: window.FLORIN_EXT.api.key() }));
+    await m.evaluate(() => window.FLORIN_EXT.api.set("history", "list")); await mw();
+    ok(ln.on && ln.inView && ln.t === "History is now Calendar." && ln.b === "See it:show|Read the note:now-note" && rn.notes && rn.h === "How should History show past days?" && gone && si.closed && si.key === "hist-cal", `fix-notes: on a phone, a changed decision says so at the top of Toggles (${ln.t}); Read the note opens its note, See it closes the sheet on the calendar, and the line is gone next time`);
+    await mclick('.rx-mbar [data-v="toggles"]');
+    await m.evaluate(() => { const x = document.querySelector('[data-rx="fold"]'); if (x.getAttribute("aria-expanded") !== "true") x.click(); }); await mw(200);
+    await mclick('#rxSheet-toggles [data-rx="meals"][data-v="rough"]', 600);
+    const mn = await m.evaluate(() => ({ notes: !document.querySelector("#rxSheet-notes").hidden, toggles: !document.querySelector("#rxSheet-toggles").hidden, h: document.querySelector("#rxNotes h2").textContent }));
+    await m.evaluate(() => window.FLORIN_EXT.api.set("meals", "all")); await mw();
+    ok(mn.notes && !mn.toggles && mn.h === "Demo person's meals", "fix-notes: on a phone, changing Demo person's meals opens its note");
+    ok(!fe.length, `fix-notes: no console or page errors${fe.length ? ": " + fe.slice(0, 3).join(" | ") : ""}`);
+    await mc.close();
+  }
+  /* ===== end fix-notes ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

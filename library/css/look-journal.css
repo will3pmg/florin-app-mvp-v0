@@ -14,9 +14,11 @@
   --jr-on-shift: var(--forest);
   --jr-on-read: var(--cream);
   --jr-ctx: var(--ap-teal);
-  /* a day within your usual is a tint of the usual colour, so the eye lands on the solid Gold shifts */
+  /* your usual's band on the score ring is a tint of the usual colour */
   --jr-u-fill: color-mix(in srgb, var(--plum) 22%, transparent);
   --jr-u-edge: color-mix(in srgb, var(--plum) 52%, transparent);
+  /* a day within your usual is a solid Plum circle (Ray on dark), as on the app's days, with its date in Cream */
+  --jr-on-usual: var(--cream);
 }
 .lk-journal[data-theme="dark"] {
   --jr-paper: var(--ap-card);
@@ -26,6 +28,7 @@
   --jr-on-read: var(--forest);
   --jr-u-fill: color-mix(in srgb, var(--ray) 24%, transparent);
   --jr-u-edge: color-mix(in srgb, var(--ray) 58%, transparent);
+  --jr-on-usual: var(--jr-paper);
 }
 
 /* ---------- the page of the journal ---------- */
@@ -52,8 +55,10 @@
 /* a key's words sit on the caption's baseline whatever the swatch's height; the swatch centres on them */
 .lk-journal .jr-key { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .lk-journal .jr-sw { display: inline-block; flex: none; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--ap-chart); }
-.lk-journal .jr-sw--usual { background: var(--jr-u-fill); box-shadow: inset 0 0 0 1px var(--jr-u-edge); }
-.lk-journal .jr-sw--shift { background: var(--ap-shift); }
+.lk-journal .jr-sw--usual { background: var(--ap-signal); }
+/* every Gold mark carries the Shift Ink edge in light, so it holds against the paper (light Gold alone is 2.37:1) */
+.lk-journal .jr-sw--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-shift-ink); }
+.lk-journal[data-theme="dark"] .jr-sw--shift { box-shadow: none; }
 /* could be either: half the usual, half open, never Gold, since it is never a shift */
 .lk-journal .jr-sw--either { background: linear-gradient(90deg, var(--jr-u-edge) 50%, transparent 50%); box-shadow: inset 0 0 0 1px var(--ap-ink2); }
 .lk-journal .jr-sw--flag { background: none; box-shadow: inset 0 0 0 2px var(--ap-teal); }
@@ -83,7 +88,7 @@
 .lk-journal .jr-svg .jr-big--none { font-size: 34px; letter-spacing: -.02em; fill: var(--ap-ink2); }
 .lk-journal .jr-svg .jr-date { font-family: var(--sans); font-weight: 300; font-size: 17px; letter-spacing: -.01em; fill: var(--ap-ink); }
 .lk-journal .jr-svg .jr-dnum { font-size: 11px; letter-spacing: 0; font-weight: 700; }
-.lk-journal .jr-svg .on-usual { fill: var(--ap-usual-ink); }
+.lk-journal .jr-svg .on-usual { fill: var(--jr-on-usual); }
 .lk-journal .jr-svg .on-shift { fill: var(--jr-on-shift); }
 .lk-journal .jr-svg .on-read { fill: var(--jr-on-read); }
 .lk-journal .jr-svg .on-either { fill: var(--ap-ink); }
@@ -108,8 +113,9 @@
 .lk-journal .jr-lead.tu-s { stroke: var(--ap-usual-ink); }
 .lk-journal .jr-lead-end.tu-s { fill: var(--ap-usual-ink); }
 .lk-journal .jr-read { fill: var(--ap-chart); }
-.lk-journal .jr-usual { fill: var(--jr-u-fill); stroke: var(--jr-u-edge); stroke-width: 1; }
-.lk-journal .jr-shift { fill: var(--ap-shift); }
+.lk-journal .jr-usual { fill: var(--ap-signal); }
+.lk-journal .jr-shift { fill: var(--ap-shift); stroke: var(--ap-shift-ink); stroke-width: 1.5; }
+.lk-journal[data-theme="dark"] .jr-shift { stroke: none; }
 .lk-journal .jr-either-r { fill: var(--jr-paper); stroke: var(--ap-ink2); stroke-width: 1; }
 .lk-journal .jr-stem { fill: none; stroke: var(--ap-shift); stroke-width: 1; }
 .lk-journal .jr-ctx { fill: var(--jr-ctx); }

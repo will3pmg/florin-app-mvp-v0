@@ -83,6 +83,151 @@
   RU.fromInput = (v) => { const m = /^(\d{1,2}):(\d{2})/.exec(v || ""); return m ? +m[1] + +m[2] / 60 : null; };
   const lower1 = (s) => s.charAt(0).toLowerCase() + s.slice(1);
 
+  /* ============ build-core: the model helpers every chart and day mark reads (claude/Florin data viz.md, C1) ============
+     They belong with the rest of L in refresh-data.js; they sit here, on L, because this pass doesn't own that file (to
+     move there as they are). Pure, no DOM. The week card, Insights, History, Your days, Easy, Ask Florin and the data
+     looks count days, name why a day sat outside the usual and say the symptoms through these, so they all agree. */
+  const cap1 = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const andJoin = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
+  const NUMW = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  /* the one wording for a flagged today, everywhere (RU.FLAG_DAY is the same string) */
+  L.FLAG_DAY = L.FLAG_DAY || "Today has a log noted for a clinician, so it isn't read against your usual.";
+  /* a day's name in a sentence about the last 7 days: Today, never its weekday; any other day its weekday */
+  L.dayName = (d) => (d === L.TODAY ? "Today" : Ut.DOWL[dateOf(d).getDay()]);
+  /* L.span with an optional last day (today by default), so a card can be drawn to any day and count what Insights
+     would have counted then */
+  if (!L.span.withEnd) {
+    const span0 = L.span;
+    L.span = (M, n, mode, end) => {
+      if (end == null || end >= L.TODAY) return span0(M, n, mode);
+      const d0 = Math.max(M.start, end - n + 1);
+      return M.days.filter((x) => x.d >= d0 && x.d <= end).map((x) => L.facts(M, x, mode));
+    };
+    L.span.withEnd = true;
+  }
+  /* a stretch's days, counted the one way every screen counts them: the days within your usual out of the days read
+     either way (within or outside). A day that could be either, or one logged with nothing about BMs, is counted
+     neither way, never as a shift; left says which, by name (named) or by count. A flagged today is in neither count
+     (L.FLAG_DAY). F is L.span's facts. Moved from library/js/looks-data.js, same output */
+  L.tally = (F, named) => {
+    const lg = F.filter((f) => f.logged), by = (s) => lg.filter((f) => f.state === s);
+    const within = by("usual"), shifted = by("shifted"), unsure = by("unsure"), noc = by("nocount"), flag = by("flag");
+    const nm = (f) => (f.today ? "today" : Ut.DOWL[dateOf(f.d).getDay()]);
+    const who = (a) => cap1(named ? andJoin(a.map(nm)) : plural(a.length, "day"));
+    const notC = (a) => `so ${a.length === 1 ? "it isn't" : "they aren't"} counted`;
+    const past = noc.filter((f) => !f.today), now = noc.some((f) => f.today);
+    const left = [
+      unsure.length && `${who(unsure)} could be either, ${notC(unsure)}.`,
+      past.length && `${who(past)} had nothing about BMs, ${notC(past)}.`,
+      now && "Today has nothing about BMs yet, so it isn't counted.",
+      flag.length && L.FLAG_DAY
+    ].filter(Boolean).join(" ");
+    return { logged: lg.length, within: within.length, shifted: shifted.length, unsure: unsure.length, nocount: noc.length, flag: flag.length, none: F.filter((f) => !f.logged && !f.pending).length, known: within.length + shifted.length, left };
+  };
+  /* why a day sat where it did, in the order the week card names it: No BM, more or fewer BMs than usual, a form outside
+     your usual forms, then the first BM's time. reasons[0] is the line; a second reason adds its short tail. f is one
+     of L.span's facts. Returns { state, word (the mark's word), reasons [{ k, text, tail, short }], line (with the
+     day's name: "Wednesday: your first BM came later than usual, at 8:55 AM."), say (the same without the name, for a
+     header that already names the day), sr (the short words a screen reader hears) }. o.name names the day another
+     way ("Friday, Oct 9"); the default is L.dayName */
+  L.dayWhy = (M, f, mode, o = {}) => {
+    const u = M.usual, name = o.name || L.dayName(f.d);
+    const state = f.pending ? "pending" : f.state;
+    const out = { d: f.d, state, word: "", reasons: [], line: "", say: "", sr: "" };
+    const cnt = () => (u.nLo === u.nHi ? `${u.nLo}` : `${u.nLo} to ${u.nHi}`);
+    if (state === "pending") return Object.assign(out, { word: "Nothing logged yet", say: "Nothing logged yet today.", sr: "nothing logged yet" });
+    if (state === "none") return Object.assign(out, { word: "Nothing logged", line: `Nothing logged on ${name}.`, say: "Nothing logged.", sr: "nothing logged" });
+    if (state === "flag") return Object.assign(out, { word: "Noted for a clinician", line: L.FLAG_DAY, say: L.FLAG_DAY, sr: "noted for a clinician, not read against your usual" });
+    if (state === "usual") return Object.assign(out, { word: "Within your usual", line: `${name}: within your usual.`, say: "Within your usual.", sr: "within your usual" });
+    if (state === "logged") {
+      const n = f.count;
+      const what = n == null ? "symptoms or meals" : n === 0 ? "No BM" : plural(n, "BM");
+      return Object.assign(out, { word: "Logged", say: "Logged.", sr: `logged, ${what}` });
+    }
+    if (state === "unsure") {
+      const bs = f.bms.filter((b) => L.inForms(M, b, mode) === null), w = andJoin([...new Set(bs.map((b) => L.WORDS[L.wordKey(b)].word))]);
+      const text = `${bs.length === 1 ? "a BM" : `${NUMW[bs.length] || bs.length} BMs`} logged as ${w} could be either side of your usual`;
+      return Object.assign(out, { word: "Not counted", line: `${name} isn't counted: ${text}.`, say: `Not counted: ${text}.`, sr: `not counted, ${text}` });
+    }
+    if (state === "nocount") {
+      const s = f.nsym > 0, m = f.meals.length > 0;
+      if (f.today) return Object.assign(out, { word: "Not counted", line: "Today isn't counted yet: nothing about BMs is logged.", say: "Not counted yet: nothing about BMs is logged.", sr: "not counted yet, nothing about BMs logged" });
+      const text = `only ${s && m ? "symptoms and meals were" : s ? "symptoms were" : m ? "meals were" : "notes were"} logged`;
+      return Object.assign(out, { word: "Not counted", line: `${name} isn't counted: ${text}.`, say: `Not counted: ${text}.`, sr: `not counted, ${text}` });
+    }
+    /* outside your usual */
+    const R = out.reasons;
+    if (f.count === 0) R.push({ k: "none", text: `No BM, fewer than your usual ${cnt()} a day`, tail: "", short: "No BM" });
+    else if (f.inCount === false) {
+      const more = f.count > u.nHi;
+      R.push({ k: more ? "more" : "fewer", text: `${plural(f.count, "BM")}, ${more ? "more" : "fewer"} than your usual ${cnt()} a day`, tail: `, and ${more ? "more" : "fewer"} BMs than usual`, short: `${plural(f.count, "BM")}, ${more ? "more" : "fewer"} than usual` });
+    }
+    if (f.formsIn === false) {
+      const B = mode === "B", outB = f.bms.filter((b) => L.inForms(M, b, mode) === false);
+      const firmer = outB.filter((b) => (B ? L.wordKey(b) < u.wLo : Math.max(...L.stepsOf(b)) < u.fLo));
+      const n = outB.length, dir = firmer.length === n ? "firmer" : firmer.length === 0 ? "looser" : null;
+      const names = andJoin([...new Set(outB.map((b) => L.formName(b, mode)))]);
+      const lead = `${NUMW[n] || n} BM${n === 1 ? " was" : "s were"}`;
+      R.push(dir
+        ? { k: "form", text: `${lead} ${names}, ${dir} than your usual forms`, tail: `, and ${dir} than usual`, short: `${dir} than your usual forms` }
+        : { k: "form", text: `${lead} outside your usual forms, ${firmer.length} firmer and ${n - firmer.length} looser`, tail: ", and a form outside your usual", short: "outside your usual forms" });
+    }
+    if (f.inWin === false && f.first != null) {
+      const late = Math.round(f.first * 60) / 60 > u.tHi;
+      R.push({ k: late ? "late" : "early", text: `your first BM came ${late ? "later" : "earlier"} than usual, at ${T(f.first)}`, tail: `, and ${late ? "later" : "earlier"} than usual`, short: `first BM ${late ? "later" : "earlier"} than usual` });
+    }
+    const r0 = R[0], tail = R[1] ? R[1].tail : "";
+    return Object.assign(out, { word: "Outside your usual", line: r0 ? `${name}: ${r0.text}${tail}.` : `${name}: outside your usual.`, say: r0 ? `${cap1(r0.text)}${tail}.` : "Outside your usual.", sr: `outside your usual${R.length ? `, ${R.map((r) => r.short).join(", ")}` : ""}` });
+  };
+  /* the one symptom sentence, for the week card, Insights' Symptoms card and Ask Florin: each symptom counted once per
+     day it came up; the one on the most days named (a tie names both); "both days" or "each day" when it came up every
+     symptom day; its strength only when every log of it gave one; another symptom logged stronger added after. Never
+     "most often". o.named (the default) names a single day ("today", "on Wednesday"); false counts it ("on 1 day").
+     o.of, the days logged, makes the head "Symptoms on 2 of 6 days you logged". "" when no symptoms were logged */
+  L.symLine = (F, o = {}) => {
+    const named = o.named !== false, days = F.filter((f) => f.logged && f.nsym);
+    if (!days.length) return "";
+    const k = days.length, by = {};
+    days.forEach((f) => Object.keys(f.sym).forEach((n) => (by[n] = by[n] || []).push(f)));
+    const at = (n) => { const i = L.SYMPTOMS.indexOf(n); return i < 0 ? 99 : i; };
+    const names = Object.keys(by).sort((a, b) => by[b].length - by[a].length || at(a) - at(b));
+    const low = (s) => s.toLowerCase();
+    const when = (fs) => (fs.length === 1 && named ? (fs[0].today ? "today" : `on ${L.dayName(fs[0].d)}`) : `on ${plural(fs.length, "day")}`);
+    const str = (n) => {
+      if (by[n].some((f) => (f.unrated && f.unrated[n]) || !f.sym[n])) return "";
+      const ss = by[n].map((f) => f.sym[n]), a = Math.min(...ss), b = Math.max(...ss);
+      return a === b ? low(L.STRENGTH[a - 1]) : `${low(L.STRENGTH[a - 1])} to ${low(L.STRENGTH[b - 1])}`;
+    };
+    const named1 = (n) => { const s = str(n); return `${s ? s + " " : ""}${low(n)}`; };
+    const head = o.of != null ? `Symptoms on ${k} of ${plural(o.of, "day")} you logged` : k === 1 && named ? `Symptoms ${when(days)}` : `Symptoms on ${plural(k, "day")}`;
+    if (k === 1) return `${head}: ${andJoin(names.map(named1))}${o.of != null && named ? `, ${when(days)}` : ""}.`;
+    const c = by[names[0]].length, tops = names.filter((n) => by[n].length === c);
+    let lead;
+    if (tops.length > 1) lead = `${andJoin(tops.map(low))}, ${plural(c, "day")} each`;
+    else lead = c === k ? `${named1(tops[0])} ${k === 2 ? "both days" : "each day"}` : `${named1(tops[0])} on ${plural(c, "day")}`;
+    const top = Math.max(0, ...tops.flatMap((n) => by[n].map((f) => f.sym[n] || 0)));
+    const strong = names.filter((n) => !tops.includes(n)).map((n) => ({ n, s: Math.max(0, ...by[n].map((f) => f.sym[n] || 0)) })).filter((x) => x.s > top).sort((a, b) => b.s - a.s)[0];
+    return `${head}: ${lead}${strong ? `, and ${low(L.STRENGTH[strong.s - 1])} ${low(strong.n)} ${when(by[strong.n])}` : ""}.`;
+  };
+  /* what moved FloraScore, in whole points: each part's change rounded by largest remainder so the four add up to the
+     change shown (delta), a part that didn't move staying 0. Added to L.scoreMoved's parts as pts */
+  if (!L.scoreMoved.whole) {
+    const moved0 = L.scoreMoved;
+    L.scoreMoved = (M, mode) => {
+      const mv = moved0(M, mode);
+      if (!mv) return mv;
+      const r = mv.parts.map((p) => p.delta), sum = r.reduce((s, v) => s + v, 0), abs = r.reduce((s, v) => s + Math.abs(v), 0);
+      /* the parts' raw sum and the change shown can differ by the rounding of each day's score: share the difference out
+         by each part's size, so a part at 0 stays at 0 */
+      const adj = r.map((v) => v + (abs ? ((mv.delta - sum) * Math.abs(v)) / abs : (mv.delta - sum) / r.length));
+      const base = adj.map((v) => Math.floor(v + 1e-9)), left = mv.delta - base.reduce((s, v) => s + v, 0);
+      adj.map((v, i) => ({ i, f: v - base[i] })).sort((a, b) => b.f - a.f).slice(0, Math.max(0, left)).forEach((x) => base[x.i]++);
+      mv.parts.forEach((p, i) => (p.pts = base[i]));
+      return mv;
+    };
+    L.scoreMoved.whole = true;
+  }
+
   /* how an entry reads in a list (Today's timeline and History share it) */
   RU.entryText = (e, mode) => {
     if (e.kind === "bm") {
@@ -115,9 +260,14 @@
      every list at once */
   RU.entryRow = (e, M, V, o) => RU.row(e, V.form, o);
 
-  /* ---------- the week, Monday to Sunday ---------- */
-  RU.week = (M, mode) => {
-    const ds = L.weekOf(L.TODAY);
+  /* ---------- the last 7 days ----------
+     The days Today's week card and Insights' 7 days count: today and the six before it (Oct 28: not Monday to today,
+     which disagreed with Insights on every day but Sunday). end draws them to another day. The fields stay as they
+     were (the page's notes and the check-in read them); "within your usual" counts are over the days read, never a
+     flagged today. */
+  RU.week = (M, mode, end) => {
+    const e = end != null ? end : L.TODAY;
+    const ds = Array.from({ length: 7 }, (_, i) => e - 6 + i);
     const cols = ds.map((d) => {
       const x = L.day(M, d);
       const before = !x;
@@ -151,8 +301,47 @@
     bms.forEach((b) => { const k = L.formKey(b, mode); formCount[k] = (formCount[k] || 0) + 1; });
     const topForm = Object.entries(formCount).sort((a, b) => b[1] - a[1])[0];
     const gaps = live.filter((c) => !c.logged);
-    return { ds, cols, bms, rbms, inForms, unsure, mornings, rmornings, inWin, flagged, loggedDays, symDays, symItems, meals, topForm, gaps };
+    /* F and tally: the same days as L.span's facts and their count, the one every screen states ("4 of 6 days") */
+    const F = L.span(M, 7, mode, e), tally = L.tally(F, true);
+    return { ds, cols, bms, rbms, inForms, unsure, mornings, rmornings, inWin, flagged, loggedDays, symDays, symItems, meals, topForm, gaps, F, tally };
   };
+
+  /* ---------- one day, as a mark (claude/Florin data viz.md, section 1) ----------
+     The one way a day is drawn: Today's week card, History's day headers and calendar, Your days and Easy. Shape says
+     what it is, colour how it read against your usual, and a word says it again. f is one of L.span's facts.
+       within your usual   a filled Plum circle (Ray on dark), the date inside
+       outside your usual  a filled Gold circle, edged in Shift Ink in light, the date inside
+       logged, not counted a filled Ink 3 circle (a word that could be either, only symptoms or meals, or before day 14)
+       nothing logged      no circle: the date alone, in Ink 3 (and today with nothing logged yet)
+       flagged today       a Teal ring with the info glyph, no fill, in no count
+       today, logged       a 2px Ink ring, 2px out from its circle; the word Today under today's column
+       a symptom that day  one Teal square under it, whatever the strength
+     o: { M, mode (for the screen reader's words; or why, L.dayWhy's result), before (a day before the person
+     started: the date alone, never named), lg or size: 32 (Easy's 32px), sym (false: no square slot), dow (the weekday
+     above), today (overrides f.today: the ring and the word), todayWord (false: no Today under today), name (the screen
+     reader's name for the day) }. Spans only, so a calendar can wrap it in its button */
+  const DAY_K = { usual: "usual", shifted: "shift", flag: "flag", unsure: "quiet", nocount: "quiet", logged: "quiet", none: "none", pending: "none" };
+  const DAY_SR = { usual: "within your usual", shifted: "outside your usual", flag: "noted for a clinician, not read against your usual", unsure: "not counted", nocount: "not counted", logged: "logged", none: "nothing logged", pending: "nothing logged yet" };
+  RU.dayMark = (f, o = {}) => {
+    const st = o.before ? "before" : f.pending ? "pending" : !f.logged ? "none" : f.state;
+    const k = o.before ? "none" : DAY_K[st] || "quiet", lg = !!(o.lg || o.size === 32), today = o.today != null ? !!o.today : !!f.today;
+    const ring = today && !o.before && (k === "usual" || k === "shift" || k === "quiet");
+    const date = dateOf(f.d), sym = !o.before && f.logged && f.nsym > 0;
+    const why = o.before ? null : o.why || (o.M ? L.dayWhy(o.M, f, o.mode) : null);
+    const symW = sym ? `Symptoms: ${Object.entries(f.sym).map(([n, s]) => `${n.toLowerCase()}, ${s ? L.STRENGTH[s - 1].toLowerCase() : "strength not said"}`).join("; ")}.` : "";
+    const name = o.name || `${f.today ? "Today, " : ""}${Ut.DOWL[date.getDay()]}, ${Ut.MONL[date.getMonth()]} ${date.getDate()}`;
+    /* a day before the person started is its date alone, never named: hidden from a screen reader too */
+    const words = o.before ? "" : `${name}: ${why ? why.sr : DAY_SR[st] || "logged"}.${symW ? ` ${symW}` : ""}`;
+    return `<span class="ap-day ap-day--${o.before ? "before" : k}${ring ? " is-today" : ""}${lg ? " ap-day--lg" : ""}" data-day="${f.d}"${o.before ? ' aria-hidden="true"' : ""}>`
+      + (o.dow ? `<span class="ap-day-w" aria-hidden="true">${esc(Ut.DOW[date.getDay()])}</span>` : "")
+      + `<span class="ap-day-c" aria-hidden="true">${k === "flag" ? ic("info") : date.getDate()}</span>`
+      + (o.sym === false ? "" : `<span class="ap-day-s${sym ? " is-on" : ""}" aria-hidden="true"></span>`)
+      + (today && !o.before && o.todayWord !== false ? `<span class="ap-day-t" aria-hidden="true">Today</span>` : "")
+      + (words ? `<span class="sr">${esc(words)}</span>` : "") + "</span>";
+  };
+  /* the small mark a line starts with, so the lines under a row of days are its legend: k is usual, shift, quiet, flag,
+     sym (the Teal square) or none (an empty slot, so the words still line up) */
+  RU.dayKey = (k) => `<i class="ap-day-k ap-day-k--${k}" aria-hidden="true">${k === "flag" ? ic("info") : ""}</i>`;
 
   /* ---------- what stood out today ----------
      Today's entries, ranked, one way for Score first's sentence and Day first's marked row. First a flag on a BM, or an
@@ -167,7 +356,7 @@
   /* today has a flag or an alarm feature logged: Today's score, its sentence, every week card, Insights, Ask Florin and
      the data looks then read nothing of today against the usual (L.facts gives today the state "flag") */
   RU.flagToday = (M) => todayOf(M).some((e) => !!RU.alarmOf(e));
-  RU.FLAG_DAY = "Today has a log noted for a clinician, so it isn't read against your usual.";
+  RU.FLAG_DAY = L.FLAG_DAY;
   const SHIFT_CHIP = { form: "Outside your usual forms", late: "Later than your window", early: "Earlier than your window", more: "More than your usual", none: "Fewer than your usual" };
   RU.standouts = (M, mode) => {
     const u = M.usual, es = todayOf(M), bms = es.filter((e) => e.kind === "bm");
@@ -224,9 +413,10 @@
   /* what the log that stood out did to FloraScore, said after the sentence that leads with it, worked out by scoring
      today with and without it (never by crediting a part it didn't move): "Without it, FloraScore would be 80." or "It
      didn't change FloraScore." Nothing for an alarm (a flagged log is never read through the score), nothing without a
-     score today. Why the score moved is a membership feature, so the caller leaves it off on Free */
+     score today. Nothing for a No BM log either (Oct 28): pricing an honest log in points reads as a cost for logging.
+     Why the score moved is a membership feature, so the caller leaves it off on Free */
   RU.scoreEffect = (M, mode, N) => {
-    if (!N || !N.e || N.kind === "alarm" || !M.usual) return "";
+    if (!N || !N.e || N.kind === "alarm" || N.kind === "none" || !M.usual) return "";
     const s = L.score(M, L.TODAY, mode);
     if (!s || s.value == null) return "";
     const w = RU.scoreWithout(M, N.e, mode);
@@ -250,95 +440,55 @@
     return `${es.length ? "No BM logged yet today" : "Nothing logged yet today"}; your first usually comes between ${winBetween(M)}.`;
   };
 
-  /* ---------- the week so far: three rows, each a count in plain words over a seven-day strip ----------
-     The count leads (Function's summary counts), the strip shows which days. Each row names its own usual, so one
-     legend can cover them. A gap is marked once, on the day itself, never as a zero. */
-  RU.weekCard = (M, mode) => {
-    const u = M.usual, W = RU.week(M, mode), today = L.TODAY;
-    const dow = ["M", "T", "W", "T", "F", "S", "S"];
-    const seen = {};
-    const cellName = (c) => `${Ut.DOWL[dateOf(c.d).getDay()]}, ${shortDate(c.d)}`;
-    const head = `<div class="ap-wk-days" aria-hidden="true">${W.cols.map((c, i) => `<span class="${c.d === today ? "is-today" : ""}${c.before ? " is-before" : ""}${!c.before && !c.pending && !c.logged ? " is-gap" : ""}"><b>${dow[i]}</b><em>${dateOf(c.d).getDate()}</em></span>`).join("")}</div>`;
-    const strip = (label, fn) => `<ol class="ap-wk-strip" aria-label="${esc(label)}, by day">${W.cols.map((c) => {
-      let html = "", aria;
-      if (c.before) aria = "before you started";
-      else if (c.pending) aria = "nothing yet";
-      else if (!c.logged) { aria = "nothing logged"; seen.gap = true; }
-      else [html, aria] = fn(c);
-      return `<li class="${c.before ? "is-before" : ""}${!c.before && !c.pending && !c.logged ? " is-gap" : ""}"><span class="sr">${esc(`${cellName(c)}: ${aria}`)}</span>${html}</li>`;
-    }).join("")}</ol>`;
-    const dot = (k) => { seen[k === true ? "usual" : k === false ? "shift" : u ? "either" : "dot"] = true; return `<i class="ap-wk-dot${k === true ? " is-usual" : k === false ? " is-shift" : ""}"></i>`; };
-    const noBm = (c) => (c.nobm ? (seen.no = true, ['<i class="ap-wk-no"></i>', "no BM, logged"]) : ["", "no BM logged"]);
-    /* a flagged day: the calendar's mark, a Teal ring, and no reading */
-    const flagMk = () => { seen.flag = true; return '<i class="ap-wk-flag"></i>'; };
-    const isFlag = (c) => W.flagged.includes(c);
-    const bmStrip = strip("BMs", (c) => {
-      if (!c.bms.length) return noBm(c);
-      if (isFlag(c)) return [flagMk(), `${plural(c.bms.length, "BM")}, noted for a clinician, not read against your usual`];
-      const k = c.bms.map((b) => (u ? L.inForms(M, b, mode) : null));
-      return [`<span class="ap-wk-dots">${k.map(dot).join("")}</span>`, `${plural(c.bms.length, "BM")}${u ? `, ${k.filter((v) => v === true).length} within your usual` : ""}`];
-    });
-    const firstStrip = strip("First BM", (c) => {
-      if (!c.bms.length) return noBm(c);
-      if (isFlag(c)) return [flagMk(), `first at ${T(c.bms[0].t)}, noted for a clinician, not read against your usual`];
-      const f = c.bms[0].t, k = u ? L.inWindow(M, f) : null;
-      return [dot(k), `first at ${T(f)}${k === true ? ", inside your usual window" : k === false ? ", outside your usual window" : ""}`];
-    });
-    const symStrip = strip("Symptoms", (c) => {
-      if (!c.syms.length) return ["", "no symptoms logged"];
-      const s = Math.max(0, ...c.syms.flatMap((e) => e.items.map((i) => i.s || 0)));
-      seen[s ? "sym" : "sym0"] = true;
-      /* each symptom with its own strongest strength that day; one logged without a strength says so, never mild */
-      const by = {};
-      c.syms.forEach((e) => e.items.forEach((i) => { by[i.name] = Math.max(by[i.name] || 0, i.s || 0); }));
-      return [`<i class="ap-wk-sq ap-wk-sq--${s}"></i>`, Object.entries(by).map(([n, k]) => `${n.toLowerCase()}, ${k ? L.STRENGTH[k - 1].toLowerCase() : "strength not said"}`).join("; ")];
-    });
-    const symWords = (() => {
-      if (!W.symDays.length) return W.loggedDays ? `none on the ${plural(W.loggedDays, "day")} logged` : "none logged yet";
-      /* each symptom counts once per day it came up, the way Insights counts it */
-      const names = {}; W.symDays.forEach((c) => [...new Set(c.syms.flatMap((s) => s.items.map((i) => i.name)))].forEach((n) => (names[n] = (names[n] || 0) + 1)));
-      const top = Object.entries(names).sort((a, b) => b[1] - a[1] || L.SYMPTOMS.indexOf(a[0]) - L.SYMPTOMS.indexOf(b[0]))[0][0];
-      /* the strength word comes from the top symptom's own entries, and only when every one of them gave one */
-      const mine = W.symItems.filter((i) => i.name === top).map((i) => i.s);
-      const how = !mine.length || mine.some((s) => !s) ? "" : Math.min(...mine) === Math.max(...mine) ? `${L.STRENGTH[mine[0] - 1].toLowerCase()} ` : `${L.STRENGTH[Math.min(...mine) - 1].toLowerCase()} to ${L.STRENGTH[Math.max(...mine) - 1].toLowerCase()} `;
-      const each = Object.keys(names).length === 1 && names[top] === W.symDays.length;
-      const lead = W.symDays.length === 1 ? "" : each ? "each time " : names[top] > W.symDays.length / 2 ? "mostly " : "most often ";
-      return `${W.symDays.length} of ${plural(W.loggedDays, "day")} logged, ${lead}${how}${top.toLowerCase()}`;
-    })();
-    const rows = u ? [
-      ["BMs", `<b>${W.inForms} of ${W.rbms.length - W.unsure}</b> within your usual, ${esc(L.usualFormsText(M, mode))}${W.unsure ? `, and ${W.unsure} that could be either` : ""}`, bmStrip],
-      ["First BM", `<b>${W.inWin} of ${plural(W.rmornings.length, "morning")}</b> inside your usual window, ${esc(winText(M))}`, firstStrip],
-      ["Symptoms", esc(symWords), symStrip]
-    ] : [
-      ["BMs", W.bms.length ? `<b>${plural(W.bms.length, "BM")}</b> logged${W.topForm && W.topForm[1] > 1 ? `, ${W.topForm[1] > W.bms.length / 2 ? "mostly" : "most often"} ${esc(W.topForm[0])}` : ""}` : "none logged yet", bmStrip],
-      ["First BM", W.mornings.length ? `logged on <b>${plural(W.mornings.length, "day")}</b>` : "none logged yet", firstStrip],
-      ["Symptoms", esc(symWords), symStrip]
-    ];
-    /* nothing logged this week yet (day 1, say): the counts in words, without seven empty strips under each */
-    const none = !W.cols.some((c) => c.logged);
-    /* a flagged day is named, so the counts above add up: it's left out of the two BM rows, never read. The line sits
-       under those rows, the ones it's about; symptoms are counts, not readings against the usual */
-    const flagLine = W.flagged.length ? `<p class="ap-wk-fl">${esc(RU.FLAG_DAY)}</p>` : "";
-    const body = rows.map(([l, s, st], i) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${none ? "" : st}</div>${i === 1 ? flagLine : ""}`).join("");
-    const legend = [
-      seen.usual ? `<span><i class="ap-wk-dot is-usual"></i>Within your usual</span>` : "",
-      seen.shift ? `<span><i class="ap-wk-dot is-shift"></i>Outside it</span>` : "",
-      seen.dot ? `<span><i class="ap-wk-dot"></i>Logged</span>` : "",
-      seen.either ? `<span><i class="ap-wk-dot"></i>Could be either</span>` : "",
-      seen.sym ? `<span><i class="ap-wk-sq ap-wk-sq--1"></i><i class="ap-wk-sq ap-wk-sq--3"></i>Symptoms, milder to stronger</span>` : "",
-      seen.sym0 ? `<span><i class="ap-wk-sq ap-wk-sq--0"></i>Strength not said</span>` : "",
-      seen.flag ? `<span><i class="ap-wk-flag"></i>Noted for a clinician</span>` : "",
-      seen.no ? `<span><i class="ap-wk-no"></i>No BM, logged</span>` : "",
-      /* the key is the first gap day's own struck date, so it matches the mark on the card */
-      seen.gap ? `<span><i class="ap-wk-gapday">${(() => { const g = W.cols.find((c) => !c.before && !c.pending && !c.logged); return g ? dateOf(g.d).getDate() : ""; })()}</i>Nothing logged that day</span>` : ""
-    ].join("");
-    const learn = u ? "" : `<div class="ap-learn-st"><p><b>Day ${L.learnDay(M)} of ${L.LEARN_DAYS}.</b> Florin learns your usual from your first two weeks of logs, so this week shows counts, not comparisons.</p><div class="ap-learn-bar" role="img" aria-label="${esc(`Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`)}"><i style="--w:${((L.learnDay(M) / L.LEARN_DAYS) * 100).toFixed(1)}%"></i></div></div>`;
+  /* ---------- Your last 7 days (claude/Florin data viz.md, section 3) ----------
+     One question in five seconds: how many of my last 7 days sat within my usual, and which didn't. The answer counts
+     the days exactly as Insights' 7 days counts them (L.tally over L.span), then one row of seven day marks ending on
+     today, then one line for each day that wasn't within the usual, each starting with that day's mark, so the lines
+     are the legend. No strips, no hatch, no struck dates, no meal count, no legend. o.end draws it to another day */
+  RU.weekCard = (M, mode, o = {}) => {
+    const u = M.usual, end = o.end != null ? o.end : L.TODAY, d0 = end - 6;
+    const F = L.span(M, 7, mode, end), T7 = L.tally(F, true);
+    const lowName = (d) => (d === L.TODAY ? "today" : L.dayName(d));
+    const onDays = (fs) => andJoin(fs.map((f) => (f.d === L.TODAY ? "today" : `on ${L.dayName(f.d)}`)).map((s, i) => (i && s.indexOf("on ") === 0 ? s.slice(3) : s)));
+    const line = (k, text) => (k ? `<li>${RU.dayKey(k)}<span>${esc(text)}</span></li>` : `<li class="is-plain"><span>${esc(text)}</span></li>`);
+    const logged = F.filter((f) => f.logged), none = F.filter((f) => !f.logged && !f.pending);
+    const lines = [];
+    let answer, row = true;
+    if (u) {
+      answer = T7.known ? `${RU.dayKey("usual")}<span><b>${T7.within} of ${plural(T7.known, "day")}</b> within your usual</span>`
+        : `<span>${logged.length ? "None of the last 7 days can be read against your usual." : "Nothing logged in the last 7 days."}</span>`;
+      /* outside your usual first, in day order, at most three lines: a fourth or more roll into the third */
+      const sh = F.filter((f) => f.state === "shifted");
+      const own = sh.length > 3 ? sh.slice(0, 2) : sh;
+      own.forEach((f) => lines.push(line("shift", L.dayWhy(M, f, mode).line)));
+      if (sh.length > 3) lines.push(line("shift", `Also outside your usual: ${andJoin(sh.slice(2).map((f) => lowName(f.d)))}.`));
+      F.filter((f) => f.logged && (f.state === "unsure" || f.state === "nocount")).forEach((f) => lines.push(line("quiet", L.dayWhy(M, f, mode).line)));
+      if (none.length) lines.push(line("none", `Nothing logged on ${andJoin(none.map((f) => L.dayName(f.d)))}.`));
+      if (F.some((f) => f.state === "flag")) lines.push(line("flag", L.FLAG_DAY));
+    } else if (logged.length) {
+      answer = `${RU.dayKey("quiet")}<span><b>${plural(logged.length, "day")}</b> logged</span>`;
+      lines.push(line("quiet", `Days show as logged until Florin knows your usual, on day ${L.LEARN_DAYS}.`));
+      const nBm = F.reduce((s, f) => s + f.bms.length, 0), noBm = F.filter((f) => f.count === 0);
+      if (nBm) lines.push(line("none", `${plural(nBm, "BM")} over ${plural(F.filter((f) => f.bms.length).length, "day")}${noBm.length ? `, and No BM ${onDays(noBm)}` : ""}.`));
+      else if (noBm.length) lines.push(line("none", `No BM logged ${onDays(noBm)}.`));
+      if (none.length) lines.push(line("none", `Nothing logged on ${andJoin(none.map((f) => L.dayName(f.d)))}.`));
+    } else {
+      /* (Day first and Easy say "Nothing logged yet" for today; the card counts days) */
+      answer = "<span>No days logged yet.</span>";
+      row = false;
+      lines.push(line(null, "Your days show here as you log them."));
+    }
+    const sl = L.symLine(F);
+    if (sl) lines.push(line("sym", sl));
+    const pre = [];
+    for (let d = d0; d < Math.max(d0, M.start); d++) pre.push(`<li>${RU.dayMark({ d, today: false }, { before: true, dow: true })}</li>`);
+    const days = row ? `<ol class="ap-days" aria-label="${esc(`Your last 7 days, ${spanText(d0, end)}`)}">${pre.join("")}${F.map((f) => `<li>${RU.dayMark(f, { M, mode, dow: true })}</li>`).join("")}</ol>` : "";
     return `<section class="ap-card ap-wk" data-a>
-        <div class="ap-card-h"><h2>This week so far</h2><span class="ap-k">${esc(spanText(W.ds[0], W.ds[6]))}</span></div>
-        ${learn}${head}${body}
-        <p class="ap-wk-meals">${W.meals ? `${plural(W.meals, "meal")} logged` : W.loggedDays ? "No meals logged this week" : "No meals logged yet"}</p>
-        ${legend ? `<div class="ap-legend ap-wk-legend">${legend}</div>` : ""}
-        <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights" data-range="7">See the week on Insights ${ic("chev")}</button>
+        <div class="ap-card-h"><h2>Your last 7 days</h2><span class="ap-k">${esc(spanText(d0, end))}</span></div>
+        <p class="ap-wk-a">${answer}</p>
+        ${days}
+        ${lines.length ? `<ul class="ap-wk-ls">${lines.join("")}</ul>` : ""}
+        <button type="button" class="ap-link ap-wk-go" data-act="tab" data-tab="insights" data-range="7">See these days on Insights ${ic("chev")}</button>
       </section>`;
   };
 
@@ -735,7 +885,8 @@
     const xs = `<text class="ap-ckt-x" x="${X(0)}" y="${H - 4}" text-anchor="start">${esc(shortDate(0))}</text><text class="ap-ckt-x" x="${X(12)}" y="${H - 4}" text-anchor="end">This week</text>`;
     /* the newest answered week is ringed: this week once it's in, the last one before that */
     const answered = weeks.filter((c) => c.answers && c.answers[qi] != null), last = answered[answered.length - 1];
-    const dots = answered.map((c) => `<circle class="ap-ckt-dot${c === last ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="${c === last ? 4.5 : 3}"/>`).join("");
+    /* every week's dot 8px across (marks are 8px or more), this week's ringed */
+    const dots = answered.map((c) => `<circle class="ap-ckt-dot${c === last ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="4"/>`).join("");
     const now = last ? `<circle class="ap-ckt-ring" cx="${X(last.w)}" cy="${Y(last.answers[qi])}" r="8"/>` : "";
     const lbl = `${q.label}, each week since ${shortDate(0)}.${cur != null ? ` This week: ${q.opts[cur].toLowerCase()}.` : last ? ` Latest, the week of ${shortDate(last.w * 7)}: ${q.opts[last.answers[qi]].toLowerCase()}.` : ""}${b ? (b[qi].lo === b[qi].hi ? ` Your first three weeks were ${q.opts[b[qi].lo].toLowerCase()}.` : ` Your first three weeks ran from ${q.opts[b[qi].lo].toLowerCase()} to ${q.opts[b[qi].hi].toLowerCase()}.`) : ""}`;
     const table = `<table class="sr"><caption>${esc(q.label)} by week</caption><tbody>${weeks.map((c) => `<tr><th scope="row">${esc(c.w === 12 ? "This week" : `Week of ${shortDate(c.w * 7)}`)}</th><td>${esc(c.answers && c.answers[qi] != null ? q.opts[c.answers[qi]] : "Skipped")}</td></tr>`).join("")}</tbody></table>`;
@@ -777,10 +928,11 @@
           <h3 tabindex="-1">${b ? "This week, next to your first weeks" : "Your first check-in is saved"}</h3>
           <p class="ap-ckr-lede">${b ? `Compared only with your first three check-ins, ${esc(spanText(first[0].ws, first[2].ws + 6))}. Each chip says whether this week is about the same as then, or moved, and which way. No score and no severity labels.` : "This is your starting point. After three check-ins, each week is compared with these first ones. No score and no severity labels, only you next to you."}</p>
           ${(() => {
-            /* the week's own logs next to the answers: the weekly view, with no separate report */
-            const Wk = RU.week(M, V.form);
+            /* the week's own logs next to the answers, counted as Today's card and Insights count them: days within your
+               usual out of the days read, and the one symptom sentence (Oct 28: not BMs here and mornings there) */
             if (!M.usual) return "";
-            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li><b>${Wk.inForms} of ${plural(Wk.rbms.length - Wk.unsure, "BM")}</b> within your usual${Wk.unsure ? `, and ${Wk.unsure} that could be either` : ""}</li><li>First BM inside your usual window on <b>${Wk.inWin} of ${plural(Wk.rmornings.length, "morning")}</b></li><li>Symptoms on <b>${Wk.symDays.length} of ${plural(Wk.loggedDays, "day")}</b> logged</li></ul></div>`;
+            const Fk = L.span(M, 7, V.form, Math.min(ck.ws + 6, L.TODAY)), Tk = L.tally(Fk, true), sl = L.symLine(Fk);
+            return `<div class="ap-ckr-logs"><span class="ap-k">Your logs this week</span><ul><li>${Tk.known ? `<b>${Tk.within} of ${plural(Tk.known, "day")}</b> within your usual` : "No day this week can be read against your usual yet"}</li><li>${esc(sl || "No symptoms logged this week.")}</li></ul></div>`;
           })()}
           ${b ? `<div class="ap-legend"><span><i class="sw sw--band"></i>Your first three weeks</span><span><i class="sw ap-ckt-sw--past"></i>Each week</span><span><i class="sw ap-ckt-sw--now"></i>This week</span></div>` : ""}
           <ul class="ap-ckr-list">${rows}</ul>
@@ -806,16 +958,22 @@
      RU.history lists the days, newest first; RU.historyDay draws one day and RU.entryRow one entry, so a calendar can
      show the same day the same way. The weekly check-in isn't an entry, so History has none to hide when it's off. */
   const keepFor = (F) => (e) => F === "all" || (F === "bm" && (e.kind === "bm" || e.kind === "nobm")) || (F === "sym" && e.kind === "sym") || (F === "meal" && e.kind === "meal") || (F === "note" && e.note);
-  /* one day: its name, how many entries, then the rows, or the gap with Add to this day. d is a day number or a day;
-     entries defaults to everything logged that day (History passes the filtered ones) */
+  /* one day: its mark and its name, one line on how it sat against the usual (L.dayWhy: the same mark and words as
+     Today's card, so a day reads the same everywhere), how many entries, then the rows, or the gap with Add to this
+     day. The day carries the reading once, in its header: the rows stay as they are (no chip on a BM row, which would
+     double Day first's chip and read a flagged today). d is a day number or a day; entries defaults to everything
+     logged that day (History passes the filtered ones) */
   RU.historyDay = (M, V, d, entries) => {
     const x = typeof d === "number" ? L.day(M, d) : d;
     if (!x) return "";
     const es = entries || (x.logged ? x.entries : []);
     const isToday = x.d === L.TODAY;
+    const f = L.facts(M, x, V.form), why = L.dayWhy(M, f, V.form, { name: dayName(x.d) });
+    /* the line under the name: what was different, or within; a gap says so in its body; a learning day has none */
+    const say = f.state === "none" || f.pending || f.state === "logged" ? "" : why.say;
     return `<section class="ap-hd" data-a>
-        <div class="ap-card-h ap-card-h--pad"><h2>${esc(dayName(x.d))}</h2><span class="ap-k">${x.logged ? (es.length ? plural(es.length, "entry", "entries") : isToday ? "Nothing yet" : "Nothing logged") : "Nothing logged"}</span></div>
-        ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">No logs this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
+        <div class="ap-hd-h">${RU.dayMark(f, { M, mode: V.form, why, todayWord: false })}<div class="ap-hd-t"><h2>${esc(dayName(x.d))}</h2>${say ? `<p class="ap-hd-why">${esc(say)}</p>` : ""}</div><span class="ap-k">${x.logged ? (es.length ? plural(es.length, "entry", "entries") : isToday ? "Nothing yet" : "Nothing logged") : "Nothing logged"}</span></div>
+        ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">Nothing logged this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
       </section>`;
   };
   RU.history = (M, V, st) => {

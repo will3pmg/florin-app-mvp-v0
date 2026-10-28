@@ -59,13 +59,32 @@ Today and the look's Insights, and draws its own in their place.
 
 The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar holds **Decisions**
 (Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), one line each,
-then **Demo** (Person; Logs: 12 weeks, New, day 5 or Just joined; Meal logs; Plan; Theme; Reset), which folds to a
+then **Demo** (Person; Logs: 12 weeks, New, day 5 or Just joined; Demo person's meals: Every day, Only with symptoms or
+Never; Plan; Theme; Reset), under one plain line, "These change the demo person, not the app", which folds to a
 one-line summary (folded by default, remembered per viewer as `florin-refresh:demoOpen`), then **Screens**. Each side
 bar scrolls on its own and is sized from where it sits, so its end is always in reach. The right bar is the notes for
-the screen, or for the decision just changed (until the phone moves to another screen); each decision's info button
-shows its note. Between 760 and 1019px the notes sit under the phone: an info button scrolls to them, and a changed
-decision shows a "Read the note" button at the foot of the toggles column, never over the phone. Every option of every decision is drawn, by the core or a module, so each
-reads **On the phone** (an option no module claimed would read **Picked**). A screen in the list that belongs to a
+the screen, or for the decision or demo control just changed or asked about (until the phone moves to another screen);
+every decision and every demo control has an info button that shows its note (`data-rx="dinfo"`, `data-rx="xinfo"`).
+Changing Demo person's meals shows its note, since it reads like a design option. Between 760 and 1019px the notes sit
+under the phone: an info button scrolls to them, and a changed decision shows a "Read the note" button at the foot of
+the toggles column, never over the phone.
+
+The notes (Will, Oct 28: "Make it simple"). A decision's note takes the decision sheet's shape and keeps to its words
+(`claude/Florin decisions.md`): the question in ten words or fewer, one sentence on what it decides, a block per option
+(its name, then What it is, Why do it and Why not, one sentence each, honest both ways), the recommended block marked
+Recommended, "We recommend <option>" with one sentence of why, at most one Still open, and Try it. Its top label
+numbers it as the deck does and says what we recommend ("Decision 1 of 9 · Consistency · We recommend C"; `rec.short`
+names a recommendation more shortly there), so the answer is in view before the options. The check-in's note answers
+Will's question first (`answer`), then says what the check-in is, as the sheet does. A note about something else opens
+at its top. A screen's note shows its claims line only when the screen fails a rule (no line is a pass, and every check
+reads it that way). A demo control's note
+says what it changes about the demo person (Person gives each person a line from their own logs: their usual first
+BM window and forms, how often symptoms come up and the food pattern Insights finds; Logs says New's day from the
+model); the meals one explains the trap (meals written down only on days with
+symptoms make everyday foods look linked to them) and the food check, with `L.MEAL_COVER` and `L.FOOD_CHECK_DAYS`. A
+screen's note is about 80 words or fewer: what the screen does and why, and at most one open question. Every note is
+plain: no badges (every option is drawn, so nothing says On the phone or Picked), no build status, no was and now, no
+research lists, no persona names or scores as evidence, and every figure from the model. A screen in the list that belongs to a
 decision sets that decision, and it stays: Home: Day first, History: Calendar, the onboarding screens and the Easy
 version's, as the Membership screens set Plan to Free. So the phone and the left bar always agree, and a check that
 sweeps the list puts the decisions back after. Decisions are stored (`florin-refresh:<key>`); the demo controls
@@ -75,10 +94,17 @@ giving it back leaves nothing stored). The arrow keys step through Screens from 
 the phone is still on it (so a row that draws another row's screen, such as Log a BM, details filled in, never loops),
 and focus comes back to the lit row if a screen took it into the phone. A row picked from the list always shows that
 screen's note. The first Tab stop is Skip to the phone. The header links the decisions deck and the data looks
-library. A decision whose option shows on another screen (Home, History, BM logging, Meal sheet) has Show it on the
-phone in its note, which opens that screen and keeps the note up. With the Easy version on, Home and Data style read
-"Picked; Easy draws its own", with a line under each row saying so (`SHADOWED` in refresh-app.js). Under 760px the app is full screen
-and a bottom bar opens Toggles (Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled.
+library ("Every data style, side by side"); the footer says only "Prototype only. Not for patients." A decision whose option shows on another screen (Home, History, BM logging, Meal sheet) has Show it on the
+phone in its note, which opens that screen and keeps the note up. With the Easy version on, the Home and Data style rows
+each get one plain line, "Easy has its own Today (charts). Turn Easy off to see this choice.", under the row and at the top
+of the note (`SHADOWED` in refresh-app.js). Under 760px the app is full screen and a slim bar at the top opens Toggles
+(Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled. A decision changed in the
+Toggles sheet says so in one line at the sheet's top ("History is now Calendar."), with See it (closing the sheet, on the
+screen the option shows on) and Read the note; changing Demo person's meals opens its note. The bar is at the top so the app
+keeps its own tab bar at the bottom, as on a real phone (Will, Oct 28: a bottom bar covered the app's tabs). The app
+ends above the home indicator (`.rx-mount` takes `--rx-sab`), and the strip under it is the app's own ground. The safe
+areas are variables on `:root` (`--rx-sat`, `--rx-sab`), so behave.js stands in a phone's at 47 and 34. The bar is
+border-box, so it is 48px plus the top inset, counted once, and the app's first line and avatar sit under it.
 Weekly check-in Off takes the check-in out of the whole app (`RU.ckOn(V)`), and its screens are disabled in the list.
 BM logging Full form only shows one Log a BM row on plus and no one-tap save. Home Day first, History Calendar, Data
 style, Version Easy and Onboarding are stored and stamped on the phone, and drawn by their modules. Where they meet:
@@ -119,8 +145,10 @@ averages raw (`wk`, `lw`, for the waterfall's geometry) and as shown (`wkR`, `lw
 always sits beside 76 and 84.
 
 Meals are occasional (Will, Oct 14). `L.build(persona, data, { meals })` takes "all", "rough" (only days with a
-symptom) or "none". Under 60% of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back
-(`sparse`), because rough-day-only logs name ordinary foods by selection. The quick log (`RU.mealQuick`) is one box
+symptom) or "none". `L.MEAL_LOGS` labels them Every day, Only with symptoms and Never: the demo control (Demo person's
+meals) is the demo person's history, never a design option, so nothing on the page says "rough days" for it. Under 60%
+of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back (`sparse`), because logs kept
+only on days with symptoms name ordinary foods by selection. The quick log (`RU.mealQuick`) is one box
 for the day with a voice button; the prototype plays `L.mealSay` in place of the microphone (that day's meals not
 logged yet, so saying the day never counts a food twice).
 
@@ -142,14 +170,19 @@ FLORIN_EXT = {
                                                            // opens.ask: after the core's Ask tab, a module's fresh chat
   screens:   [[group, [[id, label], ...], { before?: group }]],  // joins a group of that name, or a new group
   notes:     { [screenId]: (M, P) => note },               // wins over the core note when it returns one
-  decisions: { [key]: (M, P) => note },                    // replaces a decision's core note
-  built:     { [key]: [value, ...] },                      // the options of a decision a module draws (home: ["day"])
+  decisions: { [key]: (M, P) => decision },                // the note of a decision a module draws
+  built:     {},                                           // no longer read (Oct 28); kept so an old claim can't throw
   keys:      { [overlayType]: (overlay) => screenId, ["tab:<tab>"]: ({ st: S }) => screenId },
   onSet:     [(key, value, api) => void],                  // after phone.set has redrawn and the page has followed
   api                                                      // the live phone's api, there from the phone's first draw
 }
-note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], res?: [] }   // P: every decision, the
-                                                           // demo controls (persona, data, meals, plan, theme) and key
+note = { t, lede, open?: [one question] }               // a screen's: about 80 words at most (was and now, and
+                                                           // research, are gone: the page draws neither)
+decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text: "We recommend ...", why },
+             open?: "...", try: "...", aside?, answer?: [lead, rest],
+             about?: { h, lede?, items: [[a, b]], more?: [line] } }   // the page adds q and what (DECISIONS)
+                                                           // P: every decision, the demo controls (persona, data,
+                                                           // meals, plan, theme) and key
 ```
 
 - **api**: `S` (the phone's state), `V()`, `M()`, `push(type, st, { instant })` (returns the overlay, or null when its
@@ -165,11 +198,11 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
   the notes (so a Profile screen can turn the check-in off). Each decision is stamped on the phone's `.ap` root
   (`data-bm-ui="full"`, `data-look="rings"`, `data-easy="true"`) for a module's CSS; an overlay's element carries
   `.ap-o--t-<type>`.
-- **built**: until a module claims an option in `EXT.built[key]`, a decision's note says Picked for it, not On the
-  phone. The core draws every option of form, bmUI, checkin and mealUI, and only Score first, List, As built and
-  Standard of the others, and no onboarding. The modules claim the rest: looks `look` rings, journal, bento, oura and
-  easy; variants `home` day and `history` calendar; profile `onboard` short and full; easy `easy` true. So every option
-  reads On the phone, and behave.js checks it stays that way.
+- **decisions**: every option is drawn, so a note has no badge. The core writes the notes of form, bmUI, checkin and
+  mealUI; the modules write the rest: looks `look`, variants `home` and `history`, profile `onboard`, easy `easy`. The
+  page gives each its question (`q`) and what it decides (`what`) from `DECISIONS`, and if a module's note throws, the
+  note falls back to those and the options' names. behave.js and sweep.js check every option of every decision for the
+  sheet's shape.
 - **V()** = `{ form, uid, mealUI, plan, bmUI, home, history, checkin, look, easy, onboard, persona, data, meals }`.
 - **Wrap, don't edit.** Render functions are looked up when called, so `const base = RU.plus; RU.plus = (M, V, st) =>
   V.easy ? mine(M, V, st) : base(M, V, st)` works for `RU.today`, `RU.history`, `RU.insights`, `RU.idetail`, `RU.ask`,
@@ -223,23 +256,23 @@ What each module registers (the file's header comment has the detail):
 ```
 refresh-looks     wraps RU.insights, RU.todayParts.hero and .week, RU.idetail (Your days), RU.askContext; acts idetail,
                   iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style; keys tab:insights and
-                  tab:today; notes, decisions.look, built.look; onSet (theme, look, a rebuild). Oura sets the phone
+                  tab:today; notes, decisions.look; onSet (theme, look, a rebuild). Oura sets the phone
                   dark while it's drawn (through api.set, so the page follows) unless the viewer has picked a theme,
                   and gives the theme back when it stops; with Easy on it leaves the theme alone
 refresh-variants  wraps RU.today (Day first) and RU.history (Calendar); acts vr-quick, vr-cal-day, vr-cal-m; screens
                   home-day and hist-cal in Tabs; keys tab:today and tab:history; notes, decisions.home and .history
 refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
-                  (the first name); screens Onboarding and profile; notes, decisions.onboard, built.onboard; onSet
+                  (the first name); screens Onboarding and profile; notes, decisions.onboard; onSet
 refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-*, ask-about and ask-clear (wrapped),
                   flag-report; screens ask-chat and ask-alarm; opens ask-chat, ask-alarm and ask (Screens > Ask
                   Florin is a fresh chat); keys tab:ask; notes; onSet (form, check-in, meals, plan)
 refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idetail under V.easy; acts ez-* and plus-day
                   (wrapped); screens ez-today and ez-bm (which set Version to Easy); keys tab:today, tab:insights, bm;
-                  notes (its screens, plus and sym in Easy), decisions.easy, built.easy; onSet (easy, theme)
+                  notes (its screens, plus and sym in Easy), decisions.easy; onSet (easy, theme)
 ```
 - A hook that throws is logged and skipped, never allowed to take the page down. A wrapped screen that throws is drawn
   the core's way instead (`RU.core` keeps every core screen from before the modules loaded), and so is a Today part
-  or layout. A module screen with no note of its own shows "On the phone" and lights no row in Screens.
+  or layout. A module screen with no note of its own shows "This screen" and lights no row in Screens.
 
 ## Rules you must not break
 

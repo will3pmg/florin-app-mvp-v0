@@ -8,8 +8,9 @@
      1.35x, controls 56px or more, text in Ink, labels on every icon, larger toasts and sheets, a tab bar of Today, Add,
      History and Ask with their words);
    - Today (RU.today): a greeting, one plain sentence about today, FloraScore as a big number with its words, three big
-     buttons (I had a BM, Something feels off, What I ate), the check-in when it's on and due, This week as the library's
-     Easy read week card, and today's logs as big rows;
+     buttons (I had a BM, Something feels off, What I ate), the check-in when it's on and due, the last 7 days as the
+     library's Easy read week card (the app's one day mark at 32px, a line for each day not within the usual), and
+     today's logs as big rows;
    - Insights folds into Today: the tab leaves the tab bar, and This week leads to "Your weeks" (RU.insights), the
      Easy read cards for a member, each with Ask about this where Insights has its twin, the week and the membership
      card on Free;
@@ -55,13 +56,13 @@
   };
   let seq = 0;
   const themeNow = () => { const a = api(); return (a && a.root && a.root.dataset.theme) || "light"; };
-  const ctx = (V) => ({ uid: `ez${V.uid}-${++seq}`, theme: themeNow(), esc, T, C: window.FLC, motion: !reduced() });
+  const ctx = (V, o) => Object.assign({ uid: `ez${V.uid}-${++seq}`, theme: themeNow(), esc, T, C: window.FLC, motion: !reduced() }, o || {});
   /* a card's title is a heading under the screen's own: h2, not the library's h3 */
   const asH2 = (h) => String(h || "").replace(/<h3 class="ez-t">([^<]*)<\/h3>/g, '<h2 class="ez-t">$1</h2>');
-  const card = (D, V, k, post) => {
+  const card = (D, V, k, post, o) => {
     const Lk = look();
     if (!Lk || !Lk.components || typeof Lk.components[k] !== "function") return "";
-    try { const h = asH2(Lk.components[k](D, ctx(V))); return post ? post(h) : h; } catch (e) { warn(`the Easy read ${k} card`, e); return ""; }
+    try { const h = asH2(Lk.components[k](D, ctx(V, o))); return post ? post(h) : h; } catch (e) { warn(`the Easy read ${k} card`, e); return ""; }
   };
   /* the look's cards sit in a .lk-easy box carrying the phone's theme, so its dark rules apply */
   const box = (inner, cls = "") => `<div class="lk-easy${cls ? ` ${cls}` : ""}" data-theme="${esc(themeNow())}">${inner}</div>`;
@@ -143,12 +144,13 @@
       </header>`;
   };
 
-  /* FloraScore as a big number with its words, in the Easy read card's parts (title, big number, one sentence). Its
+  /* FloraScore as a big number with its words, in the Easy read card's parts (title, big number, one sentence). The
+     number never counts up: a number that counts up sits for a moment beside a reading it doesn't have. Its
      note (not a medical score) sits in the fine print at the end of Today, so the three buttons come up sooner. While
      Florin is learning, the big line says Day, so the count of days never reads as a score */
   function scorePart(D, M) {
     const S = D.score || {};
-    let n = null, unit = "", ans, body = "", shift = false, label;
+    let n = null, unit = "", ans, body = "", label;
     if (!M.usual) {
       const lr = S.learning || D.learning || { day: L.learnDay(M), of: L.LEARN_DAYS };
       n = `Day ${lr.day}`; unit = `of ${lr.of}`;
@@ -161,16 +163,16 @@
       label = "FloraScore, not scored today";
     } else {
       n = S.value;
-      /* a flag today: the number stays, read against nothing, as Today's hero says */
-      shift = !S.flag && !!S.usual && (S.value < S.usual[0] || S.value > S.usual[1]);
+      /* a flag today: the number stays, read against nothing, as Today's hero says. FloraScore is a reading, never a
+         day's state, so it is never Gold: the words say where it sits */
       ans = S.flag ? `${S.relation}.` : S.usual && S.relation ? `${S.relation}, ${S.usual[0]} to ${S.usual[1]}.` : "Florin is still learning your usual range.";
       label = `FloraScore today, ${S.value}`;
     }
     return box(`<article class="ez ez-score ap-ez-score" aria-label="${esc(label)}">
         <header class="ez-h"><h2 class="ez-t">FloraScore</h2><p class="ez-side">Today</p></header>
         <div class="ez-lead">
-          ${n != null ? `<p class="ez-big"><b class="ez-n"${M.usual && typeof n === "number" ? ` data-count="${n}"` : ""}>${esc(String(n))}</b>${unit ? `<span class="ez-unit">${esc(unit)}</span>` : ""}</p>` : ""}
-          <p class="ez-ans">${shift ? '<i class="ez-dot is-shift" aria-hidden="true"></i>' : ""}${esc(ans)}</p>
+          ${n != null ? `<p class="ez-big"><b class="ez-n">${esc(String(n))}</b>${unit ? `<span class="ez-unit">${esc(unit)}</span>` : ""}</p>` : ""}
+          <p class="ez-ans">${esc(ans)}</p>
         </div>
         ${body ? `<p class="ez-body">${esc(body)}</p>` : ""}
       </article>`, "ap-ez-lk");
@@ -201,21 +203,23 @@
     return "";
   }
 
-  /* the library's Easy read week card. On a person's first day it covers one day, so its side says Today rather than
-     "Oct 11 to today" */
+  /* the library's Easy read week card: the last 7 days in the app's one day mark (RU.dayMark) at 32px, with a line for
+     each day that wasn't within the usual (claude/Florin data viz.md, section 3). On Today, under FloraScore's big
+     number, its answer is a line, so Today carries one big number (o.answerLine). On a person's first day it covers
+     one day, so its side says Today rather than "Oct 11 to today" */
   const weekDays = (D) => (D && D.days && D.days[7] ? D.days[7] : []);
-  const weekCard = (D, V) => card(D, V, "week", (h) => {
+  const weekCard = (D, V, o) => card(D, V, "week", (h) => {
     const ds = weekDays(D);
     return ds.length === 1 && ds[0].today ? h.replace(/<p class="ez-side">[^<]*<\/p>/, '<p class="ez-side">Today</p>') : h;
-  });
+  }, o);
   /* This week: the library's Easy read week card, then the way to the rest of Insights. Until the week has two days
      the card would only repeat today's logs, with a second big count under the FloraScore's, so Today leaves it off */
   function weekPart(D, M, V) {
-    const wk = weekDays(D).length >= 2 ? weekCard(D, V) : "";
+    const wk = weekDays(D).length >= 2 ? weekCard(D, V, { answerLine: true }) : "";
     const more = V.plan === "free"
       ? bigBtn("pay", ic("lock"), "More weeks", "With Florin membership", { cls: "ap-ez-big--line", attrs: ' data-pay="range"' })
       : bigBtn("tab", ic("bars"), "More about your weeks", `Your score, timing, form, symptoms${RU.ckOn(V) ? ", the check-in" : ""} and patterns`, { cls: "ap-ez-big--line", chev: true, attrs: ' data-tab="insights" data-range="30"' });
-    return `<section class="ap-ez-sec" data-a aria-label="This week">${wk ? box(wk, "ap-ez-lk") : ""}${more}</section>`;
+    return `<section class="ap-ez-sec" data-a aria-label="Your last 7 days">${wk ? box(wk, "ap-ez-lk") : ""}${more}</section>`;
   }
 
   /* today's logs: the app's own rows (RU.entryRow), drawn big by the CSS */
@@ -275,7 +279,7 @@
       : [["score", card(D, V, "score")], ["parts", card(D, V, "parts")], ["trend", card(D, V, "trend")], ["month", card(D, V, "month")], ["timing", card(D, V, "timing")], ["often", card(D, V, "often")], ["form", card(D, V, "form")], ["symptoms", card(D, V, "symptoms")], ["checkin", ck ? ckCard() : ""], ["pattern", patCard()]].map(([k, h]) => withAsk(k, h));
     return `<div class="ap-scr ap-ez ap-ez-weeks">
         <button type="button" class="ap-ez-nav" data-act="tab" data-tab="today">${ic("back")}<span>Back to Today</span></button>
-        <header class="ap-hist-top" data-a><h1 class="ap-h1" tabindex="-1">Your weeks</h1><p class="ap-hi-sub">${esc(V.plan === "free" ? "This week, from your own logs." : "Every card reads you against your own usual.")}</p></header>
+        <header class="ap-hist-top" data-a><h1 class="ap-h1" tabindex="-1">Your weeks</h1><p class="ap-hi-sub">${esc(V.plan === "free" ? "Your last 7 days, from your own logs." : "Every card reads you against your own usual.")}</p></header>
         ${box(cards.filter(Boolean).join(""), "ap-ez-cards")}
         ${V.plan === "free" ? lock : ""}
         <p class="ap-fine">${esc(`${DISC} ${CLIN}`)}</p>
@@ -629,7 +633,6 @@
   /* ====================================================================== */
   /* WHAT THE PAGE KNOWS: screens, keys, notes, the decision                  */
   /* ====================================================================== */
-  EXT.built.easy = [true];
   EXT.screens.push(["Easy version", [["ez-today", "Easy version: Today"], ["ez-bm", "Easy version: log a BM"]]]);
   EXT.opens["ez-today"] = (a) => { setEasy(a); };
   EXT.opens["ez-bm"] = (a) => {
@@ -651,83 +654,32 @@
     if (k === "theme") themes(a);
   });
 
-  /* ---------- the notes ---------- */
-  const BASIS = [
-    "Guidance for older adults (W3C WAI's notes on older users, and the stricter WCAG 2.2 criteria it points to): body text 16px or more, contrast of 7:1 where possible (WCAG 1.4.6), targets of 44px or more (WCAG 2.5.5), one task per screen, a label on every icon, and no meaning carried by colour alone (WCAG 1.4.1).",
-    "Here: body 18 to 20px, answers 28 to 32px, text in Ink (Forest on Cream is 12.7:1, and nothing is in Ink 3), every control 56px or more for a mild tremor, a word on every icon, and every colour paired with its word. The one exception is History as a calendar: its days are 64px tall but about 49px wide, since seven columns can't be wider on a phone; a day only shows its logs, so a tap on its neighbour costs one more tap and changes nothing.",
-    "Apple asks for 44pt targets and Google for 48dp; 56px leaves room for an unsteady hand."
-  ];
-  const REC = "A setting, not a separate version: \"Larger text and simpler screens\" in Profile, offered once in onboarding. One app to build, test and clear with counsel, the same logs underneath, and a person, or someone helping them, can switch either way without losing anything.";
-  const words = (mode) => (mode === "B" ? "five words" : "seven words");
-  const quickLine = (M, P) => {
-    const n = RU.bmCount(M), k = RU.QUICK_AFTER;
-    if (P.bmUI === "full") return "With BM logging on Full form only, I had a BM is one button into the four steps, and no word saves on its own.";
-    return n >= k ? `With quick tiles on, the ${words(P.form)} sit under I had a BM on the plus menu and one tap saves the BM, since ${M.P.name} has ${plural(n, "BM")} logged.` : `With quick tiles on, the ${words(P.form)} sit under I had a BM on the plus menu; a tap opens the steps with that word picked until ${plural(k - n, "more BM")} ${k - n === 1 ? "is" : "are"} logged.`;
-  };
-  EXT.decisions.easy = (M, P) => ({
-    t: "Version: standard, or easy",
-    lede: `An easier version of the whole app, for a 70-year-old with reading glasses, a mild tremor and little patience for charts, or anyone who wants less on screen. The same logs and the same numbers, said more simply and bigger: type about a third larger, every control 56px or more with its words on it, a BM logged one question at a time, and Insights folded into Today as This week. Easy has its own Today, so Home doesn't change it, and it always draws the Easy read data style.`,
+  /* ---------- the notes. Oct 28: the decision in the decision sheet's shape (refresh-app.js, THE DECISIONS, has the
+     fields; the page gives the question and what it decides), and plain screen notes ---------- */
+  EXT.decisions.easy = () => ({
     opts: [
-      [false, "As built: Today with the FloraScore card and the week as strips, Insights as its own tab, and a BM on one form."],
-      [true, `Larger text and simpler screens. Today: a greeting, one sentence about the day, FloraScore as a big number, three big buttons (I had a BM, Something feels off, What I ate), ${P.checkin ? "the check-in when it's due, " : ""}this week as day circles, and today's logs. A BM in four short steps, symptoms as big chips, History and Ask bigger with the same content.`]
+      { v: false, is: "The app as the rest of this demo shows it: the FloraScore card, the week, charts and the full Insights tab.", why: "It shows the most, for people who want the detail.", not: "Small type and many cards and charts are hard with reading glasses or a shaky hand." },
+      { v: true, is: `Larger text and big labelled buttons: one sentence and FloraScore as a big number on Today, three buttons to log from, and a BM in ${num(STEPS)} short steps.`, why: "Older people, or anyone who wants less on screen, get the same logs and numbers, said more simply.", not: "It's a second set of screens to design, test and clear with counsel, and it shows less of the data." }
     ],
-    rec: REC,
-    open: [
-      "A setting in Profile, or a version of its own? A setting is recommended.",
-      "Offer it in onboarding as one question (\"Would you like larger text and simpler screens?\"), or turn it on when the phone's own text size is set large?",
-      `${quickLine(M, P)} Keep the one-tap save in Easy, or always go through the steps, since a tremor brings mis-taps?`,
-      "Insights folds into Today here: This week on Today, the rest one button away. Or keep it a tab?",
-      `${P.history === "calendar" ? "History is the calendar on the phone now. " : ""}With History as a calendar, Easy keeps it, days 64px tall and about 49px wide. Keep it, or show Easy the list, one big row a day?`
-    ],
-    res: BASIS
+    rec: { v: true, short: "Easy, as a setting", text: "We recommend Easy as a setting anyone can turn on or off, \"Larger text and simpler screens\", not a separate version, with Standard as the default.", why: "One app underneath keeps the same logs, so a person can switch either way and lose nothing." },
+    open: "Is offering it during set-up enough, or should Florin also offer it when the phone's text is set large?",
+    try: "Switch to Easy. With Easy on, Home and Data style don't apply, because Easy has its own Today and charts. Set-up offers it on its first and last steps, and it's in Profile, from the avatar on Today."
   });
-  EXT.notes["ez-today"] = (M, P) => {
-    const n = RU.week(M, P.form), wd = Math.min(7, L.TODAY - M.start + 1);
-    const wkText = wd >= 2 ? `this week as ${num(wd)} day circles` : "this week once there's a second day to show (on day one it would only repeat today's logs)";
-    return {
-      t: "Easy version: Today",
-      lede: `One screen, read top to bottom: a greeting, one plain sentence about today, FloraScore as a big number with its words${M.usual ? "" : " (while Florin is learning, the day it's on, with Day written in)"}, three big buttons, ${P.checkin ? "the weekly check-in when it's due, " : ""}${wkText}, and today's logs as big rows. Here the sentence reads: "${sentence(M)}" This week has ${n.loggedDays ? plural(n.loggedDays, "day") : "no days"} logged so far.`,
-      ba: [
-        ["A score card with a 30-day line, today's timeline, the week as three strips of dots, and a next step", "One sentence, the score as one number, three big buttons, the week as day circles, and today's logs"],
-        ["Insights as its own tab", "This week on Today, and the rest one tap away under More about your weeks"],
-        ["Labels from 10.5 to 15px, some in mono capitals", "18px and up, no mono and no capitals, text in Ink"],
-        ["A tab bar of 44px targets, and plus with no word", "Today, Add, History and Ask, each 64px tall with its word"]
-      ],
-      rec: `${REC} Insights folds into Today because one place to look reads better than a tab named for what it does: This week answers the question a person opens the app with, and the deeper cards stay one tap away for a member.`,
-      open: [
-        "Does Today need the FloraScore in Easy at all, or only the sentence and the week?",
-        "Is \"Something feels off\" the right words for symptoms, and \"What I ate\" for meals?",
-        "Should Easy drop the next step card, as here, since the three buttons are the next step?"
-      ],
-      res: BASIS
-    };
-  };
-  EXT.notes["ez-bm"] = (M, P) => ({
+  EXT.notes["ez-today"] = (M, P) => ({
+    t: "Easy version: Today",
+    lede: `One screen, top to bottom: a greeting, one plain sentence about today, FloraScore as a big number, three big buttons to log from, ${P.checkin ? "the check-in when it's due, " : ""}the last 7 days as day circles, with a line for each day that wasn't within the usual, and today's logs. The text is larger, and every button has its words on it.`,
+    open: ["Are \"Something feels off\" and \"What I ate\" the right words for symptoms and meals?"]
+  });
+  EXT.notes["ez-bm"] = () => ({
     t: "Easy version: log a BM",
-    lede: `One question per screen, four steps: what it looked like, when, anything else, then Save. Each step says where it is (Step 2 of 4) and has a big Back. A pick moves on by itself after a short pause, as the check-in does, and Back undoes it. When offers Just now, Earlier today${M.start < L.TODAY ? " or Yesterday" : ` (no Yesterday on ${M.P.name}'s first day, since there's no day before to keep it)`}, then the hour, from midnight on, so waking at night to go can be logged. Save shows every answer on one screen, with Change beside each. With a flag, Save opens the same primary care note as the standard form.`,
-    ba: [
-      ["One tall form: when, consistency, four details, how long, the flag and a note", "Four short steps; a sudden urge and the flag stay, the rest is left to the standard form"],
-      [`${P.form === "B" ? "Five" : "Seven"} tiles about 44px wide`, `${P.form === "B" ? "Five" : "Seven"} rows, 72px tall, each with its mark, its word and its line`],
-      ["A day menu and a time field", `Just now, Earlier today or Yesterday, then the hour as one big button, ${PARTS[0][0]} (${T(PARTS[0][1])} to ${T(PARTS[0][2])}) to ${PARTS[PARTS.length - 1][0]}`],
-      ["The flag among the chips", "Blood, mucus and black or tar-like on rows of their own, each with a box that ticks"]
-    ],
-    rec: REC,
-    open: [
-      "Auto-advance after a pick, or always a Next button? With a tremor a mis-tap moves on; Back is one tap away either way.",
-      "Is the nearest hour close enough, or does Easy need minutes?",
-      "Easy leaves out straining, didn't feel finished, burning, how long and the note. Enough, or keep the note?"
-    ],
-    res: BASIS.slice(0, 2)
+    lede: `One question per screen, in ${num(STEPS)} steps: what it looked like, when, anything else, then Save, which shows every answer with Change beside it. A pick moves on by itself, and Back undoes it. A flag opens the same primary care note as the standard form.`,
+    open: ["Move on after a pick, or always wait for Next? With a shaky hand, a mis-tap moves on."]
   });
   EXT.notes["ez-weeks"] = (M, P) => ({
     t: "Easy version: your weeks",
     lede: P.plan === "free"
-      ? `Insights, folded under Today. On Free it's this week's card${P.checkin ? " and the check-in" : ""}, then what membership adds, said plainly.`
-      : "Insights, folded under Today: the library's Easy read cards, one question each, the number big and one plain sentence, with at most one simple picture that has its words written on it.",
-    ba: [["Insights as a tab of charts, with 7, 30 and 90 days", "Your weeks, reached from This week on Today, in the Easy read look"]],
-    rec: "Keep the deeper cards one tap from Today rather than a tab of their own.",
-    open: ["Which cards earn a place here for an older person: all of them, or the score, the week, timing and symptoms?"],
-    res: []
+      ? `Insights, folded under Today. On Free, it's this week's card${P.checkin ? " and the check-in" : ""}, then what membership adds, said plainly.`
+      : "Insights, folded under Today: one question per card, the number big and one plain sentence, with at most one simple picture that has its words written on it."
   });
   const prevNote = (k) => EXT.notes[k];
   const plusNote = prevNote("plus"), symNote = prevNote("sym");
@@ -735,22 +687,14 @@
     if (!P.easy) return typeof plusNote === "function" ? plusNote(M, P) : null;
     return {
       t: "Easy version: the plus menu",
-      lede: `Big labelled buttons in one column: I had a BM first, then Something feels off, What I ate${P.checkin ? ", the weekly check-in" : ""}, No BM today (from ${T(L.LATE)}), and an earlier day${M.start < L.TODAY ? "" : ` (not on ${M.P.name}'s first day, with no earlier day to catch up)`}. I had a BM is a button of its own and takes focus when plus opens, so a stray Enter never saves a BM. ${quickLine(M, P)}`,
-      ba: [["A BM card with a row of small form tiles, then two tiles side by side", "One column of buttons 72px tall, each with its words"]],
-      rec: REC,
-      open: ["Does the plus menu need the earlier day at all in Easy, or is History's Add to this day enough?"],
-      res: BASIS.slice(0, 1)
+      lede: `Big labelled buttons in one column: I had a BM, Something feels off, What I ate${P.checkin ? ", the weekly check-in" : ""}, No BM today and an earlier day. I had a BM takes focus when plus opens, so a stray tap never saves a BM.`
     };
   };
   EXT.notes.sym = (M, P) => {
     if (!P.easy) return typeof symNote === "function" ? symNote(M, P) : null;
     return {
       t: "Easy version: log symptoms",
-      lede: `The same ${num(L.SYMPTOMS.length)} symptoms and Something else, as big chips, and how strong as three big buttons. How long and when it started are left out, so it's one screen; the time is when it's logged. Catching up an earlier day adds About when, as five big buttons from Morning to Night, each with its hour written on it; Midday (${T(12)}, what the standard form keeps) shows as picked until another is tapped. The primary care line stays.`,
-      ba: [["Chips 36px tall, then how strong, how long, when it started and a note", "Chips 64px tall, then how strong as three big buttons"]],
-      rec: REC,
-      open: ["Keep the note field in Easy? An alarm word typed into it is the only way a note routes to primary care."],
-      res: BASIS.slice(0, 1)
+      lede: `The same ${num(L.SYMPTOMS.length)} symptoms and Something else as big chips, and how strong as three big buttons, all on one screen. The time is when it's logged.`
     };
   };
 })();

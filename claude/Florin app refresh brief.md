@@ -189,7 +189,7 @@ The second pass (Insights, its detail pages and the Ask Florin hand-off) was bui
 Will, after seeing the second pass: the app is a lot of text and simple graphs; take inspiration from Oura and give a few looks for the data, toward a component library. Keep FloraScore: it ties Florin to the score people know from Oura. Meal logging only happens when people are having issues, so look at a version with no meal logging, and make logging food as simple as saying what you ate that day, with a big voice button or one text box. Add animation. Add a toggle for a free plan without the deeper insights and Ask Florin, behind a paywall. And a report on every feature: how valuable, how well designed, how it fits the personas.
 
 - **FloraScore is back,** built from the logs: timing, how often, form and comfort, weighted as the studio weights its four parts, blended over the last 3 logged days. A day with no BM logged is left out and has no score of its own (it would only repeat the days around it), never scored as zero; no score before day 14. On Today as the studio's Forest hero with the Ray ring and the usual range on it, first on Insights, and its own detail page. This reverses the Oct 14 workshop's "no FloraScore from manual logs" call.
-- **Meals are occasional.** A Meal logs switch shows every day, rough days only and none. Logging only on rough days named toast for Sarah by selection alone, so under 60% of logged days with a meal, patterns are held back and a 14-day food check is offered instead. FloraScore doesn't depend on meals. Today no longer asks for a missing meal; a symptom today invites what you ate.
+- **Meals are occasional.** A demo control, Demo person's meals (Every day, Only with symptoms, Never), changes the demo person's history, not the app. Meals written down only with symptoms named toast for Sarah by selection alone, so under 60% of logged days with a meal, patterns are held back and a 14-day food check is offered instead. FloraScore doesn't depend on meals. Today no longer asks for a missing meal; a symptom today invites what you ate.
 - **The quick meal log:** a big voice button and one box for the whole day; Florin picks out the foods as the words land. The prototype plays a sample transcript, since an artifact can't use the microphone.
 - **Florin membership.** A Plan switch shows Free and Member. Free keeps logging, Today, FloraScore, the weekly check-in, History and 7 days of Insights; membership adds why the score moved, 30 and 90 days, every detail page, possible patterns and the food check, Ask Florin and the clinician report. The paywall says what membership adds and "Membership price set at launch", as the studio's membership page does. Teasers blur the person's own counts, never made-up content.
 - **Motion:** the ring fills and the score counts up, Insights bars grow and dots land, the mic pulses while listening. All of it off under reduced motion.
@@ -207,10 +207,12 @@ prototype at the same link, and in the decisions deck (https://claude.ai/artifac
 
 - **Toggles on the left, above the screens.** The page is one live phone in the middle under a slim header. The left
   bar runs Decisions (nine toggles: Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style,
-  Version, Onboarding), then Demo (person, logs, meal logs, plan, theme, reset, folded to one line), then Screens. Each
-  decision is stored per viewer and has an info button for its note: what it decides, every option, our
-  recommendation, what's open and the research. The notes for the screen sit on the right. On a phone the app is full
-  screen, with Toggles and Notes as sheets.
+  Version, Onboarding), then Demo (Person, Logs, Demo person's meals, Plan, Theme, Reset, folded to one line), then
+  Screens. Each decision is stored per viewer and has an info button for its note, in the decision sheet's shape: the
+  question, what it decides, each option (what it is, why do it, why not), what we recommend (also in the note's top
+  label), at most one open question, and where to try it. The notes for the screen sit on the right. On a phone the
+  app is full screen, with Toggles and Notes as sheets; a decision changed in Toggles says so at the top of the sheet,
+  with See it and Read the note.
 - **The 3 demos become a toggle and a slide.** The A, B and C phones side by side are gone. Consistency is one toggle
   (A 1 to 7, B 5 words, C 7 words) that redraws the whole app, and the deck has a Consistency slide that sets the three
   side by side with one demo person's last 30 days in each.

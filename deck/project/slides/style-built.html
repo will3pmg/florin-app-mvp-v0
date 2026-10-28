@@ -1,10 +1,10 @@
-<section id="style-built" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:32px;">
-  <div style="display:flex; flex-direction:column; gap:12px;">
-    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Data styles · 1 of 6</p>
-    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Data style: As built</h2>
+<section id="style-built" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:16px;">
+  <div style="display:flex; flex-direction:column; gap:6px; padding:0 0 4px;">
+    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Decision 7 of 9 · Data style</p>
+    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Florin charts</h2>
   </div>
-  <x-embed style="position:absolute; left:128px; top:280px; width:536px; height:640px;"><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>As built: FloraScore card</title>
+  <x-embed style="position:absolute; left:128px; top:256px; width:536px; height:640px;"><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Florin charts: FloraScore card</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
@@ -35,7 +35,7 @@ p b{color:#00352B}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="FloraScore card as built: 83, a little above the usual range of 74 to 82">
+<div class="card" role="img" aria-label="Florin charts, the FloraScore card: 83, a little above the usual range of 74 to 82">
   <div class="top">
     <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect width="52" height="52" rx="14" fill="#F1EEE6"/><circle cx="26" cy="26" r="13" fill="none" stroke="#DCD7CC" stroke-width="5"/><circle class="ring" cx="26" cy="26" r="13" fill="none" stroke="#00352B" stroke-width="5" pathLength="100" stroke-dasharray="83 100" transform="rotate(-90 26 26)" stroke-linecap="round"/></svg>
     <span class="k">FloraScore · Today</span>
@@ -67,8 +67,8 @@ function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classL
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
-  <x-embed style="position:absolute; left:696px; top:280px; width:536px; height:640px;"><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>As built: Timing card</title>
+  <x-embed style="position:absolute; left:696px; top:256px; width:536px; height:640px;"><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Florin charts: Timing card</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
@@ -91,7 +91,7 @@ svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#3E5A52}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Timing card as built: usually 7:15 to 8:45 AM, 21 of 28 mornings in that window">
+<div class="card" role="img" aria-label="Florin charts, the Timing card: usually 7:15 to 8:45 AM, 21 of 28 mornings in that window">
   <div class="top">
     <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect width="52" height="52" rx="14" fill="#F1EEE6"/><circle cx="26" cy="26" r="13" fill="none" stroke="#00352B" stroke-width="3"/><path d="M26 18v9l6 4" fill="none" stroke="#00352B" stroke-width="3" stroke-linecap="round"/></svg>
     <span class="k">Timing · First BM</span>
@@ -121,33 +121,20 @@ function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classL
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
-  <div style="position:absolute; left:1296px; top:280px; width:496px; height:640px; display:flex; flex-direction:column; gap:28px;">
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">THE IDEA</p>
-      <p style="font-size:28px; line-height:1.4;">The studio’s chart kit, on cards that lead with the usual in words, then a count.</p>
+  <div style="position:absolute; left:1264px; top:256px; width:528px; height:640px; display:flex; flex-direction:column; gap:16px;">
+    <div style="background:#EFECE4; border-radius:28px; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> Today’s dark green FloraScore card, and Insights cards that say the person’s usual in words, give a count, then draw a plain bar or dot chart.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> Each card says the person’s usual in words and gives a count before the chart, and every card works the same way.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> It’s a lot of text and small charts, so it’s slow to take in at a glance.</p>
     </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">STRENGTH</p>
-      <p style="font-size:28px; line-height:1.4;">Proof over promises: a count before any chart. Alex rated the cards 5, Sarah and Marcus 4.</p>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#396E7C;">COST</p>
-      <p style="font-size:28px; line-height:1.4;">One template repeated for about six screen heights, with colours that change meaning between charts.</p>
-    </div>
+    <p style="font-size:24px; line-height:1.25; color:#3E5A52;"><b>Here to compare.</b> We recommend Oura on Today and the FloraScore page, and Field journal on detail pages.</p>
   </div>
   <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
-    <p style="font-size:24px; color:#3E5A52;">Florin app refresh · Decisions · Oct 27</p>
-    <p style="font-size:24px; color:#3E5A52;">14</p>
+    <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Decisions › Data style › Florin charts</p>
+    <p style="font-size:24px; color:#3E5A52;">11</p>
   </div>
-  <aside>The first of six data styles, all drawn from the same numbers: Sarah, consistency C, 12 weeks of logs, meals every day, on the demo’s seeded Sunday, October 11. Each style slide shows the FloraScore card and one chart, animated the way the look moves in the app.
-
-As built is the prototype’s Insights today: the studio’s small SVG chart kit, on cards that lead with the usual in words, then a count, then the chart, with Ask about this and a way into the detail page.
-
-The FloraScore card: 83, a little above her usual range of 74 to 82, 3 points above last week on average (this week 83, last week 80). The parts, as this week’s averages: Timing 95, How often 97, Form 94, Comfort 93. The line is her last 30 days of FloraScore over the usual band, with a break on Oct 8, a day with no logs, which stays a gap. In the app the bars fill and the line draws.
-
-The Timing card: usually 7:15 to 8:45 AM; 21 of 28 mornings in that window, 5 later and 2 earlier; today 7:42 AM. In the app the mornings drop in as dots.
-
-Strength: proof over promises. Alex rated the Insights cards 5, Sarah and Marcus 4 (feature review). Cost: the design critic rated it 3. It runs about six screen heights at phone width with seven Ask about this pills, repeats one card template, and colours change meaning between charts (outside the usual is Gold on Timing but grey on the Form histogram). It is what Will called a lot of text and simple graphs on Oct 14.
-
-Sources: the model at commit 475f259 (FLD.build for Sarah in C, 12 weeks of logs, every meal), and the feature review.</aside>
+  <aside>Florin charts, the first option on the Data style toggle. What it is: Today’s dark green FloraScore card, and Insights cards that say the person’s usual in words, give a count, then draw a plain bar or dot chart. Why do it: each card says the person’s usual in words and gives a count before the chart, and every card works the same way. Why not: it’s a lot of text and small charts, so it’s slow to take in at a glance.
+Here to compare. We recommend Oura on Today and the FloraScore page, and Field journal on detail pages.
+The two cards here are its FloraScore and timing cards from Insights, drawn from the same logs as every other style.
+Try it: Decisions, Data style, Florin charts, then the Today and Insights tabs. The demo shows one style at a time, and detail pages don’t change. To see every style on every card, open the style gallery: https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
 </section>

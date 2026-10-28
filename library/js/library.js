@@ -31,19 +31,32 @@
   }
   window.FLL = { esc, T: AD.util.fmtTime, n1, lin, C: window.FLC, countUp, reduced };
 
+  /* each row's question, as the app's data viz list words it (claude/Florin data viz.md, section 2): the question is
+     the title the chart answers, so a look is judged by whether it answers it */
   const COMPONENTS = [
-    ["score", "FloraScore", "How is today, against my own usual?"],
-    ["parts", "What makes up the score", "Which of the four parts moved it?"],
-    ["trend", "FloraScore over 30 days", "Has it been steady, against my usual range?"],
-    ["week", "This week at a glance", "Which days sat within my usual?"],
-    ["month", "The last month", "How did each day sit, at a glance?"],
+    ["score", "FloraScore", "How is FloraScore today against its usual range?"],
+    ["parts", "What makes up the score", "Which part moved my score this week?"],
+    ["trend", "FloraScore over 30 days", "Has FloraScore stayed in its usual range?"],
+    ["week", "The last 7 days", "How many of my last 7 days sat within my usual, and which didn't?"],
+    ["month", "The last 30 days", "How did each day sit against my usual?"],
     ["timing", "Timing", "Did my first BM come in my usual window?"],
-    ["often", "How often", "How many BMs a day, against my usual?"],
-    ["form", "Form", "Were my forms within my usual?"],
-    ["symptoms", "Symptoms", "How often did symptoms come up, and which?"],
-    ["checkin", "Weekly check-in", "Is this week like my first weeks?"],
-    ["pattern", "A possible pattern", "What tends to follow something I logged?"]
+    ["often", "How often", "Did I go my usual number of times?"],
+    ["form", "Form", "Were my BMs my usual forms?"],
+    ["symptoms", "Symptoms", "How often did symptoms come up?"],
+    ["checkin", "Weekly check-in", "Are my answers like my first weeks?"],
+    ["pattern", "A possible pattern", "Does something tend to come before a change?"]
   ];
+  /* where each look stands in the app (the data viz list, section 5). The app draws its own charts, the base, on every
+     screen; the looks here are compared with it. Until Will decides on the data style, the app keeps every look as an
+     option, so a status says what is proposed. [the line over the look, the word over each of its cards] */
+  const STATUS = {
+    easy: ["In the app, with the Easy version", "In the app"],
+    journal: ["Its answer-first sentences fold into the app's charts", "Folds in"],
+    rings: ["Proposed to leave the app", "Leaves the app"],
+    bento: ["Proposed to leave the app", "Leaves the app"],
+    oura: ["Will's call: a fixed Oura on Today, or leave the app", "Will's call"]
+  };
+  const statusOf = (id) => STATUS[id] || ["Not used in the app", "Not used"];
 
   /* the theme starts as the viewer's; the switch then sets the page and the cards together */
   const root = document.documentElement;
@@ -80,15 +93,15 @@
     const card = (look, k) => {
       let html = "";
       try { html = look.components && look.components[k] ? look.components[k](D, ctxOf(look)) : `<p class="lb-missing">Not drawn in this look yet.</p>`; } catch (e) { console.error(look.id, k, e); html = `<p class="lb-missing">This card failed to draw: ${esc(e.message)}</p>`; }
-      return `<div class="lb-cell" data-look="${esc(look.id)}"${attrs(look.id)}><p class="lb-cell-name" aria-hidden="true">${esc(look.name)}</p><div class="ap lk-${esc(look.id)}" data-theme="${S.theme}"><div class="lb-phonecard" data-k="${k}">${html}</div></div></div>`;
+      return `<div class="lb-cell" data-look="${esc(look.id)}"${attrs(look.id)}><p class="lb-cell-name" aria-hidden="true">${esc(`${look.name} · ${statusOf(look.id)[1]}`)}</p><div class="ap lk-${esc(look.id)}" data-theme="${S.theme}"><div class="lb-phonecard" data-k="${k}">${html}</div></div></div>`;
     };
     const count = ["No looks", "One look", "Two looks", "Three looks", "Four looks", "Five looks", "Six looks", "Seven looks"][looks.length] || `${looks.length} looks`;
     const ways = ["", "one way", "two ways", "three ways", "four ways", "five ways", "six ways", "seven ways"][looks.length] || `${looks.length} ways`;
     mount.innerHTML = `
       <header class="lb-head">
-        <p class="lb-eyebrow">Florin app refresh · Data looks · Oct 27</p>
+        <p class="lb-eyebrow">Florin app refresh · Data looks · Oct 28</p>
         <h1>${esc(count)} for the data</h1>
-        <p class="lb-lede">${esc(`The same person, the same numbers, drawn ${ways}. Each look takes its cue from Oura: one score up front, parts you can see, charts that move. Every card is built from the refresh's manual logs and keeps Florin's rules: everything is read against your own usual, with Plum for your usual on light, Ray on dark, and Gold for a shift. Pick the one to take through the app.`)}</p>
+        <p class="lb-lede">${esc(`The same person and the same numbers, drawn ${ways}, row by row, each row under the question its card answers. The app itself draws Florin's own charts on every screen, in one set of marks: Plum for a day within your usual (Ray on dark), Gold for one outside it, always with a word. Easy read is the Easy version's look. The others are kept here to compare, and each says where it stands in the app.`)}</p>
       </header>
       <div class="lb-ctls" role="group" aria-label="What the cards show">
         ${seg("persona", "Person", FLD.PERSONAS)}
@@ -105,7 +118,7 @@
         <div class="lb-arrows" role="group" aria-label="Scroll the looks"><button type="button" data-act="prev" aria-label="Scroll the looks back one column">&#8249;</button><button type="button" data-act="next" aria-label="Scroll the looks on one column">&#8250;</button></div>
         <p class="lb-pick-note" aria-live="polite"></p>
       </div>
-      <div class="lb-looks lb-x">${looks.map((l) => `<section class="lb-look"${attrs(l.id)} data-look="${esc(l.id)}"><span class="lb-eyebrow">Look ${looks.indexOf(l) + 1}</span><h2>${esc(l.name)}</h2><p>${esc(l.idea || "")}</p></section>`).join("")}</div>
+      <div class="lb-looks lb-x">${looks.map((l) => `<section class="lb-look"${attrs(l.id)} data-look="${esc(l.id)}"><span class="lb-eyebrow">${esc(statusOf(l.id)[0])}</span><h2>${esc(l.name)}</h2><p>${esc(l.idea || "")}</p></section>`).join("")}</div>
       ${COMPONENTS.map(([k, t, q]) => `<section class="lb-row" aria-labelledby="lb-h-${k}"><div class="lb-row-h"><h2 id="lb-h-${k}">${esc(t)}</h2><p>${esc(q)}</p></div><div class="lb-cells lb-x">${looks.map((l) => card(l, k)).join("")}</div></section>`).join("")}
       <footer class="lb-foot"><p>${esc(D.disclaimer)}</p><p>Every number here is computed from the demo person's logs. Change the person, the option, the logs or the meal logs above, and every look redraws.</p></footer>`;
     countUp(mount);
@@ -198,6 +211,6 @@
     }
   });
   if (S.theme !== viewerTheme()) root.setAttribute("data-theme", S.theme);
-  window.FLLIB = { render, state: S, COMPONENTS };
+  window.FLLIB = { render, state: S, COMPONENTS, STATUS };
   render();
 })();

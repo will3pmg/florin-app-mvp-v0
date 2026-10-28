@@ -8,7 +8,7 @@
      "pf-del" (delete my logs, or the account, asked first)
    - acts: "profile" (the Today avatar), the onboarding steps (onb-*), the Profile rows (pf-*), and "ckd-save" chained
      so the check-in day sheet, opened from Profile, redraws Profile when it saves
-   - opens, screens, notes, decisions.onboard, built.onboard, onSet, and one RU wrapper (RU.today), which puts the
+   - opens, screens, notes, decisions.onboard, onSet, and one RU wrapper (RU.today), which puts the
      first name from onboarding on Today and always draws the screen it wraps
    Every answer is kept in the phone's state (api.S.pf), per demo person, and shown in Profile. Every usual figure in
    Profile is read from the model (M.usual, L.scoreUsual), the same way Insights reads it. */
@@ -825,84 +825,49 @@
     "profile-day1": (api) => { api.push("pf", { preview: api.V().data !== "fresh" }, { instant: true }); }
   });
   EXT.screens.push(["Onboarding and profile", [["onb-short", "Onboarding (short)"], ["onb-full", "Onboarding (full survey)"], ["onb-sign", "Onboarding: a sign that needs a clinician"], ["profile", "Profile"], ["profile-day1", "Profile on day 1"]]]);
-  EXT.built.onboard = ["short", "full"];
 
   /* ====================================================================== */
   /* NOTES FOR WILL                                                          */
   /* ====================================================================== */
-  const nameOf = (M) => (M && M.P ? M.P.name : "The person");
-  const WRONG = [
-    ["14 questions before Today, each line opening with an emoji, buttons in all caps", `${FLOWS.short.length} short steps in Florin's voice, sentence case, every one skippable`],
-    ["Goals that promise outcomes: reduce IBS-D flare-ups, optimize microbiome health, improve digestive comfort", "What Florin does: know my own usual, see what tends to come before a rougher day, find foods worth a 14-day check, bring my logs to a clinician, keep a simple record"],
-    ["IBS-D symptoms as a tile Florin reads", "I have IBS-D, or I've been told I might have IBS: the person's own words, never a label Florin gives"],
-    ["Typical consistency on a slider named for a licensed scale, with steps called Normal and Ideal", "Most often, lately?, in the option's own words, with It varies; a first guess the logs replace by day 14"],
-    ["Weight in pounds", "Left out. Weight loss is an alarm feature, so asking for it at sign-up invites reading it later"],
-    ["Bloody stool and mucus as two more chips", "Blood, black or tar-like stools, or waking at night to go show the Teal primary care note on the step"],
-    ["A conditions list that names a condition Florin never mentions", "Self-reported and short: IBS, celiac disease, lactose intolerance, a food allergy, something else, none, prefer not to say"],
-    ["Research consent as step 14 of 14", "A clear choice, off unless yes, and a switch in Profile to turn it off again"]
-  ];
-  const shortSteps = (P) => `welcome, first name, what brings you, up to 3 things Florin does, periods, ${P.checkin ? "a BM reminder and the check-in day" : "a BM reminder"}, what Florin is and isn't, and ready`;
-  const fullSteps = "welcome, first name, about you (age range, sex, periods), what brings you, goals, most often lately, symptoms now, eating, stress and sleep, foods to watch, medicines and supplements, conditions, research, and ready";
+  /* Oct 28: plain screen notes, and the decision in the decision sheet's shape (refresh-app.js, THE DECISIONS, has
+     the fields; the page gives the question and what it decides). The step counts are the flows' own */
+  const shortSteps = (P) => `welcome, first name, what brings you, what you'd like Florin to do, periods, ${P.checkin ? "reminders" : "a BM reminder"}, what Florin is and isn't, and ready`;
+  const fullSteps = "welcome, first name, about you, what brings you, goals, most often lately, symptoms now, eating, stress and sleep, foods to watch, medicines, conditions, research, and ready";
   Object.assign(EXT.notes, {
     "onb-short": (M, P) => ({
       t: "Onboarding, short",
-      lede: `${FLOWS.short.length} steps, under two minutes, each with Continue and Skip, and Back from step 2: ${shortSteps(P)}. Only what changes the app on day 1. Welcome offers Larger text and simpler screens as a switch, before the first question, and Ready offers it again. Log your first BM or Go to Today both finish on Today, day 1 of ${L.LEARN_DAYS} (Logs on the left moves to Just joined), and every answer shows in Profile. Welcome has Close (and Escape there closes it too), which leaves set-up with the logs on the phone as they were; on a later step Escape goes back a step.`,
-      ba: WRONG.slice(0, 3).concat([["Biological sex as a demographic", P.checkin ? "Do you have periods?, which feeds cycle context later (the Period tag on the check-in)" : "Do you have periods?, kept for cycle context later"]]),
-      open: ["Is a BM reminder worth a step on day 1, or better offered after the third log?", "Welcome can be closed, so the page's toggles always have a way back. In the app, should a person be able to leave set-up at Welcome and finish it later?", "What should 'what brings you' change on day 1? Ask Florin's first questions are the obvious candidate.", "Ask the rest in context: eating when the first meal is logged, foods to watch with the first food check, medicines and conditions with the first clinician report. Agree?"],
-      res: ["The shipping survey notes (Oct 27): 60% of men want setup under 10 minutes, and 47% of women want cycle context.", "Oura takes up to 2 weeks of learning before it judges anything; Florin's day 14 does the same."]
+      lede: `${FLOWS.short.length} steps, under two minutes: ${shortSteps(P)}. Every step can be skipped. Welcome and Ready offer larger text and simpler screens. Finishing lands on Today, day 1 of ${L.LEARN_DAYS}, and every answer shows in Profile.`,
+      open: ["Is the BM reminder worth a step on day 1?"]
     }),
     "onb-full": () => ({
       t: "Onboarding, the full survey",
-      lede: `Today's sections, refreshed, in ${FLOWS.full.length} steps: ${fullSteps}. Every step skippable, every answer editable from Profile. Welcome and Ready both offer Larger text and simpler screens, and Welcome can be closed. Finishing lands on Today, day 1 of ${L.LEARN_DAYS}.`,
-      ba: WRONG.slice(3),
-      open: ["Which of these earn a place before Today? The recommendation is none: ask each one where it's used.", "Age range and sex: keep at all, or only for the clinician report?", `Foods to watch: should Florin count them from day 1, or wait for ${L.PATTERN_BAR.n} logs like every other food (as built)?`, "The shipping survey has no reminder step, so after it Profile's BM reminder reads Not set until it's picked there. Add the short flow's reminder step to it?"],
-      res: ["Nerva asks a symptom measure at onboarding, weekly and at the end (its licensing is unverified); Florin's questions stay its own.", "Rome questionnaires are diagnostic and licensed: nothing here adapts or scores one."]
+      lede: `The current app's survey in ${FLOWS.full.length} steps, about three minutes, reworded in Florin's voice: ${fullSteps}. Every step can be skipped, and every answer can be changed later in Profile.`
     }),
     "onb-sign": () => ({
       t: "Onboarding: a sign that needs a clinician",
-      lede: "On the symptoms step, picking blood, black or tar-like stools, or waking at night to go brings the Teal note right there: When to see a clinician, the sign in bold, primary care first, and urgent care for a lot of blood. It's read out too. Florin never interprets it, and onboarding carries on.",
-      ba: [["Bloody stool as a quiet tick among 17 chips", "The primary care note on the step, in Teal, never red"], ["Mucus in the same list", "Mucus gets the softer line, as on Log a BM: new for you, keeps showing up, or with pain or blood"]],
-      open: ["Should the note come back on Today on day 1, or is once, on the step, enough? Profile marks the row Primary care first.", "Fever, vomiting that won't stop and weight loss you can't explain aren't on the list (they weren't in the shipping survey). Add them?"],
-      res: ["The research's watch-outs: keep the referral path, and blood or mucus goes to a clinician, not to interpretation."]
+      lede: "Picking blood, a black or tar-like stool, or waking at night to go shows a note right on the step: see primary care first, and urgent care for a lot of blood. Florin never reads anything into it, and set-up carries on."
     }),
     "onb-edit": () => ({
       t: "An answer, reopened from Profile",
-      lede: "The same step as onboarding, with Save and Clear my answer in place of Continue and Skip, and Cancel to leave it as it was. Saving goes back to Profile with the new answer on its row.",
-      ba: [["Update health survey: all 14 questions again", "One answer at a time, from its own row"]],
-      open: ["Should a changed answer (periods, say) also offer to change what it feeds, like cycle context, there and then?"],
-      res: []
+      lede: "The same step as set-up, with Save, Clear my answer and Cancel. Saving goes back to Profile with the new answer on its row."
     }),
-    profile: (M, P) => {
-      const u = M && M.usual;
-      return {
-        t: "Profile",
-        lede: `From the avatar on Today, a full screen: ${nameOf(M)}, then their usual, the answers from onboarding (${P.onboard === "full" ? "the full survey's" : "the short one's"}, each reopening its step), reminders${P.checkin ? " with the check-in day" : ""}, logging, display, connected apps, membership, their data, and help. The first name is the one from sign-up unless onboarding changed it. ${u ? `Every usual figure is read from the model, the same weeks Insights uses (${usualSpan()}).` : `Day ${L.learnDay(M)} of ${L.LEARN_DAYS}: Your usual says what arrives on day ${L.LEARN_DAYS}, and that the FloraScore range follows ${rangeWhen()}, instead of a number.`}`,
-        ba: [["Demo Settings, Requires assessment every visit to Insights", "The demo's own switches stay on the page. Profile keeps the few a person might set for themselves: how a BM is logged, the meal sheet, larger text and the theme"], ["Update health survey", "Each answer is a row that reopens its own step"], ["A red Delete Profile", "Delete my logs (the answers stay) and Delete my account (everything goes), each asked first, never red"], ["Research consent buried in the survey", "Its own switch under Your data, off until turned on"], ["Name and email first", `${u ? "Your usual, set from the logs, near the top" : "What day 14 brings, near the top"}; the email under Help, Email and sign-in`]],
-        open: [P.checkin ? "Should a person turn the weekly check-in off here, as well as change its day?" : "With the check-in off, Reminders has the BM reminder only. Enough?", "Logging repeats two of the page's decisions, Quick tiles or Full form and the meal sheet, as a person's own setting. Should a person pick these themselves, or should Florin pick one for everyone?", "Connected apps: which ones for this version, Apple Health first?", "Export: a file of logs for the person, the clinician report for a visit, or both?", "Larger text and simpler screens turns on the Easy version, here and on onboarding's first and last steps. Is set-up enough, or should Florin offer it again after a few days?", "Delete my account: membership is billed through the app store, so cancelling it may need its own step. Should the sheet say so for a member?"],
-        res: ["Oura Advisor's memories can be seen and deleted by the person: the same idea as Your data.", "Oura explains baselines in plain terms; Your usual says where each one comes from."]
-      };
-    },
-    "profile-day1": (M0, P) => {
-      const api = EXT.api, M = api ? pfModel(api) : M0, prev = !!api && M !== api.M();
-      return {
-        t: "Profile on day 1",
-      lede: `${prev ? `A preview of ${nameOf(M)}'s Profile just after onboarding, drawn against a day-1 model, so the logs on the phone stay as they are (Logs on the left, Just joined, gives the same Profile live): ` : "Just after onboarding: "}day ${L.learnDay(M)} of ${L.LEARN_DAYS}, ${logCount(M) ? plural(logCount(M), "entry", "entries") + " logged so far" : "nothing logged yet"}. Your usual lists what Florin sets on day ${L.LEARN_DAYS} instead of numbers, with the FloraScore range after it, ${rangeWhen()}; About you shows what onboarding asked (${P.onboard === "full" ? "the full survey" : "the short flow"}), and Delete has nothing to delete until there are logs.`,
-      ba: [["A profile that's the same on day 1 as on day 100", "The learning state says what's coming, and when"]],
-      open: [`Day 1 has no usual, so the answers carry Profile. Is that the right order until day ${L.LEARN_DAYS}?`],
-      res: ["Oura shows a learning period before baselines; the Profile does the same for the usual."]
-      };
-    }
+    profile: () => ({
+      t: "Profile",
+      lede: "From the avatar on Today: the person's usual, their set-up answers (each reopens its step), reminders, logging, display, connected apps, membership, their data, and help. Logging and display let a person set three of the decisions for themselves: how a BM is logged, the meal sheet, and larger text.",
+      open: ["Should a person pick how they log, or should Florin pick one way for everyone?"]
+    }),
+    "profile-day1": () => ({
+      t: "Profile on day 1",
+      lede: `Right after set-up, before Florin knows the person's usual: Your usual says what arrives on day ${L.LEARN_DAYS} instead of numbers, and the set-up answers carry the page.`
+    })
   });
   EXT.decisions.onboard = (M, P) => ({
-    t: "Onboarding: short, or the full survey",
-    lede: `What a new person is asked before Today. The app that ships asks 14 questions (Will, Oct 27). Short asks ${FLOWS.short.length} steps, only what changes the app on day 1; the full survey keeps the shipping sections, refreshed, in ${FLOWS.full.length}. Both finish on Today, day 1 of ${L.LEARN_DAYS}, and every answer shows in Profile. Switching here shows the flow on the phone (one already open moves to the other flow, answers kept); Screens, Onboarding and profile has both too.`,
     opts: [
-      ["short", `Under two minutes: ${shortSteps(P)}.`],
-      ["full", `About 3 minutes: ${fullSteps}. Every step skippable.`]
+      { v: "short", is: `${FLOWS.short.length} steps in under two minutes: ${shortSteps(P)}.`, why: "It asks only what changes the app on day 1, so people start logging sooner.", not: "Florin knows less at the start, and the rest (eating, foods to watch, medicines) has to be asked later." },
+      { v: "full", is: `The current app's survey in ${FLOWS.full.length} steps, about three minutes, reworded in Florin's voice, with a note to talk to their primary care doctor if someone picks blood or a black stool.`, why: "Florin knows the most from day 1, and it stays close to the current app.", not: `Most answers change nothing the person sees on day 1, and ${FLOWS.full.length} steps is long.` }
     ],
-    rec: "Short, then ask the rest in context: the eating pattern when the first meal is logged, foods to watch with the first food check, medicines and conditions with the first clinician report, and research consent in Profile. Most of the shipping survey's answers change nothing a person sees on day 1.",
-    ba: WRONG,
-    open: ["Which questions earn a place on day 1? The short flow's are the proposal.", "Research consent: a step at all, or only the switch in Profile?", "Age range and sex: asked at all, or only when making a clinician report?"],
-    res: ["The shipping onboarding: 14 questions, about 1 to 3 minutes (Will, Oct 27).", "The shipping survey notes: 60% of men want setup under 10 minutes; 47% of women want cycle context."]
+    rec: { v: "short", text: "We recommend Short, and asking the rest when it matters: eating habits at the first meal log, foods to watch when a food check starts, medicines at the first clinician report.", why: "Each answer then changes something the person can see." },
+    open: "Is the BM reminder worth a step on day 1?",
+    try: "Switch it to see that set-up on the phone, or open either version from Screens, under Onboarding and profile."
   });
 })();

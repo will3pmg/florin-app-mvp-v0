@@ -28,8 +28,6 @@
   const andList = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
   const DOWS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const DOWL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
-  const dayName = (d) => (d.today ? "today" : DOWL[d.dow] || d.dow);
-  const dayShort = (d) => (d.today ? "today" : d.dow);
   /* the dates a card covers, ending on today: a one-day stretch (day 1) is just today */
   const spanOf = (days) => { const a = days[0], z = days[days.length - 1]; return days.length === 1 ? (a.today ? "Today" : a.label) : `${a.label} to ${z.today ? "today" : z.label}`; };
 
@@ -66,35 +64,8 @@
       </li>`;
   }).join("")}</ul>`;
 
-  /* the state of a day, as a class and in words */
-  const STATE = {
-    usual: ["usual", "Within your usual"],
-    shifted: ["shift", "Outside your usual"],
-    unsure: ["unsure", "Could be either"],
-    /* today with a flag or an alarm feature logged: noted for a clinician, never read (a Teal ring) */
-    flag: ["flag", "Noted for a clinician"],
-    logged: ["logged", "Logged"],
-    nocount: ["nocount", "Logged, no BMs said"],
-    none: ["none", "Not logged"]
-  };
-  const stateOf = (d) => (d.pending ? ["pending", "Not logged yet"] : STATE[d.state] || STATE.none);
-  const ORDER = ["usual", "shift", "unsure", "flag", "logged", "nocount", "none"];
-  /* a day circle: the date inside, the state as its fill or its outline. A day not logged is a thin hairline, a gap;
-     a day logged with no BMs said is a plain fill with no ring, so no two states differ only in the weight of a ring */
-  const circle = (x, d) => `<span class="ez-c is-${stateOf(d)[0]}" aria-hidden="true">${d.date}</span>`;
-  const swatch = (k) => `<i class="ez-c ez-c--sw is-${k}" aria-hidden="true"></i>`;
-  /* dates as the circles show them, the month said once: "Oct 2, 9 and 14", "Sep 29 and Oct 3" */
+  /* dates as the day marks show them, the month said once: "Oct 2, 9 and 14", "Sep 29 and Oct 3" */
   const dates = (ds) => { let mon = null; return andList(ds.map((d) => { const [m, n] = d.label.split(" "); const t = m === mon ? n : d.label; mon = m; return t; })); };
-  /* the words under the circles: each state on show, with its own circle and the days (or how many) it covers. In
-     the month, the days outside your usual are named by date when there are few, so Gold never stands alone. Today
-     not logged yet needs no circle of its own: it says "Today" where it sits, so it is listed in words only */
-  const groups = (x, days, named) => {
-    const by = {};
-    days.forEach((d) => { const [k] = stateOf(d); (by[k] = by[k] || []).push(d); });
-    const word = (k) => Object.values(STATE).find((s) => s[0] === k)[1];
-    const what = (k) => (named ? andList(by[k].map(dayShort)) : k === "shift" && by[k].length <= 6 ? `${plural(by[k].length, "day")}, ${dates(by[k])}` : plural(by[k].length, "day"));
-    return `<ul class="ez-groups">${ORDER.filter((k) => by[k]).map((k) => `<li>${swatch(k)}<span><b>${x.esc(word(k))}:</b> ${x.esc(what(k))}</span></li>`).join("")}${by.pending ? `<li class="is-plain"><span><b>Today:</b> not logged yet</span></li>` : ""}</ul>`;
-  };
 
   /* ---------- FloraScore: one big ring, the number inside it, your usual drawn on its outer edge ---------- */
   function score(D, x) {
@@ -116,7 +87,9 @@
         ${note(x, DISC, true)}`);
     }
     const v = S.value, u = S.usual;
-    const shift = !S.flag && v != null && (v < u[0] || v > u[1]);
+    /* FloraScore is a reading, never a day's state: its end mark is the reading colour inside your usual range or not,
+       never Gold, and the words say where it sits (claude/Florin data viz.md, section 1) */
+    const shift = false;
     const ends = [u[0], u[1]].map((val) => { const [a, b] = pol(C, C, RU - 9, val / 100), [c2, d2] = pol(C, C, RU + 9, val / 100); return `<line x1="${a}" y1="${b}" x2="${c2}" y2="${d2}"/>`; }).join("");
     const [ex, ey] = v != null ? pol(C, C, R, v / 100) : [0, 0];
     const aria = v == null ? `No FloraScore today: ${lower1(S.why)} Your usual range is ${u[0]} to ${u[1]}.` : S.flag ? `FloraScore today ${v}. ${S.relation}: a log is noted for a clinician.` : `FloraScore today ${v}. ${S.relation}, ${u[0]} to ${u[1]}.`;
@@ -136,7 +109,7 @@
     const rel = v != null ? `${S.relation}.` : "No FloraScore today.";
     return card(x, "ez-score", `FloraScore today${v != null ? `, ${v}` : ""}`, "FloraScore", D.todayLabel, `
       ${ring}
-      ${lead(x, null, null, rel, shift ? "shift" : null)}
+      ${lead(x, null, null, rel)}
       ${v == null ? body(x, S.why) : ""}
       ${note(x, DISC, true)}`);
   }
@@ -150,18 +123,23 @@
         ${lead(x, null, null, "The four parts start with your FloraScore.")}
         ${body(x, `Timing, how often, form and comfort.${D.learning ? ` Florin is learning your usual first: day ${D.learning.day} of ${D.learning.of}.` : ""}`)}`);
     }
-    /* a part's change is in FloraScore points: what it added to the score, or took from it, since last week. The score
-       moves in whole points, so a change that rounds to 0 is about the same */
-    const pts = (p) => +Math.abs(p.delta).toFixed(1);
-    const word = (p) => (Math.round(p.delta) === 0 ? "About the same" : `${p.delta > 0 ? "Up" : "Down"} ${plural(pts(p), "point")}`);
-    const moved = P.slice().sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
-    const still = P.every((p) => Math.round(p.delta) === 0);
-    const rows = P.map((p) => ({ label: p.label, tag: ["plain", word(p)], count: p.now, of: 100, kind: "read", text: `${p.now} of 100` }));
-    return card(x, "ez-parts", "The four parts of FloraScore, this week against last", "What makes up the score", "This week", `
-      ${still ? lead(x, null, null, "Every part is about the same as last week.")
-        : lead(x, pts(moved), `${pts(moved) === 1 ? "point" : "points"}, the most any part moved`, `${moved.label} ${moved.delta > 0 ? "added" : "took"} ${plural(pts(moved), "point")} ${moved.delta > 0 ? "to" : "from"} your score since last week.`)}
+    /* a part's change is in whole FloraScore points (L.scoreMoved's pts): what it added to this week's average, or took
+       from it, against last week's. The four add up to the change in the score, so each is said as a move, never as a
+       part's own 0 to 100 */
+    const pts = (p) => Math.abs(p.pts);
+    const word = (p) => (!p.pts ? "Didn't move" : p.pts > 0 ? `Added ${plural(pts(p), "point")}` : `Took ${plural(pts(p), "point")}`);
+    const most = Math.max(...P.map(pts)), tops = P.filter((p) => most && pts(p) === most), moved = tops[0] || P[0];
+    const still = !most;
+    /* a tie names every part that moved most, when they moved the same way */
+    const same = tops.length > 1 && tops.every((p) => Math.sign(p.pts) === Math.sign(moved.pts));
+    const top = Math.max(1, ...P.map(pts));
+    const rows = P.map((p) => ({ label: p.label, tag: ["plain", word(p)], count: pts(p), of: top, kind: "read", text: p.pts ? `${p.pts > 0 ? "+" : "−"}${pts(p)}` : "0" }));
+    const d = S.delta;
+    return card(x, "ez-parts", "What moved FloraScore this week, part by part", "What moved the score", "This week", `
+      ${still ? lead(x, null, null, "No part moved the score since last week.")
+        : lead(x, pts(moved), pts(moved) === 1 ? "point, the most any part moved" : "points, the most any part moved", same ? `${andList(tops.map((p) => p.label))} ${moved.pts > 0 ? "added" : "took"} ${plural(pts(moved), "point")} each ${moved.pts > 0 ? "to" : "from"} your score this week.` : `${moved.label} ${moved.pts > 0 ? "added" : "took"} ${plural(pts(moved), "point")} ${moved.pts > 0 ? "to" : "from"} your score this week.`)}
       ${bars(x, rows)}
-      ${body(x, "Each part is out of 100 and reads you against your own usual.")}
+      ${d != null ? body(x, d ? `Together they moved FloraScore ${d > 0 ? "up" : "down"} ${plural(Math.abs(d), "point")}: ${S.weekAvg} on average this week, ${S.lastWeekAvg} last week.` : `Together they left FloraScore where it was: ${S.weekAvg} on average this week and last.`) : ""}
       ${note(x, DISC, true)}`);
   }
 
@@ -184,75 +162,98 @@
     const within = nums.filter((v) => v >= u[0] && v <= u[1]).length, above = nums.filter((v) => v > u[1]).length, below = nums.filter((v) => v < u[0]).length;
     const n = nums.length;
     /* "most" only when it is a clear majority, two days in three; just over half is said as more than half */
-    const ans = within === n ? "Every day with a score sat within your usual range."
-      : within * 3 >= n * 2 ? "Most days sat within your usual range."
-      : within * 2 > n ? "More than half the days sat within your usual range."
-      : within * 2 === n ? "Half the days sat within your usual range."
-      : "Fewer than half the days sat within your usual range.";
+    /* the score's own words, never a day's: "in its usual range", so it never reads like the days within your usual */
+    const ans = within === n ? "It sat in its usual range every day it had a score." : `It was above its usual range on ${plural(above, "day")} and below it on ${plural(below, "day")}.`;
     const rows = [
-      { label: `Within your usual, ${u[0]} to ${u[1]}`, count: within, of: n, kind: "usual", text: plural(within, "day") },
-      { label: "Above your usual", count: above, of: n, kind: "shift", text: plural(above, "day") },
-      { label: "Below your usual", count: below, of: n, kind: "shift", text: plural(below, "day") }
+      { label: `In its usual range, ${u[0]} to ${u[1]}`, count: within, of: n, kind: "read", text: plural(within, "day") },
+      { label: "Above its usual range", count: above, of: n, kind: "read", text: plural(above, "day") },
+      { label: "Below its usual range", count: below, of: n, kind: "read", text: plural(below, "day") }
     ];
     return card(x, "ez-trend", "FloraScore over 30 days", "FloraScore over 30 days", "Last 30 days", `
-      ${lead(x, within, `of ${n} days within your usual range`, ans)}
+      ${lead(x, within, `of ${plural(n, "day")} with FloraScore in its usual range`, ans)}
       ${bars(x, rows)}
       ${noScore ? body(x, `No FloraScore on ${plural(noScore, "day")}. A day without logs is left out.`) : ""}
       ${fl && D.flagLine ? body(x, D.flagLine) : ""}`);
   }
 
-  /* ---------- this week: a row of seven big day circles, then the days in words ---------- */
+  /* ---------- the days: the app's one day mark (RU.dayMark), at 32px ----------
+     A day looks the same here as on Today's card, in History and in Your days (claude/Florin data viz.md, section 1):
+     a Plum circle within your usual (Ray on dark), a Gold circle outside it (named in a line, always), an Ink 3 circle
+     for a day logged but not counted, the date alone for a day with nothing logged, a Teal ring with the info glyph for
+     a flagged today, today ringed with Today under it, and one Teal square under a day with symptoms. Each line under
+     the days starts with its mark (RU.dayKey), so the lines are the legend */
+  const RUI = () => window.FLORIN_RUI || {};
+  const mark = (d, o) => { const R = RUI(); return R.dayMark && d.facts ? R.dayMark(d.facts, Object.assign({ why: d.why, lg: true }, o)) : `<span class="ez-c">${d.date}</span>`; };
+  const keyOf = (k) => { const R = RUI(); return R.dayKey ? R.dayKey(k) : ""; };
+  const lineLi = (x, k, t) => `<li>${keyOf(k)}<span>${x.esc(t)}</span></li>`;
+  const named = (d) => (d.today ? "today" : DOWL[d.dow] || d.dow);
+  /* the lines for a stretch of days, in the week card's order (section 3, as RU.weekCard words them): days outside your
+     usual first, at most three lines, then days not counted, then the days with nothing logged together, then a flagged
+     today, then the one symptom sentence. byDate names a month's days by their dates instead of one line each */
+  const dayLines = (D, x, days, n) => {
+    const out = [], learning = !!D.learning, T = D.tally[n];
+    const sh = days.filter((d) => d.logged && d.state === "shifted"), none = days.filter((d) => !d.logged && !d.pending);
+    if (learning) {
+      if (days.some((d) => d.logged)) out.push(lineLi(x, "quiet", `Days show as logged until Florin knows your usual, on day ${D.learning.of}.`));
+    } else if (n === 7) {
+      const own = sh.length > 3 ? sh.slice(0, 2) : sh;
+      own.forEach((d) => out.push(lineLi(x, "shift", d.why ? d.why.line : `${cap(named(d))}: outside your usual.`)));
+      if (sh.length > 3) out.push(lineLi(x, "shift", `Also outside your usual: ${andList(sh.slice(2).map(named))}.`));
+      days.filter((d) => d.logged && (d.state === "unsure" || d.state === "nocount")).forEach((d) => out.push(lineLi(x, "quiet", d.why ? d.why.line : `${cap(named(d))} isn't counted.`)));
+    } else {
+      if (sh.length) out.push(lineLi(x, "shift", `Outside your usual on ${plural(sh.length, "day")}${sh.length <= 6 ? `: ${dates(sh)}` : ""}.`));
+      /* the days not counted, by count and why (L.tally's own words), the flag said once on its own line below */
+      const left = T && T.left ? T.left.replace(D.flagLine || "\u0000", "").trim() : "";
+      if (left) out.push(lineLi(x, "quiet", left));
+    }
+    if (none.length) out.push(lineLi(x, "none", n === 7 ? `Nothing logged on ${andList(none.map((d) => (d.today ? "Today" : DOWL[d.dow] || d.dow)))}.` : `Nothing logged on ${plural(none.length, "day")}.`));
+    if (!learning && T && T.flag && D.flagLine) out.push(lineLi(x, "flag", D.flagLine));
+    const sl = D.symLine && D.symLine[n];
+    if (sl) out.push(lineLi(x, "sym", sl));
+    return out.length ? `<ul class="ez-lines">${out.join("")}</ul>` : "";
+  };
+
+  /* ---------- the last 7 days: a row of seven day marks ending on today, then a line for each day not within ---------- */
   function week(D, x) {
-    const esc = x.esc, days = D.days[7];
+    const days = D.days[7];
     const learning = !!D.learning;
-    const slots = Array(Math.max(0, 7 - days.length)).fill(null).concat(days);
-    const n = (s) => days.filter((d) => d.logged && d.state === s);
-    const logged = days.filter((d) => d.logged), shifted = n("shifted");
-    /* within your usual out of the days read either way: a day that could be either, or with nothing about BMs, is
-       said by name under the number (D.tally), never counted as not within */
-    const T = D.tally[7];
-    const cols = slots.map((d) => {
-      if (!d) return `<li class="ez-day is-before" aria-hidden="true"><span class="ez-day-k">&nbsp;</span><span class="ez-c is-blank"></span></li>`;
-      const [, word] = stateOf(d);
-      return `<li class="ez-day${d.today ? " is-today" : ""}">${vh(x, `${d.today ? "Today" : DOWL[d.dow]}, ${d.label}: ${word}.`)}<span class="ez-day-k" aria-hidden="true">${esc(d.dow)}</span>${circle(x, d)}${d.today ? `<span class="ez-day-now" aria-hidden="true">Today</span>` : ""}</li>`;
-    }).join("");
-    const ans = !logged.length ? (learning ? "Nothing logged yet." : "No days logged this week yet.")
-      : learning ? "Florin is still learning your usual, so days show as logged."
-      : shifted.length ? `Outside your usual on ${andList(shifted.map(dayName))}.`
-      : !T.known ? "No day this week has a BM count logged yet."
-      : T.left ? "No day you logged was outside your usual."
-      : "Every day you logged sat within your usual.";
-    return card(x, "ez-week", "This week at a glance", "This week", spanOf(days), `
-      ${!logged.length ? lead(x, null, null, ans) : learning ? lead(x, logged.length, `of ${plural(days.length, "day")} logged`, ans) : T.known ? lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, ans, shifted.length ? "shift" : null) : lead(x, null, null, ans)}
-      ${learning ? "" : body(x, T.left)}
-      <div class="ez-fit"><ol class="ez-week-row">${cols}</ol></div>
-      ${groups(x, days, true)}`);
+    const logged = days.filter((d) => d.logged), T = D.tally[7];
+    /* days before the person started sit at the left as their dates alone, never named */
+    const R = RUI(), d0 = days.length ? days[days.length - 1].d - 6 : 0;
+    const pre = R.dayMark ? Array.from({ length: Math.max(0, 7 - days.length) }, (_, i) => `<li>${R.dayMark({ d: d0 + i, today: false }, { before: true, dow: true, lg: true })}</li>`).join("") : "";
+    const row = `<ol class="ap-days ez-days" aria-label="${x.esc(`Your last 7 days, ${spanOf(days)}`)}">${pre}${days.map((d) => `<li>${mark(d, { dow: true })}</li>`).join("")}</ol>`;
+    /* the answer: the number big, as every Easy read card leads; or, on a screen that already carries one big number
+       (the Easy version's Today, under FloraScore), the same answer as a line that starts with its mark (x.answerLine) */
+    const ansLine = (k, n, rest) => `<div class="ez-lead"><p class="ez-ans ez-ans--line">${keyOf(k)}<span><b>${x.esc(n)}</b> ${x.esc(rest)}</span></p></div>`;
+    const big = !logged.length ? lead(x, null, null, learning ? "Nothing logged yet." : "Nothing logged in the last 7 days.")
+      : learning ? (x.answerLine ? ansLine("quiet", plural(logged.length, "day"), "logged") : lead(x, logged.length, `of ${plural(days.length, "day")} logged`, null))
+      : T.known ? (x.answerLine ? ansLine("usual", `${T.within} of ${plural(T.known, "day")}`, "within your usual") : lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, null))
+      : lead(x, null, null, "None of the last 7 days can be read against your usual.");
+    return card(x, "ez-week", "Your last 7 days at a glance", "Your last 7 days", spanOf(days), `
+      ${big}
+      ${logged.length ? `<div class="ez-fit">${row}</div>` : body(x, "Your days show here as you log them.")}
+      ${dayLines(D, x, days, 7)}`);
   }
 
-  /* ---------- the last 30 days: the same circles as a wall calendar, then how many of each ---------- */
+  /* ---------- the last 30 days: the same day marks as a wall calendar, then the lines ---------- */
   function month(D, x) {
     const days = D.days[30];
     const learning = !!D.learning;
     const off = Math.max(0, DOWS.indexOf(days[0].dow));
     const cells = Array(off).fill(null).concat(days);
-    const n = (s) => days.filter((d) => d.logged && d.state === s).length;
-    const logged = days.filter((d) => d.logged).length, shifted = n("shifted"), T = D.tally[30];
-    const grid = cells.map((d) => (!d ? `<li class="ez-md is-pad" aria-hidden="true"></li>`
-      : `<li class="ez-md${d.today ? " is-today" : ""}">${vh(x, `${d.today ? "Today" : DOWL[d.dow]}, ${d.label}: ${stateOf(d)[1]}.`)}${circle(x, d)}</li>`)).join("");
-    const ans = !logged ? (learning ? "Nothing logged yet." : "No days logged yet.")
-      : learning ? "Days fill in against your usual once Florin knows it."
-      : shifted ? `Outside your usual on ${plural(shifted, "day")}.`
-      : !T.known ? "No day in the last 30 days has a BM count logged yet."
-      : T.left ? "No day you logged was outside your usual."
-      : "Every day you logged sat within your usual.";
+    const logged = days.filter((d) => d.logged).length, T = D.tally[30];
+    const grid = cells.map((d) => (!d ? `<li class="ez-md is-pad" aria-hidden="true"></li>` : `<li class="ez-md">${mark(d, { todayWord: false })}</li>`)).join("");
+    const big = !logged ? lead(x, null, null, learning ? "Nothing logged yet." : "No days logged yet.")
+      : learning ? lead(x, logged, `of ${plural(days.length, "day")} logged`, null)
+      : T.known ? lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, null)
+      : lead(x, null, null, "No day in the last 30 days can be read against your usual yet.");
     return card(x, "ez-month", learning ? "Since you started, at a glance" : "The last 30 days at a glance", learning ? "Since you started" : "The last 30 days", spanOf(days), `
-      ${!logged ? lead(x, null, null, ans) : learning ? lead(x, logged, `of ${plural(days.length, "day")} logged`, ans) : T.known ? lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, ans, shifted ? "shift" : null) : lead(x, null, null, ans)}
-      ${learning ? "" : body(x, T.left)}
+      ${big}
       <div class="ez-cal ez-fit">
         <ol class="ez-cal-h" aria-hidden="true">${DOWS.map((w) => `<li>${w.slice(0, 2)}</li>`).join("")}</ol>
         <ol class="ez-cal-g">${grid}</ol>
       </div>
-      ${groups(x, days, false)}`);
+      ${dayLines(D, x, days, 30)}`);
   }
 
   /* ---------- timing: one thick time bar, your usual window drawn on it and named under it, the morning marked ---------- */
@@ -316,7 +317,7 @@
         : lead(x, known.length, known.length === 1 ? "day logged so far" : "days logged so far", `Florin learns your usual count by day ${D.learning ? D.learning.of : 14}.`)}
       ${bars(x, rows)}
       ${u ? body(x, `Your usual is ${o.usualText}.`) : ""}
-      ${gaps ? body(x, `Not logged on ${plural(gaps, "day")}. Those days are left out.`) : ""}
+      ${gaps ? body(x, `Nothing logged on ${plural(gaps, "day")}. Those days are left out.`) : ""}
       ${fl && D.flagLine ? body(x, D.flagLine) : ""}`);
   }
 

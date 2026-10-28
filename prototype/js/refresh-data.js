@@ -11,6 +11,8 @@
    hooks, has the shape of each key. window.FLORIN_EXT */
 (function () {
   const EXT = (window.FLORIN_EXT = window.FLORIN_EXT || {});
+  /* built is no longer read (Oct 28: every option is drawn, so the notes carry no badge); it stays an empty object
+     so a module that still claims its options there can't throw */
   [["overlays", {}], ["acts", {}], ["opens", {}], ["screens", []], ["notes", {}], ["decisions", {}], ["built", {}], ["keys", {}], ["onSet", []]].forEach(([k, d]) => { if (!EXT[k]) EXT[k] = d; });
 })();
 
@@ -419,8 +421,9 @@
   const learning = (mode) => mode === "new" || mode === "fresh";
   /* what a demo person logs for meals. Will (Oct 14): meal logging happens when things feel off, not every day.
      "all" is every day, as seeded; "rough" keeps a day's meals only when that day has a symptom logged (what someone
-     writes down when things feel off); "none" logs no meals at all */
-  L.MEAL_LOGS = [["all", "Every day"], ["rough", "Rough days only"], ["none", "None"]];
+     writes down when things feel off); "none" logs no meals at all. A demo control (the page calls it Demo person's
+     meals), never a design option: the labels say whose history it is (Will, Oct 28) */
+  L.MEAL_LOGS = [["all", "Every day"], ["rough", "Only with symptoms"], ["none", "Never"]];
   const keepMeals = (days, how) => {
     if (how === "all") return;
     const sym = (d) => { const x = days.find((y) => y.d === d); return !!x && x.entries.some((e) => e.kind === "sym"); };

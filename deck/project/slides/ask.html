@@ -1,47 +1,56 @@
-<section id="ask" data-transition="fade" style="background:#00352B; font-family:'DM Sans', sans-serif; color:#F9F7F2; display:flex; flex-direction:column; padding:128px 128px 160px; gap:32px;">
-  <div style="display:flex; flex-direction:column; gap:12px;">
-    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#EEFFA3;">Screens · Ask Florin</p>
-    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#F9F7F2;">Ask Florin: answers from your own logs</h2>
+<section id="ask" data-transition="fade" style="background:#F9F7F2; font-family:'DM Sans', sans-serif; color:#00352B; display:flex; flex-direction:column; padding:128px 128px 160px; gap:16px;">
+  <div style="display:flex; flex-direction:column; gap:6px; padding:0 0 4px;">
+    <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; text-transform:uppercase; color:#396E7C;">Also to decide</p>
+    <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Do people on Free get any Ask Florin answers?</h2>
+    <p style="font-size:28px; line-height:1.3; color:#3E5A52;">This decides what the Ask tab does on the free plan; members ask questions and get answers from their own logs.</p>
   </div>
-  <div style="display:grid; grid-template-columns:680px 952px; gap:32px; flex:1;">
-    <div style="background:#14443B; border-radius:32px; padding:28px; display:flex; flex-direction:column; gap:16px;">
-      <p style="font-family:'Space Mono', monospace; font-size:24px; letter-spacing:2px; color:#BFD3CC;">AN EXAMPLE, FROM SARAH’S NUMBERS</p>
-      <div style="display:flex; justify-content:flex-end;">
-        <div style="background:#F9F7F2; border-radius:24px; padding:14px 20px;"><p style="font-size:24px; color:#00352B;">Why did my FloraScore move this week?</p></div>
+  <div style="display:flex; flex-direction:column; gap:8px; padding:0 0 4px;">
+    <p style="font-size:24px; line-height:1.2; color:#396E7C;"><b>How Ask Florin answers a member, in three steps</b></p>
+    <div style="display:grid; grid-template-columns:533px 533px 533px; gap:32px;">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <p style="font-family:'Space Mono', monospace; font-size:24px; line-height:1.2; color:#396E7C; width:24px;">1</p>
+        <p style="font-size:24px; line-height:1.2; width:497px;"><b>Signs to see a doctor come first.</b> Ask about blood or a black stool, and Florin says to see a primary care doctor. It reads nothing into it.</p>
       </div>
-      <div style="background:#1E5045; border-radius:24px; padding:20px 24px;">
-        <p style="font-size:24px; line-height:1.4;">This week averages 83, up 3 on last week’s 80. Timing added about 3 points, Comfort about 1, and Form took about 1 off. Tonight’s check-in will add how the week felt.</p>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <p style="font-family:'Space Mono', monospace; font-size:24px; line-height:1.2; color:#396E7C; width:24px;">2</p>
+        <p style="font-size:24px; line-height:1.2; width:497px;"><b>No diagnosis, doses or predictions.</b> Ask for one, and Florin gives a fixed reply that points to the person’s own logs and to a clinician.</p>
       </div>
-      <p style="font-family:'Space Mono', monospace; font-size:24px; color:#EEFFA3;">FROM YOUR LOGS ›</p>
-      <p style="font-size:24px; line-height:1.35; color:#BFD3CC;">Florin Health shows patterns in your own data. It doesn’t diagnose, treat or prevent any condition.</p>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:14px;">
-      <h3 style="font-family:Lora, serif; font-size:40px; font-weight:500; line-height:1.1;">How each answer is made</h3>
-      <div style="display:flex; gap:20px; align-items:flex-start;"><p style="font-family:'Space Mono', monospace; font-size:28px; color:#EEFFA3; width:40px;">1</p><p style="font-size:28px; line-height:1.35; width:892px;"><b>Alarm words go to primary care,</b> <span style="color:#BFD3CC;">in the Teal clinician answer. They never reach Claude.</span></p></div>
-      <div style="display:flex; gap:20px; align-items:flex-start;"><p style="font-family:'Space Mono', monospace; font-size:28px; color:#EEFFA3; width:40px;">2</p><p style="font-size:28px; line-height:1.35; width:892px;"><b>Asks to diagnose, dose or predict</b> <span style="color:#BFD3CC;">get a kind redirect to the logs and a clinician.</span></p></div>
-      <div style="display:flex; gap:20px; align-items:flex-start;"><p style="font-family:'Space Mono', monospace; font-size:28px; color:#EEFFA3; width:40px;">3</p><p style="font-size:28px; line-height:1.35; width:892px;"><b>Claude answers from the person’s own numbers,</b> <span style="color:#BFD3CC;">under Florin’s rules.</span></p></div>
-      <div style="display:flex; gap:20px; align-items:flex-start;"><p style="font-family:'Space Mono', monospace; font-size:28px; color:#EEFFA3; width:40px;">4</p><p style="font-size:28px; line-height:1.35; width:892px;"><b>Every answer is checked</b> <span style="color:#BFD3CC;">against the claims rules and the logs. A failed check shows the computed answer.</span></p></div>
-      <p style="font-size:24px; line-height:1.35; color:#BFD3CC;">In the demo, it runs on the viewer’s own Claude usage.</p>
-      <div style="background:#14443B; border-left:6px solid #EEFFA3; border-radius:20px; padding:18px 28px;">
-        <p style="font-size:28px; line-height:1.35;"><b>Open call, not built: one free answer a week on Free?</b> <span style="color:#BFD3CC;">Free keeps the lock for now. Marcus scored the hand-off 2: he never sees an answer before being asked to pay.</span></p>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <p style="font-family:'Space Mono', monospace; font-size:24px; line-height:1.2; color:#396E7C; width:24px;">3</p>
+        <p style="font-size:24px; line-height:1.2; width:497px;"><b>The rest, from their own logs.</b> Claude writes the answer and Florin checks it. If the check fails, Florin shows its own answer from the logs.</p>
       </div>
     </div>
+  </div>
+  <div style="display:grid; grid-template-columns:816px 816px; gap:32px; flex:1;">
+    <div style="background:#EFECE4; border-radius:28px; padding:24px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3 style="font-family:Lora, serif; font-size:36px; font-weight:500; line-height:1.1;">Members only</h3>
+      </div>
+      <p style="font-size:24px; line-height:1.2;"><b><span style="color:#396E7C;">What it is:</span></b> On Free, the Ask tab explains what Ask Florin does and the questions people ask, and offers membership.</p>
+      <p style="font-size:24px; line-height:1.2;"><b><span style="color:#396E7C;">Why do it:</span></b> It’s the simplest: no free answers to pay for or check.</p>
+      <p style="font-size:24px; line-height:1.2;"><b><span style="color:#396E7C;">Why not:</span></b> People never see an answer from their own numbers before they’re asked to pay.</p>
+    </div>
+    <div style="background:#EFECE4; border:3px solid #4F2641; border-radius:28px; padding:21px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3 style="font-family:Lora, serif; font-size:36px; font-weight:500; line-height:1.1;">One free answer a week</h3>
+        <div style="background:#4F2641; border-radius:20px; padding:2px 12px;"><p style="font-size:24px; color:#F9F7F2; white-space:nowrap;">We recommend</p></div>
+      </div>
+      <p style="font-size:24px; line-height:1.2;"><b><span style="color:#396E7C;">What it is:</span></b> On Free, a person gets one answered question a week from their own numbers, and questions about whether to see a doctor are answered on any plan.</p>
+      <p style="font-size:24px; line-height:1.2;"><b><span style="color:#396E7C;">Why do it:</span></b> People see what Ask Florin does with their logs before paying, which makes the case for membership.</p>
+      <p style="font-size:24px; line-height:1.2;"><b><span style="color:#396E7C;">Why not:</span></b> Each free answer costs us money to run, and some people will find one a week enough and never pay.</p>
+    </div>
+  </div>
+  <div style="background:#4F2641; border-radius:20px; padding:12px 28px;">
+    <p style="font-size:28px; line-height:1.25; color:#F9F7F2;"><b>We recommend one free answer a week, with questions about seeing a doctor always answered.</b> One answer from a person’s own logs sells membership better than a locked tab.</p>
   </div>
   <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
-    <p style="font-size:24px; color:#BFD3CC;">Florin app refresh · Decisions · Oct 27</p>
-    <p style="font-size:24px; color:#BFD3CC;">13</p>
+    <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Demo › Plan, then the Ask tab</p>
+    <p style="font-size:24px; color:#3E5A52;">19</p>
   </div>
-  <aside>Ask Florin is now interactive for members. It answers from the person’s own numbers, through Claude, and checks every answer before showing it. On Free it is locked today: the Ask tab shows the membership sheet and the questions people ask, with no answers.
-
-The engine, in order (stage two spec, M2):
-1. Alarm words in the question (blood, black or tar-like stools, fever, vomiting that won’t stop, weight loss, waking at night to go) get the Teal “When to see a clinician” answer, primary care first, with the urgent-care line. Never interpreted, and never sent to Claude.
-2. Requests to diagnose, prescribe, dose or predict get a fixed, kind redirect to what the logs show and to a clinician.
-3. Otherwise Claude answers, given Florin’s rules and a facts packet computed from the model: usual ranges, 7 and 30 day counts, today’s FloraScore and what moved it, patterns found or held back, the latest check-in against the first weeks, the top symptoms and today’s logs. Two to four short sentences, numbers only from the facts, ending on one thing to log or try.
-4. Every answer runs through Florin’s claims check and a numbers check: every number in the answer must appear in the facts. If either fails, the computed answer shows instead, marked “Checked against Florin’s rules”.
-
-Each answer has a “From your logs” disclosure listing the numbers it used, and the fine print. In the demo this runs on the viewer’s own Claude usage; where Claude isn’t available, the computed answers run on their own.
-
-The answer on the slide is an example composed from Sarah’s numbers in the model, not a captured reply: her week averages 83 against last week’s 80; by part, Timing added about 3 points (95 against 88), Comfort about 1 (93 against 88), and Form took about 1 off (94 against 98). The check-in is due tonight.
-
-The open call for Will, not built: one answered question a week on Free, started from a card’s numbers, and never lock the clinician question. Free keeps the lock for now. Marcus scored the hand-off 2 of 5, because a buyer who has been burned before never sees an answer before being asked to pay. The strategist flags Ask as the biggest claims risk once answers ship, which is why step 4 exists.</aside>
+  <aside>The question: do people on Free get any Ask Florin answers? This decides what the Ask tab does on the free plan; members ask questions and get answers from their own logs.
+How Ask Florin answers a member, in three steps. First, signs to see a doctor come first: ask about blood or a black stool, and Florin says to see a primary care doctor. It reads nothing into it. Second, no diagnosis, doses or predictions: ask for one, and Florin gives a fixed reply that points to the person’s own logs and to a clinician. Third, the rest comes from their own logs: Claude writes the answer and Florin checks it. If the check fails, Florin shows its own answer from the logs.
+Members only. What it is: on Free, the Ask tab explains what Ask Florin does and the questions people ask, and offers membership. Why do it: it’s the simplest, with no free answers to pay for or check. Why not: people never see an answer from their own numbers before they’re asked to pay.
+One free answer a week. What it is: on Free, a person gets one answered question a week from their own numbers, and questions about whether to see a doctor are answered on any plan. Why do it: people see what Ask Florin does with their logs before paying, which makes the case for membership. Why not: each free answer costs us money to run, and some people will find one a week enough and never pay.
+We recommend one free answer a week, with questions about seeing a doctor always answered. One answer from a person’s own logs sells membership better than a locked tab.
+Try it: Demo, Plan, Free, then the Ask tab. The demo keeps Ask Florin locked on Free; switch Plan to Member to ask a question.</aside>
 </section>

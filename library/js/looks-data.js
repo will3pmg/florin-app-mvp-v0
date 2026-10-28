@@ -38,7 +38,11 @@
       forms: f.bms.map((b) => ({ t: b.t, name: L.formName(b, mode), steps: mode === "B" ? [L.wordKey(b)] : L.stepsOf(b), level: mode === "B" ? L.wordKey(b) : Ut.mean(L.stepsOf(b)), within: u && !(flagT && f.today) ? L.inForms(M, b, mode) : null, flag: flagT && f.today })),
       sym: Object.entries(f.sym).map(([name, s]) => ({ name, strength: s, word: s ? L.STRENGTH[s - 1] : "Strength not said" })),
       meals: f.meals.length,
-      score: (L.score(M, f.d, mode) || {}).value == null ? null : L.score(M, f.d, mode).value
+      score: (L.score(M, f.d, mode) || {}).value == null ? null : L.score(M, f.d, mode).value,
+      /* why the day sat where it did, in the app's one wording (L.dayWhy: its word, its line, what a screen reader
+         hears), and the day's own facts, so a look draws the day with the app's one day mark (RU.dayMark) */
+      why: L.dayWhy ? L.dayWhy(M, f, mode) : null,
+      facts: f
     });
     const span = (n) => L.span(M, n, mode).map(day);
 
@@ -65,7 +69,8 @@
       /* the change is the difference of the two averages as shown, so "84, up 8 on 76" always adds up */
       weekAvg: mv ? Math.round(mv.wk) : null, lastWeekAvg: mv ? Math.round(mv.lw) : null,
       delta: mv ? Math.round(mv.wk) - Math.round(mv.lw) : null,
-      parts: mv ? mv.parts.map((p) => ({ key: p.key, label: NAMES[p.key].label, desc: NAMES[p.key].desc, weight: p.weight, now: p.now, before: p.before, delta: +p.delta.toFixed(1), usual: partsUsual ? partsUsual[p.key] : null })) : [],
+      /* pts: what the part added to FloraScore this week, in whole points that add up to delta (L.scoreMoved) */
+      parts: mv ? mv.parts.map((p) => ({ key: p.key, label: NAMES[p.key].label, desc: NAMES[p.key].desc, weight: p.weight, now: p.now, before: p.before, delta: +p.delta.toFixed(1), pts: p.pts != null ? p.pts : Math.round(p.delta), usual: partsUsual ? partsUsual[p.key] : null })) : [],
       /* a series point's flag: today's, on a flag day, keeps its value and is read against nothing (no within, above or
          below, and in no count of them) */
       series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value, flag: flagS && s.d === L.TODAY }))])),
@@ -90,25 +95,11 @@
     };
 
     /* the cards' numbers */
-    const F7 = span(7), F30 = span(30), F90 = span(90);
-    /* a stretch's days, counted the way Insights and Your days count them: the days within your usual out of the days
-       read either way (within or shifted). A day that could be either, or one logged with nothing about BMs, is counted
-       neither way, never as a shift: left says which, by name for a week and by count for a month */
-    const tally = (F, named) => {
-      const lg = F.filter((f) => f.logged), by = (s) => lg.filter((f) => f.state === s);
-      const within = by("usual"), shifted = by("shifted"), unsure = by("unsure"), noc = by("nocount"), flag = by("flag");
-      const nm = (f) => (f.today ? "today" : Ut.DOWL[L.dateOf(f.d).getDay()]);
-      const who = (a) => cap(named ? andList(a.map(nm)) : plural(a.length, "day"));
-      const notC = (a) => `so ${a.length === 1 ? "it isn't" : "they aren't"} counted`;
-      const past = noc.filter((f) => !f.today), now = noc.some((f) => f.today);
-      const left = [
-        unsure.length && `${who(unsure)} could be either, ${notC(unsure)}.`,
-        past.length && `${who(past)} had nothing about BMs, ${notC(past)}.`,
-        now && "Today has nothing about BMs yet, so it isn't counted.",
-        flag.length && RU.FLAG_DAY
-      ].filter(Boolean).join(" ");
-      return { logged: lg.length, within: within.length, shifted: shifted.length, unsure: unsure.length, nocount: noc.length, flag: flag.length, none: F.filter((f) => !f.logged && !f.pending).length, known: within.length + shifted.length, left };
-    };
+    const R7 = L.span(M, 7, mode), R30 = L.span(M, 30, mode);
+    const F7 = R7.map(day), F30 = R30.map(day), F90 = span(90);
+    /* a stretch's days, counted the one way every screen counts them (L.tally, in refresh-ui.js): the days within your
+       usual out of the days read either way; a day that could be either, or one logged with nothing about BMs, is
+       counted neither way, never as a shift, and left says which, by name for a week and by count for a month */
     const scale = scaleOf(mode);
     const formUsual = !u ? null : mode === "B" ? [u.wLo, u.wHi] : [u.fLo, u.fHi];
     /* every reading over the days read: a flagged today's BMs are noted for a clinician, in none of these counts */
@@ -187,7 +178,9 @@
       learning: !u ? { day: L.learnDay(M), of: L.LEARN_DAYS } : null,
       score,
       days: { 7: F7, 30: F30, 90: F90 },
-      tally: { 7: tally(F7, true), 30: tally(F30, false) },
+      tally: { 7: L.tally(R7, true), 30: L.tally(R30, false) },
+      /* the one symptom sentence (L.symLine): the week names its days, the month counts them. "" with none logged */
+      symLine: { 7: L.symLine ? L.symLine(R7) : "", 30: L.symLine ? L.symLine(R30, { named: false }) : "" },
       /* the sentence for today with a flag (RU.FLAG_DAY), or "" */
       flagLine: flagT && RU.FLAG_DAY ? RU.FLAG_DAY : "",
       /* flagToday: today has a log noted for a clinician, so the mornings and days counted against the usual leave it out
