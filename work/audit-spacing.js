@@ -61,6 +61,8 @@ const PRODUCT = [
   { f: '../library/css/look-rings.css', scope: () => true },
   { f: '../library/css/look-journal.css', scope: () => true },
   { f: '../library/css/look-bento.css', scope: () => true },
+  { f: '../library/css/look-oura.css', scope: () => true },
+  { f: '../library/css/look-easy.css', scope: () => true },
 ];
 const REPORT_ONLY = [];
 

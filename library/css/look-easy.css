@@ -1,1 +1,193 @@
-/* Florin data looks: easy. Being built. */
+/* Look: Easy read. Every rule scoped under .lk-easy.
+   Made for a 70-year-old with reading glasses: the answer at 28px, the number at 64px, nothing a person must read under
+   16px, text in Ink (Ink 2 only for secondary lines at 18px or more), no small caps and no mono. One picture a card at
+   most, with its words on it. Colours are the app tokens (--ap-*) or the six brand colours; nothing is a literal.
+   Spacing and radii are on the DESIGN.md scales. Motion is a short fade and rise, once, inside
+   prefers-reduced-motion: no-preference, and only animates *from* a state, so the still page is the final page. */
+
+/* ---------- the card ---------- */
+.lk-easy .ez {
+  --ez-usual: var(--ap-usual-ink);
+  --ez-on-usual: var(--cream);
+  --ez-shift: var(--ap-shift);
+  --ez-on-shift: var(--forest);
+  --ez-read: var(--ap-chart);
+  --ez-on-read: var(--ap-card);
+  --ez-trk: color-mix(in srgb, var(--ap-ink) 9%, transparent);
+  --ez-hair: color-mix(in srgb, var(--ap-ink) 45%, transparent);
+  /* your usual window on the time bar: Plum at 40% on light; on dark the app's own usual band, Ray at 17%, because
+     Ray at 40% over Forest mixes to a new green */
+  --ez-band: color-mix(in srgb, var(--ez-usual) 40%, transparent);
+  /* a day logged with no BMs said: a plain grey disc, dark enough to see as a disc even without its date */
+  --ez-nocount: color-mix(in srgb, var(--ap-ink) 22%, var(--ap-card));
+  display: flex; flex-direction: column; gap: 24px;
+  padding: 24px; border-radius: 24px;
+  background: var(--ap-card); color: var(--ap-ink); box-shadow: var(--ap-shadow);
+  font-family: var(--sans); font-size: 18px; line-height: 1.45;
+}
+/* on dark, your usual is Ray, so what sits on it is Forest. The app's dark Gold is nearly as light as Ray, so a
+   shift here is a deeper Gold: the two then differ in lightness as well as hue, for eyes that see little colour. A
+   reading is Ink 2, so it never looks like your usual where the two meet (the score ring, the time bar). Tracks need a
+   little more to show on Forest */
+.lk-easy[data-theme="dark"] .ez {
+  --ez-on-usual: var(--forest);
+  --ez-shift: oklch(from var(--gold) calc(l - .1) calc(c * 1.25) h);
+  --ez-read: var(--ap-ink2);
+  --ez-on-read: var(--forest);
+  --ez-trk: color-mix(in srgb, var(--ap-ink) 13%, transparent);
+  --ez-hair: color-mix(in srgb, var(--ap-ink) 50%, transparent);
+  --ez-band: var(--ap-band);
+}
+.lk-easy .ez :where(p, h3, ul, ol, li) { margin: 0; }
+.lk-easy .ez :where(ul, ol) { list-style: none; padding: 0; }
+.lk-easy .ez-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- type ---------- */
+.lk-easy .ez-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.lk-easy .ez-t { font-size: 22px; line-height: 1.25; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-side { font-size: 18px; line-height: 1.3; color: var(--ap-ink2); }
+.lk-easy .ez-lead { display: flex; flex-direction: column; gap: 12px; }
+.lk-easy .ez-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.lk-easy .ez-n { font-size: 64px; line-height: 1; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.lk-easy .ez-unit { font-size: 20px; line-height: 1.3; color: var(--ap-ink); }
+.lk-easy .ez-ans { font-size: 28px; line-height: 1.25; font-weight: 400; color: var(--ap-ink); text-wrap: pretty; }
+/* a shift's sentence starts with a Gold dot, the colour of the mark it describes */
+.lk-easy .ez-dot { display: inline-block; vertical-align: .06em; width: 16px; height: 16px; margin-right: 12px; border-radius: 50%; background: var(--ez-shift); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 25%, transparent); }
+.lk-easy .ez-body { font-size: 18px; line-height: 1.45; color: var(--ap-ink2); text-wrap: pretty; }
+.lk-easy .ez-body.is-strong { font-size: 20px; line-height: 1.35; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-note { font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--ap-ink2); text-wrap: pretty; }
+.lk-easy .ez-care { font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--ap-ink); text-wrap: pretty; }
+.lk-easy .ez-sure { font-size: 20px; line-height: 1.35; color: var(--ap-ink); }
+.lk-easy .ez-sure b { font-weight: 500; }
+
+/* ---------- tags: a word, sometimes with the colour it names ---------- */
+.lk-easy .ez-tag { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 18px; line-height: 1.2; font-weight: 500; background: var(--ap-card2); color: var(--ap-ink); }
+.lk-easy .ez-tag.is-usual { background: var(--ap-usual-bg); color: var(--ap-usual-ink); }
+.lk-easy .ez-tag.is-shift { background: var(--ap-shift-bg); color: var(--ap-shift-ink); }
+.lk-easy .ez-tag.is-either { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+
+/* ---------- thick bars, the count written on them ---------- */
+.lk-easy .ez-bars { display: flex; flex-direction: column; gap: 20px; }
+.lk-easy .ez-row { display: flex; flex-direction: column; gap: 8px; }
+.lk-easy .ez-row-l { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.lk-easy .ez-row-name { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-row-aside { font-size: 18px; line-height: 1.3; color: var(--ap-ink2); }
+.lk-easy .ez-bar { display: flex; align-items: center; height: 44px; border-radius: 999px; background: var(--ez-trk); }
+.lk-easy .ez-fill { display: flex; align-items: center; justify-content: flex-end; flex: none; height: 100%; min-width: 8px; border-radius: 999px; background: var(--ez-read); color: var(--ez-on-read); }
+.lk-easy .ez-fill:has(b) { padding: 0 12px; }
+.lk-easy .ez-fill.is-usual { background: var(--ez-usual); color: var(--ez-on-usual); }
+.lk-easy .ez-fill.is-shift { background: var(--ez-shift); color: var(--ez-on-shift); }
+.lk-easy .ez-fill.is-either { background: var(--ap-card2); color: var(--ap-ink); box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+.lk-easy .ez-fill b, .lk-easy .ez-out, .lk-easy .ez-row-n { font-size: 20px; line-height: 1; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lk-easy .ez-out { padding-left: 12px; color: var(--ap-ink); }
+/* a count that fits neither on its bar nor after it sits at the end of the bar's name line */
+.lk-easy .ez-row-n { margin-left: auto; line-height: 1.3; color: var(--ap-ink); }
+/* on light, Gold is pale against the card and the track, so a Gold fill or circle carries a thin Gold-ink edge */
+.lk-easy:not([data-theme="dark"]) :is(.ez-c.is-shift, .ez-fill.is-shift, .ez-dot) { box-shadow: inset 0 0 0 2px var(--ap-shift-ink); }
+
+/* ---------- day circles: the date inside, the state as fill or outline ---------- */
+.lk-easy .ez-c { display: grid; place-items: center; flex: none; width: 40px; height: auto; aspect-ratio: 1; border-radius: 50%; font-size: 18px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ap-ink); }
+.lk-easy .ez-c.is-usual { background: var(--ez-usual); color: var(--ez-on-usual); }
+.lk-easy .ez-c.is-shift { background: var(--ez-shift); color: var(--ez-on-shift); }
+.lk-easy .ez-c.is-unsure { background: var(--ap-card2); box-shadow: inset 0 0 0 3px var(--ap-ink2); }
+.lk-easy .ez-c.is-logged { background: var(--ez-read); color: var(--ez-on-read); }
+.lk-easy .ez-c.is-nocount { background: var(--ez-nocount); box-shadow: none; }
+/* a day not logged is a gap: a thin hairline, never a filled or empty-looking zero */
+.lk-easy .ez-c.is-none, .lk-easy .ez-c.is-pending { box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
+.lk-easy .ez-c.is-blank { box-shadow: none; }
+.lk-easy .ez-c--sw { width: 24px; height: 24px; font-size: 0; }
+
+.lk-easy .ez-week-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.lk-easy .ez-day { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+/* the circles shrink to their column on a narrow phone, keeping 4px between them */
+.lk-easy .ez-day .ez-c { width: min(40px, calc(100% - 4px)); }
+.lk-easy .ez-day-k { font-size: 16px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); white-space: nowrap; }
+/* today says so under its circle, where no other label can crowd it */
+.lk-easy .ez-day-now { font-size: 16px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); white-space: nowrap; }
+
+.lk-easy .ez-groups { display: flex; flex-direction: column; gap: 12px; }
+.lk-easy .ez-groups li { display: flex; align-items: flex-start; gap: 12px; font-size: 18px; line-height: 1.35; color: var(--ap-ink); }
+.lk-easy .ez-groups b { font-weight: 500; }
+
+/* the wall calendar: smaller circles, so today's ring fits between its neighbours on a phone */
+.lk-easy .ez-cal { display: flex; flex-direction: column; gap: 8px; }
+.lk-easy .ez-cal-h, .lk-easy .ez-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.lk-easy .ez-cal-g { row-gap: 8px; }
+.lk-easy .ez-cal-h li { text-align: center; font-size: 16px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-md { display: flex; justify-content: center; min-width: 0; }
+.lk-easy .ez-md .ez-c { width: min(34px, calc(100% - 6px)); font-size: 16px; }
+.lk-easy .ez-md.is-today .ez-c { outline: 2px solid var(--ap-ink); outline-offset: 1px; }
+
+/* a narrow card (a 320px phone, or large text zoom): the week's seven circles wrap four and three so each stays
+   40px and its day name fits over it; the calendar keeps its seven columns with smaller gaps, so its circles stay
+   28px or more and today's ring, 1px out, still clears its neighbours. The container is the picture's own wrapper, never the card: a card with
+   inline-size containment has no width of its own, and collapses wherever the page sizes it to its content */
+.lk-easy .ez-fit { container-type: inline-size; }
+@container (max-width: 300px) {
+  .lk-easy .ez-week-row { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 16px; }
+  .lk-easy .ez-day.is-before { display: none; }
+  .lk-easy .ez-md .ez-c { width: min(34px, calc(100% - 4px)); }
+}
+
+/* ---------- timing: one thick time bar ---------- */
+.lk-easy .ez-tl { display: flex; flex-direction: column; gap: 12px; }
+.lk-easy .ez-tl-trk { position: relative; height: 32px; border-radius: 999px; background: var(--ez-trk); }
+.lk-easy .ez-tl-band { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--ez-band); box-shadow: inset 0 0 0 2px var(--ez-usual); }
+.lk-easy .ez-tl-mark { position: absolute; top: 50%; width: 32px; height: 32px; border-radius: 50%; background: var(--ez-read); box-shadow: 0 0 0 4px var(--ap-card); transform: translate(-50%, -50%); }
+.lk-easy .ez-tl-mark.is-shift { background: var(--ez-shift); }
+.lk-easy:not([data-theme="dark"]) .ez-tl-mark.is-shift { box-shadow: 0 0 0 4px var(--ap-card), inset 0 0 0 2px var(--ap-shift-ink); }
+/* a label sits by what it names and stays inside the bar: it moves with its point, and slides back over that point by
+   the same share of its own width, so at the bar's ends it lines up with the end */
+.lk-easy .ez-tl-l { position: relative; left: calc(var(--x) * 1%); width: max-content; max-width: 100%; transform: translateX(calc(var(--x) * -1%)); }
+.lk-easy .ez-tl-l.is-mark { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-tl-l.is-band { font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--ap-usual-ink); }
+
+/* ---------- FloraScore: one big ring ---------- */
+.lk-easy .ez-ring { position: relative; width: 240px; max-width: 100%; margin: 0 auto; }
+.lk-easy .ez-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.lk-easy .ez-ring-trk { fill: none; stroke: var(--ez-trk); }
+.lk-easy .ez-ring-utrk { fill: none; stroke: var(--ez-trk); stroke-width: 2; }
+.lk-easy .ez-ring-uband { fill: none; stroke: var(--ez-usual); stroke-width: 10; stroke-linecap: round; }
+.lk-easy .ez-ring-uend line { stroke: var(--ez-usual); stroke-width: 3; stroke-linecap: round; }
+.lk-easy .ez-ring-arc { fill: none; stroke: var(--ez-read); stroke-linecap: round; }
+.lk-easy .ez-ring-end { fill: var(--ez-read); stroke: var(--ap-card); stroke-width: 4; }
+.lk-easy .ez-ring-end.is-shift { fill: var(--ez-shift); }
+.lk-easy .ez-ring-edge { fill: none; stroke: none; stroke-width: 2; }
+.lk-easy:not([data-theme="dark"]) .ez-ring-edge { stroke: var(--ap-shift-ink); }
+.lk-easy .ez-seg { fill: none; stroke: var(--ez-trk); }
+.lk-easy .ez-seg.is-on { stroke: var(--ez-read); }
+.lk-easy .ez-ring-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; pointer-events: none; }
+.lk-easy .ez-ring-n { font-size: 72px; line-height: 1; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.lk-easy .ez-ring-n--sm { font-size: 32px; line-height: 1.1; letter-spacing: 0; }
+.lk-easy .ez-ring-k { font-size: 20px; line-height: 1.2; color: var(--ap-ink); }
+.lk-easy .ez-ring-u { font-size: 18px; line-height: 1.25; font-weight: 500; color: var(--ap-usual-ink); }
+
+/* ---------- weekly check-in: four answers in words ---------- */
+.lk-easy .ez-cks { display: flex; flex-direction: column; }
+.lk-easy .ez-ck { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }
+.lk-easy .ez-ck:first-child { padding-top: 0; }
+.lk-easy .ez-ck:last-child { padding-bottom: 0; }
+.lk-easy .ez-ck + .ez-ck { border-top: 1px solid var(--ap-line); }
+.lk-easy .ez-ck-q { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-ck-a { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.lk-easy .ez-ck-a b { font-size: 24px; line-height: 1.25; font-weight: 400; }
+.lk-easy .ez-ck-f { font-size: 18px; line-height: 1.4; color: var(--ap-ink2); }
+
+/* ---------- a possible pattern ---------- */
+.lk-easy .ez-pbars { display: flex; flex-direction: column; gap: 16px; }
+
+/* ---------- the one button a card can have: 56px, easy to hit with an unsteady hand ---------- */
+.lk-easy .ez-cta { display: flex; }
+.lk-easy .ez-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ap-accent); color: var(--ap-on-accent); font: 500 20px/1.2 var(--sans); text-align: center; cursor: pointer; }
+.lk-easy:not([data-theme="dark"]) .ez-btn { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--forest) 35%, transparent); }
+.lk-easy .ez-btn:focus-visible { outline: 3px solid var(--ap-teal); outline-offset: 4px; }
+
+/* ---------- motion: each part of a card fades and rises in, once ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .lk-easy .ez > * { animation: ezRise .45s var(--ap-ease) both; }
+  .lk-easy .ez > :nth-child(2) { animation-delay: 60ms; }
+  .lk-easy .ez > :nth-child(3) { animation-delay: 120ms; }
+  .lk-easy .ez > :nth-child(4) { animation-delay: 180ms; }
+  .lk-easy .ez > :nth-child(n + 5) { animation-delay: 240ms; }
+}
+@keyframes ezRise { from { opacity: 0; transform: translateY(8px); } }

@@ -8,6 +8,8 @@
   const short = (d) => { const x = L.dateOf(d); return `${Ut.MON[x.getMonth()]} ${x.getDate()}`; };
   const dow = (d) => Ut.DOW[L.dateOf(d).getDay()];
   const lower1 = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  /* the weeks every usual is learned from, days 28 to 83 (refresh-data.js, the studio's rule) */
+  const BASE = [28, 83];
 
   /* the scale each option draws consistency on: A numbers 1 to 7, B five words, C seven words */
   const scaleOf = (mode) => (mode === "B" ? L.WORDS.map((w) => ({ k: w.k, label: w.word })) : L.TYPES.slice(1).map((t) => ({ k: t.k, label: mode === "A" ? String(t.k) : t.short })));
@@ -37,6 +39,14 @@
     const sU = L.scoreUsual(M, mode);
     const mv = L.scoreMoved(M, mode);
     const NAMES = Object.fromEntries(L.SCORE_PARTS.map(([k, l, d]) => [k, { label: l, desc: d }]));
+    /* each part's own usual range: the middle 70% of that part on the days the score's usual comes from, the same rule
+       as the score's. Worked out whether or not today has a FloraScore, so a look can read this week against it */
+    const partsUsual = (() => {
+      if (!u) return null;
+      const base = [];
+      for (let x = Math.max(BASE[0], M.start); x <= BASE[1]; x++) { const s = L.score(M, x, mode); if (s && s.value != null) base.push(s.parts); }
+      return Object.fromEntries(L.SCORE_PARTS.map(([k]) => { const v = base.map((p) => p[k]); return [k, v.length >= 7 ? [Math.round(Ut.pct(v, 0.15)), Math.round(Ut.pct(v, 0.85))] : null]; }));
+    })();
     const score = u ? {
       value: sNow ? sNow.value : null,
       usual: sU,
@@ -44,20 +54,10 @@
       /* the change is the difference of the two averages as shown, so "84, up 8 on 76" always adds up */
       weekAvg: mv ? Math.round(mv.wk) : null, lastWeekAvg: mv ? Math.round(mv.lw) : null,
       delta: mv ? Math.round(mv.wk) - Math.round(mv.lw) : null,
-      parts: mv ? mv.parts.map((p) => ({ key: p.key, label: NAMES[p.key].label, desc: NAMES[p.key].desc, weight: p.weight, now: p.now, before: p.before, delta: +p.delta.toFixed(1) })) : [],
+      parts: mv ? mv.parts.map((p) => ({ key: p.key, label: NAMES[p.key].label, desc: NAMES[p.key].desc, weight: p.weight, now: p.now, before: p.before, delta: +p.delta.toFixed(1), usual: partsUsual ? partsUsual[p.key] : null })) : [],
       series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value }))])),
-      /* today's four parts, each against its own usual range: the middle 70% of that part on the days the score's
-         usual comes from, the same rule as the score's. Empty when today has no FloraScore */
-      partsToday: (() => {
-        if (!sNow || sNow.value == null || !sNow.parts) return [];
-        const base = [];
-        for (let x = Math.max(28, M.start); x <= 83; x++) { const s = L.score(M, x, mode); if (s && s.value != null) base.push(s.parts); }
-        return L.SCORE_PARTS.map(([k, l, d]) => {
-          const v = base.map((p) => p[k]);
-          const usual = v.length >= 7 ? [Math.round(Ut.pct(v, 0.15)), Math.round(Ut.pct(v, 0.85))] : null;
-          return { key: k, label: l, desc: d, weight: L.SCORE_W[k], value: Math.round(sNow.parts[k]), usual };
-        });
-      })(),
+      /* today's four parts, each against its own usual range (partsUsual). Empty when today has no FloraScore */
+      partsToday: !sNow || sNow.value == null || !sNow.parts ? [] : L.SCORE_PARTS.map(([k, l, d]) => ({ key: k, label: l, desc: d, weight: L.SCORE_W[k], value: Math.round(sNow.parts[k]), usual: partsUsual ? partsUsual[k] : null })),
       how: "FloraScore blends your last 3 days that have logs and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.",
       learning: null
     } : { value: null, usual: null, partsToday: [], learning: { day: L.learnDay(M), of: L.LEARN_DAYS, line: `Your FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.` } };
@@ -103,6 +103,8 @@
     const ckWeeks = M.checkins;
     const checkin = {
       due: M.checkin.status === "due",
+      /* the check-in's own tag words, so a look that asks about a day saves the same tags the check-in does */
+      tags: L.CHECKIN_TAGS.slice(),
       questions: L.CHECKIN.map((q, i) => {
         const weeks = ckWeeks.map((c) => ({ w: c.w, label: c.w === 12 ? "This week" : `Week of ${short(c.ws)}`, v: c.answers ? c.answers[i] : null }));
         const latest = weeks.filter((w) => w.v != null).slice(-1)[0] || null;
@@ -129,7 +131,7 @@
         hit: p.hit, n: p.n, oh: p.oh, on: p.on, tier: p.tier.label, tierK: p.tier.k, occ: p.occ.map((x) => x.hit), oth: p.oth.map((x) => x.hit)
       })),
       /* sparse is the model's gate; coverage and every count shown come from meals, so a share and a count always agree */
-      sparse: PR.sparse, meals, coverage: meals.logged ? meals.days / meals.logged : 0, foodCheckDays: L.FOOD_CHECK_DAYS,
+      sparse: PR.sparse, meals, coverage: meals.logged ? meals.days / meals.logged : 0, cover: L.MEAL_COVER, foodCheckDays: L.FOOD_CHECK_DAYS,
       note: "Patterns show what tends to happen together. They don't prove cause.",
       sparseLine: !PR.sparse ? null
         : !meals.days ? `No meals are logged in the last ${meals.window} days, so there is nothing to compare yet. ${checkLine}`
@@ -147,7 +149,8 @@
       days: { 7: F7, 30: F30, 90: F90 },
       timing: { usual: u ? [u.tLo, u.tHi] : null, usualText: u ? `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}` : null, inWin30: u ? F30.filter((f) => f.inWin).length : null, mornings30: F30.filter((f) => f.first != null).length },
       often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })() },
-      form: { scale, usual: formUsual, usualText: u ? L.usualFormsText(M, mode) : null, bins, spans, firmer, looser, either, within30: allForms.filter((x) => x.within === true).length, total30: allForms.length },
+      /* usualWeeks: the days the usual forms were learned from, so a look can show what share of BMs they held */
+      form: { scale, usual: formUsual, usualText: u ? L.usualFormsText(M, mode) : null, bins, spans, firmer, looser, either, within30: allForms.filter((x) => x.within === true).length, total30: allForms.length, usualWeeks: u ? BASE.slice() : null },
       symptoms: { usualText: symUsual, rows: symRows, withSym30: F30.filter((f) => f.sym.length).length, logged30: F30.filter((f) => f.logged).length },
       checkin, patterns,
       disclaimer: "Florin Health shows patterns in your own data. It doesn't diagnose, treat or prevent any condition."

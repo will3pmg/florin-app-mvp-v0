@@ -19,10 +19,20 @@
 .lb-note { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
 .lb :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
-/* the look buttons: on a wide screen they jump to a column, on a phone they are tabs */
-.lb-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+/* the look buttons: on a wide screen they switch a look on or off, on a phone they are tabs. The picker stays at the
+   top of the window as the page scrolls, so a look is always one press away; whatever is scrolled into view (a link,
+   a focused control, a find on the page) stops below it */
+html:has(.lb-pick) { scroll-padding-top: 96px; }
+@media (max-width: 819px) { html:has(.lb-pick) { scroll-padding-top: 120px; } }
+.lb-pick { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-block: -12px; padding-block: 12px; background: var(--bg); box-shadow: 0 1px 0 var(--line-2); }
 .lb-tabs { align-self: flex-start; }
-.lb-pick-note { margin: 0; max-width: 60ch; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.lb-arrows { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.lb-arrows[hidden] { display: none; }
+.lb-arrows button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: none; font: 400 24px/1 var(--sans); color: var(--ink); cursor: pointer; }
+.lb-arrows button:disabled { color: var(--ink-3); cursor: default; }
+.lb-arrows button:not(:disabled):hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.lb-pick-note { margin: 0; flex: 1 1 320px; max-width: 64ch; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.lb-pick-note:empty { display: none; }
 
 /* five looks don't fit side by side: each row scrolls sideways, and the rows scroll together (library.js), so a
    column stays one look all the way down. Every column is one phone-width card wide */
@@ -45,7 +55,11 @@
 .lb-foot p { margin: 0; max-width: 72ch; }
 
 /* a phone: one look at a time, picked with the tabs */
-@media (min-width: 820px) { .lb { max-width: 1400px; } }
+@media (min-width: 820px) {
+  .lb { max-width: 1400px; }
+  /* a look switched off */
+  .lb [data-hide] { display: none; }
+}
 @media (max-width: 819px) {
   .lb-x { display: flex; flex-direction: column; overflow: visible; padding-bottom: 0; }
   .lb [data-off] { display: none; }
