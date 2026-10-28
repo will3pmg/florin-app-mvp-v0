@@ -1,0 +1,1 @@
+/* Florin app refresh: module slot for the data style decision (V.look): draws Today and Insights in one of the library's looks. Registers into window.FLORIN_EXT (CLAUDE.md, Extension hooks). Empty until it's built. */

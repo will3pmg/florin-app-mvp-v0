@@ -5,8 +5,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=Space+Mono:wght@400;700&display=swap">
 <style>
 /* Florin Health, DESIGN.md v1.1. The six brand colours are the only literal colours; everything else derives from them.
-   Layout: a working page around one phone (or two, A and B): screens on the left, the phone, notes on the right.
-   On a phone, the app fills the screen and the notes move into a sheet. */
+   Layout: a working page around one phone: the decisions, the demo controls and the screens on the left, the phone
+   live in the middle, notes on the right. On a phone, the app fills the screen and a bottom bar opens the toggles
+   and the notes as sheets. */
 :root {
   --forest: #00352B; --cream: #F9F7F2; --ray: #EEFFA3; --plum: #4F2641; --teal: #396E7C; --gold: #D1BD7E;
   --raydeep: oklch(from var(--ray) calc(l - .43) c h);
@@ -52,6 +53,16 @@ body { margin: 0; font-family: var(--sans); -webkit-font-smoothing: antialiased;
 </style>
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/refresh.css">
+<link rel="stylesheet" href="css/look-rings.css">
+<link rel="stylesheet" href="css/look-journal.css">
+<link rel="stylesheet" href="css/look-bento.css">
+<link rel="stylesheet" href="css/look-oura.css">
+<link rel="stylesheet" href="css/look-easy.css">
+<link rel="stylesheet" href="css/refresh-looks.css">
+<link rel="stylesheet" href="css/refresh-variants.css">
+<link rel="stylesheet" href="css/refresh-profile.css">
+<link rel="stylesheet" href="css/refresh-ask.css">
+<link rel="stylesheet" href="css/refresh-easy.css">
 <div id="rx" class="rx"><p style="padding:40px 0;font-family:system-ui,sans-serif">Loading the Florin app refresh…</p></div>
 <script src="js/lib.js"></script>
 <script src="js/claims-rules.js"></script>
@@ -60,4 +71,17 @@ body { margin: 0; font-family: var(--sans); -webkit-font-smoothing: antialiased;
 <script src="js/refresh-data.js"></script>
 <script src="js/refresh-ui.js"></script>
 <script src="js/refresh-insights.js"></script>
+<!-- the data looks, from the library (never library.js, which mounts the library page) -->
+<script src="js/looks-data.js"></script>
+<script src="js/look-rings.js"></script>
+<script src="js/look-journal.js"></script>
+<script src="js/look-bento.js"></script>
+<script src="js/look-oura.js"></script>
+<script src="js/look-easy.js"></script>
+<!-- feature modules: each registers into window.FLORIN_EXT (CLAUDE.md, Extension hooks) -->
+<script src="js/refresh-looks.js"></script>
+<script src="js/refresh-variants.js"></script>
+<script src="js/refresh-profile.js"></script>
+<script src="js/refresh-ask.js"></script>
+<script src="js/refresh-easy.js"></script>
 <script src="js/refresh-app.js"></script>

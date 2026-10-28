@@ -1,4 +1,5 @@
-/* Behaviour checks for the refresh prototype: the interactions the Oct 14 workshop fixed.
+/* Behaviour checks for the refresh prototype: the interactions the Oct 14 workshop fixed, and the Oct 27 page: the
+   decisions as toggles, one phone, the extension hooks and the Just joined state.
    NODE_PATH=$(npm root -g) node work/behave.js     (exits 1 on any failure) */
 const { chromium } = require("playwright");
 const path = require("path");
@@ -16,7 +17,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   await p.waitForSelector(".ap-rx");
   const ph = ".rx-stage .ap-rx";
   const wait = (ms = 450) => p.waitForTimeout(ms);
-  const open = async (id) => { await p.evaluate((id) => document.querySelector(`#rxMsheet [data-rx="screen"][data-v="${id}"]`).click(), id); await wait(); };
+  /* the page's controls exist once (on a phone they sit in the Toggles sheet), so a click by selector reaches them */
+  const open = async (id) => { await p.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await wait(); };
 
   /* 1. a half-filled BM survives a close */
   await open("today");
@@ -130,21 +132,20 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(bword[0] === "Loose" && /Type 5 or 6/.test(bword[1]) && /or loose/.test(bword[2]), `a B log reads honestly in every option (${bword.join(" / ")})`);
 
   /* 10. B through the full form: saves with a toast, and reads as its own word in C */
-  await p.evaluate(() => document.querySelector('#rxMsheet [data-rx="form"][data-v="B"]') ? null : null);
-  await p.evaluate(() => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === "B"); b && b.click(); });
+  await p.evaluate(() => document.querySelector('[data-rx="form"][data-v="B"]').click());
   await wait();
   await open("bm");
   await p.click(`${ph} .ap-fm-b[data-word="1"]`); await wait(200);
   await p.click(`${ph} [data-act="save-bm"]`); await wait(500);
   ok(/BM saved\. Firm/.test(await p.$eval(`${ph} .ap-tst`, (e) => e.textContent)), "saving a B log through the form shows its toast");
-  await p.evaluate(() => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === "C"); b && b.click(); });
+  await p.evaluate(() => document.querySelector('[data-rx="form"][data-v="C"]').click());
   await wait();
   ok(await p.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer .ap-tl-m b")].some((b) => b.textContent === "BM · Firm")), "and reads as Firm in C, not another word");
 
   /* 11. reset with a half-filled form leaves nothing behind */
   await open("bm");
   await p.fill(`${ph} [data-in="note"]`, "left over");
-  await p.evaluate(() => document.querySelector('#rxMsheet [data-rx="reset"]').click()); await wait();
+  await p.evaluate(() => document.querySelector('[data-rx="reset"]').click()); await wait();
   await open("bm");
   ok(await p.$eval(`${ph} [data-in="note"]`, (e) => e.value) === "", "reset doesn't carry a draft into the new demo");
   await p.keyboard.press("Escape"); await wait();
@@ -229,7 +230,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(await p.evaluate(() => /FloraScore/.test((document.querySelector(".rx-stage .ap-rx .ap-nav-t") || {}).textContent || "") && document.activeElement && document.activeElement.classList.contains("ap-nav-t")), "the hero opens the FloraScore detail, focus on its title");
 
   /* 16. Insights reads in all three options: six cards, and the form mix in each option's own terms */
-  const setForm = (v) => p.evaluate((v) => { const b = [...document.querySelectorAll('.rx-mbar [data-rx="form"]')].find((x) => x.dataset.v === v); b && b.click(); }, v);
+  const setForm = (v) => p.evaluate((v) => document.querySelector(`[data-rx="form"][data-v="${v}"]`).click(), v);
   for (const [m, n, lbl] of [["A", 7, "1"], ["B", 5, "Hard"], ["C", 7, "Pellets"]]) {
     await setForm(m); await wait();
     await open("insights");
@@ -354,10 +355,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(await p.evaluate(() => !/in the last 30 days|in 30 days/.test(document.querySelector(".rx-stage .ap-rx .ap-layer").textContent)), "Today counts foods over the same 90 days Insights checks");
 
   /* 27. nothing on screen or in the notes reads undefined or NaN, for any person or screen */
-  const ids = await p.$$eval('#rxMsheet [data-rx="screen"]', (b) => b.map((x) => x.dataset.v));
+  const ids = await p.$$eval('[data-rx="screen"]:not([disabled])', (b) => b.map((x) => x.dataset.v));
   const bad = [];
   for (const who of ["sarah", "marcus", "alex"]) {
-    await p.evaluate((v) => { const b = document.querySelector(`#rxMsheet [data-rx="persona"][data-v="${v}"]`); b && b.click(); }, who); await wait(300);
+    await p.evaluate((v) => { const b = document.querySelector(`[data-rx="persona"][data-v="${v}"]`); b && b.click(); }, who); await wait(300);
     for (const id of ids) { await open(id); const t = await p.evaluate(() => document.body.innerText); if (/\bundefined\b|\bNaN\b/.test(t)) bad.push(`${who}/${id}`); }
   }
   ok(!bad.length, `no screen or note reads undefined or NaN (${bad.slice(0, 4).join(", ") || "none"})`);
@@ -440,6 +441,191 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     return bad;
   });
   ok(!unscored.length, `no unlogged day carries a FloraScore (${unscored.slice(0, 3).join(", ") || "none"})`);
+
+  /* ==================== Oct 27: the decisions as toggles, one phone, the hooks, Just joined ==================== */
+  const pick = (k, v) => p.evaluate(([k, v]) => { const b = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (!b) throw new Error(`no ${k}=${v} control`); b.click(); }, [k, v]);
+  const has = (sel) => p.evaluate((s) => !!document.querySelector(s), sel);
+  const layerText = () => p.evaluate(() => { const l = document.querySelector(".rx-stage .ap-rx .ap-layer"); return l.textContent + " " + [...l.querySelectorAll("[data-msg]")].map((x) => x.dataset.msg).join(" "); });
+  const topText = () => p.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); return o ? o.textContent + " " + [...o.querySelectorAll("[data-msg]")].map((x) => x.dataset.msg).join(" ") : ""; });
+  const CK = /check-in|\bcheck in\b/i;
+  await pick("persona", "sarah"); await pick("data", "est"); await pick("plan", "member"); await wait(300);
+
+  /* 33. the page: Decisions first in the left bar, Screens after Demo, one phone and no compare (at 1440) */
+  {
+    const d = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    const de = [];
+    d.on("pageerror", (e) => de.push(e.message));
+    await d.goto(PAGE); await d.waitForSelector(".rx-stage .ap-rx");
+    const lay = await d.evaluate(() => {
+      const l = document.querySelector(".rx-side--l");
+      const heads = l ? [...l.querySelectorAll(":scope > .rx-panel > .rx-h")].map((h) => h.textContent.trim()) : [];
+      const ph = document.querySelector(".rx-stage .ap-rx"), r = ph.getBoundingClientRect();
+      return {
+        heads,
+        phones: document.querySelectorAll(".ap-rx").length,
+        compare: !!document.querySelector('#rxCmp, [data-rx="compare"], [data-v="compare-bm"], .rx-cmpt') || /compare all three|side by side/i.test(document.body.textContent),
+        headSwitch: !!document.querySelector('.rx-head [data-rx]'),
+        decs: [...document.querySelectorAll(".rx-side--l .rx-dec")].map((x) => x.dataset.dec),
+        info: [...document.querySelectorAll('.rx-side--l [data-rx="dinfo"]')].length,
+        fits: r.bottom <= window.innerHeight && r.top >= 0,
+        leftScrolls: getComputedStyle(l).overflowY === "auto" && getComputedStyle(l).position === "sticky" && parseFloat(getComputedStyle(l).maxHeight) <= window.innerHeight && l.scrollHeight > l.clientHeight
+      };
+    });
+    ok(lay.heads[0] === "Decisions" && lay.heads.indexOf("Screens") > lay.heads.indexOf("Demo") && lay.heads.indexOf("Demo") > 0, `the left bar runs Decisions, Demo, then Screens (${lay.heads.join(", ")})`);
+    ok(lay.phones === 1 && !lay.compare && !lay.headSwitch, "one phone, no compare mode, and no switches left in the header");
+    ok(["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"].every((k) => lay.decs.includes(k)) && lay.info === lay.decs.length, `every decision has a toggle and an info button (${lay.decs.join(", ")})`);
+    ok(lay.fits && lay.leftScrolls, "the whole phone fits under the header, and the left bar scrolls on its own");
+    /* a decision's note shows when it changes, stays while the screen does, and gives way on the next screen */
+    await d.click('[data-rx="bmUI"][data-v="full"]'); await d.waitForTimeout(400);
+    const n1 = await d.evaluate(() => ({ eb: document.querySelector("#rxNotes .rx-eyebrow").textContent, t: document.querySelector("#rxNotes h2").textContent, on: (document.querySelector("#rxNotes .rx-opts .is-on") || {}).textContent || "", rec: !!document.querySelector("#rxNotes .rx-rec") }));
+    ok(/Decision/.test(n1.eb) && /BM logging/.test(n1.t) && /Full form only/.test(n1.on) && n1.rec, `changing a decision shows its note, with the option on the phone and a recommendation (${n1.t})`);
+    await d.click('.rx-side [data-rx="screen"][data-v="insights"]'); await d.waitForTimeout(400);
+    ok(await d.evaluate(() => /On the phone now/i.test(document.querySelector("#rxNotes .rx-eyebrow").textContent) && /Insights/.test(document.querySelector("#rxNotes h2").textContent)), "the next screen change brings back that screen's notes");
+    await d.click('[data-rx="dinfo"][data-v="checkin"]'); await d.waitForTimeout(300);
+    ok(await d.evaluate(() => /check-in/i.test(document.querySelector("#rxNotes h2").textContent) && document.querySelector('[data-rx="dinfo"][data-v="checkin"]').getAttribute("aria-pressed") === "true"), "an info button shows its decision's note");
+    await d.click('[data-rx="bmUI"][data-v="quick"]');
+    ok(!de.length, `no page errors at 1440${de.length ? ": " + de[0] : ""}`);
+    await d.close();
+  }
+
+  /* 34. on a phone: a bottom bar with Toggles and Notes; Toggles holds Decisions, Demo and Screens, in that order */
+  const mob = await p.evaluate(() => {
+    const bar = document.querySelector(".rx-mbar"), r = bar.getBoundingClientRect();
+    const t = document.querySelector("#rxSheet-toggles"), n = document.querySelector("#rxSheet-notes");
+    return {
+      bottom: Math.abs(r.bottom - window.innerHeight) < 2 && getComputedStyle(bar).position === "fixed",
+      btns: [...bar.querySelectorAll('[data-rx="sheet"]')].map((x) => x.textContent.trim()),
+      heads: [...t.querySelectorAll(".rx-panel > .rx-h")].map((h) => h.textContent.trim()),
+      notes: !!n.querySelector("#rxNotes"),
+      full: document.querySelector(".rx-stage .ap-rx").classList.contains("is-full")
+    };
+  });
+  ok(mob.bottom && mob.btns.join("|") === "Toggles|Notes" && mob.full, `on a phone the app is full screen over a bottom bar of ${mob.btns.join(" and ")}`);
+  ok(mob.heads.join("|") === "Decisions|Demo|Screens" && mob.notes, `the Toggles sheet holds ${mob.heads.join(", ")}; the Notes sheet the notes`);
+  await p.click('.rx-mbar [data-v="toggles"]'); await wait(300);
+  ok(await p.evaluate(() => !document.querySelector("#rxSheet-toggles").hidden && document.activeElement && document.activeElement.matches("#rxSheet-toggles .rx-x")), "Toggles opens its sheet, focus on Close");
+  await p.keyboard.press("Escape"); await wait(300);
+  ok(await p.evaluate(() => document.querySelector("#rxSheet-toggles").hidden && document.activeElement && document.activeElement.matches('.rx-mbar [data-v="toggles"]')), "Escape closes it and hands focus back to Toggles");
+
+  /* 35. FLORIN_EXT: the documented keys, and a module act, overlay, note and onSet registered here (not in shipped code) */
+  const ext = await p.evaluate(() => {
+    const X = window.FLORIN_EXT, out = {};
+    out.keys = !!X && ["overlays", "acts", "opens", "notes", "decisions", "keys"].every((k) => X[k] && typeof X[k] === "object" && !Array.isArray(X[k])) && Array.isArray(X.screens) && Array.isArray(X.onSet);
+    out.api = !!X && !!X.api && ["S", "V", "M", "push", "pop", "swap", "rerender", "top", "closeAll", "toast", "say", "renderTab", "go", "nav", "focusSel", "open", "rebuild", "set", "countUp", "layer", "root"].every((k) => k in X.api);
+    out.v = !!X && !!X.api && ["form", "uid", "mealUI", "plan", "bmUI", "home", "history", "checkin", "look", "easy", "onboard", "persona", "data", "meals"].every((k) => k in X.api.V());
+    window.__ext = { hits: [], sets: [] };
+    X.acts["test-act"] = (btn, api) => { window.__ext.hits.push([btn.dataset.v, api.S.tab, typeof api.set]); api.push("test-ovl", { n: 3 }); };
+    X.overlays["test-ovl"] = { kind: "sheet", render: (M, V, st) => `<div class="ap-psh" role="dialog" aria-label="Test"><p class="t-ovl">Test overlay ${st.n} for ${M.P.name}</p><button type="button" data-act="close">Close</button></div>`, key: () => "test-screen" };
+    X.notes["test-screen"] = (M, P) => ({ t: "Test note", lede: `Form ${P.form}`, ba: [], open: [], res: [] });
+    X.onSet.push((k, v) => window.__ext.sets.push(`${k}=${v}`));
+    X.acts["profile"] = (btn, api) => api.toast("Test profile");
+    const layer = document.querySelector(".rx-stage .ap-rx .ap-layer");
+    layer.insertAdjacentHTML("afterbegin", '<button type="button" id="tAct" data-act="test-act" data-v="7">t</button>');
+    return out;
+  });
+  ok(ext.keys, "FLORIN_EXT has overlays, acts, opens, screens, notes, decisions, keys and onSet");
+  ok(ext.api && ext.v, "FLORIN_EXT.api drives the phone, and V() carries every decision");
+  await p.evaluate(() => document.querySelector("#tAct").click()); await wait(500);
+  const extR = await p.evaluate(() => ({ hit: window.__ext.hits[0] || [], ovl: (document.querySelector(".rx-stage .ap-rx .t-ovl") || {}).textContent || "", note: document.querySelector("#rxNotes h2").textContent, cls: !!document.querySelector(".rx-stage .ap-rx .ap-o--t-test-ovl") }));
+  ok(extR.hit[0] === "7" && extR.hit[2] === "function", `a registered act runs with the button and the api (${extR.hit.join(", ")})`);
+  ok(/Test overlay 3 for Sarah/.test(extR.ovl) && extR.cls && extR.note === "Test note", `its overlay opens, and the overlay's key brings its own note (${extR.note})`);
+  await p.keyboard.press("Escape"); await wait(400);
+  await pick("home", "day"); await wait(300);
+  ok(await p.evaluate(() => window.__ext.sets.includes("home=day") && document.querySelector(".rx-stage .ap-rx").dataset.home === "day"), "phone.set tells onSet, and stamps the decision on the phone");
+  await pick("home", "score"); await open("today");
+  await p.click(`${ph} .ap-avatar`); await wait(300);
+  ok(await p.$eval(`${ph} .ap-tst`, (e) => /Test profile/.test(e.textContent)), "the Today avatar runs a module's profile act when one is registered");
+  await p.evaluate(() => { const X = window.FLORIN_EXT; delete X.acts["test-act"]; delete X.acts.profile; delete X.overlays["test-ovl"]; delete X.notes["test-screen"]; X.onSet.length = 0; });
+  await open("history"); await open("today");
+  await p.click(`${ph} .ap-avatar`); await wait(300);
+  const av = await p.evaluate(() => { const a = document.querySelector(".rx-stage .ap-rx .ap-avatar"), r = a.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), l: a.getAttribute("aria-label"), t: document.querySelector(".rx-stage .ap-rx .ap-tst").textContent }; });
+  ok(av.w === 44 && av.h === 44 && av.l === "Profile" && /profile/i.test(av.t) && /this pass/.test(av.t), `without a module, the 44px Profile avatar says the profile comes in this pass (${av.w}x${av.h})`);
+
+  /* 36. Weekly check-in off: gone from Today, plus, Insights, History and the Screens list; nothing else breaks */
+  const score0 = await p.evaluate(() => (window.FLORIN_EXT.api.M() && window.FLORIN_LOGS.score(window.FLORIN_EXT.api.M(), window.FLORIN_LOGS.TODAY, "C") || {}).value);
+  await pick("checkin", "false"); await wait(400);
+  await open("today");
+  const ckToday = await layerText();
+  ok(!CK.test(ckToday) && !(await has(`${ph} .ap-ckc`)), "check-in off: nothing on Today mentions it");
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  ok(!CK.test(await topText()) && !(await has(`${ph} .ap-pck`)), "check-in off: the plus menu has no check-in");
+  await p.keyboard.press("Escape"); await wait();
+  await open("insights");
+  ok(!CK.test(await layerText()) && !(await has(`${ph} .ap-ic-h[data-k="ck"]`)) && await p.$$eval(`${ph} .ap-ins .ap-ic`, (e) => e.length) === 6, "check-in off: Insights has six cards and no check-in");
+  await open("i-sym");
+  ok(await p.$eval(`${ph} .ap-idt-next`, (e) => /Possible patterns/.test(e.textContent)), "check-in off: Next from Symptoms goes to Possible patterns");
+  await open("history");
+  ok(!CK.test(await layerText()), "check-in off: History and its report never mention it");
+  await open("pay");
+  ok(!CK.test(await topText()), "check-in off: the paywall's free list leaves it out");
+  await p.keyboard.press("Escape"); await wait();
+  const scr = await p.evaluate(() => ["ck-card", "ck", "ck-last", "ckdone", "ckday", "i-ck"].map((id) => { const b2 = document.querySelector(`[data-rx="screen"][data-v="${id}"]`); return !!b2 && b2.disabled && /Check-in is off/.test(b2.textContent); }));
+  ok(scr.every(Boolean), `check-in off: its screens in the list are disabled and say Check-in is off (${scr.filter(Boolean).length} of ${scr.length})`);
+  await p.evaluate(() => window.FLORIN_EXT.api.open("ck")); await wait();
+  ok(!(await has(`${ph} .ap-o--screen`)) && await p.evaluate(() => window.FLORIN_EXT.api.S.tab === "today"), "check-in off: opening a check-in screen lands on Today instead");
+  ok(await p.evaluate(() => { const L = window.FLORIN_LOGS; return (L.score(window.FLORIN_EXT.api.M(), L.TODAY, "C") || {}).value; }) === score0, "check-in off: FloraScore is the same");
+  await open("today");
+  ok(await p.evaluate(() => /Demo time/.test(document.querySelector("[data-time]").textContent) && !/check-in/i.test(document.querySelector("[data-time]").textContent)), "check-in off: the demo time line drops it too");
+  await pick("checkin", "true"); await wait(400);
+  ok(await has(`${ph} .ap-ckc`) && await p.evaluate(() => !document.querySelector('[data-rx="screen"][data-v="ck"]').disabled), "check-in on again: the card and its screens are back");
+
+  /* 37. BM logging, full form only: no tiles anywhere on plus, one Log a BM row that opens the form, no one-tap save */
+  await pick("bmUI", "full"); await wait(400);
+  await open("today");
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  const full = await p.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); return { tiles: o.querySelectorAll(".ap-fm, .ap-fm-b, [data-act='quick-bm']").length, row: (o.querySelector(".ap-pbm [data-act='open-bm']") || {}).textContent || "", rows: o.querySelectorAll(".ap-pbm [data-act='open-bm']").length }; });
+  ok(full.tiles === 0 && full.rows === 1 && /Log a BM/.test(full.row), `full form only: the plus menu has one Log a BM row and no tiles (${full.tiles} tiles)`);
+  await p.click(`${ph} .ap-pbm [data-act="open-bm"]`); await wait();
+  ok(await p.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); return !!o && !!o.querySelector(".ap-fsh") && /Log a BM/.test(o.querySelector("h2").textContent) && o.querySelectorAll(".ap-fm-b").length === 7; }), "the row opens the full BM form");
+  await p.keyboard.press("Escape"); await wait();
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  await p.click(`${ph} [data-act="plus-earlier"]`); await wait();
+  await p.click(`${ph} .ap-ea-row`); await wait();
+  ok(await p.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); return o.querySelectorAll(".ap-fm-b").length === 0 && !!o.querySelector(".ap-pbm [data-act='open-bm']"); }), "full form only: no tiles for an earlier day either");
+  await p.keyboard.press("Escape"); await wait(); await p.keyboard.press("Escape"); await wait();
+  const n0 = await p.evaluate(() => window.FLORIN_RUI.bmCount(window.FLORIN_EXT.api.M()));
+  await p.evaluate(() => { const b2 = document.createElement("button"); b2.dataset.form = "4"; window.FLORIN_EXT.api.act("quick-bm", b2); }); await wait();
+  ok(await p.evaluate((n0) => window.FLORIN_RUI.bmCount(window.FLORIN_EXT.api.M()) === n0 && !!document.querySelector(".rx-stage .ap-rx .ap-o:not(.is-out) .ap-fsh") && !/BM saved/.test(document.querySelector(".rx-stage .ap-rx .ap-tst").textContent), n0), "full form only: a quick-bm tap opens the form, never a one-tap save");
+  await p.keyboard.press("Escape"); await wait();
+  await pick("bmUI", "quick"); await wait(300);
+
+  /* 38. Just joined: day 1 of 14, nothing logged, and every tab reads right */
+  await pick("data", "fresh"); await wait(400);
+  const fr = await p.evaluate(() => {
+    const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M();
+    return { start: M.start === L.TODAY, day: L.learnDay(M), none: M.days.every((x) => !x.entries.length), usual: M.usual === null, days: M.days.length, built: ["sarah", "marcus", "alex"].every((id) => { const m = L.build(id, "fresh"); return m.days.length === 1 && !m.days[0].entries.length && !m.usual && L.learnDay(m) === 1; }) };
+  });
+  ok(fr.start && fr.day === 1 && fr.none && fr.usual && fr.days === 1 && fr.built, `Just joined: the model starts today, day ${fr.day} of 14, with nothing logged and no usual, for every person`);
+  await open("today");
+  const frT = await layerText();
+  ok(/Day 1 of 14/.test(frT) && await has(`${ph} .ap-tl-empty`) && !/\b\d+ entr/.test(frT.replace(/Nothing yet/, "")), "Just joined: Today says day 1 of 14 and shows nothing logged");
+  await p.click(`${ph} .ap-tb-plus`); await wait();
+  ok(!(await has(`${ph} [data-act="plus-earlier"]`)), "Just joined: plus has no earlier day to catch up on");
+  await p.keyboard.press("Escape"); await wait();
+  await open("insights");
+  const frI = await layerText();
+  ok(/day 1 of 14/i.test(frI) && !/\bNaN\b|undefined/.test(frI), "Just joined: Insights is learning, day 1 of 14");
+  await open("history");
+  ok(/Started today\. Nothing logged yet/.test(await layerText()), "Just joined: History says it started today with nothing logged");
+  await open("ask");
+  ok(/How does Florin learn my usual/.test(await layerText()), "Just joined: Ask starts with questions about getting started");
+  ok(await p.evaluate(() => /just joined/i.test(document.querySelector("[data-time]").textContent) && /day 1 of 14/.test(document.querySelector("[data-time]").textContent)), "Just joined: the demo time line says so");
+
+  /* 39. the toggles together, every screen: nothing reads undefined or NaN, nothing names the check-in when it's off */
+  await pick("checkin", "false"); await pick("bmUI", "full"); await wait(300);
+  const ids2 = await p.$$eval('[data-rx="screen"]:not([disabled])', (b2) => b2.map((x) => x.dataset.v));
+  const bad2 = [];
+  for (const [who, data] of [["marcus", "fresh"], ["alex", "est"]]) {
+    await pick("persona", who); await pick("data", data); await wait(300);
+    for (const id of ids2) {
+      await open(id);
+      const t = await p.evaluate(() => { const ph2 = document.querySelector(".rx-stage .ap-rx"); return ph2.textContent + " " + [...ph2.querySelectorAll("[data-msg]")].map((x) => x.dataset.msg).join(" "); });
+      if (/\bundefined\b|\bNaN\b/.test(t) || CK.test(t)) bad2.push(`${who}/${data}/${id}`);
+    }
+  }
+  ok(!bad2.length, `with check-in off and full form only, no screen reads undefined, NaN or the check-in (${bad2.slice(0, 4).join(", ") || "none"})`);
+  for (const [k, v] of [["checkin", "true"], ["bmUI", "quick"], ["persona", "sarah"], ["data", "est"], ["plan", "member"]]) await pick(k, v);
+  await wait(300);
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

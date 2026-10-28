@@ -585,7 +585,7 @@
       profile() { toast("Profile and settings are being built in this pass of the prototype."); }
     };
     /* a module's act wins over a core act of the same name; looked up on every tap, so an act registered late works */
-    const actOf = (name) => (EXT.acts[name] ? (b, e) => EXT.acts[name](b, api, e) : ACT[name]);
+    const actOf = (name) => (EXT.acts[name] ? (b, e) => safe(EXT.acts[name], b, api, e) : ACT[name]);
     root.addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]");
       if (!b || !root.contains(b)) return;
@@ -880,7 +880,7 @@
   const WORKSHOP = {
     changed: [
       ["Plus menu", ["A close button, and a drag down closes it", "Tiles 44px wide with How to pick on the card, and a tile now logs the BM in one tap, with Add details and Undo", "Log for an earlier day, a week back, and Add to this day on a gap in History", "Log no BM today from 5 PM on the day"]],
-      ["Log a BM", ["A third option, C: seven steps in our own words, no numbers. A and B stay to compare", "Our own words and marks for the seven steps. The first pass followed the scale's own descriptions", "B saves its word, never a step the person didn't pick, and each B word sits on the step C gives the same word", "The extras show under the form, all optional, as Will asked; blood, mucus and black stools are named on the flag", "The flag note offers a report for a clinician, an urgent care line and Undo"]],
+      ["Log a BM", ["A third option, C: seven steps in our own words, no numbers. A and B stay, as the Consistency toggle", "Our own words and marks for the seven steps. The first pass followed the scale's own descriptions", "B saves its word, never a step the person didn't pick, and each B word sits on the step C gives the same word", "The extras show under the form, all optional, as Will asked; blood, mucus and black stools are named on the flag", "The flag note offers a report for a clinician, an urgent care line and Undo"]],
       ["Log symptoms", ["One strength for the entry, how long it lasted, and when it started", "Low energy back, Burning moved to the BM, your own symptoms come back next time", "A symptom without a strength no longer reads as mild", "Fever, vomiting or blood typed into a note opens the primary care note"]],
       ["Log a meal", ["One food matcher for the seeded meals and for typing, with plurals and drinks", "The foods Florin counted show as you type", "Same as yesterday, and recent foods that add to the text", "The time follows the meal you pick; Other reads as Snack or drink"]],
       ["Weekly check-in", ["The chip and the band use one rule, so they can't disagree", "A taller trend with all four steps labelled, the first weeks named in words, and a table for screen readers", "The recall window in words, Next after an answer, and Change an answer", "Your logs this week above the answers; the clinician line and disclaimer at the end"]],
@@ -888,7 +888,7 @@
       ["Throughout", ["Sheets hold focus, a half-filled log is kept when closed, and focus returns after saving", "44px targets, Ink 2 for anything to read, no colour meaning more than one thing in dark", "No sideways scroll at any width"]]
     ],
     calls: [
-      ["Types 1 to 7 (A), five words (B), or seven words (C)?", "C. Seven steps, one word each in our own words, no numbers or scale name in the app. The step is stored, so a clinician report can add the number once licensed. Send the Rome Foundation one request covering that export and IBS-SSS for the NSF study arm, and ship C once counsel has read its words and marks next to the scale.", "Built as C, A and B kept to compare; counsel to read C"],
+      ["Types 1 to 7 (A), five words (B), or seven words (C)?", "C. Seven steps, one word each in our own words, no numbers or scale name in the app. The step is stored, so a clinician report can add the number once licensed. Send the Rome Foundation one request covering that export and IBS-SSS for the NSF study arm, and ship C once counsel has read its words and marks next to the scale.", "Built as C; A and B are the Consistency toggle; counsel to read C"],
       ["Tiles on the plus card?", "Yes, and a tile logs the BM in one tap, as Will's note asks. Undo and Add details sit in the toast. Catching up an earlier day, or a person's first few BMs, still open the form. Easy to switch back if you'd rather the form always opens.", "Built; needs your OK"],
       ["Check-in in plus every week, or only when due?", "Every week, last in the menu, with the dot only when it's due.", "Built"],
       ["A skipped check-in: stay skipped, or move to the next day?", "Stays skipped. One reminder only. One left alone (not skipped) stays on Today through Tuesday evening, then the week closes as a gap.", "Skip built; the Tuesday rule needs your OK"],
@@ -931,26 +931,36 @@
   const NOTES = {
     today: (M) => ({
       t: "Today",
-      lede: "Today opens on FloraScore: the studio's Forest card with the Ray ring, the usual range drawn on the ring, 30 days under it, and the day's one sentence. Then the check-in when it's due, the day's entries, and the week as three plain counts.",
+      lede: `Today opens on FloraScore: the studio's Forest card with the Ray ring, the usual range drawn on the ring, 30 days under it, and the day's one sentence. Then ${P.checkin ? "the check-in when it's due, " : ""}the day's entries, and the week as three plain counts.`,
       ba: [
         ["A FloraScore over a lake photo, with a progress bar", "FloraScore from the logs, on the ring with the person's usual range, and one sentence read against their usual window"],
         ["A week strip with a ring for each day you logged", "Three counts in plain words (BMs, first BM, symptoms), each over a seven-day strip. A gap is marked on its day, never as a zero"],
         ["A generic daily tip about 8 glasses of water", "No tips. One next step from what today is missing, like a dinner not logged yet"],
         ["First pass: a 6 AM to midnight chart above the list", "Cut. It repeated the list, and the list is the one timeline"]
       ],
-      open: [M.usual ? `FloraScore is back (Will, Oct 14), built from four things people log: timing, how often, form and symptoms. ${M.P.name} is at ${(L.score(M, L.TODAY, "C") || {}).value} today against a usual range of ${(L.scoreUsual(M, "C") || []).join(" to ")}. A day not logged is left out, never scored as zero. Are those the right four?` : `New people see the ring fill by day until day ${L.LEARN_DAYS}, then their first FloraScore. Right wait?`, "The check-in card sits second on the evening it's due, then folds to one line once done. Right place?", "Does History stay a tab, or move under Today?"],
+      open: [M.usual ? `FloraScore is back (Will, Oct 14), built from four things people log: timing, how often, form and symptoms. ${M.P.name} is at ${(L.score(M, L.TODAY, "C") || {}).value} today against a usual range of ${(L.scoreUsual(M, "C") || []).join(" to ")}. A day not logged is left out, never scored as zero. Are those the right four?` : `New people see the ring fill by day until day ${L.LEARN_DAYS}, then their first FloraScore. Right wait?`, P.checkin ? "The check-in card sits second on the evening it's due, then folds to one line once done. Right place?" : "", "Does History stay a tab, or move under Today?"].filter(Boolean),
       res: ["Oura's Today: one daily highlight, then a timeline you can add to.", "Function leads with summary counts in plain terms. Each row here leads with its count.", "Oura waits up to 2 weeks before judging anything. Switch Logs to New, day 5 to see the learning state."]
     }),
-    plus: () => ({
+    plus: () => P.bmUI === "full" ? ({
+      t: "The plus menu · full form only",
+      lede: "Plus opens a short menu with one Log a BM row at the top. Every BM goes through the form: when, consistency, the details, then Save. No one-tap save, and no tiles on the menu.",
+      ba: [
+        ["Plus opened one long BM form with symptoms attached", `A menu: BM, Symptoms, Meal${P.checkin ? ", and the weekly check-in" : ""}`],
+        ["Logging a symptom meant logging a BM", "Symptoms log on their own"],
+        ["An empty day read as missing data", "Log no BM today, from 5 PM on the day, or any time for an earlier day"]
+      ],
+      open: ["Full form only is the BM logging decision on the left. Every log then carries its time and details, at the cost of a tap or two each time."],
+      res: ["Bellyx claims 2 taps; Stool Log, a few.", "Throne's guidance: log the days with no BM."]
+    }) : ({
       t: "The plus menu",
       lede: "Plus opens a short menu. BM comes first and largest, with the tiles right on it: a usual BM is plus, then a tile, saved at once with Add details and Undo in the toast. A person's first few BMs, or a catch-up day, open the form instead.",
       ba: [
-        ["Plus opened one long BM form with symptoms attached", "A menu: BM, Symptoms, Meal, and the weekly check-in"],
+        ["Plus opened one long BM form with symptoms attached", `A menu: BM, Symptoms, Meal${P.checkin ? ", and the weekly check-in" : ""}`],
         ["Logging a symptom meant logging a BM", "Symptoms log on their own"],
         ["An empty day read as missing data", "Log no BM today, from 5 PM on the day, or any time for an earlier day"],
         ["A missed day stayed missed", "Log for an earlier day: pick the day, then log as usual. History offers the same on a gap"]
       ],
-      open: ["Tiles on the menu card (built here), or only inside Log a BM?", "The check-in sits in the menu every week, with a dot only when it's due. The brief had it there only when due."],
+      open: ["Tiles on the menu card (built here), or only inside Log a BM? It's the BM logging decision on the left.", P.checkin ? "The check-in sits in the menu every week, with a dot only when it's due. The brief had it there only when due." : ""].filter(Boolean),
       res: ["Bellyx claims 2 taps; Stool Log, a few.", "CareClinic records several entries in one catch-up session.", "Throne's guidance: log the days with no BM.", "Logging from a widget or the watch without opening the app is a good next step after this."]
     }),
     earlier: () => ({
@@ -1062,13 +1072,13 @@
     history: () => ({ t: "History (basic)", lede: "Every kind of entry in one list, newest day first. A gap stays a gap, with Add to this day for catching up. Not workshopped yet.", ba: [["Consistency in green, brown and yellow, with odor", "The same rows as Today, in neutral ink"]], open: ["Does History stay a tab, or move under Today?"], res: ["CareClinic lets people catch up on several entries in one go."] }),
     insights: (M, f) => ({
       t: "Insights",
-      lede: M.usual ? "A summary in the person's terms, then one card per question: timing, how often, form, symptoms, the weekly check-in and possible patterns. Each card says the usual in words, then a count, then the chart. The chevron opens the detail; Ask about this opens chat with the card's numbers." : "The learning state: counts only, no band and no Gold, until day 14. Patterns wait for 5 logs of a food.",
+      lede: M.usual ? `A summary in the person's terms, then one card per question: timing, how often, form, symptoms${P.checkin ? ", the weekly check-in" : ""} and possible patterns. Each card says the usual in words, then a count, then the chart. The chevron opens the detail; Ask about this opens chat with the card's numbers.` : `The learning state: counts only, no band and no Gold, until day ${L.LEARN_DAYS}. Patterns wait for 5 logs of a food.`,
       ba: [
-        ["Insights forced the weekly report on every visit", "The check-in is one card with its trend. It never blocks Insights"],
-        ["FloraScore, VOC and duration tiles from the sensor", "Only what the person logs: timing, how often, form, symptoms, check-ins and meals"],
+        P.checkin ? ["Insights forced the weekly report on every visit", "The check-in is one card with its trend. It never blocks Insights"] : null,
+        ["FloraScore, VOC and duration tiles from the sensor", `Only what the person logs: timing, how often, form, symptoms${P.checkin ? ", check-ins" : ""} and meals`],
         ["The studio's 24-hour clock for timing", "A morning strip from the data vis board: one dot per morning on a straight time axis"],
         ["Patterns from synced sleep and workouts", "Patterns from logged meals, only after a food comes up 5 times"]
-      ],
+      ].filter(Boolean),
       open: [
         "A day counts as within your usual when the first BM landed in the window, the count was usual and every form was within the usual. A word logged in B that could sit either side counts on neither, and so does a day with only symptoms or meals logged. Symptoms are counted on their own card. Right definition?",
         M.usual ? `Symptoms have no band: their usual is how often they came up in the same weeks as the other usuals, ${RU.spanText(28, 83)}${M.usual.sym.every ? ` (about 1 day in ${M.usual.sym.every} for ${M.P.name})` : ""}. Enough, or no usual for symptoms at all?` : `Symptoms have no band: their usual will be how often they come up in the person's first ${L.LEARN_DAYS} days of logs. Enough, or no usual for symptoms at all?`,
@@ -1081,7 +1091,7 @@
     }),
     pay: (M) => ({
       t: "Florin membership",
-      lede: "The paywall, from wherever a member feature was tapped: a title for that feature, what membership adds in five lines, and the price as the studio has it, set at launch. Logging, Today, FloraScore, the weekly check-in and 7 days of Insights stay free.",
+      lede: `The paywall, from wherever a member feature was tapped: a title for that feature, what membership adds in five lines, and the price as the studio has it, set at launch. Logging, Today, FloraScore${P.checkin ? ", the weekly check-in" : ""} and 7 days of Insights stay free.`,
       ba: [
         ["Everything free, with no plan for paying", "A free app that logs and shows today, and a membership that explains"],
         ["A paywall in front of logging", "Logging is never behind the paywall: without logs there's nothing to explain"],
@@ -1182,274 +1192,462 @@
     })
   };
 
-  /* the list of screens beside the phone */
+  /* the list of screens beside the phone. A module adds its own through EXT.screens */
   const SCREENS = [
-    ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["compare-bm", "Log a BM, A, B and C side by side"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log what you ate"], ["meal-voice", "What you ate, said"]]],
+    ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log what you ate"], ["meal-voice", "What you ate, said"]]],
     ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
     ["Insights", [["insights", "Insights"], ["i-score", "FloraScore"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
     ["Membership", [["pay", "The paywall"], ["free-insights", "Insights, free"], ["free-ask", "Ask Florin, free"]]],
     ["Tabs", [["today", "Today"], ["history", "History, basic"], ["ask", "Ask Florin"]]]
   ];
-  const keyToScreen = (k) => ({ today: "today", plus: "plus", earlier: "earlier", bm: "bm", guide: "guide", flag: "flag", sym: "sym", meal: "meal", "meal-voice": "meal", ck: "ck", ckdone: "ckdone", ckday: "ckday", history: "history", insights: "insights", ask: "ask", "ask-about": "ask-about", nobm: "today", "i-score": "i-score", pay: "pay", "i-timing": "i-timing", "i-often": "i-often", "i-form": "i-form", "i-sym": "i-sym", "i-ck": "i-ck", "i-pat": "i-pat", "i-pattern": "i-pattern" }[k] || "today");
+  /* the core list with every module's groups merged in: items join a group of the same name, or a new group goes
+     before the one it names (or last) */
+  const screenGroups = () => {
+    const G = SCREENS.map(([g, items]) => [g, items.slice()]);
+    (EXT.screens || []).forEach((row) => {
+      const [g, items, o] = row || [];
+      if (!g || !Array.isArray(items)) return;
+      const have = G.find((x) => x[0] === g);
+      if (have) { items.forEach((it) => { if (!have[1].some((x) => x[0] === it[0])) have[1].push(it); }); return; }
+      const at = o && o.before ? G.findIndex((x) => x[0] === o.before) : -1;
+      if (at >= 0) G.splice(at, 0, [g, items.slice()]); else G.push([g, items.slice()]);
+    });
+    return G;
+  };
+  /* a phone screen id (key()) to the row that lights up in the list */
+  const KEY_SCREEN = { "meal-voice": "meal", nobm: "today" };
+  const keyToScreen = (k) => {
+    const ids = screenGroups().flatMap(([, items]) => items.map(([id]) => id));
+    if (ids.includes(k)) return k;
+    return KEY_SCREEN[k] && ids.includes(KEY_SCREEN[k]) ? KEY_SCREEN[k] : "today";
+  };
+  const screenLabel = (id) => { for (const [, items] of screenGroups()) { const it = items.find(([x]) => x === id); if (it) return it[1]; } return ""; };
+
+  /* ====================================================================== */
+  /* THE DECISIONS                                                           */
+  /* ====================================================================== */
+  /* Will, Oct 27: the open decisions are toggles in the one demo. Each one is stored, goes to the phone through
+     phone.set(key, value), and has a note: what it decides, what each option does, the recommendation, what's open.
+     A module replaces a note through EXT.decisions[key]. */
+  const lookOf = (id) => (window.FLOOKS || []).find((x) => x && x.id === id);
+  const lookIdea = (id, fallback) => { const k = lookOf(id); return (k && k.idea) || fallback; };
+  const NEXT_PASS = "Built in the next pass; until then the phone shows";
+  const DECISIONS = [
+    {
+      k: "form", label: "Consistency", def: "C", opts: [["A", L.MODES_SHORT.A], ["B", L.MODES_SHORT.B], ["C", L.MODES_SHORT.C]],
+      note: (M) => ({
+        t: "Consistency: A, B or C",
+        lede: "How a BM's consistency is named on the tiles, in History and on Insights. Underneath, A and C keep a step from 1 to 7 and B keeps one of five words, so the option changes what a person picks and what Florin can count.",
+        opts: [
+          ["A", "Seven tiles, each a number and a word. Shipping A means licensing the scale from the Rome Foundation, then its own wording, word for word; the words here are stand-ins."],
+          ["B", "Today's five words: Hard, Firm, Formed, Loose, Watery. No licence question, but Hard covers steps 1 and 2 and Loose covers 5 and 6, so the loose end can't be counted on its own."],
+          ["C", "Seven steps, one word each, in our own words, with no numbers and no scale name. The step is stored, so a clinician report can add the number once licensed. Today's five-word logs carry over as one or two steps."]
+        ],
+        rec: "C. It keeps the seven steps a clinician can read and the plain words a first-timer can pick. Send the Rome Foundation one request covering a licensed export and IBS-SSS for the NSF study arm, and ship C once counsel has read its words and marks next to the scale.",
+        open: [abLine(M, P.form), M.usual ? abMonth(M) : "", "Counsel's read on C's words, lines and marks, before it ships."].filter(Boolean),
+        res: ["A clinical reviewer criticised Bowelle's own 1 to 5 scale for not matching the 1 to 7. C matches it step for step.", "Throne: record the type number, not a description. C stores it and shows a word."]
+      })
+    },
+    {
+      k: "bmUI", label: "BM logging", def: "quick", opts: [["quick", "Quick tiles and form"], ["full", "Full form only"]],
+      note: (M) => {
+        const n = RU.bmCount(M), k = RU.QUICK_AFTER;
+        return {
+          t: "BM logging: quick tiles, or the full form",
+          lede: `What plus offers for a BM. With quick tiles, the tiles sit on the plus card, and once ${plural(k, "BM")} are logged a tile saves the BM at once, with Add details and Undo in the toast. With the full form only, plus has one Log a BM row and every BM goes through the form. ${M.P.name} has ${n ? plural(n, "BM") : "no BMs"} logged, so a tile ${n >= k ? "saves at once" : `opens the form until ${plural(k - n, "more BM")}`}.`,
+          opts: [
+            ["quick", "Plus, then a tile: two taps for a usual BM, saved at the time it's tapped. The BM's header still opens the full form, and a catch-up day always does."],
+            ["full", "Plus, then Log a BM, then the form: when, consistency and the details, then Save. Every log carries its time and details, at a tap or two more each time. No tiles on the menu, no one-tap save."]
+          ],
+          rec: "Keep the quick tiles, as Will's Oct 14 note asked, and add a When row on the plus card (now, or earlier today) so a log made after the fact isn't saved at the wrong time.",
+          open: ["Should a person's first two weeks always open the form, while Florin learns their usual, rather than the first 5 BMs?", "A one-tap log has no details: urgency, straining, how long and the flag only come from the form. Enough for the people who need them most?"],
+          res: ["Bellyx claims 2 taps; Stool Log, a few.", "Logging from a widget or the watch, without opening the app, is the next step after this."]
+        };
+      }
+    },
+    {
+      k: "home", label: "Home", def: "score", opts: [["score", "Score first"], ["day", "Day first"]],
+      note: (M) => ({
+        t: "Home: score first, or day first",
+        lede: `What Today opens on. Score first leads with FloraScore, then ${P.checkin ? "the check-in when it's due, " : ""}today's entries and the week. Day first leads with today itself: the entries and what to log next, with the score further down. ${NEXT_PASS} Score first.`,
+        opts: [
+          ["score", "As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence about the day."],
+          ["day", "Today's timeline and a quick way to log first, then FloraScore and the week. For people who mostly open the app to log."]
+        ],
+        rec: "Score first. It ties Florin to the score people know from Oura (Will, Oct 14). Day first is worth testing with people who log several times a day.",
+        open: [`There's no FloraScore before day ${L.LEARN_DAYS}${M.usual ? "" : `, and ${M.P.name} is on day ${L.learnDay(M)}`}. Should a new person's Today open day first until their first score?`],
+        res: ["Oura's Today: one daily highlight, then a timeline you can add to."]
+      })
+    },
+    {
+      k: "history", label: "History", def: "list", opts: [["list", "List"], ["calendar", "Calendar"]],
+      note: (M) => {
+        const n = M.days.filter((x) => x.d < L.TODAY && !x.logged).length;
+        return {
+          t: "History: a list, or a calendar",
+          lede: `How History shows past days. The list is every day, newest first, with a gap kept as a gap and Add to this day on it. A calendar shows the month with each logged day marked, and a day's entries under it when tapped. ${NEXT_PASS} the list.`,
+          opts: [
+            ["list", "As built: newest day first, filters for BMs, symptoms, meals and notes, Show earlier days, and the report for a clinician at the top."],
+            ["calendar", "A month at a glance: days logged, gaps easy to spot, and the same rows as the list for the day tapped."]
+          ],
+          rec: "A calendar to find a day and see the gaps, with the list's rows under it, so both read the same way. A gap stays a gap, never a zero.",
+          open: [`${M.P.name} has ${n ? plural(n, "day") : "no days"} with nothing logged so far. What does a day's mark say: logged or not, or how the day sat next to the usual? The second is a reading, so it needs the same colour rules as Insights.`],
+          res: ["CareClinic lets people catch up on several entries in one go."]
+        };
+      }
+    },
+    {
+      k: "checkin", label: "Weekly check-in", def: true, opts: [[true, "On"], [false, "Off"]],
+      note: (M) => ({
+        t: "The weekly check-in: on or off",
+        lede: `${L.CHECKIN.length} questions once a week (${L.CHECKIN.map((q) => q.label.toLowerCase()).join(", ").replace(/, ([^,]*)$/, " and $1")}), each compared only with the person's own first three check-ins. Off takes it out of the whole app.`,
+        opts: [
+          [true, "As built: a card on Today the evening it's due, an item in plus every week, its own card and trend on Insights, and its screens in the list here. Free on both plans."],
+          [false, "No card, no plus item, no Insights card or detail, and nothing that mentions it. Logging, FloraScore and Insights carry on as they are: FloraScore never used it."]
+        ],
+        rec: "On, and kept free. It's the one place Florin asks how the week felt rather than what happened, it takes about a minute, and it never blocks logging or Insights.",
+        open: ["With it off, nothing asks how the week felt. Is the week card on Today enough?", "Should a person be able to turn it off themselves, in Profile?", "If the NSF pilot needs a validated measure, license IBS-SSS from the Rome Foundation for the study arm only."],
+        res: ["Nerva checks in at the start, weekly and at the end.", "Oura's Advisor: opt-in check-ins at a frequency and time the person picks."]
+      })
+    },
+    {
+      k: "mealUI", label: "Meal sheet", def: "quick", opts: [["quick", "Quick, voice or text"], ["detailed", "One meal at a time"]],
+      note: (M) => {
+        const PR = L.patterns(M, P.form);
+        return {
+          t: "Meal sheet: quick, or one meal at a time",
+          lede: "How a meal is logged. Quick is one box for the day, said or typed, and Florin picks out the foods. One meal at a time picks breakfast, lunch, dinner or other, then the text and a time.",
+          opts: [
+            ["quick", "A big voice button and one box for the whole day (Will, Oct 14). The quickest, but the day has no meal times, so the later-dinner pattern can't be read from it."],
+            ["detailed", "Each meal with its time, so dinner times count. Same as yesterday and recent foods are one tap each."]
+          ],
+          rec: "Quick, since people log meals when things feel off (Will, Oct 14), with the one-meal sheet a tap away for people who want times. Meal logs on the left shows what rough-day-only logging does to patterns.",
+          open: [M.usual ? (PR.sparse ? `With these meal logs ${M.P.name} has meals on ${PR.withMeal} of ${plural(PR.logged, "day")}, under ${Math.round(L.MEAL_COVER * 100)}%, so Insights holds patterns back and offers the ${L.FOOD_CHECK_DAYS}-day food check.` : `With these meal logs, ${M.P.name}'s logs show ${plural(PR.found.length, "possible pattern")}.`) : `Patterns wait for a food to come up 5 times in ${L.PATTERN_DAYS} days.`, "Keep meal times at all, or drop them with the one-meal sheet?"],
+          res: ["Oura shows a Discovery only after a tag is used about 5 to 40 times."]
+        };
+      }
+    },
+    {
+      k: "look", label: "Data style", def: "built", chips: true,
+      opts: [["built", "As built"], ["rings", "Rings"], ["journal", "Field journal"], ["bento", "Bento"], ["oura", "Oura"], ["easy", "Easy read"]],
+      note: () => ({
+        t: "Data style",
+        lede: `How the numbers are drawn on Today and Insights: the score, the week, timing, how often, form, symptoms${P.checkin ? ", the check-in" : ""} and patterns. Every look draws the same numbers from the same logs; only the drawing changes. The looks come from the data looks library. ${NEXT_PASS} As built.`,
+        opts: [
+          ["built", "The studio's chart kit, as on the phone now: the Forest score card, bars from zero, morning strips and dot rows."],
+          ["rings", lookIdea("rings", "FloraScore as a ring with the usual on it, and every card below read as rings.")],
+          ["journal", lookIdea("journal", "A field journal: the numbers written out, with small marks beside them.")],
+          ["bento", lookIdea("bento", "Tiles of different sizes, one number each.")],
+          ["oura", lookIdea("oura", "Oura's look under Florin's rules: an open arc for the score, contributor rows and range tracks. Being drawn in the library now.")],
+          ["easy", lookIdea("easy", "Large type and plain sentences, with few charts. Being drawn in the library now.")]
+        ],
+        rec: "Pick from the library side by side, then take one look through Today and Insights rather than mixing them. In every look Plum is the person's usual, Gold a shift and Teal context; no red, no green.",
+        open: ["Does the Easy version take Easy read with it, or keep the style chosen here?"],
+        res: ["Oura's Vitals: one card per metric, the personal baseline, and a side arrow into the detail.", "Function opens on summary counts in plain terms."]
+      })
+    },
+    {
+      k: "easy", label: "Version", def: false, opts: [[false, "Standard"], [true, "Easy"]],
+      note: () => ({
+        t: "Version: standard, or easy",
+        lede: `An easier version of the whole app, for older people or anyone who wants less on screen: larger type and targets, fewer cards, sentences in place of most charts, and one clear next step. ${NEXT_PASS} Standard.`,
+        opts: [
+          [false, "As built."],
+          [true, "The same logs and the same numbers, said more simply and bigger."]
+        ],
+        rec: "A setting in Profile, not a separate app, so a person can switch and nothing they logged changes.",
+        open: ["Which charts stay in Easy: none, or the week only?", "Does Easy log every BM through one form with large buttons, in place of the quick tiles?"],
+        res: []
+      })
+    },
+    {
+      k: "onboard", label: "Onboarding", def: "short", opts: [["short", "Short"], ["full", "Full survey"]],
+      note: () => ({
+        t: "Onboarding: short, or the full survey",
+        lede: `What a new person is asked before Today. The app that ships asks 14 questions (Will, Oct 27). Short asks only what changes the app on day 1; the full survey keeps the shipping app's sections, reworded to Florin's rules. ${NEXT_PASS} the app as it is, and Logs on the left has Just joined for day 1 after onboarding.`,
+        opts: [
+          ["short", "The consistency words, what brings the person to Florin in their own words, and when the check-in is due. Everything else is asked later, where it's used."],
+          ["full", "The shipping survey's sections, reworded: no scale named, no goals that promise an outcome, weight left out, and blood or black stools answered with the primary care note right there."]
+        ],
+        rec: "Short. 60% of men want setup under 10 minutes; ask the rest in context, where each answer changes something.",
+        open: ["Which questions earn a place on day 1?", "Research consent: its own choice in Profile, never a survey step?"],
+        res: ["The shipping onboarding: 14 questions, about 1 to 3 minutes."]
+      })
+    }
+  ];
+  const DEC = {};
+  DECISIONS.forEach((D) => (DEC[D.k] = D));
 
   /* ====================================================================== */
   /* THE PAGE                                                                */
   /* ====================================================================== */
   const sysDark = () => window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const pageTheme = () => { const a = document.documentElement.getAttribute("data-theme"); return a === "dark" || a === "light" ? a : sysDark() ? "dark" : "light"; };
-  const P = {
-    form: ["A", "B", "C"].includes(store.get("form", "C")) ? store.get("form", "C") : "C",
-    compare: !!store.get("compare", false),
-    persona: "sarah",
-    data: "est",
-    meals: "all",
-    mealUI: "quick",
-    plan: "member",
-    themeSet: null,
-    key: "today",
-    phones: []
-  };
+  /* the compare mode is gone (Oct 27): its stored switch goes too */
+  try { localStorage.removeItem("florin-refresh:compare"); } catch (e) { /* private window: fine */ }
+  const P = { persona: "sarah", data: "est", meals: "all", plan: "member", themeSet: null, key: "today", dec: null, ph: null };
+  DECISIONS.forEach((D) => { const v = store.get(D.k, D.def); P[D.k] = D.opts.some(([o]) => o === v) ? v : D.def; });
   const appTheme = () => P.themeSet || pageTheme();
+  /* what a module's notes see: every decision, the demo controls and the screen */
+  const pageState = () => {
+    const o = { persona: P.persona, data: P.data, meals: P.meals, plan: P.plan, theme: appTheme(), key: P.key };
+    DECISIONS.forEach((D) => (o[D.k] = P[D.k]));
+    return o;
+  };
 
-  const seg = (name, opts, cur) => `<div class="rx-seg" role="group" aria-label="${esc(name)}">${opts.map(([v, l]) => `<button type="button" data-rx="${esc(name)}" data-v="${esc(v)}" aria-pressed="${v === cur}">${esc(l)}</button>`).join("")}</div>`;
-  const demoControls = () => `
-      <div class="rx-ctl"><span class="rx-ctl-l">Person</span>${seg("persona", Object.values(AD.personas).map((p) => [p.id, p.name]), P.persona)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">Logs</span>${seg("data", [["est", "12 weeks"], ["new", "New, day 5"]], P.data)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">Meal logs</span>${seg("meals", L.MEAL_LOGS, P.meals)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">Meal sheet</span>${seg("mealUI", [["quick", "Quick, voice or text"], ["detailed", "One meal at a time"]], P.mealUI)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">Plan</span>${seg("plan", [["member", "Member"], ["free", "Free"]], P.plan)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">App theme</span>${seg("theme", [["light", "Light"], ["dark", "Dark"]], appTheme())}</div>
+  /* "A · 1 to 7" sets as two lines on purpose, the letter over its words, so the three fit side by side */
+  const optLabel = (l) => { const i = l.indexOf(" · "); return i < 0 ? esc(l) : `<span class="rx-o1">${esc(l.slice(0, i))}</span> <span class="rx-o2">${esc(l.slice(i + 3))}</span>`; };
+  const btns = (k, opts, cur) => opts.map(([v, l]) => `<button type="button" data-rx="${esc(k)}" data-v="${esc(String(v))}" aria-pressed="${v === cur}"${l.indexOf(" · ") >= 0 ? ` aria-label="${esc(l)}"` : ""}>${optLabel(l)}</button>`).join("");
+  const seg = (k, label, opts, cur) => `<div class="rx-seg" role="group" aria-label="${esc(label)}">${btns(k, opts, cur)}</div>`;
+  const decHTML = (D) => `<div class="rx-dec" data-dec="${D.k}">
+      <div class="rx-dec-h"><span class="rx-ctl-l" id="rxd-${D.k}">${esc(D.label)}</span><button type="button" class="rx-info" data-rx="dinfo" data-v="${D.k}" aria-pressed="false" aria-label="About ${esc(D.label)}">${ic("info")}</button></div>
+      <div class="${D.chips ? "rx-chips" : "rx-seg"}" role="group" aria-labelledby="rxd-${D.k}">${btns(D.k, D.opts, P[D.k])}</div>
+    </div>`;
+  const demoHTML = () => `
+      <div class="rx-ctl"><span class="rx-ctl-l">Person</span>${seg("persona", "Person", Object.values(AD.personas).map((p) => [p.id, p.name]), P.persona)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Logs</span>${seg("data", "Logs", L.DATA, P.data)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Meal logs</span>${seg("meals", "Meal logs", L.MEAL_LOGS, P.meals)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Plan</span>${seg("plan", "Plan", [["member", "Member"], ["free", "Free"]], P.plan)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">App theme</span>${seg("theme", "App theme", [["light", "Light"], ["dark", "Dark"]], appTheme())}</div>
       <button type="button" class="rx-btn rx-btn--line" data-rx="reset">${ic("undo")}Reset the demo</button>
-      <p class="rx-small">Demo time is Sunday, October 11, 7:40 PM: the check-in is due tonight. Logs you add stay until you reset or reload.</p>`;
-  const screenList = () => SCREENS.map(([g, items]) => `<li class="rx-nav-g"><span class="rx-eyebrow">${esc(g)}</span><ol>${items.map(([id, l]) => `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${id}">${esc(l)}</button></li>`).join("")}</ol></li>`).join("");
+      <p class="rx-small" data-time></p>`;
+  /* the demo's clock and where the person is, from the model */
+  const timeLine = () => {
+    const M = P.ph && P.ph.model();
+    if (!M) return "";
+    const t = L.dateOf(L.TODAY), U = AD.util;
+    const who = P.data === "fresh" ? ` ${M.P.name} just joined: onboarding finished this evening, so today is day ${L.learnDay(M)} of ${L.LEARN_DAYS} and nothing is logged yet.` : !M.usual ? ` ${M.P.name} is on day ${L.learnDay(M)} of ${L.LEARN_DAYS}, so Florin is still learning their usual.` : "";
+    const ck = P.checkin && M.checkin.status === "due" ? " The weekly check-in is due tonight." : "";
+    return `Demo time is ${U.DOWL[t.getDay()]}, ${U.MONL[t.getMonth()]} ${t.getDate()}, ${T(L.NOW)}.${who}${ck} Logs you add stay until you reset or reload.`;
+  };
+  const offScreen = (id) => !P.checkin && CK_SCREENS.includes(id);
+  const screensHTML = () => screenGroups().map(([g, items]) => `<li class="rx-nav-g"><span class="rx-eyebrow">${esc(g)}</span><ol>${items.map(([id, l]) => offScreen(id)
+    ? `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${esc(id)}" disabled><span>${esc(l)}</span><em>Check-in is off</em></button></li>`
+    : `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${esc(id)}">${esc(l)}</button></li>`).join("")}</ol></li>`).join("");
 
   mount.innerHTML = `
     <header class="rx-head">
-      <div class="rx-head-l">
-        <p class="rx-eyebrow">Florin app refresh · Second pass · Oct 14</p>
-        <h1>Logging, Today and Insights</h1>
-        <p class="rx-lede">Today's app, the one that ships without hardware. Tap through it like the app: plus logs a BM, symptoms or a meal, the weekly check-in never blocks anything, and Insights reads it all against the person's own usual. Consistency comes three ways: A and B as briefed, and C, the seven words the workshop proposes.</p>
-      </div>
-      <div class="rx-head-r" role="group" aria-label="Consistency">
-        <span class="rx-ctl-l">Consistency</span>
-        <div class="rx-ab">${seg("form", [["A", L.MODES.A], ["B", L.MODES.B], ["C", L.MODES.C]], P.form)}<button type="button" class="rx-btn rx-cmp" data-rx="compare" aria-pressed="${P.compare}">${ic("bars")}Compare all three</button></div>
-      </div>
+      <p class="rx-eyebrow">Florin app refresh · Third pass · Oct 27</p>
+      <h1>The app, with the open decisions as toggles</h1>
+      <p class="rx-lede">Today's app, the one that ships without hardware. Each open decision is a toggle on the left: change one and the phone changes with it, and the notes say what it decides.</p>
     </header>
     <div class="rx-main">
-      <aside class="rx-side rx-side--l" aria-label="Screens and demo">
-        <nav class="rx-panel" aria-label="Screens"><h2 class="rx-h">Screens</h2><ol class="rx-nav">${screenList()}</ol></nav>
-        <div class="rx-panel"><h2 class="rx-h">Demo</h2><div class="rx-demo">${demoControls()}</div></div>
-      </aside>
-      <div class="rx-center">
-        <div class="rx-stage" id="rxStage"></div>
-        <section class="rx-cmpt" id="rxCmp" hidden aria-label="A, B and C compared"></section>
-        <section class="rx-ws" id="rxWs" aria-label="The Oct 14 workshop">${workshopHTML()}</section>
-      </div>
-      <aside class="rx-side rx-side--r" aria-label="Notes for this screen"><div class="rx-panel rx-notes" id="rxNotes"></div></aside>
+      <aside class="rx-side rx-side--l" id="rxLeft" aria-label="Toggles"></aside>
+      <div class="rx-center"><div class="rx-stage" id="rxStage"></div></div>
+      <aside class="rx-side rx-side--r" id="rxRight" aria-label="Notes"></aside>
+      <div class="rx-under" id="rxUnder"></div>
     </div>
     <footer class="rx-foot"><span>Built on the brand studio: DESIGN.md v1.1 tokens, the chart kit and the seeded demo data.</span><span>Prototype only. Not for patients.</span></footer>
-    <div class="rx-mbar" role="group" aria-label="Prototype">
-      <span class="rx-mbar-t">Florin refresh</span>
-      ${seg("form", [["A", L.MODES_SHORT.A], ["B", L.MODES_SHORT.B], ["C", L.MODES_SHORT.C]], P.form)}
-      <button type="button" class="rx-mbar-b" data-rx="msheet" aria-label="Screens and notes">${ic("list")}<span>Notes</span></button>
-    </div>
-    <div class="rx-msheet" id="rxMsheet" hidden>
-      <div class="rx-msheet-scrim" data-rx="msheet-close"></div>
-      <div class="rx-msheet-p" role="dialog" aria-modal="true" aria-label="Screens and notes">
-        <div class="rx-msheet-h"><b>Florin app refresh</b><button type="button" class="rx-x" data-rx="msheet-close" aria-label="Close">${ic("close")}</button></div>
-        <div class="rx-panel rx-notes" id="rxNotesM"></div>
-        <div class="rx-panel rx-ws rx-ws--m">${workshopHTML()}</div>
-        <div class="rx-panel"><h2 class="rx-h">Screens</h2><ol class="rx-nav">${screenList()}</ol></div>
-        <div class="rx-panel"><h2 class="rx-h">Demo</h2><div class="rx-demo">${demoControls()}</div></div>
+    <nav class="rx-mbar" aria-label="Prototype">
+      <button type="button" class="rx-mbar-b" data-rx="sheet" data-v="toggles" aria-haspopup="dialog">${ic("sliders")}<span>Toggles</span></button>
+      <span class="rx-mbar-t" data-now></span>
+      <button type="button" class="rx-mbar-b" data-rx="sheet" data-v="notes" aria-haspopup="dialog">${ic("info")}<span>Notes</span></button>
+    </nav>
+    ${["toggles", "notes"].map((w) => `<div class="rx-sheet" id="rxSheet-${w}" hidden>
+      <div class="rx-sheet-scrim" data-rx="sheet-close"></div>
+      <div class="rx-sheet-p" role="dialog" aria-modal="true" aria-labelledby="rxSheet-${w}-h">
+        <div class="rx-sheet-h"><b id="rxSheet-${w}-h">${w === "toggles" ? "Toggles" : "Notes"}</b><button type="button" class="rx-x" data-rx="sheet-close" aria-label="Close">${ic("close")}</button></div>
+        <div class="rx-sheet-b" data-slot></div>
       </div>
-    </div>`;
+    </div>`).join("")}`;
 
-  const stage = mount.querySelector("#rxStage"), cmp = mount.querySelector("#rxCmp");
+  const $ = (s) => mount.querySelector(s);
+  const main = $(".rx-main"), stage = $("#rxStage"), left = $("#rxLeft"), right = $("#rxRight"), under = $("#rxUnder"), mbar = $(".rx-mbar");
+  const sheets = { toggles: $("#rxSheet-toggles"), notes: $("#rxSheet-notes") };
+  const make = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  /* the panels exist once, and move between the side bars (wide) and the sheets (phone), so nothing is doubled */
+  const decPanel = make(`<section class="rx-panel rx-panel--dec" aria-labelledby="rxDecH"><h2 class="rx-h" id="rxDecH">Decisions</h2><p class="rx-small rx-dec-lede">Each one changes the whole app. The info button says what it decides.</p><div class="rx-decs">${DECISIONS.map(decHTML).join("")}</div></section>`);
+  const demoPanel = make(`<section class="rx-panel rx-panel--demo" aria-labelledby="rxDemoH"><h2 class="rx-h" id="rxDemoH">Demo</h2><div class="rx-demo">${demoHTML()}</div></section>`);
+  const navPanel = make(`<nav class="rx-panel rx-panel--nav" aria-labelledby="rxScrH"><h2 class="rx-h" id="rxScrH">Screens</h2><ol class="rx-nav">${screensHTML()}</ol></nav>`);
+  const notesPanel = make(`<div class="rx-panel rx-notes" id="rxNotes"></div>`);
+  const wsPanel = make(`<section class="rx-ws" id="rxWs" aria-label="The Oct 14 workshop">${workshopHTML()}</section>`);
   const mq = window.matchMedia("(max-width: 759px)");
   const isM = () => mq.matches;
 
-  /* ---------- the phones ---------- */
-  function phoneShell(tag) {
+  /* ---------- the phone ---------- */
+  function phoneShell() {
     const w = document.createElement("div");
     w.className = "rx-ph";
-    w.innerHTML = `${tag ? `<p class="rx-ph-tag"><b>${esc(tag.split(" · ")[0])}</b>${esc(tag.split(" · ")[1] || "")}</p>` : ""}<div class="rx-fit"><div class="apx-device rx-dev"><div class="apx-phone" aria-hidden="true"></div><div class="apx-screen"><div class="rx-mount"></div></div></div></div>`;
+    w.innerHTML = `<div class="rx-fit"><div class="apx-device rx-dev"><div class="apx-phone" aria-hidden="true"></div><div class="apx-screen"><div class="rx-mount"></div></div></div></div>`;
     return w;
   }
-  function onNav(k, ph) {
-    if (!P.phones.includes(ph)) return; /* still being built; build() catches up */
-    if (ph !== P.phones[0]) { if (P.compare) compareTable(); return; }
+  function onNav(k) {
+    if (!P.ph) return; /* still being built */
+    /* a decision's note stays up until the phone moves to another screen */
+    if (k !== P.key) P.dec = null;
     P.key = k;
     notes();
     syncNav();
-    if (P.compare) compareTable();
   }
-  function build() {
-    stage.innerHTML = "";
-    P.phones = [];
-    const compare = P.compare && !isM();
-    const forms = compare ? ["A", "B", "C"] : [P.form];
-    forms.forEach((f, i) => {
-      const sh = phoneShell(compare ? L.MODES[f] : null);
-      stage.appendChild(sh);
-      const ph = Phone(sh.querySelector(".rx-mount"), { form: f, persona: P.persona, data: P.data, meals: P.meals, mealUI: P.mealUI, plan: P.plan, theme: appTheme(), onNav: (k, p) => onNav(k, p), onPlan: (v, then) => setPlanAll(v, then) });
-      P.phones.push(ph);
-      ph.setFull(isM());
-      ph.el.setAttribute("aria-label", compare ? `Option ${f}` : "Florin app prototype");
-    });
-    mount.classList.toggle("is-compare", compare);
-    mount.classList.toggle("rx--m", isM());
-    cmp.hidden = !compare;
-    if (compare) P.phones.forEach((p) => p.open("bm"));
-    fit();
-    P.key = P.phones[0].key();
-    notes();
-    syncNav();
-    if (compare) compareTable();
-    syncControls();
-  }
-
-  /* scale the phone to the space it has, never above 1 */
+  /* scale the phone to the space it has, never above 1: the whole phone fits under the header, tab bar included */
   function fit() {
-    const devs = [...stage.querySelectorAll(".rx-fit")];
-    if (isM()) { devs.forEach((f) => { f.style.width = ""; f.style.height = ""; f.firstElementChild.style.transform = ""; }); return; }
-    const n = devs.length;
-    const avW = (stage.clientWidth - (n - 1) * 32 - n) / n; /* a pixel of slack per phone, so rounding never wraps one */
-    const avH = Math.max(560, window.innerHeight - (P.compare ? 72 : 40));
-    /* never below 0.78 in compare: past that the tile words get too small to compare, so the third phone wraps */
-    const s = n > 1 ? Math.max(0.78, Math.min(1, avW / 414, avH / 868)) : Math.min(1, avW / 414, avH / 868);
-    devs.forEach((f) => {
-      f.style.width = `${Math.round(414 * s)}px`;
-      f.style.height = `${Math.round(868 * s)}px`;
-      f.firstElementChild.style.transform = s < 1 ? `scale(${s.toFixed(4)})` : "";
-    });
+    const f = stage.querySelector(".rx-fit");
+    if (!f) return;
+    if (isM()) { f.style.width = ""; f.style.height = ""; f.firstElementChild.style.transform = ""; return; }
+    const top0 = Math.min(240, stage.getBoundingClientRect().top + window.scrollY);
+    const avW = stage.clientWidth - 1, avH = Math.max(560, window.innerHeight - top0 - 24);
+    const s = Math.min(1, avW / 414, avH / 868);
+    f.style.width = `${Math.round(414 * s)}px`;
+    f.style.height = `${Math.round(868 * s)}px`;
+    f.firstElementChild.style.transform = s < 1 ? `scale(${s.toFixed(4)})` : "";
+  }
+  /* wide: the toggles on the left, the notes on the right, the workshop under the phone. Phone: all of it in sheets */
+  function place() {
+    const m = isM();
+    const tSlot = m ? sheets.toggles.querySelector("[data-slot]") : left;
+    [decPanel, demoPanel, navPanel].forEach((el) => tSlot.appendChild(el));
+    const nSlot = m ? sheets.notes.querySelector("[data-slot]") : right;
+    nSlot.appendChild(notesPanel);
+    (m ? nSlot : under).appendChild(wsPanel);
+    wsPanel.classList.toggle("rx-ws--m", m);
+    mount.classList.toggle("rx--m", m);
+    if (!m) closeSheet();
+    P.ph.set("full", m);
+    fit();
   }
 
-  /* ---------- notes, the screen list and the compare table ---------- */
+  /* ---------- notes: the screen's, or the decision just changed ---------- */
+  const noteFor = () => {
+    const M = P.ph.model(), S = pageState();
+    if (P.dec) {
+      const f = EXT.decisions[P.dec];
+      return { dec: true, N: (f && safe(f, M, S)) || DEC[P.dec].note(M) };
+    }
+    const f = EXT.notes[P.key];
+    const N = (f && safe(f, M, S)) || (NOTES[P.key] ? NOTES[P.key](M, P.form) : { t: screenLabel(keyToScreen(P.key)) || "On the phone", lede: "No notes for this screen yet.", ba: [], open: [], res: [] });
+    return { dec: false, N };
+  };
+  const list = (h, cls, items) => (items && items.length ? `<h3 class="rx-h3">${esc(h)}</h3><ul class="${cls}">${items.map((q) => `<li>${esc(q)}</li>`).join("")}</ul>` : "");
   function notes() {
-    const ph = P.phones[0];
-    if (!ph) return;
-    const k = P.key, f = ph.form(), M = ph.model();
-    const N = (NOTES[k] || NOTES.today)(M, f);
+    if (!P.ph) return;
+    const { dec, N } = noteFor();
+    const D = dec ? DEC[P.dec] : null;
     /* disclaimers are left out of the scan, as in the studio: they name what Florin doesn't do on purpose */
-    const src = ph.el.querySelector(".ap-o:not(.is-out):last-child .ap-o-p") || ph.el.querySelector(".ap-layer");
+    const src = P.ph.el.querySelector(".ap-o:not(.is-out):last-child .ap-o-p") || P.ph.el.querySelector(".ap-layer");
     const clone = src.cloneNode(true);
     clone.querySelectorAll(".ap-fine, [data-disclaimer], svg").forEach((n) => n.remove());
-    const text = clone.textContent.replace(/\s+/g, " ");
-    const hits = checkClaims(text);
-    const html = `<article class="rx-note">
-        <p class="rx-eyebrow">On the phone now</p>
-        <h2>${esc(N.t)}</h2>
-        <p class="rx-note-lede">${esc(N.lede)}</p>
-        ${N.ba.length ? `<h3 class="rx-h3">Was, now</h3><ul class="rx-ba">${N.ba.map(([a, b]) => `<li><s>${esc(a)}</s><b>${esc(b)}</b></li>`).join("")}</ul>` : ""}
-        ${N.open.length ? `<h3 class="rx-h3">To decide</h3><ul class="rx-q">${N.open.map((q) => `<li>${esc(q)}</li>`).join("")}</ul>` : ""}
-        ${N.res.length ? `<h3 class="rx-h3">From the research</h3><ul class="rx-res">${N.res.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+    const hits = checkClaims(clone.textContent.replace(/\s+/g, " "));
+    const opts = N.opts && N.opts.length ? `<h3 class="rx-h3">The options</h3><ul class="rx-opts">${N.opts.map(([v, text, label]) => {
+      const o = D && D.opts.find(([x]) => x === v), on = !!D && P[D.k] === v;
+      return `<li${on ? ' class="is-on"' : ""}><b>${esc(label || (o ? o[1] : String(v)))}${on ? `<span class="rx-on">On the phone</span>` : ""}</b><span>${esc(text)}</span></li>`;
+    }).join("")}</ul>` : "";
+    notesPanel.innerHTML = `<article class="rx-note${dec ? " rx-note--dec" : ""}">
+        <p class="rx-eyebrow">${dec ? "Decision" : "On the phone now"}</p>
+        <h2>${esc(N.t || "")}</h2>
+        ${N.lede ? `<p class="rx-note-lede">${esc(N.lede)}</p>` : ""}
+        ${opts}
+        ${N.rec ? `<h3 class="rx-h3">Recommended</h3><p class="rx-rec">${esc(N.rec)}</p>` : ""}
+        ${N.ba && N.ba.length ? `<h3 class="rx-h3">Was, now</h3><ul class="rx-ba">${N.ba.map(([a, b]) => `<li><s>${esc(a)}</s><b>${esc(b)}</b></li>`).join("")}</ul>` : ""}
+        ${list("To decide", "rx-q", N.open)}
+        ${list("From the research", "rx-res", N.res)}
         <p class="rx-lint${hits.length ? " is-hit" : ""}">${ic(hits.length ? "info" : "check")}<span>${hits.length ? `Claims check: ${hits.length} to look at on this screen: ${esc(hits.map((h) => `"${h.text}" (${h.rule.why})`).join("; "))}` : `Claims check: this screen passes all ${RULES.length} rules.`}</span></p>
+        ${dec ? `<button type="button" class="rx-btn rx-btn--line rx-note-back" data-rx="dclose">${ic("back")}Notes for this screen</button>` : ""}
       </article>`;
-    mount.querySelector("#rxNotes").innerHTML = html;
-    mount.querySelector("#rxNotesM").innerHTML = html;
+    mount.querySelectorAll('[data-rx="dinfo"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.dec)));
+    const now = mount.querySelector("[data-now]");
+    if (now) now.textContent = dec ? `${D.label}` : screenLabel(keyToScreen(P.key)) || N.t || "";
+    const tl = mount.querySelector("[data-time]");
+    if (tl) tl.textContent = timeLine();
   }
   function syncNav() {
-    const cur = P.compare && !isM() && P.key === "bm" ? "compare-bm" : keyToScreen(P.key);
+    const cur = keyToScreen(P.key);
     mount.querySelectorAll('[data-rx="screen"]').forEach((b) => b.setAttribute("aria-current", String(b.dataset.v === cur)));
   }
-  function compareTable() {
-    const M = P.phones[0].model();
-    const ab = abWeek(M);
-    /* each column from its own phone, so a log on phone B shows in B's column */
-    const wk = (m) => { const ph = P.phones.find((p) => p.form() === m) || P.phones[0], Mi = ph.model(), Wi = RU.week(Mi, m); return Mi.usual ? `${Wi.inForms} of ${Wi.bms.length - Wi.unsure} BMs within the usual, ${L.usualFormsText(Mi, m)}` : `Still learning the usual, day ${L.learnDay(Mi)}`; };
-    const mo = (m) => { const ph = P.phones.find((p) => p.form() === m) || P.phones[0], Mi = ph.model(); return Mi.usual ? `${abMonthK(Mi, m)} of ${abMonthN(Mi)} BMs within the usual` : `Still learning the usual, day ${L.learnDay(Mi)}`; };
-    const rows = [
-      ["On each tile", "A number and a word", "One of five words", "One of seven words"],
-      ["To log a usual BM", "Plus, then a tile. Saved, with Undo", "Plus, then a tile. Saved, with Undo", "Plus, then a tile. Saved, with Undo"],
-      ["Steps the log keeps", "Seven", "Five. Hard covers 1 and 2, Loose covers 5 and 6", "Seven"],
-      [`This week, ${M.P.name}`, wk("A"), wk("B"), wk("C")],
-      [`Last 30 days on Insights, ${M.P.name}`, mo("A"), mo("B"), mo("C")],
-      ["With a clinician", "The numbers they know", "Words that cover one or two steps", "The step is stored, so a report can carry the number once licensed"],
-      ["Licensing", "The Rome Foundation's licence, then the scale's own wording, word for word. The words here are stand-ins", "None for the words", "Pending counsel's read: the words, lines and marks are ours but describe the same seven forms. License the report's numbers"],
-      ["Today's five-word logs", "Can't become one number each", "Carry over as they are", "Carry over as one or two steps"],
-      ["First few logs", "A number to learn, with a word beside it", "Plain words, little to learn", "Plain words, little to learn"]
-    ];
-    cmp.innerHTML = `<div class="rx-cmpt-h"><p class="rx-eyebrow">A, B and C, compared</p><h2>Same flow, three ways to name it</h2><p>${esc(abLine(M))} Recommended: C. It keeps the seven steps a clinician can read and the plain words a first-timer can pick, pending counsel's read on its words and marks.</p></div>
-      <div class="rx-tbl-wrap"><table class="rx-tbl"><thead><tr><th scope="col"><span class="sr">Question</span></th>${["A", "B", "C"].map((m) => `<th scope="col">${esc(L.MODES[m])}${m === "C" ? " · proposed" : ""}</th>`).join("")}</tr></thead>
-      <tbody>${rows.map(([q, a, b, c]) => `<tr><th scope="row">${esc(q)}</th><td>${esc(a)}</td><td>${esc(b)}</td><td>${esc(c)}</td></tr>`).join("")}</tbody></table></div>
-      <p class="rx-small">Each phone is its own copy of the app, so you can log in one without changing the others. The list on the left moves all three.</p>`;
-  }
-  /* the plan for every phone at once: the switch, Start membership, or a free screen from the list */
-  function setPlanAll(v, then) {
-    P.plan = v;
-    P.phones.forEach((p) => p.setPlan(v));
-    if (then) P.phones.forEach((p) => p.open(then));
-    syncControls(); notes();
-  }
+  function renderNav() { navPanel.querySelector(".rx-nav").innerHTML = screensHTML(); syncNav(); }
   function syncControls() {
-    mount.querySelectorAll('[data-rx="form"]').forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset.v === P.form)); b.disabled = P.compare && !isM(); });
-    mount.querySelectorAll('[data-rx="compare"]').forEach((b) => b.setAttribute("aria-pressed", String(P.compare)));
-    mount.querySelectorAll('[data-rx="persona"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.persona)));
-    mount.querySelectorAll('[data-rx="data"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.data)));
-    ["meals", "mealUI", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
+    DECISIONS.forEach((D) => mount.querySelectorAll(`[data-rx="${D.k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === String(P[D.k])))));
+    ["persona", "data", "meals", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
     mount.querySelectorAll('[data-rx="theme"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === appTheme())));
   }
 
-  /* ---------- page controls ---------- */
+  /* ---------- the controls ---------- */
+  /* a decision: stored, sent to the phone, and its note shown until the phone moves on */
+  function decide(k, v) {
+    P[k] = v;
+    store.set(k, v);
+    P.ph.set(k, v);
+    if (k === "checkin") renderNav();
+    P.dec = k;
+    syncControls(); notes(); syncNav();
+  }
+  /* the plan for the phone: the switch, Start membership, or a free screen from the list */
+  function setPlan(v, then) {
+    P.plan = v;
+    P.ph.set("plan", v);
+    if (then) P.ph.open(then);
+    syncControls(); notes();
+  }
+  function scrollToStage() {
+    if (isM()) return;
+    const r = stage.getBoundingClientRect();
+    if (r.top < 0 || r.top > window.innerHeight * 0.5) stage.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
+  }
+  function openSheet(w) {
+    Object.entries(sheets).forEach(([k, el]) => (el.hidden = k !== w));
+    main.inert = true; mbar.inert = true;
+    const el = sheets[w];
+    el.querySelector(".rx-sheet-p").scrollTop = 0;
+    requestAnimationFrame(() => { const x = el.querySelector(".rx-x"); if (x) x.focus(); });
+  }
+  function closeSheet() {
+    const was = Object.keys(sheets).find((k) => !sheets[k].hidden);
+    Object.values(sheets).forEach((el) => (el.hidden = true));
+    main.inert = false; mbar.inert = false;
+    if (was && isM()) { const b = mbar.querySelector(`[data-v="${was}"]`); if (b) b.focus({ preventScroll: true }); }
+  }
   mount.addEventListener("click", (e) => {
     const b = e.target.closest("[data-rx]");
-    if (!b) return;
+    if (!b || !mount.contains(b) || b.disabled) return;
     const k = b.dataset.rx, v = b.dataset.v;
-    if (k === "form") {
-      if (P.compare && !isM()) return;
-      P.form = v; store.set("form", v);
-      P.phones.forEach((p) => p.setForm(v));
-      notes(); syncControls();
-    } else if (k === "compare") {
-      P.compare = !P.compare; store.set("compare", P.compare);
-      build();
-    } else if (k === "screen" && v === "compare-bm") {
-      closeMsheet();
-      if (isM()) { P.phones.forEach((p) => p.open("bm")); return; }
-      if (!P.compare) { P.compare = true; store.set("compare", true); build(); } else P.phones.forEach((p) => p.open("bm"));
-      const r = stage.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.5) stage.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
-    } else if (k === "screen") {
-      P.phones.forEach((p) => p.open(v));
-      closeMsheet();
-      if (!isM()) { const r = stage.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.5) stage.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); }
-    } else if (k === "persona") {
-      P.persona = v; P.phones.forEach((p) => p.setPersona(v)); syncControls(); notes(); if (P.compare) compareTable();
-    } else if (k === "data") {
-      P.data = v; P.phones.forEach((p) => p.setData(v)); syncControls(); notes(); if (P.compare) compareTable();
-    } else if (k === "meals") {
-      P.meals = v; P.phones.forEach((p) => p.setMeals(v)); syncControls(); notes(); if (P.compare) compareTable();
-    } else if (k === "mealUI") {
-      P.mealUI = v; P.phones.forEach((p) => p.setMealUI(v)); syncControls(); notes();
-    } else if (k === "plan") {
-      setPlanAll(v);
-    } else if (k === "theme") {
-      P.themeSet = v; P.phones.forEach((p) => p.setTheme(v)); syncControls();
-    } else if (k === "reset") {
-      P.phones.forEach((p) => p.reset()); notes();
-      if (P.compare) P.phones.forEach((p) => p.open("bm"));
-    } else if (k === "msheet") {
-      const m = mount.querySelector("#rxMsheet"); m.hidden = false;
-      requestAnimationFrame(() => { const x = m.querySelector(".rx-x"); if (x) x.focus(); });
-    } else if (k === "msheet-close") closeMsheet();
+    if (DEC[k]) { const o = DEC[k].opts.find(([x]) => String(x) === v); if (o) decide(k, o[0]); return; }
+    switch (k) {
+      case "dinfo":
+        P.dec = P.dec === v && !isM() ? null : v;
+        notes();
+        if (isM()) openSheet("notes");
+        break;
+      case "dclose": P.dec = null; notes(); break;
+      case "screen": closeSheet(); P.ph.open(v); scrollToStage(); break;
+      case "persona": case "data": case "meals": P[k] = v; P.ph.set(k, v); syncControls(); notes(); break;
+      case "plan": setPlan(v); break;
+      case "theme": P.themeSet = v; P.ph.set("theme", v); syncControls(); break;
+      case "reset": P.ph.reset(); notes(); break;
+      case "sheet": openSheet(v); break;
+      case "sheet-close": closeSheet(); break;
+      default: break;
+    }
   });
-  function closeMsheet() { const m = mount.querySelector("#rxMsheet"); if (!m.hidden) { m.hidden = true; const t = mount.querySelector('.rx-mbar [data-rx="msheet"]'); if (t && isM()) t.focus({ preventScroll: true }); } }
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeMsheet();
+    if (e.key === "Escape" && Object.values(sheets).some((el) => !el.hidden)) { e.preventDefault(); closeSheet(); return; }
+    /* the arrow keys step through the screens list, when focus isn't in the phone or a field */
     if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !isM() && !e.target.closest("input, textarea, select, .ap")) {
-      const flat = SCREENS.flatMap(([, items]) => items.map(([id]) => id)).filter((id) => id !== "compare-bm");
+      const flat = screenGroups().flatMap(([, items]) => items.map(([id]) => id)).filter((id) => !offScreen(id));
       const i = Math.max(0, flat.indexOf(keyToScreen(P.key)));
-      const next = flat[(i + (e.key === "ArrowRight" ? 1 : -1) + flat.length) % flat.length];
-      P.phones.forEach((p) => p.open(next));
+      P.ph.open(flat[(i + (e.key === "ArrowRight" ? 1 : -1) + flat.length) % flat.length]);
     }
   });
 
   /* follow the viewer's theme unless the demo picks one */
-  const followTheme = () => { if (!P.themeSet) { P.phones.forEach((p) => p.setTheme(pageTheme())); syncControls(); } };
+  const followTheme = () => { if (!P.themeSet && P.ph) { P.ph.set("theme", pageTheme()); syncControls(); } };
   if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", followTheme);
   new MutationObserver(followTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
+  /* ---------- build ---------- */
+  const shell = phoneShell();
+  stage.appendChild(shell);
+  const cfg = { persona: P.persona, data: P.data, meals: P.meals, plan: P.plan, theme: appTheme(), onNav: (k) => onNav(k), onPlan: (v, then) => setPlan(v, then) };
+  DECISIONS.forEach((D) => (cfg[D.k] = P[D.k]));
+  P.ph = Phone(shell.querySelector(".rx-mount"), cfg);
+  P.ph.el.setAttribute("aria-label", "Florin app prototype");
+  /* the live phone, for a module that needs it outside a hook */
+  EXT.api = P.ph;
+  P.key = P.ph.key();
+  place();
+  notes();
+  syncNav();
+  syncControls();
+  /* the header settles once the fonts are in, and the phone's room with it */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   let wasM = isM();
-  window.addEventListener("resize", FL.debounce(() => { if (isM() !== wasM) { wasM = isM(); build(); } else fit(); }, 120));
-  /* the notes follow the phone's screen even when the change came from inside it */
-  build();
+  window.addEventListener("resize", FL.debounce(() => { if (isM() !== wasM) { wasM = isM(); place(); } else fit(); }, 120));
 })();

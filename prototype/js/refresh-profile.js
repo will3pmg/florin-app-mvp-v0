@@ -1,0 +1,1 @@
+/* Florin app refresh: module slot for the profile and onboarding (V.onboard), from the Today avatar (data-act="profile"). Registers into window.FLORIN_EXT (CLAUDE.md, Extension hooks). Empty until it's built. */

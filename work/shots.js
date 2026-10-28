@@ -1,6 +1,7 @@
-/* Screenshots of every prototype screen, in each state that matters.
+/* Screenshots of every prototype screen, in each state that matters, and of the page itself.
    NODE_PATH=$(npm root -g) node work/shots.js <out-dir> [screen ids, comma separated]
-   Captures the phone only (the .rx-dev frame) at 1440 wide, plus console errors and the notes panel's claims line. */
+   Captures the phone only (the .rx-stage) at 1440 wide, plus console errors and the notes panel's claims line, then the
+   whole page at 1440 and 1100 wide and the phone layout at 390 (with its Toggles and Notes sheets open). */
 const { chromium } = require("playwright");
 const path = require("path");
 const fs = require("fs");
@@ -11,13 +12,19 @@ const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 fs.mkdirSync(OUT, { recursive: true });
 
 const SCREENS = ["today", "ck-card", "plus", "earlier", "bm", "bm-details", "guide", "flag", "sym", "meal", "ck", "ck-last", "ckdone", "ckday", "history", "insights", "i-score", "i-timing", "i-often", "i-form", "i-sym", "i-ck", "i-pat", "i-pattern", "ask-about", "ask"];
+/* each state sets these page controls (the rest stay at their defaults: Sarah, check-in on, quick tiles) */
 const STATES = [
   { id: "C-light-est", form: "C", theme: "light", data: "est" },
   { id: "A-light-est", form: "A", theme: "light", data: "est" },
   { id: "B-light-est", form: "B", theme: "light", data: "est" },
   { id: "C-dark-est", form: "C", theme: "dark", data: "est" },
-  { id: "C-light-new", form: "C", theme: "light", data: "new" }
+  { id: "C-light-new", form: "C", theme: "light", data: "new" },
+  { id: "C-light-fresh", form: "C", theme: "light", data: "fresh" },
+  { id: "C-dark-ckoff", form: "C", theme: "dark", data: "est", checkin: "false", persona: "marcus" },
+  { id: "C-light-full", form: "C", theme: "light", data: "est", bmUI: "full", persona: "alex" }
 ];
+const DEFAULTS = { persona: "sarah", checkin: "true", bmUI: "quick" };
+const pick = (page, k, v) => page.evaluate(([k, v]) => { const b = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (b && !b.disabled) b.click(); }, [k, v]);
 
 (async () => {
   const browser = await chromium.launch();
@@ -30,12 +37,14 @@ const STATES = [
   await page.waitForSelector(".ap-rx");
   await page.evaluate(() => document.fonts && document.fonts.ready);
   const report = [];
-  for (const s of STATES) {
-    await page.click(`.rx-head [data-rx="form"][data-v="${s.form}"]`).catch(() => {});
-    await page.click(`.rx-side [data-rx="theme"][data-v="${s.theme}"]`);
-    await page.click(`.rx-side [data-rx="data"][data-v="${s.data}"]`);
+  for (const s0 of STATES) {
+    const s = Object.assign({}, DEFAULTS, s0);
+    for (const k of ["persona", "data", "form", "theme", "checkin", "bmUI"]) await pick(page, k, s[k]);
+    await pick(page, "plan", "member");
     for (const id of SCREENS) {
       if (ONLY && !ONLY.includes(id)) continue;
+      /* a screen the decisions switched off (the check-in's, with it off) is skipped */
+      if (await page.$eval(`[data-rx="screen"][data-v="${id}"]`, (b) => b.disabled).catch(() => true)) continue;
       await page.click(`.rx-side [data-rx="screen"][data-v="${id}"]`);
       await page.waitForTimeout(450);
       const el = await page.$(".rx-stage");
@@ -61,14 +70,33 @@ const STATES = [
       report.push({ state: s.id, screen: id, file, lint });
     }
   }
-  /* the A and B comparison */
-  if (!ONLY || ONLY.includes("compare")) {
-    await page.click(`.rx-side [data-rx="theme"][data-v="light"]`);
-    await page.click(`.rx-side [data-rx="data"][data-v="est"]`);
-    await page.click(`.rx-side [data-rx="screen"][data-v="compare-bm"]`);
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(OUT, "compare-full.png"), fullPage: true });
-    await page.click(`[data-rx="compare"]`);
+  for (const k of ["persona", "data", "form", "theme", "checkin", "bmUI"]) await pick(page, k, Object.assign({ data: "est", form: "C", theme: "light" }, DEFAULTS)[k]);
+  await ctx.close();
+
+  /* the page: 1440 and 1100 wide, and the phone layout at 390 with each sheet */
+  if (!ONLY || ONLY.includes("page")) {
+    for (const [w, h] of [[1440, 1000], [1100, 900], [390, 844]]) {
+      const c = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+      const p = await c.newPage();
+      p.on("pageerror", (e) => errors.push(`${w}: ${e}`));
+      await p.goto(PAGE);
+      await p.waitForSelector(".ap-rx");
+      await p.evaluate(() => document.fonts && document.fonts.ready);
+      await p.waitForTimeout(1200);
+      await p.screenshot({ path: path.join(OUT, `page-${w}.png`) });
+      if (w < 760) {
+        for (const sh of ["toggles", "notes"]) {
+          await p.click(`.rx-mbar [data-v="${sh}"]`);
+          await p.waitForTimeout(600);
+          await p.screenshot({ path: path.join(OUT, `page-${w}-${sh}.png`) });
+          await p.keyboard.press("Escape");
+          await p.waitForTimeout(300);
+        }
+      } else {
+        await p.screenshot({ path: path.join(OUT, `page-${w}-full.png`), fullPage: true });
+      }
+      await c.close();
+    }
   }
   fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify({ errors, report }, null, 2));
   console.log(`${report.length} shots, ${errors.length} console errors`);

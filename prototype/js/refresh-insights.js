@@ -572,7 +572,7 @@
       sum: u ? (tm.mornings.length ? `<b>${tm.inW} of ${plural(tm.mornings.length, "morning")}</b> in that window${tm.later.length || tm.earlier.length ? `: ${join([tm.later.length ? `${tm.later.length} later` : "", tm.earlier.length ? `${tm.earlier.length} earlier` : ""].filter(Boolean))}` : ""}.` : "No first BM logged in this stretch.")
         : tm.mornings.length ? `First BM on <b>${plural(tm.mornings.length, "morning")}</b> so far, from ${esc(T(Math.min(...tm.mornings.map((f) => f.first))))} to ${esc(T(Math.max(...tm.mornings.map((f) => f.first))))}.` : "No BMs logged yet.",
       chart: tm.mornings.length ? morning({ days: F, usual: u, domain: dom, r: n >= 90 ? 2.8 : n >= 30 ? 4 : 5, gap: n >= 90 ? 1.2 : 1.6, aria: `First BM each morning, ${RANGE_NAME[n].toLowerCase()}${u ? `, against your usual window ${winText(u)}` : ""}` }) : "",
-      legend: u ? `${lg("", "In your window")}${lg("sw--shift", "Outside it")}${lg("sw--band", "Your usual window")}` : lg("", "First BM")
+      legend: u ? `${lg("", "In your window")}${lg("sw--shift", "Outside it")}${lg("sw--band", "Your usual window")}` : tm.mornings.length ? lg("", "First BM") : ""
     });
 
     /* how often */
@@ -761,7 +761,7 @@
         ${hero("Typical first BM", tm.med != null ? esc(T(tm.med)) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${winText(u)}`, "plain")}${chip(`${tm.inW} of ${plural(tm.mornings.length, "morning")} in it`, "usual")}`, now)}
         ${tabs}
         ${fig(u ? `${tm.inW} of ${tm.mornings.length} mornings in your window` : "First BM, each morning", RANGE_NAME[n], tm.mornings.length ? morning({ w: 326, days: F, usual: u, domain: dom, r: n >= 90 ? 3 : n >= 30 ? 4.2 : 5.4, gap: n >= 90 ? 1.2 : 1.6, bracket: true, aria: `First BM each morning, ${rn}` }) : `<p class="ap-ic-note">No first BM logged in this stretch.</p>`,
-          u ? `${lg("", "In your window")}${lg("sw--shift", "Outside it")}${lg("sw--ring", "Newest")}` : lg("", "First BM"))}
+          u ? `${lg("", "In your window")}${lg("sw--shift", "Outside it")}${lg("sw--ring", "Newest")}` : tm.mornings.length ? lg("", "First BM") : "")}
         ${second}
         ${shaped(lines)}
         ${askBtn("timing")}
@@ -823,7 +823,7 @@
       return page(M, V, st, "Form", `
         ${hero("Most common form", fm.bms.length ? esc(fm.top.label) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${L.usualFormsText(M, mode)}`, "plain")}${fm.bms.length ? chip(`${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, "usual") : ""}`, now)}
         ${tabs}
-        ${fig(u ? `${fm.inF} of ${fm.bms.length - fm.unsure} BMs within your usual forms` : "Forms so far", plural(fm.bms.length, "BM"), fm.bms.length ? hist({ w: 326, bins: fm.bins, h: 100, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${rn}` }) : "", u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "")}
+        ${!fm.bms.length ? `<p class="ap-sect-p" data-a>No BMs logged yet. Each one you log shows here, by its form.</p>` : fig(u ? `${fm.inF} of ${fm.bms.length - fm.unsure} BMs within your usual forms` : "Forms so far", plural(fm.bms.length, "BM"), fm.bms.length ? hist({ w: 326, bins: fm.bins, h: 100, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${rn}` }) : "", u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "")}
         ${!fm.bms.length ? "" : fig("Each BM, day by day", B ? "Hard at the bottom" : Cw ? "Pellets at the bottom" : "Type 1 at the bottom", formDots({ days: F.filter((f) => !f.pending), mode, usual: u, h: 110, aria: `Each BM's form, ${rn}` }), `${lg("", "Within your usual")}${u ? lg("sw--shift", "Outside it") + lg("sw--band", "Your usual") : ""}${fm.unsure ? lg("sw--maybe", "Could be either") : ""}${lg("sw--ring", "Newest")}`)}
         ${shaped(lines)}
         ${askBtn("form")}

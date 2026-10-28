@@ -1,0 +1,1 @@
+/* Florin app refresh: module slot for the Home (V.home, Day first) and History (V.history, Calendar) decisions. Registers into window.FLORIN_EXT (CLAUDE.md, Extension hooks). Empty until it's built. */

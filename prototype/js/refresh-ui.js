@@ -36,7 +36,8 @@
     undo: '<path d="M7.5 6.5 4 10l3.5 3.5M4.5 10H12a4 4 0 0 1 0 8h-1.5"/>',
     pen: '<path d="M4 16l.7-3.1 8.6-8.6a1.6 1.6 0 0 1 2.3 2.3L7 15.3z"/>',
     report: '<path d="M6 3.5h6l3 3V16a.5.5 0 0 1-.5.5h-8.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M12 3.5V7h3M7.5 10.5h5M7.5 13h5"/>',
-    repeat: '<path d="M4.5 9V7.5A2.5 2.5 0 0 1 7 5h9l-2.5-2.5M15.5 11v1.5A2.5 2.5 0 0 1 13 15H4l2.5 2.5"/>'
+    repeat: '<path d="M4.5 9V7.5A2.5 2.5 0 0 1 7 5h9l-2.5-2.5M15.5 11v1.5A2.5 2.5 0 0 1 13 15H4l2.5 2.5"/>',
+    sliders: '<path d="M3.5 6.5h13M3.5 13.5h13"/><circle cx="7.5" cy="6.5" r="2" fill="currentColor"/><circle cx="12.5" cy="13.5" r="2" fill="currentColor"/>'
   };
   const ic = (k, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 20 20" aria-hidden="true">${IC[k] || ""}</svg>`;
   RU.icon = ic;
@@ -222,7 +223,9 @@
       ["First BM", W.mornings.length ? `logged on <b>${plural(W.mornings.length, "day")}</b>` : "none logged yet", firstStrip],
       ["Symptoms", esc(symWords), symStrip]
     ];
-    const body = rows.map(([l, s, st]) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${st}</div>`).join("");
+    /* nothing logged this week yet (day 1, say): the counts in words, without seven empty strips under each */
+    const none = !W.cols.some((c) => c.logged);
+    const body = rows.map(([l, s, st]) => `<div class="ap-wk-m"><p><span class="ap-wk-l">${l}</span> ${s}</p>${none ? "" : st}</div>`).join("");
     const legend = [
       seen.usual ? `<span><i class="ap-wk-dot is-usual"></i>Within your usual</span>` : "",
       seen.shift ? `<span><i class="ap-wk-dot is-shift"></i>Outside it</span>` : "",
@@ -342,6 +345,9 @@
   /* "yesterday" inside a sentence, the weekday and date for anything older */
   const dayIn = (d) => (d === L.TODAY ? "today" : d === L.TODAY - 1 ? "yesterday" : dayName(d));
 
+  /* a tile on the plus card saves at once only after this many BMs are logged: the first few go through the form */
+  RU.QUICK_AFTER = 5;
+  RU.bmCount = (M) => M.days.reduce((s, y) => s + y.entries.filter((e) => e.kind === "bm").length, 0);
   /* the plus menu, for today or (catching up) an earlier day */
   RU.plus = (M, V, st = {}) => {
     const mode = V.form;
@@ -357,7 +363,7 @@
       : hasNo ? `<span class="ap-k">Logged: no BM ${isToday ? "today" : "that day"}</span>`
       : !isToday || L.isLate() ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="nobm">${ic("nobm")}Log no BM ${isToday ? "today" : "that day"}</button>` : "";
     const hid = `plus-h${V.uid}`;
-    const quick = isToday && M.days.reduce((s, y) => s + y.entries.filter((e) => e.kind === "bm").length, 0) >= 5;
+    const quick = isToday && RU.bmCount(M) >= RU.QUICK_AFTER;
     /* BM logging, Full form only: one row into the form, and no tiles to log from */
     const full = V.bmUI === "full";
     /* someone who joined today has no earlier day to catch up on */
@@ -713,7 +719,7 @@
       return RU.historyDay(M, V, x, es);
     }).join("");
     const since = total ? `${plural(total, "entry", "entries")} since ${shortDate(M.start)}` : `Started ${M.start === L.TODAY ? "today" : `on ${shortDate(M.start)}`}. Nothing logged yet.`;
-    const report = `A report of your logs to bring to a clinician: dates, BMs, symptoms, ${ckOn(V) ? "meals and check-ins" : "and meals"}. That comes in the next pass.`;
+    const report = `A report of your logs to bring to a clinician: dates, BMs, symptoms${ckOn(V) ? ", meals and check-ins" : " and meals"}. That comes in the next pass.`;
     return `<div class="ap-scr ap-hist">
       <header class="ap-hist-top" data-a><h1 class="ap-h1">History</h1><p class="ap-hi-sub">${esc(since)}</p></header>
       ${V.plan === "free" ? `<button type="button" class="ap-hist-rep" data-a data-act="pay" data-pay="report">${ic("report")}<span><b>Make a report for your clinician</b><em>With Florin membership</em></span>${RU.icon("lock", "ap-tl-go")}</button>` : `<button type="button" class="ap-hist-rep" data-a data-act="toast" data-msg="${esc(report)}">${ic("report")}<span><b>Make a report for your clinician</b><em>Your logs, so you don't have to remember dates</em></span>${ic("chev", "ap-tl-go")}</button>`}

@@ -11,93 +11,99 @@
 .sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; /* grid-exempt: the standard visually-hidden pattern, not spacing */ overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .rx :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .rx-eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.rx-small { font-size: 12.5px; line-height: 1.45; color: var(--ink-3); }
-.rx-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 48px; align-items: end; padding-block: 40px 32px; }
-.rx-head h1 { font-weight: 300; font-size: clamp(32px, 4vw, 48px); line-height: 1.04; letter-spacing: -.03em; margin: 8px 0 12px; text-wrap: balance; }
-.rx-lede { font-family: var(--serif); font-size: 17px; line-height: 1.5; color: var(--ink-2); max-width: 62ch; margin: 0; }
-.rx-head-r { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.rx-ab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.rx-ctl { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.rx-ctl-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.rx-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
-.rx-seg button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font: 500 13.5px/1 var(--sans); color: var(--ink-2); cursor: pointer; white-space: nowrap; transition: background .2s, color .2s; }
-.rx-seg button:hover { color: var(--ink); }
-.rx-seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
-.rx-seg button:disabled { opacity: .45; cursor: default; }
+.rx-small { font-size: 12.5px; line-height: 1.45; color: var(--ink-3); margin: 0; }
+/* a slim header, so the whole phone fits under it */
+.rx-head { padding-block: 24px 20px; }
+.rx-head h1 { font-weight: 300; font-size: clamp(28px, 2.6vw, 36px); line-height: 1.08; letter-spacing: -.025em; margin: 8px 0; text-wrap: balance; }
+.rx-lede { font-family: var(--serif); font-size: 15.5px; line-height: 1.5; color: var(--ink-2); max-width: 88ch; margin: 0; }
+.rx-ctl { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.rx-ctl-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+/* segmented controls: equal columns, words wrap to two lines rather than run out of the bar */
+.rx-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+.rx-seg button, .rx-chips button { min-height: 36px; padding: 4px 8px; border: 0; border-radius: 12px; background: none; font: 500 13px/1.15 var(--sans); color: var(--ink-2); cursor: pointer; text-wrap: balance; transition: background .2s, color .2s; }
+.rx-seg button:hover, .rx-chips button:hover { color: var(--ink); background: var(--line-2); }
+.rx-seg button[aria-pressed="true"], .rx-chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.rx-o1, .rx-o2 { display: block; }
+.rx-o1 { font-weight: 700; font-family: var(--mono); font-size: 12px; }
+/* where the options don't fit in one bar (Data style): chips that wrap */
+.rx-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.rx-chips button { min-height: 32px; padding: 0 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+.rx-chips button[aria-pressed="true"] { box-shadow: none; }
 .rx-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; transition: background .2s, color .2s; }
 .rx-btn:hover { background: var(--line-2); }
 .rx-btn--line { background: transparent; }
-.rx-cmp[aria-pressed="true"] { background: var(--ink); color: var(--bg); box-shadow: none; }
 
-.rx-main { display: grid; grid-template-columns: 248px minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
-.rx-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 32px); overflow-y: auto; scrollbar-width: thin; }
+/* left: Decisions, Demo, Screens. Middle: the phone, live. Right: notes. The workshop sits under the phone */
+.rx-main { display: grid; grid-template-columns: 288px minmax(0, 1fr) 320px; grid-template-areas: "side stage notes" "side under notes"; gap: 24px 32px; align-items: start; }
+.rx-side--l { grid-area: side; }
+.rx-center { grid-area: stage; min-width: 0; }
+.rx-side--r { grid-area: notes; }
+.rx-under { grid-area: under; min-width: 0; }
+/* each side bar scrolls on its own when it's taller than the window */
+.rx-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 32px); overflow-y: auto; scrollbar-width: thin; border-radius: 24px; }
 .rx-panel { background: var(--panel); border-radius: 24px; padding: 16px; box-shadow: inset 0 0 0 1px var(--line-2); }
 .rx-h { font: 500 15px/1.2 var(--sans); margin: 0 0 12px; letter-spacing: -.005em; }
+/* the decisions: a label, a small info button, then the options */
+.rx-dec-lede { margin: -4px 0 16px; }
+.rx-decs { display: flex; flex-direction: column; gap: 16px; }
+.rx-dec { display: flex; flex-direction: column; gap: 8px; }
+.rx-dec-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+.rx-info { position: relative; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
+.rx-info::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
+.rx .rx-info .ic { width: 18px; height: 18px; }
+.rx-info:hover { color: var(--ink); background: var(--line-2); }
+.rx-info[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.rx-demo { display: flex; flex-direction: column; gap: 16px; align-items: stretch; }
+.rx-demo .rx-btn { align-self: flex-start; }
+/* the screens to jump to */
 .rx-nav, .rx-nav ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .rx-nav { gap: 16px; }
 .rx-nav ol { gap: 4px; margin-top: 8px; }
-.rx-nav-b { width: 100%; min-height: 36px; padding: 8px 12px; border: 0; border-radius: 12px; background: none; text-align: left; font: 400 14px/1.25 var(--sans); color: var(--ink-2); cursor: pointer; }
-.rx-nav-b:hover { background: var(--line-2); color: var(--ink); }
+.rx-nav-b { width: 100%; min-height: 36px; padding: 8px 12px; border: 0; border-radius: 12px; background: none; text-align: left; font: 400 14px/1.25 var(--sans); color: var(--ink-2); cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
+.rx-nav-b:hover:not(:disabled) { background: var(--line-2); color: var(--ink); }
 .rx-nav-b[aria-current="true"] { background: var(--ink); color: var(--bg); }
-.rx-demo { display: flex; flex-direction: column; gap: 16px; align-items: stretch; }
-.rx-demo .rx-ctl { align-items: stretch; }
-.rx-demo .rx-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
-.rx-demo .rx-seg button { padding: 0 8px; }
-.rx-demo .rx-btn { align-self: flex-start; }
-.rx-center { min-width: 0; display: flex; flex-direction: column; gap: 32px; }
-.rx-stage { display: flex; justify-content: center; align-items: flex-start; gap: 32px; }
-.rx-ph { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
-.rx-ph-tag { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 15px; color: var(--ink-2); }
-.rx-ph-tag b { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--bg); font: 700 13px/1 var(--mono); }
+.rx-nav-b:disabled { cursor: default; color: var(--ink-3); }
+.rx-nav-b em { font-style: normal; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.rx-stage { display: flex; justify-content: center; align-items: flex-start; }
+.rx-ph { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .rx-fit { position: relative; flex: none; }
 .rx-dev { transform-origin: top left; }
 .rx-mount { position: absolute; inset: 0; }
 .rx-mount > .ap { position: absolute; inset: 0; overflow: hidden; }
 
-/* notes beside the phone */
+/* notes beside the phone: the screen's, or the decision just changed */
 .rx-note h2 { font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: -.015em; margin: 8px 0; text-wrap: balance; }
 .rx-note-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); margin: 0; }
 .rx-h3 { font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 24px 0 8px; }
-.rx-ba { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rx-ba, .rx-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .rx-ba li { display: flex; flex-direction: column; gap: 4px; padding-block: 12px; border-top: 1px solid var(--line-2); }
 .rx-ba s { font-size: 13px; line-height: 1.4; color: var(--ink-3); text-decoration-color: color-mix(in srgb, var(--ink-3) 60%, transparent); }
 .rx-ba b { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.rx-opts { gap: 4px; }
+.rx-opts li { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line-2); }
+.rx-opts li.is-on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.rx-opts b { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; font-size: 14px; font-weight: 500; line-height: 1.3; }
+.rx-opts span { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-opts .rx-on { padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; line-height: 20px; }
+.rx-rec { margin: 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink); }
 .rx-q, .rx-res { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .rx-q li::marker { color: var(--ink); }
 .rx-res { font-size: 13.5px; }
 .rx-lint { display: flex; gap: 8px; align-items: flex-start; margin: 24px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
 .rx-lint .ic { width: 16px; height: 16px; }
 .rx-lint.is-hit { background: color-mix(in srgb, var(--gold) 26%, transparent); color: var(--ink); }
-
-/* A and B, compared */
-.rx-cmpt { box-sizing: border-box; width: 100%; max-width: 920px; margin: 0 auto; background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: inset 0 0 0 1px var(--line-2); }
-.rx-cmpt-h h2 { font-weight: 400; font-size: 28px; line-height: 1.1; letter-spacing: -.02em; margin: 8px 0; }
-.rx-cmpt-h > p:last-child { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; margin: 0; }
-.rx-tbl-wrap { overflow-x: auto; margin-block: 16px; }
-.rx-tbl { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; line-height: 1.45; }
-.rx-tbl th, .rx-tbl td { text-align: left; vertical-align: top; padding: 12px 16px 12px 0; border-top: 1px solid var(--line-2); }
-.rx-tbl thead th { border-top: 0; font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
-.rx-tbl tbody th { width: 24%; font-weight: 500; }
-.rx-tbl td { color: var(--ink-2); }
+.rx-note-back { margin-top: 16px; }
 .rx-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
 
-.rx-mbar, .rx-msheet { display: none; }
-
-/* in compare mode the notes give their column to the second phone */
-.rx.is-compare .rx-main { grid-template-columns: 248px minmax(0, 1fr); }
-.rx.is-compare .rx-side--r { display: none; }
+.rx-mbar, .rx-sheet { display: none; }
 
 @media (max-width: 1240px) {
-  .rx-main { grid-template-columns: 212px minmax(0, 1fr) 280px; gap: 24px; }
-  .rx.is-compare .rx-main { grid-template-columns: 212px minmax(0, 1fr); }
+  .rx-main { grid-template-columns: 256px minmax(0, 1fr) 272px; gap: 24px; }
 }
+/* narrower: the notes and the workshop go under the phone; the toggles keep their bar */
 @media (max-width: 1020px) {
-  .rx-head { grid-template-columns: minmax(0, 1fr); }
-  .rx-main, .rx.is-compare .rx-main { grid-template-columns: minmax(0, 1fr); }
-  .rx-side { position: static; max-height: none; overflow: visible; }
-  .rx-side--l { order: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .rx-center { order: 1; }
-  .rx-side--r { order: 3; }
+  .rx-main { grid-template-columns: 256px minmax(0, 1fr); grid-template-areas: "side stage" "side notes" "side under"; }
+  .rx-side--r { position: static; max-height: none; overflow: visible; }
 }
 
 /* ---------- the app, inside the phone ---------- */
@@ -614,30 +620,32 @@
 .ap-rx.is-full .ap-ck-h { padding-top: 16px; }
 .ap-rx.is-full .ap-o--sheet .ap-o-p, .ap-rx.is-full .ap-o--full .ap-o-p { max-height: calc(100% - 16px); }
 .ap-rx.is-full .ap-o--full .ap-o-p { height: calc(100% - 16px); }
-.ap-rx.is-full .ap-tb { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
-.ap-rx.is-full .ap-psh, .ap-rx.is-full .ap-fsh-f { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+/* the page's bottom bar sits under the app and takes the safe area, so the app's own bottom edge needs none */
+.ap-rx.is-full .ap-tb { bottom: 16px; }
+.ap-rx.is-full .ap-psh, .ap-rx.is-full .ap-fsh-f { padding-bottom: 24px; }
 
 @media (max-width: 759px) {
   .rx { padding-inline: 0; padding-block: 0; }
-  .rx-head, .rx-side, .rx-foot, .rx-cmpt, .rx-center > .rx-ws { display: none !important; }
-  .rx-ws--m { display: block; }
+  .rx-head, .rx-side, .rx-under, .rx-foot { display: none !important; }
   .rx-main, .rx-center, .rx-stage, .rx-ph { display: block; }
-  .rx-mbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; gap: 8px; height: calc(48px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); background: var(--bg); box-shadow: 0 1px 0 var(--line); }
-  .rx-mbar-t { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; margin-right: auto; }
-  .rx-mbar .rx-seg button { min-height: 32px; padding: 0 8px; font-size: 12.5px; }
-  .rx-mbar-b { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 13px/1 var(--sans); cursor: pointer; }
-  .rx-fit { position: fixed; top: calc(48px + env(safe-area-inset-top, 0px)); left: 0; right: 0; bottom: 0; width: auto !important; height: auto !important; }
+  /* the app fills the screen above the bottom bar */
+  .rx-fit { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); width: auto !important; height: auto !important; }
   .rx-dev { width: 100%; height: 100%; transform: none !important; }
   .rx-dev .apx-phone { display: none; }
   .rx-dev .apx-screen { inset: 0; border-radius: 0; }
-  .rx-msheet:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 200; }
-  .rx-msheet-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 45%, transparent); }
-  .rx-msheet-p { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: var(--bg); animation: apSheet .4s var(--ap-ease, ease) both; }
-  .rx-msheet-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; }
-  .rx-x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
-  .rx-msheet .rx-panel { padding: 16px; }
+  /* the bottom bar: Toggles (the decisions, the demo and the screens) and Notes, each a sheet */
+  .rx-mbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 100; display: flex; align-items: center; gap: 8px; height: calc(56px + env(safe-area-inset-bottom, 0px)); padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px)); background: var(--bg); box-shadow: 0 -1px 0 var(--line); }
+  .rx-mbar-t { flex: 1; min-width: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rx-mbar-b { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; }
+  .rx-sheet:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 200; }
+  .rx-sheet-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 45%, transparent); }
+  .rx-sheet-p { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: var(--bg); animation: apSheet .4s var(--ap-ease, ease) both; }
+  .rx-sheet-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; font-size: 15px; background: var(--bg); }
+  .rx-sheet-b { display: flex; flex-direction: column; gap: 12px; }
+  .rx-x { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
+  .rx-sheet :is(.rx-seg button, .rx-nav-b) { min-height: 44px; }
+  .rx-sheet .rx-chips button { min-height: 40px; }
 }
-@media (max-width: 519px) { .rx-mbar-t { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .ap-rx *, .rx * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -661,7 +669,6 @@
 .ap-rx .ap-ch::after { content: ""; position: absolute; inset: -4px 0; }
 .ap-rx .ap-gd-b::after, .ap-rx .ap-ck-later::after { content: ""; position: absolute; inset: -4px 0; }
 .ap-rx .ap-hi-filter::after { content: ""; position: absolute; inset: -8px 0; }
-.ap-rx .ap-avatar::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 /* Insights: the range tabs, and Ask's clear and send */
 .ap-rx .ap-seg--range button, .ap-rx .ap-askc-x, .ap-rx .ap-askbar-b, .ap-rx .ap-ask-b, .ap-rx .ap-back, .ap-rx .ap-table summary, .ap-rx .ap-btn--c { position: relative; }
 .ap-rx .ap-ic-h { min-height: 44px; }
@@ -732,9 +739,9 @@
 .ap-rx .ap-tst-b { position: relative; }
 .ap-rx .ap-tst-b::after { content: ""; position: absolute; inset: -4px 0; }
 
-/* ---------- the workshop panel, under the phone (and in the notes sheet on a phone) ---------- */
+/* ---------- the workshop panel, under the phone (and in the Notes sheet on a phone) ---------- */
 .rx-ws { box-sizing: border-box; width: 100%; max-width: 920px; margin: 0 auto; background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: inset 0 0 0 1px var(--line-2); }
-.rx-ws--m { display: none; max-width: none; padding: 16px; }
+.rx-ws--m { max-width: none; padding: 16px; }
 .rx-ws-h h2 { font-weight: 400; font-size: 28px; line-height: 1.1; letter-spacing: -.02em; margin: 8px 0; text-wrap: balance; }
 .rx-ws-h > p:last-child { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; margin: 0; }
 .rx-ws-cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px; }
@@ -778,17 +785,10 @@
 .ap-rx[data-theme="dark"] .ap-legend .ap-ckt-sw--now { background: var(--ap-ink); box-shadow: 0 0 0 2px var(--ap-bg), 0 0 0 3px var(--ap-ink); }
 .ap-rx[data-theme="dark"] .ap-hi-filter[aria-pressed="true"] { background: var(--ap-ink); color: var(--ap-bg); }
 .ap-rx[data-theme="dark"] .ap-fld:focus-within, .ap-rx[data-theme="dark"] :is(.ap-ta, .ap-in):focus { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
-/* the avatar is neutral: Plum on light screens means only "your usual" */
-.ap-rx .ap-avatar { background: var(--ap-card2); color: var(--ap-ink); }
+/* the avatar is neutral in both themes: Plum on light screens means only "your usual" */
+.ap-rx[data-theme] .ap-avatar { width: 44px; height: 44px; background: var(--ap-card2); color: var(--ap-ink); }
 /* a five-word log seen through A or C: the steps its word covers, outlined, not picked */
 .ap-fm-b.is-maybe { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
-/* compare mode below 1240px: the screen list moves under the phones, so three phones keep a readable size */
-@media (max-width: 1240px) {
-  .rx.is-compare .rx-main { grid-template-columns: minmax(0, 1fr); }
-  .rx.is-compare .rx-side--l { order: 2; position: static; max-height: none; overflow: visible; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .rx.is-compare .rx-center { order: 1; }
-}
-.rx.is-compare .rx-stage { flex-wrap: wrap; row-gap: 32px; }
 .rx-nw { white-space: nowrap; }
 
 /* ---------- the quick meal log: one big voice button, one box for the day ---------- */
