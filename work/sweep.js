@@ -90,7 +90,12 @@ async function worker(browser, runs, wi, problems, counts) {
         if (/\bundefined\b|\bNaN\b|\bnull\b|\[object Object\]/.test(t)) out.push(`${b.dataset.v}: junk text`);
         if (/[—–]/.test(t)) out.push(`${b.dataset.v}: a dash`);
         if (/next pass|still to be drawn/i.test(t)) out.push(`${b.dataset.v}: says it comes later`);
-        if (!/On the phone/.test((document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "")) out.push(`${b.dataset.v}: the picked option doesn't read On the phone`);
+        /* fix-core: with the Easy version on, Home and Data style are picked but Easy draws its own Today, so their
+           notes say so; every other picked option reads On the phone */
+        const badge = (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent || "";
+        const easyOn = (document.querySelector('[data-rx="easy"][data-v="true"]') || {}).getAttribute && document.querySelector('[data-rx="easy"][data-v="true"]').getAttribute("aria-pressed") === "true";
+        if (easyOn && ["home", "look"].includes(b.dataset.v)) { if (badge !== "Picked; Easy draws its own") out.push(`${b.dataset.v}: with Easy on, the picked option doesn't say Easy draws its own`); }
+        else if (!/On the phone/.test(badge)) out.push(`${b.dataset.v}: the picked option doesn't read On the phone`);
       }
       return out;
     });
