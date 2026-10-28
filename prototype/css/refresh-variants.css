@@ -1,1 +1,106 @@
-/* Florin app refresh: styles for js/refresh-variants.js (the Home (V.home, Day first) and History (V.history, Calendar) decisions). Empty until it's built. */
+/* Florin app refresh: styles for js/refresh-variants.js, Home "Day first" and History "Calendar". Every padding,
+   margin, gap, inset and radius is on the DESIGN.md scale, controls keep their fixed heights, and every colour is an
+   app token (--ap-*) or one of the six brand colours, so dark follows the tokens. Plum is the usual (Ray in dark), Gold
+   a shift, Teal context; no Ray Deep, no red, no green. */
+
+/* ============================== DAY FIRST ============================== */
+/* the score chip under the date: the Forest of the FloraScore card, its Ray ring, at the compact app button height */
+.vr-sc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 4px; margin-top: -8px; }
+.vr-sc { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px 0 8px; border-radius: 999px; background: var(--ap-hero); color: var(--ap-hero-ink); }
+.vr-sc::after { content: ""; position: absolute; inset: -4px 0; }
+.vr-sc-ring { display: block; width: 24px; height: 24px; flex: none; }
+.vr-sc-ring .c-ring-trk { stroke: color-mix(in srgb, var(--cream) 22%, transparent); }
+.vr-sc-l { font-family: var(--mono); font-size: 10.5px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; color: var(--ray); }
+.vr-sc b { font-size: 20px; font-weight: 300; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.vr-sc .ic { width: 14px; height: 14px; color: var(--ray); }
+.vr-sc-w { flex: 1 1 140px; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); }
+
+/* today's logs: the one that stood out carries a chip and an edge in its tone (Teal a flag, Gold a shift, ink a symptom) */
+.vr-mk { position: relative; }
+.vr-mk::before { content: ""; position: absolute; left: -16px; top: 12px; bottom: 12px; width: 3px; border-radius: 0 2px 2px 0; background: var(--ap-ink2); }
+.vr-mk--shift::before { background: var(--ap-shift); }
+.vr-mk--info::before { background: var(--ap-teal); }
+.vr-mk .vr-mk-c { margin-bottom: 4px; }
+
+/* the row to log from */
+.vr-log { display: flex; flex-direction: column; gap: 12px; }
+.vr-log .ap-card-h { margin-bottom: 0; }
+.vr-log .ap-fm, .vr-log .ap-fm-scale { margin-inline: -8px; }
+.vr-log .ap-fm-scale { margin-top: -4px; }
+.vr-log-more { display: flex; flex-wrap: wrap; gap: 8px; }
+.vr-log-more .ap-btn .ic, .vr-log-more .ap-btn .ap-gl { width: 16px; height: 16px; }
+
+/* the day's sentence */
+.vr-hl { display: flex; flex-direction: column; gap: 8px; }
+.vr-hl .vr-hl-k { font-weight: 400; }
+.vr-hl-line { font-family: var(--serif); font-size: 17px; line-height: 1.45; color: var(--ap-ink); }
+
+/* ============================== THE CALENDAR ============================== */
+.vr-cal { display: flex; flex-direction: column; gap: 12px; }
+.vr-cal-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px; }
+.vr-cal-t { font-size: 17px; font-weight: 500; letter-spacing: -.01em; text-align: center; }
+.vr-cal-nav { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink); }
+.vr-cal-nav .ic { width: 18px; height: 18px; }
+.vr-cal-nav[aria-disabled="true"] { background: transparent; color: var(--ap-ink3); cursor: default; }
+.vr-cal-sum { font-size: 13px; line-height: 1.4; color: var(--ap-ink2); }
+.vr-cal-w, .vr-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-inline: -12px; }
+.vr-cal-w { margin-bottom: -8px; }
+.vr-cal-w span { text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
+.vr-cal-g { row-gap: 4px; }
+
+/* a day: its date, its mark, then its ticks. The marks are Today's week card's (refresh.css .ap-wk-dot), keyed on what
+   the day shows (data-shown): Plum filled within the usual (Ray in dark), a hollow Gold ring for a shift (a shape cue as
+   well as a colour, so it holds in dark next to Ray), a neutral dot for could be either or logged, a short dash for a
+   day with logs but nothing on BMs, a neutral dot in a Teal ring for a day noted for a clinician (Teal is context, never
+   a reading). A gap has no mark: its date is struck through, as on the week card. No mark before the first log, today
+   with nothing yet, or outside the logs. The legend draws the same markup, so the two can't drift */
+.vr-cal-d { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; min-height: 56px; padding: 8px 0 4px; border-radius: 12px; color: var(--ap-ink); }
+.vr-cal-n { font-size: 13px; font-weight: 500; line-height: 16px; font-variant-numeric: tabular-nums; }
+.vr-cal-mk { display: grid; place-items: center; width: 16px; height: 8px; flex: none; }
+.vr-cal-mk::before { content: ""; display: block; width: 8px; height: 8px; border-radius: 999px; }
+[data-shown="usual"] > .vr-cal-mk::before { background: var(--ap-usual-ink); }
+[data-shown="shifted"] > .vr-cal-mk::before { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-shift); }
+:is([data-shown="unsure"], [data-shown="logged"]) > .vr-cal-mk::before { background: var(--ap-ink2); }
+[data-shown="nocount"] > .vr-cal-mk::before { width: 12px; height: 2px; border-radius: 2px; background: var(--ap-ink2); }
+[data-shown="flag"] > .vr-cal-mk::before { width: 6px; height: 6px; background: var(--ap-ink2); outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+[data-shown="gap"] > .vr-cal-n { color: var(--ap-ink2); font-weight: 400; text-decoration: line-through; text-decoration-thickness: 1px; }
+.vr-cal-d:is(.is-plain, .is-out) .vr-cal-n { color: var(--ap-ink3); font-weight: 400; }
+.vr-cal-d.is-out { cursor: default; }
+.vr-cal-d.is-today { box-shadow: inset 0 0 0 2px var(--ap-ink); }
+.vr-cal-d[aria-pressed="true"] { background: var(--ap-card2); }
+.vr-cal-d[aria-pressed="true"] .vr-cal-n { font-weight: 600; }
+.vr-cal-d.is-dim > * { opacity: .3; }
+.vr-cal-ts { display: flex; gap: 4px; height: 8px; align-items: center; }
+.vr-t { display: inline-block; width: 6px; height: 6px; border-radius: 2px; background: var(--ap-ink2); vertical-align: middle; }
+.vr-t--s0 { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
+.vr-t--s1 { background: color-mix(in srgb, var(--ap-ink2) 35%, transparent); }
+.vr-t--s2 { background: color-mix(in srgb, var(--ap-ink2) 65%, transparent); }
+.vr-t--meal { border-radius: 999px; background: var(--ap-teal); }
+
+/* the legend: the same marks, in words */
+.vr-cal-lg { margin-top: 0; }
+.vr-cal-lg .vr-cal-mk { width: 12px; }
+.vr-cal-lg [data-shown="gap"] > .vr-cal-n { font-size: 11px; line-height: 1; }
+.vr-lg-today { display: inline-block; width: 12px; height: 12px; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--ap-ink); }
+.vr-cal-lg .vr-t + .vr-t { margin-left: -4px; }
+/* on Free, what membership adds to the month */
+.vr-cal-pay { align-self: flex-start; min-height: 44px; }
+
+/* the day picked, then Add to this day */
+.vr-cal-day { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.vr-cal-day > .ap-hd { align-self: stretch; }
+.vr-cal-add { margin-left: 4px; }
+
+/* the Easy version restyles the app, and owns the calendar's type (refresh-easy.css: the date, the weekday letters,
+   the month summary, the month buttons). This file owns the marks, which grow with it, legend included, and the state
+   colours of a date: Easy sets every date in Ink, so a plain day or a gap steps back to Ink 2 here (never Ink 3) */
+.ap.ap--easy .vr-cal-d { min-height: 64px; }
+.ap.ap--easy .vr-cal-mk { width: 20px; height: 12px; }
+.ap.ap--easy .vr-cal-mk::before { width: 12px; height: 12px; }
+.ap.ap--easy [data-shown="shifted"] > .vr-cal-mk::before { box-shadow: inset 0 0 0 3px var(--ap-shift); }
+.ap.ap--easy [data-shown="nocount"] > .vr-cal-mk::before { width: 16px; height: 3px; }
+.ap.ap--easy [data-shown="flag"] > .vr-cal-mk::before { width: 8px; height: 8px; }
+.ap.ap--easy .vr-t { width: 8px; height: 8px; }
+.ap.ap--easy .vr-lg-today { width: 16px; height: 16px; }
+.ap.ap--easy :is(.vr-cal-d:is(.is-plain, .is-out), [data-shown="gap"]) > .vr-cal-n { color: var(--ap-ink2); }
+.ap.ap--easy .vr-cal-w, .ap.ap--easy .vr-cal-g { margin-inline: -16px; }

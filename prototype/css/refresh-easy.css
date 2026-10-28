@@ -1,1 +1,384 @@
-/* Florin app refresh: styles for js/refresh-easy.js (the Easy version (V.easy), an elderly-friendly app). Empty until it's built. */
+/* Florin app refresh: the Easy version (js/refresh-easy.js, V.easy). Every rule sits under .ap--easy, the class the
+   module puts on the phone's root, so the standard version never sees it.
+   Made for a 70-year-old with reading glasses and a mild tremor: type about 1.35x (body 18 to 20px, answers 28 to
+   32px), controls 56px or more, line height 1.5, text in Ink and never Ink 3, no mono and no capitals for anything a
+   person reads, a word beside every icon, and larger toasts and sheets. The app's standard components are restyled
+   here, so another module's screens built from them come out the same way.
+   Colours are the app tokens (--ap-*) or the six brand colours; nothing is a literal. Every padding, margin, gap,
+   inset and radius is on the DESIGN.md scale (4 8 12 16 20 24 32 40 48 56 64 80 96 120; 2 4 8 12 16 24 32 full). */
+
+/* ---------- the root: no Ink 3 anywhere, and a looser line ---------- */
+.ap.ap--easy { --ap-ink3: var(--ap-ink2); line-height: 1.5; }
+.ap--easy :focus-visible { outline-width: 3px; outline-offset: 3px; }
+.ap--easy :is(.ap-ez-pbm, .ap-hero, .ap-pay-hero) :focus-visible { outline-color: var(--ray); }
+
+/* ---------- the tab bar: Today, Add, History and Ask, each with its word ---------- */
+.ap--easy .ap-tb { left: 12px; right: 12px; transform: none; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 8px; border-radius: 32px; }
+.ap-rx.ap--easy.has-full .ap-tb { transform: translateY(140%); }
+.ap--easy .ap-tb-b[data-tab="insights"] { display: none; }
+.ap--easy .ap-tb-b { width: auto; min-width: 56px; min-height: 64px; gap: 4px; padding: 0 4px; border-radius: 24px; font-size: 16px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.ap--easy .ap-tb-b .ic { width: 26px; height: 26px; }
+.ap--easy .ap-tb-b[aria-current="true"],
+.ap--easy .ap-tb:has(.ap-tb-b[data-tab="insights"][aria-current="true"]) .ap-tb-b[data-tab="today"] { background: var(--ap-card2); box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.ap--easy .ap-tb-plus { width: auto; min-width: 56px; height: auto; min-height: 64px; margin-inline: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 24px; background: none; box-shadow: none; color: var(--ap-ink); }
+.ap--easy .ap-tb-plus .ic { width: 36px; height: 36px; border-radius: 50%; background: var(--ray); color: var(--forest); stroke-width: 1.8; }
+.ap-ez-tbl { display: none; }
+.ap--easy .ap-ez-tbl { display: block; font-size: 16px; line-height: 1.2; font-weight: 500; }
+
+/* ---------- toasts: bigger, the words on their own line, the buttons under them ---------- */
+.ap--easy .ap-tst { bottom: 120px; flex-wrap: wrap; gap: 8px 12px; min-height: 64px; padding: 16px 12px 12px 20px; border-radius: 24px; font-size: 18px; line-height: 1.45; }
+.ap--easy .ap-tst > span { flex: 1 1 100%; }
+.ap--easy .ap-tst-b { min-height: 56px; padding: 0 20px; gap: 8px; font-size: 18px; }
+.ap--easy .ap-tst-b .ic { width: 20px; height: 20px; }
+
+/* ---------- type the whole app shares ---------- */
+.ap--easy .ap-scr { gap: 24px; }
+.ap--easy .ap-k:not(.ap-k--ray) { font-family: var(--sans); font-size: 16px; line-height: 1.3; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-k--ray { font-family: var(--sans); font-size: 16px; line-height: 1.3; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.ap--easy .ap-date { font-family: var(--sans); font-size: 18px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-h1 { font-size: 36px; line-height: 1.15; font-weight: 400 !important; letter-spacing: -.02em; }
+.ap--easy .ap-hi-sub { font-size: 18px; line-height: 1.45; color: var(--ap-ink); }
+.ap--easy .ap-card-h { flex-wrap: wrap; gap: 4px 12px; margin-bottom: 12px; }
+.ap--easy .ap-card-h h2 { font-size: 22px; line-height: 1.3; }
+.ap--easy .ap-fine { padding: 16px 4px 0; font-size: 16px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-legend { font-size: 16px; line-height: 1.4; color: var(--ap-ink); }
+.ap--easy .ap-chip { min-height: 32px; padding: 0 12px; font-size: 16px; }
+.ap--easy .ap-card { padding: 20px; }
+.ap--easy .ap-nx p { font-size: 20px; line-height: 1.5; }
+
+/* ---------- buttons and controls: 56px or more ---------- */
+.ap--easy .ap-btn { min-height: 56px; padding: 0 24px; gap: 8px; font-size: 18px; line-height: 1.3; }
+.ap--easy .ap-btn--block { min-height: 64px; font-size: 20px; }
+.ap--easy .ap-btn--c { min-height: 56px; padding: 0 20px; font-size: 18px; }
+.ap--easy .ap-btn .ic { width: 20px; height: 20px; }
+.ap--easy .ap-btn[aria-disabled="true"] { color: var(--ap-ink2); }
+.ap--easy .ap-link, .ap--easy .ap-gd-b, .ap--easy .ap-sy-more, .ap--easy .ap-psh-ago, .ap--easy .ap-fsh-del, .ap--easy .ap-hi-more, .ap--easy .ap-ck-later { min-height: 56px; padding: 0 20px; gap: 8px; font-size: 18px; color: var(--ap-ink); }
+.ap--easy :is(.ap-link, .ap-gd-b, .ap-sy-more, .ap-psh-ago, .ap-fsh-del) .ic { width: 20px; height: 20px; }
+.ap--easy .ap-ch { min-height: 56px; padding: 0 20px; gap: 8px; font-size: 18px; line-height: 1.2; color: var(--ap-ink); }
+.ap--easy .ap-ch.is-on { color: var(--ap-card); }
+.ap--easy .ap-ch--flag.is-on { color: var(--ap-info-ink); }
+.ap--easy .ap-ch .ic { width: 20px; height: 20px; }
+/* a chip another screen sets shorter (onboarding's long answers) still reaches 56px */
+.ap.ap--easy .ap-chs .ap-ch { min-height: 56px; }
+/* the seven days of the week, four to a row, so each is wider than a finger */
+.ap--easy .ap-chs--week { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+/* a close or back made of an icon alone says its word beside it */
+.ap--easy .ap-lg-x { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; min-width: 56px; height: auto; min-height: 56px; padding: 0 20px 0 16px; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink); font-size: 18px; line-height: 1.2; font-weight: 500; }
+.ap--easy .ap-lg-x::before { content: attr(aria-label); order: 1; }
+.ap--easy .ap-lg-x .ic { width: 20px; height: 20px; }
+.ap--easy .ap-askc-x, .ap--easy .ap-askbar-b { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; min-width: 56px; height: auto; min-height: 56px; padding: 0 20px 0 16px; border-radius: 999px; font-size: 18px; line-height: 1.2; font-weight: 500; }
+.ap--easy .ap-askc-x { background: var(--ap-card2); color: var(--ap-ink); }
+.ap--easy :is(.ap-askc-x, .ap-askbar-b)::before { content: attr(aria-label); order: 1; }
+.ap--easy :is(.ap-askc-x, .ap-askbar-b) .ic { width: 20px; height: 20px; }
+.ap--easy .ap-back { min-height: 56px; padding: 0 16px 0 0; gap: 4px; font-size: 18px; font-weight: 500; color: var(--ap-ink); }
+.ap--easy .ap-back .ic { width: 24px; height: 24px; }
+.ap--easy .ap-nav-t { font-size: 18px; }
+
+/* ---------- sheets ---------- */
+.ap--easy .ap-psh { gap: 20px; padding: 12px 20px 32px; }
+.ap--easy .ap-psh-h h2 { font-size: 28px; line-height: 1.2; }
+.ap--easy .ap-gd-lede, .ap--easy .ap-fl-body, .ap--easy .ap-mq-lede { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-psh-day { padding: 16px; gap: 12px; font-size: 18px; line-height: 1.45; }
+.ap--easy .ap-psh-day .ic { width: 20px; height: 20px; }
+.ap--easy .ap-ea-row { min-height: 72px; gap: 16px; }
+.ap--easy .ap-ea-m b { font-size: 20px; }
+.ap--easy .ap-ea-m em { font-size: 18px; color: var(--ap-ink); }
+/* the (i) guide: the mark beside the word, its line under the word */
+.ap--easy .ap-gd-list li { grid-template-columns: 48px minmax(0, 1fr); grid-template-areas: "ic k" "ic l"; gap: 4px 16px; padding-block: 12px; }
+.ap--easy .ap-gd-ic { grid-area: ic; width: 48px; height: 48px; }
+.ap--easy .ap-gd-ic .ap-gl { width: 32px; height: 32px; }
+.ap--easy .ap-gd-list b { grid-area: k; font-size: 20px; }
+.ap--easy .ap-gd-list li > span:last-child { grid-area: l; font-size: 18px; line-height: 1.4; color: var(--ap-ink); }
+/* the primary care note: Teal, never red, the sign in bold */
+.ap--easy .ap-ask-alarm { gap: 8px; padding: 16px 20px; }
+.ap--easy .ap-ask-alarm b { font-size: 20px; }
+.ap--easy .ap-ask-alarm p { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+/* the paywall: the hero keeps its height when the bigger type makes the sheet taller (it clips its ring) */
+.ap--easy .ap-pay-hero { flex: none; }
+/* its words keep clear of the ring, which steps down to 64px */
+.ap--easy .ap-pay-ring { width: 64px; height: 64px; }
+.ap--easy .ap-pay-hero h2 { max-width: none; padding-right: 80px; }
+.ap--easy .ap-pay-hero h2 { font-size: 28px; line-height: 1.2; }
+.ap--easy .ap-pay-hero p { font-size: 18px; line-height: 1.5; }
+.ap--easy .ap-pay-list b { font-size: 18px; }
+.ap--easy .ap-pay-list em { font-size: 16px; color: var(--ap-ink); }
+.ap--easy .ap-pay-price { font-size: 16px; color: var(--ap-ink); }
+
+/* ---------- the log sheets ---------- */
+.ap--easy .ap-fsh-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 8px; }
+.ap--easy .ap-fsh-t { order: 2; flex: 1 1 100%; text-align: left; }
+.ap--easy .ap-fsh-t h2 { font-size: 28px; line-height: 1.2; font-weight: 400 !important; }
+.ap--easy .ap-fsh-t p { font-family: var(--sans); font-size: 18px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-fsh-sp { display: none; }
+.ap--easy .ap-fsh-b { gap: 32px; padding: 8px 20px 32px; }
+.ap--easy .ap-fsh-f { gap: 12px; padding: 16px 20px 32px; }
+.ap-rx.is-full.ap--easy .ap-fsh-f { padding-bottom: 24px; }
+.ap--easy .ap-fsh-hint { font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ap-f { gap: 12px; }
+.ap--easy .ap-f-l { font-family: var(--sans); font-size: 20px; line-height: 1.3; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-f-h, .ap--easy .ap-xt-l { font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ap-fld { height: 56px; padding: 0 16px; gap: 12px; font-size: 18px; }
+.ap--easy .ap-fld .ic { width: 20px; height: 20px; color: var(--ap-ink); }
+.ap--easy .ap-fld select, .ap--easy .ap-fld input, .ap--easy .ap-ta, .ap--easy .ap-in { font-size: 18px; }
+.ap--easy .ap-in { height: 56px; }
+.ap--easy .ap-ta::placeholder, .ap--easy .ap-in::placeholder { color: var(--ap-ink2); }
+.ap--easy .ap-info { gap: 12px; padding: 16px; font-size: 18px; line-height: 1.5; }
+.ap--easy .ap-info .ic { width: 20px; height: 1.5em; }
+.ap--easy .ap-xt { gap: 20px; padding: 20px; }
+.ap--easy .ap-fm-line { font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ap-fm-scale { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+/* meals */
+.ap--easy .ap-ml-why { font-size: 16px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-ml-cl { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-ml-same { min-height: 72px; }
+.ap--easy .ap-ml-same b { font-size: 18px; }
+.ap--easy .ap-ml-same em { font-size: 16px; color: var(--ap-ink); }
+.ap--easy .ap-mq-mic { width: 112px; height: 112px; }
+.ap--easy .ap-mq-state { font-size: 20px; }
+.ap--easy .ap-mq-text { font-size: 18px; }
+
+/* ---------- the weekly check-in ---------- */
+.ap--easy .ap-ck-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 20px; }
+.ap--easy .ap-ck-h .ap-fsh-t { order: 2; flex: 1 1 100%; }
+.ap--easy .ap-ck-later { position: relative; margin-left: auto; border-radius: 999px; background: var(--ap-card2); }
+.ap--easy .ap-ck-prog i { height: 8px; }
+.ap--easy .ap-ck-q h3, .ap--easy .ap-ckr h3 { font-size: 32px; line-height: 1.2; font-weight: 400 !important; }
+.ap--easy .ap-ck-opt { min-height: 72px; padding: 12px 20px; font-size: 20px; }
+.ap--easy .ap-ck-opt .ic { width: 24px; height: 24px; }
+.ap--easy .ap-ck-recall, .ap--easy .ap-ckr-lede, .ap--easy .ap-ckr-w, .ap--easy .ap-ckr-note { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-ckr-row > b { font-size: 20px; }
+.ap--easy .ap-ckr-logs { font-size: 18px; }
+
+/* ---------- History, and every list of entries ---------- */
+.ap--easy .ap-hist-top { gap: 8px; }
+.ap--easy .ap-hist-rep { min-height: 72px; gap: 16px; padding: 12px 20px; }
+.ap--easy .ap-hist-rep b { font-size: 20px; }
+.ap--easy .ap-hist-rep em { font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ap-hist-rep .ic { width: 24px !important; height: 24px !important; }
+.ap--easy .ap-hist-f { flex-wrap: wrap; overflow-x: visible; margin-inline: 0; padding-inline: 0; }
+.ap--easy .ap-hi-filter { flex: none; min-height: 56px; padding: 0 20px; font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ap-hi-filter[aria-pressed="true"] { color: var(--ap-card); }
+.ap-rx[data-theme="dark"].ap--easy .ap-hi-filter[aria-pressed="true"] { color: var(--ap-bg); }
+.ap--easy .ap-hd-none { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+/* an entry: the time over its words, a big mark at the left, the chevron at the right */
+.ap--easy .ap-tl { padding: 4px 16px; }
+.ap--easy .ap-tl-row { grid-template-columns: 48px minmax(0, 1fr) 24px; grid-template-areas: "ic t go" "ic m go"; gap: 4px 16px; min-height: 72px; padding-block: 16px; align-items: start; }
+.ap--easy .ap-tl-t { grid-area: t; padding-top: 0; font-family: var(--sans); font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.ap--easy .ap-tl-ic { grid-area: ic; width: 48px; height: 48px; border-radius: 16px; }
+.ap--easy .ap-tl-ic .ic, .ap--easy .ap-tl-ic .ap-gl { width: 28px; height: 28px; }
+.ap--easy .ap-tl-m { grid-area: m; gap: 4px; padding-top: 0; }
+.ap--easy .ap-tl-m b { font-size: 20px; line-height: 1.3; }
+.ap--easy .ap-tl-m em, .ap--easy .ap-tl-m q { font-size: 18px; line-height: 1.45; color: var(--ap-ink); }
+.ap--easy .ap-tl-go { grid-area: go; width: 24px !important; height: 24px !important; margin-top: 12px; color: var(--ap-ink); }
+.ap--easy .ap-tl-nobm { min-height: 72px; gap: 16px; padding: 12px 20px; }
+.ap--easy .ap-tl-nobm b { font-size: 20px; }
+.ap--easy .ap-tl-nobm em { font-size: 18px; color: var(--ap-ink); }
+
+/* ---------- Ask ---------- */
+.ap--easy .ap-askc { gap: 12px; }
+.ap--easy .ap-askc > b { font-size: 22px; line-height: 1.3; }
+.ap--easy .ap-askc ul { gap: 8px; font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+/* .ap.ap--easy: the core sets these in Ink 2 at (0,2,2) specificity (refresh.css, "anything a person reads") */
+.ap.ap--easy .ap-askc-note { font-size: 16px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-asks { gap: 12px; align-items: stretch; }
+.ap--easy .ap-askq { min-height: 64px; padding: 16px 20px; gap: 12px; font-size: 18px; line-height: 1.45; }
+.ap--easy .ap-askq .ic { width: 20px !important; height: 20px !important; }
+.ap--easy .ap-askbar { min-height: 72px; padding: 8px 8px 8px 20px; }
+.ap--easy .ap-askbar-in { font-size: 18px; color: var(--ap-ink2); }
+
+/* ---------- an Insights detail, opened from Your weeks or the Screens list ---------- */
+.ap--easy .ap-idt-h { font-size: 32px; line-height: 1.2; font-weight: 400 !important; }
+.ap--easy .ap-idt-lede, .ap--easy .ap-sect-p, .ap--easy .ap-ic-sum { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-ic-t b { font-size: 20px; }
+.ap.ap--easy .ap-ic-note { font-size: 16px; color: var(--ap-ink); }
+.ap--easy .ap-ask-b { min-height: 56px; padding: 0 20px; font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ap-seg--range button { min-width: 56px; min-height: 56px; font-size: 18px; }
+.ap--easy .ap-idt-next { min-height: 72px; }
+.ap--easy .ap-idt-next b { font-size: 20px; }
+.ap--easy :is(.ap-idt-next em, .ap-idt-now-h em) { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-idt-now-h b { font-size: 20px; }
+
+/* ---------- the rest of the app's small print, drawn bigger: the Insights details, the check-in result, and the
+   other modules' screens (Ask's conversation, Profile, onboarding, the calendar). A chart keeps its own labels ---------- */
+.ap--easy :is(.ap-sect, .ap-shaped-b) p { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+/* the studio's callout sets its size with !important, so Easy's has to as well */
+.ap--easy .ap-callout { font-size: 18px !important; line-height: 1.5; }
+.ap.ap--easy details > summary { min-height: 56px; font-size: 18px; }
+.ap.ap--easy details > summary > span { font-size: 18px; }
+/* a range's label under its track (the chart kit's, in mono at 9px): the sans at 16px, the track a little lower */
+.ap.ap--easy .c-range-lbl { height: 24px; margin-top: 4px; font-family: var(--sans); font-size: 16px; line-height: 1.5; letter-spacing: 0; }
+.ap.ap--easy :is(.ap-figcap b, .ap-comp-h b, .ap-ipat-m b, .ap-trow b, .ap-unit-h b, .ap-sure b) { font-size: 18px; }
+.ap.ap--easy :is(.ap-figcap span, .ap-figcap-note, .ap-scale-lbl span, .ap-hbar span, .ap-hbar strong, .ap-comp-bar strong, .ap-comp-bar em, .ap-comp p, .ap-trow span, .ap-trow em, .ap-unit-h span, .ap-wait span, .ap-wait strong, .ap-ipat-m em, .c-meter em, .ap-sure em, .ap-table td, .ap-table th) { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap--easy .ap-ckr-logs li { font-size: 18px; line-height: 1.5; color: var(--ap-ink); }
+.ap--easy .ap-pay-price { font-family: var(--sans); letter-spacing: 0; text-transform: none; }
+/* Ask's conversation (refresh-ask.js), over its own Easy sizes */
+.ap.ap--easy :is(.ap-ask-body p, .ap-ask-me p, .ap-askx-facts li, .ap-askx-try, .ap-askx-in) { font-size: 18px; line-height: 1.5; }
+.ap.ap--easy :is(.ap-askx-src, .ap-askx-note) { font-size: 16px; line-height: 1.5; color: var(--ap-ink); }
+.ap.ap--easy .ap-askx-in { height: 56px; }
+/* Profile and onboarding (refresh-profile.js), the calendar (refresh-variants.js), a data style's days (refresh-looks.js) */
+.ap.ap--easy :is(.pf-you-m em, .pf-count, .vr-sc-l, .vr-cal-w span) { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; color: var(--ap-ink); }
+.ap.ap--easy :is(.pf-pts b, .rlk-day-h b) { font-size: 18px; }
+.ap.ap--easy .vr-cal-nav { width: 56px; height: 56px; }
+.ap.ap--easy .vr-cal-nav .ic { width: 24px; height: 24px; }
+.ap.ap--easy :is(.pf-pts em, .pf-us .ap-ea-m em, .pf-words li, .vr-sc-w, .vr-cal-sum, .vr-cal-n, .rlk-lock-p, .rlk-day p, .rlk-days-rest) { font-size: 16px; line-height: 1.45; color: var(--ap-ink); }
+
+/* ====================================================================== */
+/* EASY'S OWN SCREENS                                                      */
+/* ====================================================================== */
+/* the look's cards: no gap of their own between them */
+.ap-ez .lk-easy.ap-ez-cards { display: flex; flex-direction: column; gap: 16px; }
+.ap-ez .lk-easy .ez-t { margin: 0; }
+
+/* ---------- Today ---------- */
+.ap-ez-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 16px; }
+.ap-ez-date { font-size: 18px; line-height: 1.4; font-weight: 500; color: var(--ap-ink); }
+.ap--easy .ap-ez-hello { grid-column: 1 / -1; margin-top: 0 !important; font-size: 32px; line-height: 1.2; font-weight: 400 !important; letter-spacing: -.015em; text-wrap: balance; }
+.ap-ez-prof { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px 0 8px; border-radius: 999px; background: var(--ap-card); box-shadow: var(--ap-shadow), inset 0 0 0 1.5px var(--ap-line); font-size: 18px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.ap-ez-av { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ap-card2); font-size: 18px; font-weight: 500; }
+.ap-ez-say { font-size: 28px; line-height: 1.3; font-weight: 400; letter-spacing: -.01em; color: var(--ap-ink); text-wrap: pretty; }
+.ap-ez-score .ez-unit { color: var(--ap-ink); }
+
+/* the big buttons: an icon tile, the words, sometimes a line under them */
+.ap-ez-do, .ap-ez-col { display: flex; flex-direction: column; gap: 12px; }
+.ap-ez-big { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 72px; padding: 12px 20px 12px 12px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow), inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); text-align: left; transition: transform .15s var(--ap-ease), background .2s; }
+.ap-ez-big:active { transform: scale(.98); }
+.ap-ez-big-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ez-big b { font-size: 22px; line-height: 1.25; font-weight: 500; }
+.ap-ez-big em { font-style: normal; font-size: 18px; line-height: 1.4; color: inherit; }
+.ap-ez-ic { --gl-bg: var(--ap-card2); flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--ap-card2); color: var(--ap-ink); }
+.ap-ez .ap-ez-ic .ic, .ap-ez .ap-ez-ic .ap-gl { width: 28px; height: 28px; }
+.ap-ez .ap-ez-go { width: 24px; height: 24px; }
+/* I had a BM: the one Ray moment, Forest words on it in either theme */
+.ap-ez-big--bm { background: var(--ray); color: var(--forest); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--forest) 35%, transparent); }
+.ap-ez-big--bm .ap-ez-ic { --gl-bg: color-mix(in srgb, var(--forest) 10%, var(--ray)); background: color-mix(in srgb, var(--forest) 10%, var(--ray)); color: var(--forest); }
+.ap-ez-big--line { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.ap-ez-big--line .ap-ez-ic { --gl-bg: var(--ap-card2); }
+.ap-ez-big--card { box-shadow: var(--ap-shadow); }
+
+/* the cards Easy draws itself (the check-in, membership) */
+.ap-ez-card { display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-ez-kick { display: flex; align-items: center; gap: 8px; font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.ap-ez .ap-ez-kick .ic { width: 24px; height: 24px; color: var(--ap-teal); }
+.ap-ez-h2 { font-size: 24px; line-height: 1.25; font-weight: 500; letter-spacing: -.01em; color: var(--ap-ink); }
+.ap-ez-p { font-size: 20px; line-height: 1.5; color: var(--ap-ink); text-wrap: pretty; }
+.ap-ez-acts { display: flex; flex-direction: column; gap: 12px; }
+.ap-ez-sec { display: flex; flex-direction: column; gap: 16px; }
+.ap-ez-sec-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 0 4px; }
+.ap-ez-count { font-size: 18px; line-height: 1.3; color: var(--ap-ink); }
+.ap-ez-none { padding: 0 4px; font-size: 20px; line-height: 1.5; color: var(--ap-ink); }
+.ap-ez .ap-tl.ap-ez-tl { padding: 4px 20px; }
+
+/* ---------- the header bar of a log: a big Back or Close, and where you are ---------- */
+.ap-ez-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 8px; }
+.ap-ez-nav { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 24px 0 16px; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink); font-size: 20px; line-height: 1.2; font-weight: 500; }
+.ap-ez .ap-ez-nav .ic { width: 24px; height: 24px; stroke-width: 2; }
+.ap-ez-weeks > .ap-ez-nav { align-self: flex-start; }
+.ap-ez-step { font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.ap-ez-prog { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 4px 20px 0; }
+.ap-ez-prog i { height: 8px; border-radius: 999px; background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
+.ap-ez-prog i.is-done { background: var(--ap-ink); box-shadow: none; }
+.ap-ez-prog i.is-on { background: color-mix(in srgb, var(--ap-ink) 45%, var(--ap-card2)); box-shadow: none; }
+.ap--easy .ap-fsh-b.ap-ez-b { gap: 20px; padding: 24px 20px 32px; }
+.ap-ez-q { font-size: 32px; line-height: 1.2; font-weight: 400; letter-spacing: -.015em; color: var(--ap-ink); text-wrap: balance; }
+.ap-ez-q:focus { outline: none; }
+.ap-ez-q:focus-visible { outline: 3px solid var(--ap-teal); outline-offset: 4px; border-radius: 4px; }
+.ap-ez-sub { margin-top: -8px; font-size: 20px; line-height: 1.5; color: var(--ap-ink); }
+.ap-ez-h3 { margin-top: 8px; font-size: 22px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+
+/* one answer per row: its mark, its word, its line */
+.ap-ez-opts { display: flex; flex-direction: column; gap: 12px; }
+.ap-ez-opt { --gl-bg: var(--ap-card2); display: flex; align-items: center; gap: 16px; width: 100%; min-height: 72px; padding: 12px 20px 12px 12px; border-radius: 24px; background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-line); color: var(--ap-ink); text-align: left; transition: background .2s, color .2s, box-shadow .2s, transform .15s var(--ap-ease); }
+.ap-ez-opt:active { transform: scale(.98); }
+/* picked: Ink, with the app's ground for the words, as the core's own picked chips and answers in both themes */
+.ap-ez-opt.is-on { --gl-bg: color-mix(in srgb, var(--ap-bg) 18%, var(--ap-ink)); background: var(--ap-ink); color: var(--ap-bg); box-shadow: none; }
+/* a word logged in B, seen in A or C, covers this step: outlined, never filled */
+.ap-ez-opt.is-maybe { box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+.ap-ez-maybe { align-self: flex-start; padding: 0 8px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-ink); font-size: 16px; line-height: 1.5; font-weight: 500; }
+.ap-ez-mark { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: var(--ap-card2); color: var(--ap-ink); }
+.ap-ez-opt.is-on .ap-ez-mark { background: color-mix(in srgb, var(--ap-bg) 18%, var(--ap-ink)); color: var(--ap-bg); }
+.ap-ez .ap-ez-mark .ap-gl, .ap-ez .ap-ez-mark .ic { width: 32px; height: 32px; }
+.ap-ez-opt-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ez-opt-t b { font-size: 22px; line-height: 1.25; font-weight: 500; }
+.ap-ez-opt-t em { font-style: normal; font-size: 18px; line-height: 1.4; }
+.ap-ez .ap-ez-tick { width: 28px; height: 28px; stroke-width: 2.2; }
+/* a box that ticks, for the answers that can go together */
+.ap-ez-box { flex: none; display: grid; place-items: center; width: 32px; height: 32px; margin-left: 8px; border-radius: 8px; box-shadow: inset 0 0 0 2px var(--ap-ink); }
+.ap-ez .ap-ez-box .ic { width: 24px; height: 24px; stroke-width: 2.4; }
+.ap-ez-opt.is-on .ap-ez-box { background: var(--ap-bg); color: var(--ap-ink); box-shadow: none; }
+/* the flag: Teal when it's ticked, the colour of the primary care note, never red */
+.ap-ez-opt--flag.is-on { background: var(--ap-info-bg); color: var(--ap-ink); box-shadow: inset 0 0 0 2px var(--ap-teal); }
+.ap-ez-opt--flag.is-on .ap-ez-box { background: var(--ap-teal); color: var(--cream); }
+.ap-ez-link { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 20px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 18px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.ap-ez .ap-ez-link .ic { width: 20px; height: 20px; }
+/* Ask about this, at the foot of a card in Your weeks */
+.lk-easy .ez .ap-ez-ask { margin-top: 4px; }
+
+/* the hour, as one big button, morning to evening */
+.ap-ez-hgrp { display: flex; flex-direction: column; gap: 8px; }
+.ap-ez-hgrp-l { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.ap-ez-hrs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ap-ez-hr { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 56px; padding: 0 4px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-line); font-size: 18px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ap-ez-hr.is-on { background: var(--ap-ink); color: var(--ap-bg); box-shadow: none; }
+.ap-ez .ap-ez-hr .ic { width: 18px; height: 18px; stroke-width: 2.4; }
+/* catching up a symptom: the part of the day, its hour written under it */
+.ap-ez-pod { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ap-ez-pod > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+.ap-ez-pod .ap-ez-hr { min-height: 72px; padding: 8px 12px; white-space: normal; }
+.ap-ez-pod .ap-ez-hr > span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ap-ez-pod .ap-ez-hr b { display: inline-flex; align-items: center; gap: 4px; font-size: 20px; font-weight: 500; }
+.ap-ez-pod .ap-ez-hr em { font-style: normal; font-size: 16px; line-height: 1.3; }
+
+/* the review before Save: each answer with its Change */
+.ap-ez-rev { list-style: none; margin: 0; padding: 0 20px; display: flex; flex-direction: column; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-ez-rev li { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "k btn" "v btn"; align-items: center; gap: 4px 12px; padding: 16px 0; }
+.ap-ez-rev li + li { border-top: 1px solid var(--ap-line); }
+.ap-ez-rev-k { grid-area: k; font-size: 18px; line-height: 1.3; color: var(--ap-ink); }
+.ap-ez-rev b { grid-area: v; font-size: 22px; line-height: 1.3; font-weight: 500; }
+.ap-ez-chg { grid-area: btn; min-height: 56px; padding: 0 20px; border-radius: 999px; background: var(--ap-card2); font-size: 18px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.ap-ez-del { align-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 20px; border-radius: 999px; font-size: 18px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.ap-ez .ap-ez-del .ic { width: 20px; height: 20px; }
+.ap--easy .ap-fsh-f.ap-ez-foot { gap: 12px; }
+
+/* ---------- symptoms: big chips, two to a row, and three strength buttons ---------- */
+.ap-ez-chips.ap-chs--wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ap--easy .ap-ez-chips .ap-ch, .ap--easy .ap-ez-str .ap-ch { min-height: 64px; padding: 0 12px; border-radius: 16px; justify-content: center; font-size: 20px; white-space: normal; text-align: center; }
+.ap-ez-str.ap-chs--wrap { display: flex; flex-direction: column; gap: 12px; }
+.ap--easy .ap-ez-str .ap-ch { width: 100%; }
+.ap--easy .ap-ez-chips .ap-ch::after, .ap--easy .ap-ez-str .ap-ch::after { inset: 0; }
+.ap-ez-add { display: flex; flex-direction: column; gap: 8px; }
+.ap-ez-l { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.ap--easy .ap-ez-add .ap-sy-add { gap: 8px; }
+
+/* ---------- plus: big labelled buttons, one column ---------- */
+.ap--easy .ap-psh.ap-ez-plus { gap: 20px; }
+.ap-ez-sh-h h2 { min-width: 0; }
+.ap-ez-pbm { display: flex; flex-direction: column; gap: 12px; padding: 12px 12px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); }
+/* I had a BM, the card's own button into the four steps: Ray on the card, Forest words, in either theme */
+.ap-ez-pbm .ap-ez-pbm-h { box-shadow: none; }
+.ap-ez-pbm-p { padding: 4px 8px 0; font-size: 18px; line-height: 1.45; color: var(--ap-hero-ink); }
+.ap-ez-words { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ap-ez-word { --gl-bg: color-mix(in srgb, var(--cream) 12%, var(--ap-hero)); display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 12px; border-radius: 16px; background: color-mix(in srgb, var(--cream) 12%, transparent); color: var(--ap-hero-ink); text-align: left; transition: background .2s, transform .15s var(--ap-ease); }
+.ap-ez-word:hover { background: color-mix(in srgb, var(--cream) 18%, transparent); }
+.ap-ez-word:active { transform: scale(.97); }
+.ap-ez .ap-ez-word .ap-gl, .ap-ez .ap-ez-word .ic { flex: none; width: 32px; height: 32px; }
+.ap-ez-word span { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* a word wraps between words, never inside one */
+.ap-ez-word b { font-size: 20px; line-height: 1.2; font-weight: 500; overflow-wrap: normal; hyphens: none; }
+.ap-ez-word em { font-style: normal; font-size: 16px; line-height: 1.25; }
+/* five words (B) or seven (A, C): the last one takes the row to itself, and the guide sits under them, full width */
+.ap-ez-words > .ap-ez-word:nth-last-child(2):nth-child(odd), .ap-ez-words > .ap-ez-word--guide { grid-column: 1 / -1; }
+.ap-ez-word--guide { --gl-bg: var(--ap-hero); background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--cream) 55%, transparent); }
+.ap-ez-word--guide b { font-size: 18px; }
+/* a narrow phone: a smaller mark and gap, so each word keeps its own line */
+@media (max-width: 379px) {
+  .ap-ez-word { gap: 8px; padding: 8px; }
+  .ap-ez .ap-ez-word .ap-gl, .ap-ez .ap-ez-word .ic { width: 28px; height: 28px; }
+}
+.ap-ez-last { text-align: center; font-size: 18px; line-height: 1.4; font-weight: 500; color: var(--ap-ink); }
+.ap-ez-info { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 18px; line-height: 1.45; }
+.ap-ez .ap-ez-info .ic { width: 20px; height: 1.45em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-ez-big, .ap-ez-opt, .ap-ez-word { transition: none; }
+  .ap-ez-big:active, .ap-ez-opt:active, .ap-ez-word:active { transform: none; }
+}
