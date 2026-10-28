@@ -56,6 +56,12 @@ const PRODUCT = [
   { f: 'css/app.css', scope: (s) => s.split(',').some((x) => /\.ap\b|\.ap-|:where\(\.ap\)/.test(x) && !/\.apx/.test(x)) },
   // the refresh: the new app components and the prototype page around the phone, all of it on the scale
   { f: 'css/refresh.css', scope: () => true },
+  // the feature modules, one stylesheet per decision, all of it on the scale
+  { f: 'css/refresh-looks.css', scope: () => true },
+  { f: 'css/refresh-variants.css', scope: () => true },
+  { f: 'css/refresh-profile.css', scope: () => true },
+  { f: 'css/refresh-ask.css', scope: () => true },
+  { f: 'css/refresh-easy.css', scope: () => true },
   // the data looks: the library page and each look, all of it on the scale
   { f: '../library/css/library.css', scope: () => true },
   { f: '../library/css/look-rings.css', scope: () => true },

@@ -324,9 +324,15 @@
     }
   };
   RU.todayLayout = () => ["top", "hero", "checkin", "entries", "week", "next", "fine"];
-  RU.today = (M, V) => `<div class="ap-scr ap-today">
-      ${RU.todayLayout(M, V).map((k) => (RU.todayParts[k] ? RU.todayParts[k](M, V) : "")).join("\n")}
+  /* a part a module replaced, or a layout it wrapped, that throws is logged and drawn the core's way instead */
+  const CORE_PARTS = Object.assign({}, RU.todayParts), CORE_LAYOUT = RU.todayLayout;
+  const tryEach = (fs, ...a) => { for (const f of fs) { if (!f) continue; try { return f(...a); } catch (e) { console.error(e); } } return undefined; };
+  RU.today = (M, V) => {
+    const ks = tryEach([RU.todayLayout, CORE_LAYOUT], M, V) || [];
+    return `<div class="ap-scr ap-today">
+      ${ks.map((k) => tryEach([RU.todayParts[k], CORE_PARTS[k]], M, V) || "").join("\n")}
     </div>`;
+  };
 
   /* ============================== PLUS MENU ============================== */
   /* the tiles. Inside Log a BM they're toggles; on the plus card each one opens Log a BM with it picked */
@@ -737,6 +743,10 @@
     const act = g ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${g.d}">Add to ${esc(Ut.DOWL[dateOf(g.d).getDay()])}</button>` : `<button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus">Log something</button>`;
     return `<section class="ap-card ap-nx" data-a><span class="ap-k">Next step</span><p>${esc(line)}</p>${act}</section>`;
   };
+
+  /* the core's own screens, kept before any module wraps them: the phone falls back to these when a wrapper throws.
+     refresh-insights.js adds Insights, its details, Ask and the paywall */
+  RU.core = Object.assign(RU.core || {}, { today: RU.today, history: RU.history, plus: RU.plus, earlier: RU.earlier, bm: RU.bm, sym: RU.sym, meal: RU.meal, mealQuick: RU.mealQuick, guide: RU.guide, flagNote: RU.flagNote, ck: RU.ck, ckDay: RU.ckDay, nobmSheet: RU.nobmSheet });
 
   /* Insights and the Ask tab live in refresh-insights.js */
 })();

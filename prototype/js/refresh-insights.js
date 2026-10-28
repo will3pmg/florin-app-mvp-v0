@@ -96,9 +96,12 @@
       labels += `<text class="dv-newlbl" x="${n1(ax)}" y="${n1(Math.max(10, ly))}" text-anchor="${anchor}">${esc(txt)}</text>`;
     }
     g += `<line class="dv-base" x1="${left}" x2="${w - right}" y1="${n1(base)}" y2="${n1(base)}"/>`;
-    for (let h = Math.ceil(lo); h <= Math.floor(hi); h++) {
+    /* past ten hours, every other hour is labelled (always the two ends), so the labels never crowd */
+    const h0 = Math.ceil(lo), h1 = Math.floor(hi), every = h1 - h0 > 10 ? 2 : 1;
+    for (let h = h0; h <= h1; h++) {
       g += `<line class="dv-tick" x1="${n1(x(h))}" x2="${n1(x(h))}" y1="${n1(base)}" y2="${n1(base + 4)}"/>`;
-      labels += `<text class="dv-ax" x="${n1(x(h))}" y="${n1(base + 15)}" text-anchor="${h === lo ? "start" : h === hi ? "end" : "middle"}">${esc(hourLbl(h, h === Math.ceil(lo) || h === Math.floor(hi)))}</text>`;
+      if (h !== h0 && h !== h1 && ((h - h0) % every || h1 - h < every)) continue;
+      labels += `<text class="dv-ax" x="${n1(x(h))}" y="${n1(base + 15)}" text-anchor="${h === lo ? "start" : h === hi ? "end" : "middle"}">${esc(hourLbl(h, h === h0 || h === h1))}</text>`;
     }
     let H = base + 20;
     if (o.bracket && u) {
@@ -111,10 +114,12 @@
     }
     return svg(w, H, g + marks + labels, o);
   }
+  /* the axis runs 6 AM to 10 AM at least, and out to whatever first BM was logged, so a dot never sits past its end
+     (a person's first BM on the day they join can be an evening one) */
   const morningDomain = (F, u) => {
     const ts = F.filter((f) => f.first != null).map((f) => f.first).concat(u ? [u.tLo, u.tHi] : []);
     if (!ts.length) return [6, 10];
-    return [Math.max(4, Math.min(6, Math.floor(Math.min(...ts)))), Math.min(16, Math.max(10, Math.ceil(Math.max(...ts) + 0.01)))];
+    return [Math.max(0, Math.min(6, Math.floor(Math.min(...ts)))), Math.min(24, Math.max(10, Math.ceil(Math.max(...ts) + 0.01)))];
   };
 
   /* Bars from zero over your usual. A day outside your usual is Gold; a day logged as No BM gets a Gold ring on the
@@ -366,6 +371,8 @@
   }
 
   /* ============================== READING THE LOGS ============================== */
+  /* the first BMs' times in words: "at 7:40 PM" for one time, "from 6:50 AM to 8:10 AM" for a spread */
+  const timesText = (tm) => { const fs = tm.mornings.map((f) => f.first), lo = Math.min(...fs), hi = Math.max(...fs); return lo === hi ? `at ${T(lo)}` : `from ${T(lo)} to ${T(hi)}`; };
   const timingOf = (M, F) => {
     const u = M.usual;
     const mornings = F.filter((f) => f.first != null);
@@ -570,7 +577,7 @@
       k: "timing", icon: "clock", kicker: "Timing · first BM",
       head: u ? `Usually ${winText(u)}` : "Learning your usual window",
       sum: u ? (tm.mornings.length ? `<b>${tm.inW} of ${plural(tm.mornings.length, "morning")}</b> in that window${tm.later.length || tm.earlier.length ? `: ${join([tm.later.length ? `${tm.later.length} later` : "", tm.earlier.length ? `${tm.earlier.length} earlier` : ""].filter(Boolean))}` : ""}.` : "No first BM logged in this stretch.")
-        : tm.mornings.length ? `First BM on <b>${plural(tm.mornings.length, "morning")}</b> so far, from ${esc(T(Math.min(...tm.mornings.map((f) => f.first))))} to ${esc(T(Math.max(...tm.mornings.map((f) => f.first))))}.` : "No BMs logged yet.",
+        : tm.mornings.length ? `First BM logged on <b>${plural(tm.mornings.length, "day")}</b> so far, ${esc(timesText(tm))}.` : "No BMs logged yet.",
       chart: tm.mornings.length ? morning({ days: F, usual: u, domain: dom, r: n >= 90 ? 2.8 : n >= 30 ? 4 : 5, gap: n >= 90 ? 1.2 : 1.6, aria: `First BM each morning, ${RANGE_NAME[n].toLowerCase()}${u ? `, against your usual window ${winText(u)}` : ""}` }) : "",
       legend: u ? `${lg("", "In your window")}${lg("sw--shift", "Outside it")}${lg("sw--band", "Your usual window")}` : tm.mornings.length ? lg("", "First BM") : ""
     });
@@ -593,7 +600,7 @@
     const often = card(V, {
       k: "often", icon: "bars", kicker: "How often",
       head: u ? `Usually ${u.nLo} to ${u.nHi} a day` : "Learning your usual count",
-      sum: of.known.length ? (u ? `<b>${of.avg.toFixed(1)} a day</b> on average. ${of.inC} of ${plural(of.known.length, "day")} within your usual.` : `<b>${plural(of.total, "BM")}</b> over ${plural(of.known.length, "day")}.`) : "No BMs logged in this stretch.",
+      sum: of.known.length ? (u ? `<b>${of.avg.toFixed(1)} a day</b> on average. ${of.inC} of ${plural(of.known.length, "day")} within your usual.` : `<b>${plural(of.total, "BM")}</b> over ${plural(of.known.length, "day")}.`) : u ? "No BMs logged in this stretch." : "No BMs logged yet.",
       chart: oftenAny ? oftenChart : "",
       legend: oftenAny ? barLegend(oftenVals, u, "Outside it") : ""
     });
@@ -603,7 +610,7 @@
     const form = card(V, {
       k: "form", glyph: RU.glyph(4, "ap-ic-gl"), kicker: "Form",
       head: u ? `Usually ${L.usualFormsText(M, mode)}` : "Learning your usual forms",
-      sum: fm.bms.length ? (u ? `<b>${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")}</b> within your usual forms${fm.out.length ? `: ${join([fm.firmer ? `${fm.firmer} firmer` : "", fm.looser ? `${fm.looser} looser` : ""].filter(Boolean))}` : ""}${fm.unsure ? `, and ${fm.unsure} that could be either` : ""}.` : `<b>${plural(fm.bms.length, "BM")}</b>, mostly ${esc(fm.top.label)}.`) : "No BMs logged in this stretch.",
+      sum: fm.bms.length ? (u ? `<b>${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")}</b> within your usual forms${fm.out.length ? `: ${join([fm.firmer ? `${fm.firmer} firmer` : "", fm.looser ? `${fm.looser} looser` : ""].filter(Boolean))}` : ""}${fm.unsure ? `, and ${fm.unsure} that could be either` : ""}.` : `<b>${plural(fm.bms.length, "BM")}</b>, mostly ${esc(fm.top.label)}.`) : u ? "No BMs logged in this stretch." : "No BMs logged yet.",
       chart: fm.bms.length ? hist({ bins: fm.bins, h: 64, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${RANGE_NAME[n].toLowerCase()}` }) : "",
       legend: u && fm.out.length ? `${lg("sw--bar", "Within your usual")}${lg("sw--bar sw--out", "Outside it")}` : "",
       body: formSplit(fm) ? `<p class="ap-ic-note">${esc(formSplit(fm))}</p>` : ""
@@ -760,7 +767,7 @@
       return page(M, V, st, "Timing", `
         ${hero("Typical first BM", tm.med != null ? esc(T(tm.med)) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${winText(u)}`, "plain")}${chip(`${tm.inW} of ${plural(tm.mornings.length, "morning")} in it`, "usual")}`, now)}
         ${tabs}
-        ${fig(u ? `${tm.inW} of ${tm.mornings.length} mornings in your window` : "First BM, each morning", RANGE_NAME[n], tm.mornings.length ? morning({ w: 326, days: F, usual: u, domain: dom, r: n >= 90 ? 3 : n >= 30 ? 4.2 : 5.4, gap: n >= 90 ? 1.2 : 1.6, bracket: true, aria: `First BM each morning, ${rn}` }) : `<p class="ap-ic-note">No first BM logged in this stretch.</p>`,
+        ${fig(u ? `${tm.inW} of ${tm.mornings.length} mornings in your window` : "First BM, each day", RANGE_NAME[n], tm.mornings.length ? morning({ w: 326, days: F, usual: u, domain: dom, r: n >= 90 ? 3 : n >= 30 ? 4.2 : 5.4, gap: n >= 90 ? 1.2 : 1.6, bracket: true, aria: `First BM each ${u ? "morning" : "day"}, ${rn}` }) : `<p class="ap-ic-note">${u ? "No first BM logged in this stretch." : "No first BM logged yet."}</p>`,
           u ? `${lg("", "In your window")}${lg("sw--shift", "Outside it")}${lg("sw--ring", "Newest")}` : tm.mornings.length ? lg("", "First BM") : "")}
         ${second}
         ${shaped(lines)}
@@ -947,11 +954,31 @@
     if (!ctx) return null;
     const mode = V.form, u = M.usual, n = u ? ctx.range : 7, k = ctx.k;
     const F = L.span(M, n, mode), rn = u ? RANGE_NAME[n].toLowerCase() : "so far";
-    if (k === "score") { const SC = scoreOf(M, mode); if (!SC) return { title: "FloraScore", facts: [`Starts on day ${L.LEARN_DAYS}`, `Day ${L.learnDay(M)} so far`], qs: ["How is FloraScore worked out?", "What do I need to log?", "Why does it wait 14 days?"] }; const top = SC.mv ? SC.mv.parts.slice().sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] : null; return { title: "FloraScore · today", facts: [SC.v == null ? "Not scored today" : `Today ${SC.v}, ${lower1(SC.rel)}`, `Your usual range ${SC.su[0]} to ${SC.su[1]}`, top ? `Moved most this week: ${PARTN[top.key][0].toLowerCase()}, ${top.delta >= 0 ? "+" : "−"}${Math.abs(top.delta).toFixed(1)} points` : "Not enough weeks to compare"], qs: ["What moved my FloraScore this week?", "How is FloraScore worked out?", "What could I try this week?"] }; }
-    if (k === "timing") { const tm = timingOf(M, F); return { title: `Timing · ${rn}`, facts: u ? [`Your usual window: ${winText(u)}`, `${tm.inW} of ${plural(tm.mornings.length, "morning")} in it`, tm.later.length ? `${tm.laterAfterLate} of ${plural(tm.later.length, "later morning")} came after a dinner past 8 PM` : "No later mornings"] : [`First BM on ${plural(tm.mornings.length, "morning")}`], qs: ["Why do some mornings run later?", "What sets my usual window?", "What could I try this week?"] }; }
-    if (k === "often") { const of = oftenOf(M, F); return { title: `How often · ${rn}`, facts: u ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `${of.inC} of ${plural(of.known.length, "day")} within`] : [`${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`], qs: ["What made my busier days different?", "Why does a gap not count as zero?", "How is my usual worked out?"] }; }
-    if (k === "form") { const fm = formOf(M, F, mode); return { title: `Form · ${rn}`, facts: u ? [`Your usual: ${L.usualFormsText(M, mode)}`, `${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, fm.top ? `Most common: ${fm.top.label}` : "No BMs yet"] : [`${plural(fm.bms.length, "BM")} so far`], qs: ["What do the forms mean?", "Why were some BMs looser?", "When should I mention a change to a clinician?"] }; }
-    if (k === "sym") { const sy = symOf(M, F); return { title: `Symptoms · ${rn}`, facts: [u ? `Your usual: ${lower1(symUsualText(u))}` : "Learning your usual", `Symptoms on ${sy.withSym.length} of ${plural(sy.logged.length, "day")}`, sy.rows.length ? `Mostly ${sy.rows[0].name.toLowerCase()}${sy.how ? `, usually ${sy.how}` : ""}` : "None logged"], qs: ["What tends to come before my bloating?", "When should I talk to a clinician?", "How do I log symptoms well?"] }; }
+    /* while Florin is learning: the day it's on; with nothing counted yet, questions about getting started, never ones
+       that assume weeks of logs */
+    const dayN = `Day ${L.learnDay(M)} of ${L.LEARN_DAYS}`;
+    const START = ["What should I log, and when?", "How does Florin learn my usual?", "When should I talk to a clinician?"];
+    if (k === "score") { const SC = scoreOf(M, mode); if (!SC) return { title: "FloraScore", facts: [`Starts on day ${L.LEARN_DAYS}`, `Day ${L.learnDay(M)} so far`], qs: ["How is FloraScore worked out?", "What do I need to log?", `Why does it wait ${L.LEARN_DAYS} days?`] }; const top = SC.mv ? SC.mv.parts.slice().sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] : null; return { title: "FloraScore · today", facts: [SC.v == null ? "Not scored today" : `Today ${SC.v}, ${lower1(SC.rel)}`, `Your usual range ${SC.su[0]} to ${SC.su[1]}`, top ? `Moved most this week: ${PARTN[top.key][0].toLowerCase()}, ${top.delta >= 0 ? "+" : "−"}${Math.abs(top.delta).toFixed(1)} points` : "Not enough weeks to compare"], qs: ["What moved my FloraScore this week?", "How is FloraScore worked out?", "What could I try this week?"] }; }
+    if (k === "timing") {
+      const tm = timingOf(M, F), any = tm.mornings.length > 0;
+      if (u) return { title: `Timing · ${rn}`, facts: any ? [`Your usual window: ${winText(u)}`, `${tm.inW} of ${plural(tm.mornings.length, "morning")} in it`, tm.later.length ? `${tm.laterAfterLate} of ${plural(tm.later.length, "later morning")} came after a dinner past 8 PM` : "No later mornings"] : [`Your usual window: ${winText(u)}`, "No first BM logged in this stretch"], qs: ["Why do some mornings run later?", "What sets my usual window?", "What could I try this week?"] };
+      return { title: `Timing · ${rn}`, facts: any ? [dayN, `First BM logged on ${plural(tm.mornings.length, "day")}, ${timesText(tm)}`] : [dayN, "No BMs logged yet"], qs: any ? ["What sets my usual window?", `Why does Florin wait ${L.LEARN_DAYS} days?`, "What should I log, and when?"] : START };
+    }
+    if (k === "often") {
+      const of = oftenOf(M, F), any = of.known.length > 0;
+      if (u) return { title: `How often · ${rn}`, facts: any ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `${of.inC} of ${plural(of.known.length, "day")} within`] : [`Your usual: ${u.nLo} to ${u.nHi} a day`, "No BMs logged in this stretch"], qs: ["What made my busier days different?", "Why does a gap not count as zero?", "How is my usual worked out?"] };
+      return { title: `How often · ${rn}`, facts: any ? [dayN, `${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`] : [dayN, "No BMs logged yet"], qs: any ? ["How is my usual worked out?", "Why does a gap not count as zero?", "What should I log, and when?"] : START };
+    }
+    if (k === "form") {
+      const fm = formOf(M, F, mode), any = fm.bms.length > 0;
+      if (u) return { title: `Form · ${rn}`, facts: any ? [`Your usual: ${L.usualFormsText(M, mode)}`, `${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} within`, fm.top ? `Most common: ${fm.top.label}` : "No BMs yet"] : [`Your usual: ${L.usualFormsText(M, mode)}`, "No BMs logged in this stretch"], qs: ["What do the forms mean?", "Why were some BMs looser?", "When should I mention a change to a clinician?"] };
+      return { title: `Form · ${rn}`, facts: any ? [dayN, `${plural(fm.bms.length, "BM")} so far${fm.top ? `, mostly ${fm.top.label}` : ""}`] : [dayN, "No BMs logged yet"], qs: any ? ["What do the forms mean?", "How does Florin learn my usual?", "When should I mention a change to a clinician?"] : START };
+    }
+    if (k === "sym") {
+      const sy = symOf(M, F);
+      if (!u && !sy.logged.length) return { title: `Symptoms · ${rn}`, facts: [dayN, "Nothing logged yet"], qs: ["How do I log symptoms well?", "How does Florin learn my usual?", "When should I talk to a clinician?"] };
+      return { title: `Symptoms · ${rn}`, facts: [u ? `Your usual: ${lower1(symUsualText(u))}` : dayN, sy.logged.length ? `Symptoms on ${sy.withSym.length} of ${plural(sy.logged.length, "day")}` : "No days logged in this stretch", sy.rows.length ? `Mostly ${sy.rows[0].name.toLowerCase()}${sy.how ? `, usually ${sy.how}` : ""}` : "None logged"], qs: [sy.rows.length ? `What tends to come before my ${sy.rows[0].name.toLowerCase()}?` : "What should I note when a symptom comes up?", "When should I talk to a clinician?", "How do I log symptoms well?"] };
+    }
     if (k === "ck" && !RU.ckOn(V)) return null;
     if (k === "ck") { const K = ckOf(M); return { title: "Weekly check-in", facts: K.b ? [ckHead(K), `Compared with ${RU.spanText(K.done[0].ws, K.done[2].ws + 6)}`, `${plural(K.done.length + (K.cur ? 1 : 0), "check-in")} so far`] : ["Your first check-ins set your starting point"], qs: ["What changed since I started?", "How is my starting point set?", "What should I note this week?"] }; }
     if (k === "pat") { const PR = L.patterns(M, mode); return { title: `Possible patterns · last ${L.PATTERN_DAYS} days`, facts: PR.found.length ? PR.found.slice(0, 3).map((p) => `${patTitle(p)}: ${p.hit} of ${p.n} times`) : ["Nothing stands out yet"], qs: ["How sure are these patterns?", "How do I test one?", "Why does a food need 5 logs?"] }; }
@@ -1022,4 +1049,7 @@
       ${fine("Ask Florin answers from your logs and general guidance. It isn't a clinician. " + DISC)}
     </div>`;
   };
+
+  /* the core's own screens, for the phone to fall back to when a module's wrapper throws (refresh-ui.js has the rest) */
+  RU.core = Object.assign(RU.core || {}, { insights: RU.insights, idetail: RU.idetail, ask: RU.ask, paywall: RU.paywall });
 })();

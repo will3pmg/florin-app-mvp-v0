@@ -36,19 +36,24 @@ reference/oura.md              what Oura's screens do, and how each idea transla
 work/                          QA and screenshot scripts (work/shots-library.js for the looks)
 ```
 
-The page (Will, Oct 27): one phone, live, in the middle. The left bar holds **Decisions** (Consistency, BM logging,
-Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), then **Demo** (Person; Logs: 12 weeks,
-New, day 5 or Just joined; Meal logs; Plan; App theme; Reset), then **Screens**. The right bar is the notes for the
-screen, or for the decision just changed (until the phone moves to another screen); each decision's info button shows
-its note. Decisions are stored (`florin-refresh:<key>`); the demo controls aren't. Under 760px the app is full screen
-and a bottom bar opens Toggles (Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled.
+The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar holds **Decisions**
+(Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), one line each,
+then **Demo** (Person; Logs: 12 weeks, New, day 5 or Just joined; Meal logs; Plan; Theme; Reset), which folds to a
+one-line summary (folded by default, remembered per viewer as `florin-refresh:demoOpen`), then **Screens**. Each side
+bar scrolls on its own and is sized from where it sits, so its end is always in reach. The right bar is the notes for
+the screen, or for the decision just changed (until the phone moves to another screen); each decision's info button
+shows its note. Between 760 and 1019px the notes sit under the phone: an info button scrolls to them, and a changed
+decision shows a "Read the note" button. A decision's note says **On the phone** only for an option the phone draws,
+and **Picked** for one still to be drawn. Decisions are stored (`florin-refresh:<key>`); the demo controls aren't. The
+arrow keys step through Screens from the list or with nothing focused. Under 760px the app is full screen and a bottom
+bar opens Toggles (Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled.
 Weekly check-in Off takes the check-in out of the whole app (`RU.ckOn(V)`), and its screens are disabled in the list.
 BM logging Full form only shows one Log a BM row on plus and no one-tap save. Home Day first, History Calendar, Data
 style, Version Easy and Onboarding Full survey are stored and stamped on the phone, and drawn by their modules.
 
 The prototype loads the library's looks (looks-data.js, look-*.js and their css, never library.js, which mounts the
 library page) before the modules: `_local.html` from `../library/`, `index.html` from `js/` and `css/`, so publish them
-at those paths with the prototype.
+at those paths with the prototype (see Publishing).
 
 Every number a screen states is computed from the model, never typed. If copy states a figure, compute it.
 
@@ -92,23 +97,31 @@ FLORIN_EXT = {
   screens:   [[group, [[id, label], ...], { before?: group }]],  // joins a group of that name, or a new group
   notes:     { [screenId]: (M, P) => note },               // wins over the core note when it returns one
   decisions: { [key]: (M, P) => note },                    // replaces a decision's core note
+  built:     { [key]: [value, ...] },                      // the options of a decision a module draws (home: ["day"])
   keys:      { [overlayType]: (overlay) => screenId, ["tab:<tab>"]: ({ st: S }) => screenId },
-  onSet:     [(key, value, api) => void],                  // after phone.set has redrawn
-  api                                                      // the live phone's api, set by refresh-app.js
+  onSet:     [(key, value, api) => void],                  // after phone.set has redrawn and the page has followed
+  api                                                      // the live phone's api, there from the phone's first draw
 }
 note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], res?: [] }   // P: every decision, the
                                                            // demo controls (persona, data, meals, plan, theme) and key
 ```
 
-- **api**: `S` (the phone's state), `V()`, `M()`, `push(type, st, { instant })`, `pop()`, `swap(type, st)`,
-  `rerender(overlay?)`, `top()`, `closeAll()`, `toast(msg, undo?, more?)`, `say(text)`, `renderTab(soft)`, `go(tab)`,
-  `nav()`, `focusSel(selector)`, `open(screenId)`, `rebuild()`, `set(key, value)`, `countUp(el)`, `layer`, `root`, and
-  `snapshot()` (returns an undo), `commit(st, kind, fields)`, `key()`, `act(name, button)` (a module's act, else the
-  core's), `core(name, button)` (always the core's, for an act that wraps one).
+- **api**: `S` (the phone's state), `V()`, `M()`, `push(type, st, { instant })` (returns the overlay, or null when its
+  render drew nothing or threw: it isn't opened), `pop()`, `swap(type, st)`, `rerender(overlay?)`, `top()`,
+  `closeAll()`, `toast(msg, undo?, more?)`, `say(text)`, `renderTab(soft)`, `go(tab)`, `nav()`, `focusSel(selector)`,
+  `open(screenId)`, `rebuild()` (a fresh model, every draft and overlay gone, drawing nothing: follow it with
+  `open(id)`), `reset()` (rebuild, then Today), `set(key, value)`, `countUp(el)`, `layer`, `root`, and `snapshot()`
+  (returns an undo), `commit(st, kind, fields)`, `key()`, `act(name, button)` (a module's act, else the core's),
+  `core(name, button)` (always the core's, for an act that wraps one).
 - **set(key, value)** is the one way to change the phone: the decisions (`form`, `bmUI`, `home`, `history`, `checkin`,
   `mealUI`, `look`, `easy`, `onboard`), `plan`, `persona`, `data` and `meals` (these rebuild the model and go to Today),
-  `theme`, `full`. Each decision is stamped on the phone's `.ap` root (`data-bm-ui="full"`, `data-look="rings"`,
-  `data-easy="true"`) for a module's CSS; an overlay's element carries `.ap-o--t-<type>`.
+  `theme`, `full`. The page follows every set, whoever makes it: the toggles, the stored decision, the Screens list and
+  the notes (so a Profile screen can turn the check-in off). Each decision is stamped on the phone's `.ap` root
+  (`data-bm-ui="full"`, `data-look="rings"`, `data-easy="true"`) for a module's CSS; an overlay's element carries
+  `.ap-o--t-<type>`.
+- **built**: until a module claims an option in `EXT.built[key]`, a decision's note says Picked for it, not On the
+  phone, and its lede says it's drawn in the next pass. The core draws every option of form, bmUI, checkin and mealUI,
+  and only Score first, List, As built and Standard of the others; no onboarding at all.
 - **V()** = `{ form, uid, mealUI, plan, bmUI, home, history, checkin, look, easy, onboard, persona, data, meals }`.
 - **Wrap, don't edit.** Render functions are looked up when called, so `const base = RU.plus; RU.plus = (M, V, st) =>
   V.easy ? mine(M, V, st) : base(M, V, st)` works for `RU.today`, `RU.history`, `RU.insights`, `RU.idetail`, `RU.ask`,
@@ -120,7 +133,9 @@ note = { t, lede, ba?: [[was, now]], opts?: [[value, text]], rec?, open?: [], re
 - **History** is `RU.history(M, V, st)` over `RU.historyDay(M, V, d, entries)`, `RU.entryRow(e, M, V)` and
   `RU.historyNext(M, V)`, so a calendar shows a day the same way.
 - Helpers: `RU.ckOn(V)` (the check-in is on), `RU.bmCount(M)`, `RU.QUICK_AFTER` (5 BMs before a tile saves at once).
-- A hook that throws is logged and skipped, never allowed to take the page down.
+- A hook that throws is logged and skipped, never allowed to take the page down. A wrapped screen that throws is drawn
+  the core's way instead (`RU.core` keeps every core screen from before the modules loaded), and so is a Today part
+  or layout. A module screen with no note of its own shows "On the phone" and lights no row in Screens.
 
 ## Rules you must not break
 
@@ -148,7 +163,20 @@ NODE_PATH=$(npm root -g) node work/shots.js <dir>   # phone screenshots of every
 ## Publishing
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
-page and every css/js file as a published file at the same relative path. The data looks are a separate artifact,
+page and every `prototype/css` and `prototype/js` file at the same relative path (`css/app.css`, `js/refresh-app.js`,
+the modules and their css included). The library files `index.html` loads go under `js/` and `css/` too, from
+`library/`:
+
+```
+js/looks-data.js  <- library/js/looks-data.js        css/look-rings.css    <- library/css/look-rings.css
+js/look-rings.js  <- library/js/look-rings.js        css/look-journal.css  <- library/css/look-journal.css
+js/look-journal.js <- library/js/look-journal.js     css/look-bento.css    <- library/css/look-bento.css
+js/look-bento.js  <- library/js/look-bento.js        css/look-oura.css     <- library/css/look-oura.css
+js/look-oura.js   <- library/js/look-oura.js         css/look-easy.css     <- library/css/look-easy.css
+js/look-easy.js   <- library/js/look-easy.js
+```
+
+Never `library/js/library.js` or `library/css/library.css` into the prototype. The data looks are a separate artifact,
 https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (library/index.html, with the shared prototype css/js published under
 css/ and js/). Read the artifact before republishing: other
 sessions publish to it too (the second pass did, on Oct 14), so merge onto what's live rather than overwrite it.

@@ -11,7 +11,7 @@
    hooks, has the shape of each key. window.FLORIN_EXT */
 (function () {
   const EXT = (window.FLORIN_EXT = window.FLORIN_EXT || {});
-  [["overlays", {}], ["acts", {}], ["opens", {}], ["screens", []], ["notes", {}], ["decisions", {}], ["keys", {}], ["onSet", []]].forEach(([k, d]) => { if (!EXT[k]) EXT[k] = d; });
+  [["overlays", {}], ["acts", {}], ["opens", {}], ["screens", []], ["notes", {}], ["decisions", {}], ["built", {}], ["keys", {}], ["onSet", []]].forEach(([k, d]) => { if (!EXT[k]) EXT[k] = d; });
 })();
 
 (function () {

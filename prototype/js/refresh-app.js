@@ -13,6 +13,16 @@
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
   /* a module's hook that throws is reported, never allowed to take the page down */
   const safe = (f, ...a) => { try { return f(...a); } catch (e) { console.error(e); return undefined; } };
+  /* a screen, by its RU name. A module's wrapper that throws is reported, and the core's own screen (RU.core, kept
+     before any module loaded) is drawn in its place, so a module can't blank the phone */
+  const draw = (name, ...a) => {
+    try { return RU[name](...a); } catch (e) {
+      console.error(e);
+      const base = RU.core && RU.core[name];
+      if (base && base !== RU[name]) { try { return base(...a); } catch (e2) { console.error(e2); } }
+      return "";
+    }
+  };
   const reduced = () => FL.reduced();
   const store = {
     get(k, d) { try { const v = localStorage.getItem("florin-refresh:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -78,8 +88,8 @@
     function renderTab(soft) {
       const y = layer.scrollTop;
       S.M.ckDraft = S.ckDraft || null;
-      const html = S.tab === "today" ? RU.today(S.M, V()) : S.tab === "history" ? RU.history(S.M, V(), S.hist)
-        : S.tab === "insights" ? (S.ins.k ? RU.idetail(S.M, V(), S.ins) : RU.insights(S.M, V(), S.ins)) : RU.ask(S.M, V(), S.askCtx);
+      const html = S.tab === "today" ? draw("today", S.M, V()) : S.tab === "history" ? draw("history", S.M, V(), S.hist)
+        : S.tab === "insights" ? (S.ins.k ? draw("idetail", S.M, V(), S.ins) : draw("insights", S.M, V(), S.ins)) : draw("ask", S.M, V(), S.askCtx);
       layer.classList.remove("ap-anim");
       layer.innerHTML = html;
       if (!soft && !reduced()) {
@@ -91,6 +101,8 @@
       }
       layer.scrollTop = soft ? y : 0;
       tb.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-current", String(b.dataset.tab === S.tab)));
+      /* the page reads what's drawn (its claims check, the demo time line) */
+      if (cfg.onDraw) cfg.onDraw();
     }
     /* big numerals (data-count) count up as a screen draws in; with reduced motion they're simply there */
     function countUp(el) {
@@ -121,17 +133,17 @@
     function ovlHTML(o) {
       if (EXT.overlays[o.type]) return safe(EXT.overlays[o.type].render, S.M, V(), o.st, api) || "";
       switch (o.type) {
-        case "pay": return RU.paywall(S.M, V(), o.st);
-        case "plus": return RU.plus(S.M, V(), o.st);
-        case "earlier": return RU.earlier(S.M, V());
-        case "bm": return RU.bm(S.M, V(), o.st);
-        case "sym": return RU.sym(S.M, V(), o.st);
-        case "meal": return o.st.quick ? RU.mealQuick(S.M, V(), o.st) : RU.meal(S.M, V(), o.st);
-        case "guide": return RU.guide(V());
-        case "flag": return RU.flagNote(o.st);
-        case "ck": return RU.ck(S.M, V(), o.st);
-        case "ckday": return RU.ckDay(S.M, o.st);
-        case "nobm": return RU.nobmSheet(o.st);
+        case "pay": return draw("paywall", S.M, V(), o.st);
+        case "plus": return draw("plus", S.M, V(), o.st);
+        case "earlier": return draw("earlier", S.M, V());
+        case "bm": return draw("bm", S.M, V(), o.st);
+        case "sym": return draw("sym", S.M, V(), o.st);
+        case "meal": return o.st.quick ? draw("mealQuick", S.M, V(), o.st) : draw("meal", S.M, V(), o.st);
+        case "guide": return draw("guide", V());
+        case "flag": return draw("flagNote", o.st);
+        case "ck": return draw("ck", S.M, V(), o.st);
+        case "ckday": return draw("ckDay", S.M, o.st);
+        case "nobm": return draw("nobmSheet", o.st);
         default: return "";
       }
     }
@@ -168,13 +180,17 @@
       : k === "meal" ? !!(st.text || "").trim() : false);
     const sayEl = root.querySelector("[data-say]");
     const say = (t) => { sayEl.textContent = ""; setTimeout(() => (sayEl.textContent = t), 60); };
+    /* opens an overlay and returns it, or null when it draws nothing (a module's render that threw, an unknown type):
+       an empty sheet would leave the app inert behind it with no way out */
     function push(type, st = {}, o = {}) {
       const ov = { type, st, el: document.createElement("div"), opener: document.activeElement, okey: keyFor(document.activeElement), t0: performance.now() };
+      const html = ovlHTML(ov);
+      if (!html) { console.error(`Florin prototype: the "${type}" overlay drew nothing, so it wasn't opened.`); return null; }
       const kind = kindOf(type);
       ov.el.className = `ap-o ap-o--${kind} ap-o--t-${type}${o.instant || reduced() ? " is-now" : ""}`;
       /* a short sheet closes on a tap outside it; a log form doesn't, so a stray tap can't lose what's on it */
       ov.el.innerHTML = `${kind === "screen" ? "" : `<div class="ap-o-scrim"${kind === "sheet" ? ' data-act="close"' : ""} aria-hidden="true"></div>`}<div class="ap-o-p"></div>`;
-      ov.el.querySelector(".ap-o-p").innerHTML = ovlHTML(ov);
+      ov.el.querySelector(".ap-o-p").innerHTML = html;
       tst.classList.remove("is-on");
       clearTimeout(S.tT);
       S.undo = null;
@@ -190,7 +206,10 @@
       const sc = scroller(p), y = sc ? sc.scrollTop : 0;
       const a = document.activeElement, inside = a && ov.el.contains(a);
       const fid = inside ? a.id : null, fkey = inside && !a.id ? keyOf(a) : null;
-      p.innerHTML = ovlHTML(ov);
+      /* a module's render that throws on a redraw leaves the last good one up */
+      const html = ovlHTML(ov);
+      if (!html) return;
+      p.innerHTML = html;
       const sc2 = scroller(p);
       if (sc2) sc2.scrollTop = y;
       if (o.noRestore) return;
@@ -217,7 +236,7 @@
     }
     function closeAll() { while (S.ovl.length) pop({ instant: true }); }
     /* swap the top overlay for another (the plus menu hands off to a log form) */
-    function swap(type, st) { const opener = top() && top().opener; pop({ instant: true }); const ov = push(type, st); ov.opener = opener; }
+    function swap(type, st) { const opener = top() && top().opener; pop({ instant: true }); const ov = push(type, st); if (ov) ov.opener = opener; return ov; }
 
     /* ---------- toast, with undo ---------- */
     function toast(msg, undo, more) {
@@ -284,9 +303,7 @@
       st.t = st.d === L.TODAY ? Math.min(u, L.NOW) : u;
       st.autoT = `Set to ${T(st.t)}, when you usually log ${st.meal === "other" ? "a snack or drink" : st.meal}. Change it if it was another time.`;
     };
-    const newMeal = (d = L.TODAY) => {
-      const kept = fromDraft("meal", d);
-      if (kept) return kept;
+    const blankMeal = (d) => {
       const had = (m) => { const x = L.day(S.M, d); return !!x && x.entries.some((e) => e.kind === "meal" && e.meal === m); };
       let k = L.mealFor(d === L.TODAY ? L.NOW : 12.5);
       if (d === L.TODAY && k === "other" && L.NOW >= 15 && L.NOW < 17 && !had("lunch")) k = "lunch";
@@ -295,12 +312,13 @@
       if (d !== L.TODAY || k !== L.mealFor(L.NOW)) mealTime(st);
       return st;
     };
+    const blankQuick = (d) => ({ d, t: d === L.TODAY ? L.NOW : L.MEAL_DEFAULT_T.day, meal: "day", text: "", note: "", quick: true, voice: "idle" });
+    /* a meal written on one sheet and opened on the other (the Meal sheet decision changed in between) keeps its words:
+       the text and the note move into a fresh state of the right shape */
+    const reshape = (st, quick) => (!!st.quick === quick ? st : Object.assign(quick ? blankQuick(st.d) : blankMeal(st.d), { text: st.text || "", note: st.note || "" }));
+    const newMeal = (d = L.TODAY) => { const kept = fromDraft("meal", d); return kept ? reshape(kept, false) : blankMeal(d); };
+    const newMealQuick = (d = L.TODAY) => { const kept = fromDraft("meal", d); return kept ? reshape(kept, true) : blankQuick(d); };
     const newCk = () => ({ step: 0, answers: [null, null, null, null], tags: [], note: "" });
-    const newMealQuick = (d = L.TODAY) => {
-      const kept = fromDraft("meal", d);
-      if (kept && kept.quick) return kept;
-      return { d, t: d === L.TODAY ? L.NOW : L.MEAL_DEFAULT_T.day, meal: "day", text: "", note: "", quick: true, voice: "idle" };
-    };
     /* the pretend dictation: the words of a sample land in the box one at a time, with the counted foods following */
     function voiceStop(ov, said) {
       clearInterval(S.vT);
@@ -444,7 +462,7 @@
         pop({ instant: true, focusId: e.id });
         renderTab(true);
         const signs = L.alarmsIn(e.note), sign = signs.length ? L.signText(signs) : null, flagged = L.FLAGS.some(([k]) => e.flags[k]);
-        if (flagged || sign) push("flag", { flags: Object.assign({}, e.flags), sign: flagged ? null : sign, signs: flagged ? [] : signs, restore }).okey = { act: "edit", id: e.id };
+        if (flagged || sign) { const fo = push("flag", { flags: Object.assign({}, e.flags), sign: flagged ? null : sign, signs: flagged ? [] : signs, restore }); if (fo) fo.okey = { act: "edit", id: e.id }; }
         else toast(`${edit ? "Saved" : "BM saved"}. ${L.formName(e, S.form)} at ${T(e.t)}${whenTxt(e)}.${res.replacedNoBm ? ` It replaces No BM ${e.d === L.TODAY ? "today" : "for that day"}.` : ""}`, restore);
       },
       delete() {
@@ -490,7 +508,7 @@
         renderTab(true);
         /* an alarm feature typed in goes to primary care, the same sheet as a flagged BM */
         const signs = L.alarmsIn(e.items.map((i) => i.name).join(". ") + ". " + e.note), sign = signs.length ? L.signText(signs) : null;
-        if (sign) push("flag", { sign, signs, restore }).okey = { act: "edit", id: e.id };
+        if (sign) { const fo = push("flag", { sign, signs, restore }); if (fo) fo.okey = { act: "edit", id: e.id }; }
         else toast(`${edit ? "Saved" : "Symptoms saved"}. ${RU.entryText(e, S.form).title} at ${T(e.t)}${whenTxt(e)}.`, restore);
       },
       meal(b) { const st = top().st; st.meal = b.dataset.v; st.mealTouched = true; mealTime(st); rerender(); },
@@ -755,17 +773,30 @@
       }
       nav();
     }
+    /* a fresh model for the person and logs, every draft and overlay gone. It doesn't draw: follow it with open(id), or
+       call reset(), which rebuilds and opens Today */
     function rebuild() { clearTimeout(S.ckT); S.ovl.forEach((o) => o.el.remove()); S.ovl = []; S.M = L.build(S.persona, S.data, { meals: S.meals }); S.ckDraft = null; S.drafts = {}; S.hist = { filter: "all", n: 14 }; S.ins = { range: 30, k: null, y: 0 }; S.askCtx = null; tst.classList.remove("is-on"); S.undo = null; }
     /* redraw everything in place: the tab under the overlays, then each overlay */
     const refresh = () => { renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); };
-    /* the one way to change the phone: a decision, a demo control, the theme or full screen. Modules hear every change
-       through EXT.onSet, after the phone has redrawn */
+    /* the one way to change the phone: a decision, a demo control, the theme or full screen. The page hears every
+       change first (its toggles, the stored decisions, the notes and the Screens list follow, whoever made it), then the
+       modules, through EXT.onSet, after the phone has redrawn */
     function set(k, v) {
       switch (k) {
         case "theme": root.dataset.theme = v; break;
         case "full": root.classList.toggle("is-full", !!v); break;
         case "persona": case "data": case "meals": S[k] = v; rebuild(); open("today"); break;
-        case "mealUI": S.mealUI = v; if (top() && top().type === "meal") open("meal"); else refresh(); break;
+        case "mealUI": {
+          S.mealUI = v;
+          /* an open meal sheet becomes the other sheet in place, with what's typed carried over (an edit keeps its own) */
+          const t = top();
+          if (t && t.type === "meal" && !t.st.edit && !!t.st.quick !== (v !== "detailed")) {
+            clearInterval(S.vT); clearTimeout(S.mT);
+            t.st = reshape(t.st, v !== "detailed");
+            renderTab(true); rerender(t); nav();
+          } else refresh();
+          break;
+        }
         case "checkin":
           S.checkin = v !== false;
           if (!S.checkin) {
@@ -780,6 +811,7 @@
         default: S[k] = v; refresh();
       }
       if (STAMP.includes(k)) root.setAttribute(attrOf(k), String(S[k]));
+      if (cfg.onSet) safe(cfg.onSet, k, S[k] === undefined ? v : S[k]);
       EXT.onSet.forEach((f) => safe(f, k, v, api));
     }
     /* go to a tab's top, closing whatever is open */
@@ -799,6 +831,8 @@
       form: () => S.form,
       reset() { rebuild(); open("today"); }
     };
+    /* a module can reach the phone from the first draw on (a wrapped RU.today, say) */
+    EXT.api = api;
     renderTab();
     nav();
     return api;
@@ -1214,12 +1248,13 @@
     });
     return G;
   };
-  /* a phone screen id (key()) to the row that lights up in the list */
+  /* a phone screen id (key()) to the row that lights up in the list, or null for a screen the list doesn't have (a
+     module's overlay with no row of its own): then no row lights up */
   const KEY_SCREEN = { "meal-voice": "meal", nobm: "today" };
   const keyToScreen = (k) => {
     const ids = screenGroups().flatMap(([, items]) => items.map(([id]) => id));
     if (ids.includes(k)) return k;
-    return KEY_SCREEN[k] && ids.includes(KEY_SCREEN[k]) ? KEY_SCREEN[k] : "today";
+    return KEY_SCREEN[k] && ids.includes(KEY_SCREEN[k]) ? KEY_SCREEN[k] : null;
   };
   const screenLabel = (id) => { for (const [, items] of screenGroups()) { const it = items.find(([x]) => x === id); if (it) return it[1]; } return ""; };
 
@@ -1228,13 +1263,19 @@
   /* ====================================================================== */
   /* Will, Oct 27: the open decisions are toggles in the one demo. Each one is stored, goes to the phone through
      phone.set(key, value), and has a note: what it decides, what each option does, the recommendation, what's open.
-     A module replaces a note through EXT.decisions[key]. */
+     A module replaces a note through EXT.decisions[key].
+     opts are [value, label, short]: the label in the notes, the short one (when there is one) on the toggle.
+     core lists the options the core draws (all of them when it's left out); a module claims the rest through
+     EXT.built[key], so the notes say On the phone only for an option the phone really draws. */
   const lookOf = (id) => (window.FLOOKS || []).find((x) => x && x.id === id);
   const lookIdea = (id, fallback) => { const k = lookOf(id); return (k && k.idea) || fallback; };
-  const NEXT_PASS = "Built in the next pass; until then the phone shows";
+  const andList = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+  const drawn = (k, v) => { const D = DEC[k]; return !D || !D.core || D.core.includes(v) || ((EXT.built || {})[k] || []).includes(v); };
+  /* the options still to be drawn, said in the decision's lede, with what the phone shows until then */
+  const pending = (k, shows) => { const left = DEC[k].opts.filter(([v]) => !drawn(k, v)).map(([, l]) => l); return left.length ? ` ${andList(left)} ${left.length === 1 ? "is" : "are"} drawn in the next pass; until then the phone shows ${shows}.` : ""; };
   const DECISIONS = [
     {
-      k: "form", label: "Consistency", def: "C", opts: [["A", L.MODES_SHORT.A], ["B", L.MODES_SHORT.B], ["C", L.MODES_SHORT.C]],
+      k: "form", label: "Consistency", def: "C", wide: true, opts: [["A", L.MODES_SHORT.A], ["B", L.MODES_SHORT.B], ["C", L.MODES_SHORT.C]],
       note: (M) => ({
         t: "Consistency: A, B or C",
         lede: "How a BM's consistency is named on the tiles, in History and on Insights. Underneath, A and C keep a step from 1 to 7 and B keeps one of five words, so the option changes what a person picks and what Florin can count.",
@@ -1249,7 +1290,7 @@
       })
     },
     {
-      k: "bmUI", label: "BM logging", def: "quick", opts: [["quick", "Quick tiles and form"], ["full", "Full form only"]],
+      k: "bmUI", label: "BM logging", def: "quick", opts: [["quick", "Quick tiles and form", "Tiles"], ["full", "Full form only", "Full form"]],
       note: (M) => {
         const n = RU.bmCount(M), k = RU.QUICK_AFTER;
         return {
@@ -1266,10 +1307,10 @@
       }
     },
     {
-      k: "home", label: "Home", def: "score", opts: [["score", "Score first"], ["day", "Day first"]],
+      k: "home", label: "Home", def: "score", core: ["score"], opts: [["score", "Score first"], ["day", "Day first"]],
       note: (M) => ({
         t: "Home: score first, or day first",
-        lede: `What Today opens on. Score first leads with FloraScore, then ${P.checkin ? "the check-in when it's due, " : ""}today's entries and the week. Day first leads with today itself: the entries and what to log next, with the score further down. ${NEXT_PASS} Score first.`,
+        lede: `What Today opens on. Score first leads with FloraScore, then ${P.checkin ? "the check-in when it's due, " : ""}today's entries and the week. Day first leads with today itself: the entries and what to log next, with the score further down.${pending("home", "Score first")}`,
         opts: [
           ["score", "As built: FloraScore on the Forest card, the ring with the person's usual range, 30 days under it, and one sentence about the day."],
           ["day", "Today's timeline and a quick way to log first, then FloraScore and the week. For people who mostly open the app to log."]
@@ -1280,18 +1321,18 @@
       })
     },
     {
-      k: "history", label: "History", def: "list", opts: [["list", "List"], ["calendar", "Calendar"]],
+      k: "history", label: "History", def: "list", core: ["list"], opts: [["list", "List"], ["calendar", "Calendar"]],
       note: (M) => {
-        const n = M.days.filter((x) => x.d < L.TODAY && !x.logged).length;
+        const n = M.days.filter((x) => x.d < L.TODAY && !x.logged).length, past = M.days.some((x) => x.d < L.TODAY);
         return {
           t: "History: a list, or a calendar",
-          lede: `How History shows past days. The list is every day, newest first, with a gap kept as a gap and Add to this day on it. A calendar shows the month with each logged day marked, and a day's entries under it when tapped. ${NEXT_PASS} the list.`,
+          lede: `How History shows past days. The list is every day, newest first, with a gap kept as a gap and Add to this day on it. A calendar shows the month with each logged day marked, and a day's entries under it when tapped.${pending("history", "the list")}`,
           opts: [
             ["list", "As built: newest day first, filters for BMs, symptoms, meals and notes, Show earlier days, and the report for a clinician at the top."],
             ["calendar", "A month at a glance: days logged, gaps easy to spot, and the same rows as the list for the day tapped."]
           ],
           rec: "A calendar to find a day and see the gaps, with the list's rows under it, so both read the same way. A gap stays a gap, never a zero.",
-          open: [`${M.P.name} has ${n ? plural(n, "day") : "no days"} with nothing logged so far. What does a day's mark say: logged or not, or how the day sat next to the usual? The second is a reading, so it needs the same colour rules as Insights.`],
+          open: [`${past ? `${M.P.name} has ${n ? plural(n, "past day") : "no past days"} with nothing logged.` : `${M.P.name} joined today, so there are no past days to show yet.`} What does a day's mark say: logged or not, or how the day sat next to the usual? The second is a reading, so it needs the same colour rules as Insights.`],
           res: ["CareClinic lets people catch up on several entries in one go."]
         };
       }
@@ -1306,12 +1347,12 @@
           [false, "No card, no plus item, no Insights card or detail, and nothing that mentions it. Logging, FloraScore and Insights carry on as they are: FloraScore never used it."]
         ],
         rec: "On, and kept free. It's the one place Florin asks how the week felt rather than what happened, it takes about a minute, and it never blocks logging or Insights.",
-        open: ["With it off, nothing asks how the week felt. Is the week card on Today enough?", "Should a person be able to turn it off themselves, in Profile?", "If the NSF pilot needs a validated measure, license IBS-SSS from the Rome Foundation for the study arm only."],
+        open: ["With it off, nothing asks how the week felt. Is the week card on Today enough?", "Should a person be able to turn it off themselves, in Profile?", `A person's first check-in is due on their first ${AD.util.DOWL[M.ckDay.dow]} ${M.ckDay.when}, even on the day they join (Logs, Just joined). It asks how the past week felt, which needs no logs, and it starts their first three a week sooner. Or wait for their first full week with Florin?`, "If the NSF pilot needs a validated measure, license IBS-SSS from the Rome Foundation for the study arm only."],
         res: ["Nerva checks in at the start, weekly and at the end.", "Oura's Advisor: opt-in check-ins at a frequency and time the person picks."]
       })
     },
     {
-      k: "mealUI", label: "Meal sheet", def: "quick", opts: [["quick", "Quick, voice or text"], ["detailed", "One meal at a time"]],
+      k: "mealUI", label: "Meal sheet", def: "quick", opts: [["quick", "Quick, voice or text", "Quick"], ["detailed", "One meal at a time", "One meal"]],
       note: (M) => {
         const PR = L.patterns(M, P.form);
         return {
@@ -1328,11 +1369,11 @@
       }
     },
     {
-      k: "look", label: "Data style", def: "built", chips: true,
+      k: "look", label: "Data style", def: "built", chips: true, core: ["built"],
       opts: [["built", "As built"], ["rings", "Rings"], ["journal", "Field journal"], ["bento", "Bento"], ["oura", "Oura"], ["easy", "Easy read"]],
       note: () => ({
         t: "Data style",
-        lede: `How the numbers are drawn on Today and Insights: the score, the week, timing, how often, form, symptoms${P.checkin ? ", the check-in" : ""} and patterns. Every look draws the same numbers from the same logs; only the drawing changes. The looks come from the data looks library. ${NEXT_PASS} As built.`,
+        lede: `How the numbers are drawn on Today and Insights: the score, the week, timing, how often, form, symptoms${P.checkin ? ", the check-in" : ""} and patterns. Every look draws the same numbers from the same logs; only the drawing changes. The looks come from the data looks library.${pending("look", "As built")}`,
         opts: [
           ["built", "The studio's chart kit, as on the phone now: the Forest score card, bars from zero, morning strips and dot rows."],
           ["rings", lookIdea("rings", "FloraScore as a ring with the usual on it, and every card below read as rings.")],
@@ -1347,10 +1388,10 @@
       })
     },
     {
-      k: "easy", label: "Version", def: false, opts: [[false, "Standard"], [true, "Easy"]],
+      k: "easy", label: "Version", def: false, core: [false], opts: [[false, "Standard"], [true, "Easy"]],
       note: () => ({
         t: "Version: standard, or easy",
-        lede: `An easier version of the whole app, for older people or anyone who wants less on screen: larger type and targets, fewer cards, sentences in place of most charts, and one clear next step. ${NEXT_PASS} Standard.`,
+        lede: `An easier version of the whole app, for older people or anyone who wants less on screen: larger type and targets, fewer cards, sentences in place of most charts, and one clear next step.${pending("easy", "Standard")}`,
         opts: [
           [false, "As built."],
           [true, "The same logs and the same numbers, said more simply and bigger."]
@@ -1361,15 +1402,15 @@
       })
     },
     {
-      k: "onboard", label: "Onboarding", def: "short", opts: [["short", "Short"], ["full", "Full survey"]],
+      k: "onboard", label: "Onboarding", def: "short", core: [], opts: [["short", "Short"], ["full", "Full survey"]],
       note: () => ({
         t: "Onboarding: short, or the full survey",
-        lede: `What a new person is asked before Today. The app that ships asks 14 questions (Will, Oct 27). Short asks only what changes the app on day 1; the full survey keeps the shipping app's sections, reworded to Florin's rules. ${NEXT_PASS} the app as it is, and Logs on the left has Just joined for day 1 after onboarding.`,
+        lede: `What a new person is asked before Today. The app that ships asks 14 questions (Will, Oct 27). Short asks only what changes the app on day 1; the full survey keeps the shipping app's sections, reworded to Florin's rules.${pending("onboard", "the app as it is, and Logs on the left has Just joined for day 1 after onboarding")}`,
         opts: [
-          ["short", "The consistency words, what brings the person to Florin in their own words, and when the check-in is due. Everything else is asked later, where it's used."],
+          ["short", `The consistency words${P.checkin ? ", what brings the person to Florin in their own words, and when the check-in is due" : " and what brings the person to Florin, in their own words"}. Everything else is asked later, where it's used.`],
           ["full", "The shipping survey's sections, reworded: no scale named, no goals that promise an outcome, weight left out, and blood or black stools answered with the primary care note right there."]
         ],
-        rec: "Short. 60% of men want setup under 10 minutes; ask the rest in context, where each answer changes something.",
+        rec: "Short. The shipping survey is quick, so time isn't the problem: most of its answers change nothing a person sees on day 1. Ask only what does, and the rest in context, where each answer changes something.",
         open: ["Which questions earn a place on day 1?", "Research consent: its own choice in Profile, never a survey step?"],
         res: ["The shipping onboarding: 14 questions, about 1 to 3 minutes."]
       })
@@ -1385,7 +1426,7 @@
   const pageTheme = () => { const a = document.documentElement.getAttribute("data-theme"); return a === "dark" || a === "light" ? a : sysDark() ? "dark" : "light"; };
   /* the compare mode is gone (Oct 27): its stored switch goes too */
   try { localStorage.removeItem("florin-refresh:compare"); } catch (e) { /* private window: fine */ }
-  const P = { persona: "sarah", data: "est", meals: "all", plan: "member", themeSet: null, key: "today", dec: null, ph: null };
+  const P = { persona: "sarah", data: "est", meals: "all", plan: "member", themeSet: null, key: "today", dec: null, ph: null, demoOpen: !!store.get("demoOpen", false) };
   DECISIONS.forEach((D) => { const v = store.get(D.k, D.def); P[D.k] = D.opts.some(([o]) => o === v) ? v : D.def; });
   const appTheme = () => P.themeSet || pageTheme();
   /* what a module's notes see: every decision, the demo controls and the screen */
@@ -1395,29 +1436,38 @@
     return o;
   };
 
-  /* "A · 1 to 7" sets as two lines on purpose, the letter over its words, so the three fit side by side */
+  /* "A · 1 to 7" sets as two lines on purpose, the letter over its words, so the three fit side by side; read out as
+     "A, 1 to 7". A short label on the toggle keeps the option's full label as its name, which starts with the words
+     on screen */
   const optLabel = (l) => { const i = l.indexOf(" · "); return i < 0 ? esc(l) : `<span class="rx-o1">${esc(l.slice(0, i))}</span> <span class="rx-o2">${esc(l.slice(i + 3))}</span>`; };
-  const btns = (k, opts, cur) => opts.map(([v, l]) => `<button type="button" data-rx="${esc(k)}" data-v="${esc(String(v))}" aria-pressed="${v === cur}"${l.indexOf(" · ") >= 0 ? ` aria-label="${esc(l)}"` : ""}>${optLabel(l)}</button>`).join("");
+  const btns = (k, opts, cur) => opts.map(([v, l, sh]) => {
+    const name = l.indexOf(" · ") >= 0 ? l.replace(" · ", ", ") : sh && sh !== l ? l : "";
+    return `<button type="button" data-rx="${esc(k)}" data-v="${esc(String(v))}" aria-pressed="${v === cur}"${name ? ` aria-label="${esc(name)}"` : ""}>${optLabel(sh || l)}</button>`;
+  }).join("");
   const seg = (k, label, opts, cur) => `<div class="rx-seg" role="group" aria-label="${esc(label)}">${btns(k, opts, cur)}</div>`;
-  const decHTML = (D) => `<div class="rx-dec" data-dec="${D.k}">
-      <div class="rx-dec-h"><span class="rx-ctl-l" id="rxd-${D.k}">${esc(D.label)}</span><button type="button" class="rx-info" data-rx="dinfo" data-v="${D.k}" aria-pressed="false" aria-label="About ${esc(D.label)}">${ic("info")}</button></div>
+  /* one line each: the name, the options, and the info button at the end */
+  const decHTML = (D) => `<div class="rx-dec${D.chips || D.wide ? " rx-dec--wide" : ""}" data-dec="${D.k}">
+      <span class="rx-ctl-l" id="rxd-${D.k}">${esc(D.label)}</span>
       <div class="${D.chips ? "rx-chips" : "rx-seg"}" role="group" aria-labelledby="rxd-${D.k}">${btns(D.k, D.opts, P[D.k])}</div>
+      <button type="button" class="rx-info" data-rx="dinfo" data-v="${D.k}" aria-pressed="false" aria-label="About ${esc(D.label)}">${ic("info")}</button>
     </div>`;
+  const MEAL_SHORT = { rough: "Rough days" };
   const demoHTML = () => `
       <div class="rx-ctl"><span class="rx-ctl-l">Person</span>${seg("persona", "Person", Object.values(AD.personas).map((p) => [p.id, p.name]), P.persona)}</div>
       <div class="rx-ctl"><span class="rx-ctl-l">Logs</span>${seg("data", "Logs", L.DATA, P.data)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">Meal logs</span>${seg("meals", "Meal logs", L.MEAL_LOGS, P.meals)}</div>
+      <div class="rx-ctl"><span class="rx-ctl-l">Meal logs</span>${seg("meals", "Meal logs", L.MEAL_LOGS.map(([v, l]) => [v, l, MEAL_SHORT[v]]), P.meals)}</div>
       <div class="rx-ctl"><span class="rx-ctl-l">Plan</span>${seg("plan", "Plan", [["member", "Member"], ["free", "Free"]], P.plan)}</div>
-      <div class="rx-ctl"><span class="rx-ctl-l">App theme</span>${seg("theme", "App theme", [["light", "Light"], ["dark", "Dark"]], appTheme())}</div>
-      <button type="button" class="rx-btn rx-btn--line" data-rx="reset">${ic("undo")}Reset the demo</button>
-      <p class="rx-small" data-time></p>`;
+      <div class="rx-ctl"><span class="rx-ctl-l">Theme</span>${seg("theme", "App theme", [["light", "Light"], ["dark", "Dark"]], appTheme())}</div>
+      <div class="rx-demo-f"><p class="rx-small" data-time></p><button type="button" class="rx-btn rx-btn--line" data-rx="reset">${ic("undo")}Reset the demo</button></div>`;
   /* the demo's clock and where the person is, from the model */
   const timeLine = () => {
     const M = P.ph && P.ph.model();
     if (!M) return "";
     const t = L.dateOf(L.TODAY), U = AD.util;
-    const who = P.data === "fresh" ? ` ${M.P.name} just joined: onboarding finished this evening, so today is day ${L.learnDay(M)} of ${L.LEARN_DAYS} and nothing is logged yet.` : !M.usual ? ` ${M.P.name} is on day ${L.learnDay(M)} of ${L.LEARN_DAYS}, so Florin is still learning their usual.` : "";
-    const ck = P.checkin && M.checkin.status === "due" ? " The weekly check-in is due tonight." : "";
+    /* what's logged so far, counted, so the line keeps up as the person logs */
+    const n = M.days.reduce((a, x) => a + x.entries.length, 0);
+    const who = M.mode === "fresh" ? ` ${M.P.name} just joined: onboarding finished this evening, so today is day ${L.learnDay(M)} of ${L.LEARN_DAYS}${n ? `, with ${plural(n, "log")} so far` : " and nothing is logged yet"}.` : !M.usual ? ` ${M.P.name} is on day ${L.learnDay(M)} of ${L.LEARN_DAYS}, so Florin is still learning their usual.` : "";
+    const ck = RU.ckOn(P.ph.V()) && M.checkin.status === "due" ? " The weekly check-in is due tonight." : "";
     return `Demo time is ${U.DOWL[t.getDay()]}, ${U.MONL[t.getMonth()]} ${t.getDate()}, ${T(L.NOW)}.${who}${ck} Logs you add stay until you reset or reload.`;
   };
   const offScreen = (id) => !P.checkin && CK_SCREENS.includes(id);
@@ -1427,8 +1477,7 @@
 
   mount.innerHTML = `
     <header class="rx-head">
-      <p class="rx-eyebrow">Florin app refresh · Third pass · Oct 27</p>
-      <h1>The app, with the open decisions as toggles</h1>
+      <div class="rx-head-t"><p class="rx-eyebrow">Florin app refresh · Third pass · Oct 27</p><h1>The app, with the open decisions as toggles</h1></div>
       <p class="rx-lede">Today's app, the one that ships without hardware. Each open decision is a toggle on the left: change one and the phone changes with it, and the notes say what it decides.</p>
     </header>
     <div class="rx-main">
@@ -1437,6 +1486,7 @@
       <aside class="rx-side rx-side--r" id="rxRight" aria-label="Notes"></aside>
       <div class="rx-under" id="rxUnder"></div>
     </div>
+    <button type="button" class="rx-jump" data-rx="jump" hidden></button>
     <footer class="rx-foot"><span>Built on the brand studio: DESIGN.md v1.1 tokens, the chart kit and the seeded demo data.</span><span>Prototype only. Not for patients.</span></footer>
     <nav class="rx-mbar" aria-label="Prototype">
       <button type="button" class="rx-mbar-b" data-rx="sheet" data-v="toggles" aria-haspopup="dialog">${ic("sliders")}<span>Toggles</span></button>
@@ -1452,12 +1502,14 @@
     </div>`).join("")}`;
 
   const $ = (s) => mount.querySelector(s);
-  const main = $(".rx-main"), stage = $("#rxStage"), left = $("#rxLeft"), right = $("#rxRight"), under = $("#rxUnder"), mbar = $(".rx-mbar");
+  const main = $(".rx-main"), stage = $("#rxStage"), left = $("#rxLeft"), right = $("#rxRight"), under = $("#rxUnder"), mbar = $(".rx-mbar"), jump = $(".rx-jump");
   const sheets = { toggles: $("#rxSheet-toggles"), notes: $("#rxSheet-notes") };
   const make = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
   /* the panels exist once, and move between the side bars (wide) and the sheets (phone), so nothing is doubled */
-  const decPanel = make(`<section class="rx-panel rx-panel--dec" aria-labelledby="rxDecH"><h2 class="rx-h" id="rxDecH">Decisions</h2><p class="rx-small rx-dec-lede">Each one changes the whole app. The info button says what it decides.</p><div class="rx-decs">${DECISIONS.map(decHTML).join("")}</div></section>`);
-  const demoPanel = make(`<section class="rx-panel rx-panel--demo" aria-labelledby="rxDemoH"><h2 class="rx-h" id="rxDemoH">Demo</h2><div class="rx-demo">${demoHTML()}</div></section>`);
+  const decPanel = make(`<section class="rx-panel rx-panel--dec" aria-labelledby="rxDecH"><h2 class="rx-h" id="rxDecH">Decisions</h2><p class="rx-small rx-dec-lede">Each one changes the whole app.</p><div class="rx-decs">${DECISIONS.map(decHTML).join("")}</div></section>`);
+  /* the demo controls fold away to one line, so the Screens list is near the top of the bar. Open or folded is
+     remembered for this viewer */
+  const demoPanel = make(`<section class="rx-panel rx-panel--demo" aria-labelledby="rxDemoH"><h2 class="rx-h" id="rxDemoH">Demo</h2><button type="button" class="rx-fold" data-rx="fold" aria-controls="rxDemoB" aria-expanded="false"><span></span>${ic("chev")}</button><p class="rx-small rx-demo-sum" data-sum></p><div class="rx-demo" id="rxDemoB">${demoHTML()}</div></section>`);
   const navPanel = make(`<nav class="rx-panel rx-panel--nav" aria-labelledby="rxScrH"><h2 class="rx-h" id="rxScrH">Screens</h2><ol class="rx-nav">${screensHTML()}</ol></nav>`);
   const notesPanel = make(`<div class="rx-panel rx-notes" id="rxNotes"></div>`);
   const wsPanel = make(`<section class="rx-ws" id="rxWs" aria-label="The Oct 14 workshop">${workshopHTML()}</section>`);
@@ -1479,6 +1531,15 @@
     notes();
     syncNav();
   }
+  /* each side bar is as tall as the window below where it sits now, wherever the page is scrolled, so its end is never
+     out of reach (a sticky bar starts under the header and rises to the top as the page scrolls) */
+  function sizeSides() {
+    [left, right].forEach((el) => {
+      if (isM() || getComputedStyle(el).position !== "sticky") { el.style.maxHeight = ""; return; }
+      const t = Math.max(0, el.getBoundingClientRect().top);
+      el.style.maxHeight = `${Math.max(240, Math.floor(window.innerHeight - t - 16))}px`;
+    });
+  }
   /* scale the phone to the space it has, never above 1: the whole phone fits under the header, tab bar included */
   function fit() {
     const f = stage.querySelector(".rx-fit");
@@ -1490,6 +1551,7 @@
     f.style.width = `${Math.round(414 * s)}px`;
     f.style.height = `${Math.round(868 * s)}px`;
     f.firstElementChild.style.transform = s < 1 ? `scale(${s.toFixed(4)})` : "";
+    sizeSides();
   }
   /* wide: the toggles on the left, the notes on the right, the workshop under the phone. Phone: all of it in sheets */
   function place() {
@@ -1529,11 +1591,12 @@
     const hits = checkClaims(clone.textContent.replace(/\s+/g, " "));
     const opts = N.opts && N.opts.length ? `<h3 class="rx-h3">The options</h3><ul class="rx-opts">${N.opts.map(([v, text, label]) => {
       const o = D && D.opts.find(([x]) => x === v), on = !!D && P[D.k] === v;
-      return `<li${on ? ' class="is-on"' : ""}><b>${esc(label || (o ? o[1] : String(v)))}${on ? `<span class="rx-on">On the phone</span>` : ""}</b><span>${esc(text)}</span></li>`;
+      /* On the phone only for an option the phone draws; one still to be drawn is Picked */
+      return `<li${on ? ' class="is-on"' : ""}><b>${esc(label || (o ? o[1] : String(v)))}${on ? `<span class="rx-on">${drawn(D.k, v) ? "On the phone" : "Picked"}</span>` : ""}</b><span>${esc(text)}</span></li>`;
     }).join("")}</ul>` : "";
     notesPanel.innerHTML = `<article class="rx-note${dec ? " rx-note--dec" : ""}">
         <p class="rx-eyebrow">${dec ? "Decision" : "On the phone now"}</p>
-        <h2>${esc(N.t || "")}</h2>
+        <h2 id="rxNoteH" tabindex="-1">${esc(N.t || "")}</h2>
         ${N.lede ? `<p class="rx-note-lede">${esc(N.lede)}</p>` : ""}
         ${opts}
         ${N.rec ? `<h3 class="rx-h3">Recommended</h3><p class="rx-rec">${esc(N.rec)}</p>` : ""}
@@ -1554,28 +1617,57 @@
     mount.querySelectorAll('[data-rx="screen"]').forEach((b) => b.setAttribute("aria-current", String(b.dataset.v === cur)));
   }
   function renderNav() { navPanel.querySelector(".rx-nav").innerHTML = screensHTML(); syncNav(); }
+  const MEAL_SUM = { all: "Meals every day", rough: "Meals on rough days", none: "No meals" };
+  const demoSum = () => [AD.personas[P.persona] ? AD.personas[P.persona].name : P.persona, (L.DATA.find(([v]) => v === P.data) || [, ""])[1], MEAL_SUM[P.meals], P.plan === "free" ? "Free" : "Member", appTheme() === "dark" ? "Dark" : "Light"].filter(Boolean).join(" · ");
+  function syncFold() {
+    const b = demoPanel.querySelector('[data-rx="fold"]'), body = demoPanel.querySelector("#rxDemoB"), sum = demoPanel.querySelector("[data-sum]");
+    b.setAttribute("aria-expanded", String(P.demoOpen));
+    b.setAttribute("aria-label", P.demoOpen ? "Hide the demo controls" : "Show the demo controls");
+    b.querySelector("span").textContent = P.demoOpen ? "Hide" : "Show";
+    body.hidden = !P.demoOpen;
+    sum.hidden = P.demoOpen;
+    sum.textContent = demoSum();
+  }
   function syncControls() {
     DECISIONS.forEach((D) => mount.querySelectorAll(`[data-rx="${D.k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === String(P[D.k])))));
     ["persona", "data", "meals", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
     mount.querySelectorAll('[data-rx="theme"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === appTheme())));
+    syncFold();
   }
 
   /* ---------- the controls ---------- */
-  /* a decision: stored, sent to the phone, and its note shown until the phone moves on */
-  function decide(k, v) {
-    P[k] = v;
-    store.set(k, v);
-    P.ph.set(k, v);
-    if (k === "checkin") renderNav();
-    P.dec = k;
+  /* every phone.set lands here first, whoever made it (a toggle on the left, Start membership, a module's profile
+     screen), so the toggles, the stored decisions, the Screens list and the notes always match the phone */
+  function onSet(k, v) {
+    if (!P.ph || k === "full") return;
+    if (k === "theme") { if (v !== appTheme()) P.themeSet = v; }
+    else if (DEC[k]) {
+      if (DEC[k].opts.some(([o]) => o === v)) { P[k] = v; store.set(k, v); }
+      if (k === "checkin") renderNav();
+    } else if (["persona", "data", "meals", "plan"].includes(k)) P[k] = v;
     syncControls(); notes(); syncNav();
+  }
+  /* the notes sit under the phone between 760 and 1019px: a decision changed up in the bar points down to its note */
+  const notesOut = () => { if (isM()) return false; const r = notesPanel.getBoundingClientRect(); return r.top > window.innerHeight - 48 || r.bottom < 48; };
+  const toNotes = () => { notesPanel.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); const h = notesPanel.querySelector("#rxNoteH"); if (h) h.focus({ preventScroll: true }); };
+  function pointAtNote(D) {
+    clearTimeout(jump._t);
+    if (!D || !notesOut()) { jump.hidden = true; return; }
+    jump.textContent = `Read the note on ${D.label}`;
+    jump.hidden = false;
+    jump._t = setTimeout(() => (jump.hidden = true), 8000);
+  }
+  /* a decision: stored, sent to the phone (onSet does the rest), and its note shown until the phone moves on */
+  function decide(k, v) {
+    P.ph.set(k, v);
+    P.dec = k;
+    notes();
+    pointAtNote(DEC[k]);
   }
   /* the plan for the phone: the switch, Start membership, or a free screen from the list */
   function setPlan(v, then) {
-    P.plan = v;
     P.ph.set("plan", v);
     if (then) P.ph.open(then);
-    syncControls(); notes();
   }
   function scrollToStage() {
     if (isM()) return;
@@ -1604,13 +1696,18 @@
       case "dinfo":
         P.dec = P.dec === v && !isM() ? null : v;
         notes();
+        jump.hidden = true;
         if (isM()) openSheet("notes");
+        /* asked for, so a note under the phone comes into view */
+        else if (P.dec && notesOut()) toNotes();
         break;
       case "dclose": P.dec = null; notes(); break;
-      case "screen": closeSheet(); P.ph.open(v); scrollToStage(); break;
-      case "persona": case "data": case "meals": P[k] = v; P.ph.set(k, v); syncControls(); notes(); break;
+      case "jump": jump.hidden = true; toNotes(); break;
+      case "fold": P.demoOpen = !P.demoOpen; store.set("demoOpen", P.demoOpen); syncFold(); sizeSides(); break;
+      case "screen": closeSheet(); jump.hidden = true; P.ph.open(v); scrollToStage(); break;
+      case "persona": case "data": case "meals": P.ph.set(k, v); break;
       case "plan": setPlan(v); break;
-      case "theme": P.themeSet = v; P.ph.set("theme", v); syncControls(); break;
+      case "theme": P.themeSet = v; P.ph.set("theme", v); break;
       case "reset": P.ph.reset(); notes(); break;
       case "sheet": openSheet(v); break;
       case "sheet-close": closeSheet(); break;
@@ -1619,8 +1716,10 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && Object.values(sheets).some((el) => !el.hidden)) { e.preventDefault(); closeSheet(); return; }
-    /* the arrow keys step through the screens list, when focus isn't in the phone or a field */
-    if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !isM() && !e.target.closest("input, textarea, select, .ap")) {
+    /* the arrow keys step through the screens list, from the list itself or with nothing focused; never from a toggle,
+       a field or the phone, where the arrows mean something else */
+    const from = e.target, free = from === document.body || from === document.documentElement || (from.closest && from.closest(".rx-panel--nav"));
+    if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !isM() && free && !e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
       const flat = screenGroups().flatMap(([, items]) => items.map(([id]) => id)).filter((id) => !offScreen(id));
       const i = Math.max(0, flat.indexOf(keyToScreen(P.key)));
       P.ph.open(flat[(i + (e.key === "ArrowRight" ? 1 : -1) + flat.length) % flat.length]);
@@ -1635,12 +1734,13 @@
   /* ---------- build ---------- */
   const shell = phoneShell();
   stage.appendChild(shell);
-  const cfg = { persona: P.persona, data: P.data, meals: P.meals, plan: P.plan, theme: appTheme(), onNav: (k) => onNav(k), onPlan: (v, then) => setPlan(v, then) };
+  /* the page redraws its notes (the claims check, the time line) once a frame at most, after the phone draws */
+  let notesQ = 0;
+  const notesSoon = () => { if (!notesQ) notesQ = requestAnimationFrame(() => { notesQ = 0; notes(); }); };
+  const cfg = { persona: P.persona, data: P.data, meals: P.meals, plan: P.plan, theme: appTheme(), onNav: (k) => onNav(k), onPlan: (v, then) => setPlan(v, then), onSet: (k, v) => onSet(k, v), onDraw: notesSoon };
   DECISIONS.forEach((D) => (cfg[D.k] = P[D.k]));
   P.ph = Phone(shell.querySelector(".rx-mount"), cfg);
   P.ph.el.setAttribute("aria-label", "Florin app prototype");
-  /* the live phone, for a module that needs it outside a hook */
-  EXT.api = P.ph;
   P.key = P.ph.key();
   place();
   notes();
@@ -1650,4 +1750,6 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   let wasM = isM();
   window.addEventListener("resize", FL.debounce(() => { if (isM() !== wasM) { wasM = isM(); place(); } else fit(); }, 120));
+  let sideQ = 0;
+  window.addEventListener("scroll", () => { if (!sideQ) sideQ = requestAnimationFrame(() => { sideQ = 0; sizeSides(); if (!jump.hidden && !notesOut()) jump.hidden = true; }); }, { passive: true });
 })();

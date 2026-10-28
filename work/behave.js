@@ -627,6 +627,75 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   for (const [k, v] of [["checkin", "true"], ["bmUI", "quick"], ["persona", "sarah"], ["data", "est"], ["plan", "member"]]) await pick(k, v);
   await wait(300);
 
+  /* 40. the Oct 28 review: the page follows every phone.set, Picked until an option is drawn, arrows stay off the
+     toggles, a meal sheet switch keeps what's typed, the time line counts logs, a broken overlay never opens, the left
+     bar folds its Demo panel and reaches its end, and the note under the phone is pointed to */
+  {
+    const d = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    const de = [];
+    d.on("pageerror", (e) => de.push(e.message));
+    d.on("console", (m) => { if (m.type() === "error" && !/drew nothing|t-boom/.test(m.text())) de.push(m.text()); });
+    await d.goto(PAGE); await d.waitForSelector(".rx-stage .ap-rx"); await d.waitForTimeout(400);
+    const dw = (ms = 450) => d.waitForTimeout(ms);
+    const dclick = (sel) => d.evaluate((s) => document.querySelector(s).click(), sel);
+    const pressed = (k) => d.evaluate((k) => (document.querySelector(`[data-rx="${k}"][aria-pressed="true"]`) || {}).dataset.v, k);
+    const api = (f, a) => d.evaluate(f, a);
+    /* phone.set from outside the page's own toggles (a module, say) */
+    await dclick('[data-rx="screen"][data-v="today"]'); await dw();
+    await api(() => window.FLORIN_EXT.api.set("checkin", false)); await dw();
+    const off = await d.evaluate(() => ({ dis: document.querySelector('[data-rx="screen"][data-v="ck"]').disabled, time: document.querySelector("[data-time]").textContent, lede: document.querySelector("#rxNotes .rx-note-lede").textContent }));
+    ok(await pressed("checkin") === "false" && off.dis && !/check-in/i.test(off.time + off.lede), "a module's set(checkin, false) moves the toggle, the Screens list, the time line and the notes");
+    await api(() => window.FLORIN_EXT.api.set("checkin", true)); await api(() => window.FLORIN_EXT.api.set("plan", "free")); await api(() => window.FLORIN_EXT.api.set("persona", "marcus")); await api(() => window.FLORIN_EXT.api.set("history", "calendar")); await dw();
+    ok(await pressed("checkin") === "true" && await pressed("plan") === "free" && await pressed("persona") === "marcus" && await pressed("history") === "calendar" && await d.evaluate(() => localStorage.getItem("florin-refresh:history") === '"calendar"' && /Marcus/.test(document.querySelector("[data-sum]").textContent) && /Free/.test(document.querySelector("[data-sum]").textContent)), "and set(plan), set(persona) and set(history) do too, stored and summed up in the Demo line");
+    /* On the phone, or Picked */
+    await d.click('[data-rx="history"][data-v="list"]'); await dw();
+    await d.click('[data-rx="history"][data-v="calendar"]'); await dw();
+    const pk = await d.evaluate(() => ({ on: document.querySelector("#rxNotes .rx-opts .is-on .rx-on").textContent, lede: document.querySelector("#rxNotes .rx-note-lede").textContent }));
+    ok(pk.on === "Picked" && /Calendar is drawn in the next pass/.test(pk.lede), `an option the phone doesn't draw yet reads Picked, and the lede says so (${pk.on})`);
+    await api(() => { window.FLORIN_EXT.built.history = ["calendar"]; }); await d.click('[data-rx="history"][data-v="list"]'); await d.click('[data-rx="history"][data-v="calendar"]'); await dw();
+    ok(await d.evaluate(() => document.querySelector("#rxNotes .rx-opts .is-on .rx-on").textContent === "On the phone" && !/next pass/.test(document.querySelector("#rxNotes .rx-note-lede").textContent)), "once a module claims it in EXT.built, it reads On the phone");
+    await api(() => { delete window.FLORIN_EXT.built.history; }); await d.click('[data-rx="history"][data-v="list"]'); await dw();
+    await api(() => { window.FLORIN_EXT.api.set("plan", "member"); window.FLORIN_EXT.api.set("persona", "sarah"); }); await dw();
+    /* the arrow keys step Screens from the list, never from a toggle */
+    await dclick('[data-rx="screen"][data-v="insights"]'); await dw();
+    await d.focus('[data-rx="form"][data-v="B"]'); await d.keyboard.press("ArrowLeft"); await dw();
+    const k1 = await api(() => window.FLORIN_EXT.api.key());
+    await d.focus('[data-rx="screen"][data-v="insights"]'); await d.keyboard.press("ArrowRight"); await dw();
+    ok(k1 === "insights" && await api(() => window.FLORIN_EXT.api.key()) === "i-score", "an arrow key on a decision leaves the phone be; from the Screens list it steps on");
+    /* the meal sheet switches in place with what's typed */
+    await dclick('[data-rx="screen"][data-v="meal"]'); await dw();
+    await d.fill(`${ph} [data-in="text"]`, "oatmeal and coffee"); await dw(300);
+    await d.click('[data-rx="mealUI"][data-v="detailed"]'); await dw();
+    const ms = await d.evaluate(() => { const os = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")], o = os.pop(); return { n: os.length + 1, text: (o.querySelector('[data-in="text"]') || {}).value, quick: !!o.querySelector(".ap-mq-mic"), toast: document.querySelector(".rx-stage .ap-rx .ap-tst").classList.contains("is-on") }; });
+    ok(ms.n === 1 && ms.text === "oatmeal and coffee" && !ms.quick && !ms.toast, "Meal sheet, changed with a meal half typed: the one-meal sheet opens in its place with the words, and no Not saved toast");
+    await api(() => window.FLORIN_EXT.api.closeAll()); await d.click('[data-rx="mealUI"][data-v="quick"]'); await dw();
+    /* Just joined: the time line counts what's logged */
+    await dclick('[data-rx="data"][data-v="fresh"]'); await dw();
+    const t0 = await d.evaluate(() => document.querySelector("[data-time]").textContent);
+    await d.click(`${ph} .ap-tl-empty [data-act="nobm"]`); await dw();
+    ok(/nothing is logged yet/.test(t0) && /with 1 log so far/.test(await d.evaluate(() => document.querySelector("[data-time]").textContent)), "Just joined: the demo time line counts the first log");
+    await dclick('[data-rx="data"][data-v="est"]'); await dw();
+    /* an overlay that draws nothing never opens over a dead app */
+    const boom = await api(() => { window.FLORIN_EXT.overlays["t-boom"] = { kind: "sheet", render: () => { throw new Error("t-boom"); } }; const r = window.FLORIN_EXT.api.push("t-boom", {}); delete window.FLORIN_EXT.overlays["t-boom"]; return { r: r === null, open: !!document.querySelector(".rx-stage .ap-rx .ap-o--t-t-boom"), inert: document.querySelector(".rx-stage .ap-rx .ap-stack").inert }; });
+    ok(boom.r && !boom.open && !boom.inert, "a module overlay whose render throws isn't opened, and the app stays live");
+    /* the left bar: Demo folds and unfolds, and the bar's end is in reach before the page scrolls */
+    const fold = await d.evaluate(() => { const b2 = document.querySelector('[data-rx="fold"]'), body = document.querySelector("#rxDemoB"), was = body.hidden; b2.click(); const now = body.hidden; b2.click(); const l = document.querySelector(".rx-side--l"), r = l.getBoundingClientRect(); return { was, now, back: body.hidden === was, end: r.bottom <= window.innerHeight + 1, exp: b2.getAttribute("aria-expanded") }; });
+    ok(fold.was !== fold.now && fold.back && fold.end, "the Demo panel folds and unfolds, and the left bar ends inside the window");
+    ok(await d.evaluate(() => [...document.querySelectorAll('[data-rx="form"]')].map((x) => x.getAttribute("aria-label")).join("|")) === "A, 1 to 7|B, 5 words|C, 7 words", "A, B and C are read out as A, 1 to 7 and so on");
+    ok(!de.length, `no page errors in the review checks${de.length ? ": " + de[0] : ""}`);
+    await d.close();
+    /* between 760 and 1019px, a decision changed points down to its note */
+    const n9 = await b.newPage({ viewport: { width: 900, height: 900 } });
+    await n9.goto(PAGE); await n9.waitForSelector(".rx-stage .ap-rx"); await n9.waitForTimeout(400);
+    await n9.click('[data-rx="bmUI"][data-v="full"]'); await n9.waitForTimeout(400);
+    const jp = await n9.evaluate(() => { const j = document.querySelector(".rx-jump"); return { shown: !j.hidden, text: j.textContent }; });
+    await n9.click(".rx-jump"); await n9.waitForTimeout(900);
+    const inView = await n9.evaluate(() => { const r = document.querySelector("#rxNotes").getBoundingClientRect(); return r.top < window.innerHeight && r.bottom > 0 && document.activeElement && document.activeElement.id === "rxNoteH"; });
+    ok(jp.shown && /BM logging/.test(jp.text) && inView, `at 900 wide, a changed decision offers its note under the phone, and the button brings it into view (${jp.text})`);
+    await n9.evaluate(() => document.querySelector('[data-rx="bmUI"][data-v="quick"]').click());
+    await n9.close();
+  }
+
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();
   console.log(fails.length ? `\n${fails.length} failed` : "\nAll behaviour checks pass.");
