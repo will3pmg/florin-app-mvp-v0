@@ -479,10 +479,11 @@
     } catch (err) { warn("a detail link's range didn't apply", err); }
     return prevDetail ? prevDetail(b, api, e) : api.core("idetail", b, e);
   };
-  /* the phone's screen scrolled so el is in view, the way the core's focusSel does it (the phone may be scaled) */
+  /* the phone's screen scrolled so el is in view, the way the core's focusSel does it (the phone may be scaled); with
+     top, el's top sits 16px under the status bar that's drawn over the screen */
   const inView = (api, el, top) => {
     const lay = api.layer, r = el.getBoundingClientRect(), lr = lay.getBoundingClientRect(), k = lr.height / lay.clientHeight || 1;
-    if (top) { lay.scrollTop += (r.top - lr.top) / k - 16; return; }
+    if (top) { const sb = api.root && api.root.querySelector(".apx-status"); lay.scrollTop += (r.top - lr.top) / k - (sb ? sb.getBoundingClientRect().height / k : 0) - 16; return; }
     if (r.top < lr.top || r.bottom > lr.bottom - 96) lay.scrollTop += ((r.top + r.bottom) / 2 - (lr.top + lr.bottom) / 2) / k;
   };
   /* Back from a detail: the core goes back to where Insights was and focuses the first link into that detail; in a
@@ -511,10 +512,12 @@
     requestAnimationFrame(() => {
       try {
         if (api.top() || api.S.tab !== "insights") return;
-        const sec = api.layer.querySelector('.rlk-ins [data-rlk-k="week"]'), go = sec && sec.querySelector(".rlk-go");
-        if (!go) return;
-        go.focus({ preventScroll: true });
-        inView(api, sec, true);
+        /* focus on the card's heading, so the card is read from its top and its link isn't left under the tab bar; a
+           look with no heading on its cards (Bento) focuses the card's link instead */
+        const sec = api.layer.querySelector('.rlk-ins [data-rlk-k="week"]'), h = sec && sec.querySelector(".rlk-look h2"), go = sec && sec.querySelector(".rlk-go");
+        if (!sec || !(h || go)) return;
+        if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); inView(api, sec, true); }
+        else { go.focus({ preventScroll: true }); inView(api, go); }
       } catch (err) { warn("See the week couldn't reach the week card", err); }
     });
   };

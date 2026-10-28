@@ -3,11 +3,14 @@
    (CLAUDE.md, Extension hooks), and never edits a core file.
    - Day first: the date with a small FloraScore ring that opens its detail; today's logs in time order, with the one
      that stood out most marked; a row to log from that follows the BM logging decision; one sentence that leads with
-     what stood out and says what it did to FloraScore, today against yesterday; then the week and the check-in.
-     The Easy version takes precedence over it.
-   - Calendar: a month of days, each marked from L.facts (Plum within the usual, Ray in dark; Gold a shift; an outline
-     for a gap; today ringed), with small symptom and meal ticks. A tapped day is drawn by RU.historyDay, as the list
-     draws it, with Add to this day. The filter chips stay. Arrow keys move between days.
+     what stood out, gives FloraScore against yesterday and (with membership) what that log did to it, scored with and
+     without it; then the week and the check-in. A flag leads with the Teal note and no score reading. The Easy version
+     takes precedence over it.
+   - Calendar: a month of days, each marked from L.facts with the week card's marks (Plum filled within the usual, Ray
+     in dark; a Gold ring for a shift; a struck date for a gap; a dash for nothing on BMs; today ringed), a Teal ring for
+     a day with a flag (never read), small symptom and meal ticks. On Free, days before the last 7 show only as logged.
+     A tapped day is drawn by RU.historyDay, as the list draws it, with Add to this day. The filter chips stay. Arrow
+     keys move between days, between the first day and today.
    Every number either one states is computed from the model. A wrapper that throws is reported with console.warn,
    naming this module, and the core's screen is drawn in its place. */
 (function () {

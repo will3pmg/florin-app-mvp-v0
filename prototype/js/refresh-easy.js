@@ -99,10 +99,28 @@
     requestAnimationFrame(() => themes(a));
   }
 
-  /* ---------- the Screens list ----------
-     "Easy version: Today" in the list sets its decision, as every screen in the list does (Home: Day first, History:
-     Calendar): Easy goes on, the page's toggle follows, and it stays on until someone turns it off */
-  const preview = (a) => { if (a && !a.S.easy) a.set("easy", true); };
+  /* ---------- the Screens list: a preview that gives the version back ----------
+     "Easy version: Today" in the list turns Easy on, so the phone can show it, and the page's toggle follows. Picking
+     another screen in the list puts the version back as it was, unless someone picked a version in the meantime (on
+     the left, or in Profile): that choice stays. The page's own sweep of every screen relies on this, so the screens
+     after Easy's are drawn as they'd be without it.
+     It listens to the list's buttons (capture, before the page opens the screen) rather than wrapping api.open: there
+     is no documented "leaving this screen" hook yet, and this patches nothing of the core's. A reload while previewing
+     keeps Easy on, as the page stores it, and the toggle shows it */
+  const MY_SCREENS = ["ez-today", "ez-bm"];
+  let auto = null, selfSet = false;
+  const setEasy = (a, v) => { selfSet = true; try { a.set("easy", v); } finally { selfSet = false; } };
+  const preview = (a) => { if (!a || a.S.easy) return; auto = { prev: false }; setEasy(a, true); };
+  try {
+    document.addEventListener("click", (e) => {
+      try {
+        const b = e.target && e.target.closest ? e.target.closest('[data-rx="screen"]') : null, a = api();
+        if (!b || !auto || !a || MY_SCREENS.includes(b.dataset.v)) return;
+        const prev = auto.prev; auto = null;
+        if (!!a.S.easy !== prev) setEasy(a, prev);
+      } catch (err) { warn("giving the version back", err); }
+    }, true);
+  } catch (e) { warn("listening to the Screens list", e); }
 
   /* ====================================================================== */
   /* TODAY                                                                    */
@@ -635,7 +653,7 @@
   chainKey("tab:insights", (o) => (o && o.st && o.st.easy && !(o.st.ins && o.st.ins.k) ? "ez-weeks" : null));
   chainKey("bm", () => (easyNow() ? "ez-bm" : null));
   EXT.onSet.push((k, v, a) => {
-    if (k === "easy") sync(a);
+    if (k === "easy") { if (!selfSet) auto = null; sync(a); }
     if (k === "theme") themes(a);
   });
 
@@ -674,7 +692,7 @@
     const wkText = wd >= 2 ? `this week as ${num(wd)} day circles` : "this week once there's a second day to show (on day one it would only repeat today's logs)";
     return {
       t: "Easy version: Today",
-      lede: `One screen, read top to bottom: a greeting, one plain sentence about today, FloraScore as a big number with its words${M.usual ? "" : " (while Florin is learning, the day it's on, with Day written in)"}, three big buttons, ${P.checkin ? "the weekly check-in when it's due, " : ""}${wkText}, and today's logs as big rows. Here the sentence reads: "${sentence(M)}" This week has ${plural(n.loggedDays, "day")} logged so far.`,
+      lede: `One screen, read top to bottom: a greeting, one plain sentence about today, FloraScore as a big number with its words${M.usual ? "" : " (while Florin is learning, the day it's on, with Day written in)"}, three big buttons, ${P.checkin ? "the weekly check-in when it's due, " : ""}${wkText}, and today's logs as big rows. Here the sentence reads: "${sentence(M)}" This week has ${n.loggedDays ? plural(n.loggedDays, "day") : "no days"} logged so far.`,
       ba: [
         ["A score card with a 30-day line, today's timeline, the week as three strips of dots, and a next step", "One sentence, the score as one number, three big buttons, the week as day circles, and today's logs"],
         ["Insights as its own tab", "This week on Today, and the rest one tap away under More about your weeks"],

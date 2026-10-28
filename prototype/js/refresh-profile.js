@@ -470,8 +470,18 @@
   /* ====================================================================== */
   /* REGISTRATION                                                            */
   /* ====================================================================== */
+  /* Reset the demo starts every person's answers again: the page's reset is the phone's, so it's wrapped once, the
+     first time the phone draws Today, a screen of this module's, or changes (Easy may draw Today in place of the
+     core) */
+  const hooked = new WeakSet();
+  const hookReset = (api) => {
+    if (!api || hooked.has(api) || typeof api.reset !== "function") return;
+    hooked.add(api);
+    const base = api.reset;
+    api.reset = function () { try { delete api.S.pf; } catch (e) { warn(e); } return base.apply(this, arguments); };
+  };
   /* a render that throws is reported, naming this module, and draws nothing, so the core never opens an empty sheet */
-  const safeRender = (f) => (M, V, st, api) => { try { return f(M, V, st || {}, api || EXT.api); } catch (e) { warn(e); return ""; } };
+  const safeRender = (f) => (M, V, st, api) => { try { hookReset(api || EXT.api); return f(M, V, st || {}, api || EXT.api); } catch (e) { warn(e); return ""; } };
   const pfKey = () => { const api = EXT.api, M = api && pfModel(api); return M && M.mode === "fresh" ? "profile-day1" : "profile"; };
   Object.assign(EXT.overlays, {
     pf: { kind: "screen", render: safeRender(profileHTML), key: pfKey },
@@ -720,15 +730,6 @@
     try { if (ov.st.step > 0) EXT.acts["onb-back"](e.target, api, e); } catch (err) { warn(err); }
   }, true);
 
-  /* Reset the demo starts every person's answers again: the page's reset is the phone's, so it's wrapped once, the
-     first time the phone draws Today */
-  const hooked = new WeakSet();
-  const hookReset = (api) => {
-    if (!api || hooked.has(api) || typeof api.reset !== "function") return;
-    hooked.add(api);
-    const base = api.reset;
-    api.reset = function () { try { delete api.S.pf; } catch (e) { warn(e); } return base.apply(this, arguments); };
-  };
   /* Today's greeting follows the first name from onboarding. The wrapper always draws the screen it wraps */
   const baseToday = RU.today;
   if (typeof baseToday === "function") {
@@ -754,6 +755,7 @@
      the flow opens from its first step */
   EXT.onSet.push((k, v, api) => {
     try {
+      hookReset(api);
       if (["persona", "data", "meals"].includes(k)) { if (ensurePerson(api.M(), api)) api.renderTab(true); }
       if (k === "theme" || k === "easy") redrawPf(api);
       if (k === "onboard" && !opening) {

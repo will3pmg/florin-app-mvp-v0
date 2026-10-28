@@ -1294,6 +1294,32 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const dn = await q.evaluate(() => ({ on: (document.querySelector("#rxNotes .rx-opts .is-on .rx-on") || {}).textContent, t: document.querySelector("#rxNotes h2").textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", ba: document.querySelectorAll("#rxNotes .rx-ba li").length, built: (window.FLORIN_EXT.built.onboard || []).join(",") }));
     ok(dn.on === "On the phone" && dn.built === "short,full" && /^Short, then ask the rest in context/.test(dn.rec) && dn.ba >= 6 && /Onboarding/.test(dn.t), `profile: the onboarding decision is On the phone, with what today's survey gets wrong and the recommendation (${dn.ba} was-now rows)`);
 
+    /* the Onboarding toggle shows its flow on the phone: from Today it opens, an open one moves to the other flow, and
+       a Screens row opens exactly one */
+    await popen("today");
+    await ppick("onboard", "full");
+    const tg1 = await ptop(), tgN = await q.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-o--t-onb:not(.is-out)").length), tgNote = await q.evaluate(() => document.querySelector("#rxNotes h2").textContent);
+    await ppick("onboard", "short");
+    const tg2 = await ptop();
+    await popen("onb-full");
+    const tg3 = await q.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-o--t-onb:not(.is-out)").length);
+    ok(tg1 && tg1.type === "onb" && tg1.step === "welcome" && /Full survey/.test(tg1.text) && tgN === 1 && /short, or the full survey/.test(tgNote) && /Getting started/.test(tg2.text) && tg3 === 1, `profile: the Onboarding toggle opens its flow on the phone with the decision's note beside it, switches an open one, and a Screens row opens one (${tgN}, ${tg3})`);
+    /* switched part way, a flow lands on the next step the other flow has, never back on Welcome */
+    { let k = 0; while ((await ptop()).step !== "usual" && k++ < 8) await ptap('[data-act="onb-skip"]', 150); }
+    await ppick("onboard", "short");
+    const sw1 = (await ptop()).step;
+    { let k = 0; while ((await ptop()).step !== "isnt" && k++ < 8) await ptap('[data-act="onb-skip"]', 150); }
+    await ppick("onboard", "full");
+    const sw2 = (await ptop()).step;
+    ok(sw1 === "periods" && sw2 === "usual", `onboarding: switched part way, the flow lands on the next step it has, never Welcome (usual > ${sw1}, isnt > ${sw2})`);
+    /* Escape goes back a step, never out of onboarding, and does nothing on the first */
+    await q.focus(".rx-stage .ap-rx .ap-o:not(.is-out) .ap-ck-q h3"); await q.keyboard.press("Escape"); await pw();
+    const es1 = await ptop();
+    await popen("onb-short"); await q.keyboard.press("Escape"); await pw();
+    const es2 = await ptop();
+    ok(es1 && es1.type === "onb" && es1.step === "goals" && es2 && es2.type === "onb" && es2.step === "welcome", `onboarding: Escape goes back a step and never closes it (usual > ${es1 && es1.step}, welcome > ${es2 && es2.step})`);
+    await ppick("onboard", "short"); await popen("today");
+
     /* Profile's usual figures are the model's, in A, B and C, for each person */
     for (const [who, f] of [["sarah", "A"], ["sarah", "B"], ["sarah", "C"], ["marcus", "C"], ["alex", "B"]]) {
       await ppick("persona", who); await ppick("form", f);
@@ -1318,6 +1344,20 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(await pkey() === "profile-day1" && /Day 1 of 14/.test((await ptop()).text), "profile, Just joined: the live Profile is the day-1 one");
     await ppick("data", "new"); await popen("profile");
     ok(/Day 5 of 14/.test((await ptop()).text) && /In 9 more days/.test((await ptop()).text), "profile, new day 5: day 5 of 14, with 9 more days to go");
+    /* the FloraScore range can't come on day 14: it needs days with a score, and there's none before day 14. Its row says
+       After day 14 and names the days it needs, which must be what L.scoreUsual itself asks for */
+    const sn = await q.evaluate(() => {
+      const L = window.FLORIN_LOGS, real = L.score, rows = {};
+      document.querySelectorAll(".rx-stage .ap-rx [data-pf-soon]").forEach((x) => (rows[x.dataset.pfSoon] = { chip: x.querySelector(".ap-chip").textContent, em: x.querySelector("em").textContent }));
+      const n = +((rows.score && rows.score.em.match(/(\d+) days with a FloraScore/)) || [])[1];
+      let lo = null, hi = null;
+      try {
+        L.score = (M, d) => ({ d, value: d - 28 < n - 1 ? 50 : null }); lo = L.scoreUsual({ usual: {}, start: 0 }, "C");
+        L.score = (M, d) => ({ d, value: d - 28 < n ? 50 : null }); hi = L.scoreUsual({ usual: {}, start: 0 }, "C");
+      } finally { L.score = real; }
+      return { rows, n, lo, hi, lede: document.querySelector(".rx-stage .ap-rx .pf-learn .ap-gd-lede").textContent };
+    });
+    ok(["timing", "often", "forms"].every((k) => sn.rows[k] && sn.rows[k].chip === "Day 14") && sn.rows.score && sn.rows.score.chip === "After day 14" && sn.n > 0 && sn.lo === null && Array.isArray(sn.hi) && new RegExp(`${sn.n} days with a FloraScore`).test(sn.lede), `profile, learning: the usual's three rows come on day 14, the FloraScore range after it, once there are ${sn.n} days with a score, as L.scoreUsual needs`);
     await ppick("data", "est");
 
     /* the Easy switch flips V.easy, and the page's Version toggle follows */
@@ -1330,6 +1370,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* the theme, the BM logging and the meal sheet go through set(), and the page follows */
     await ptap('[data-act="pf-set"][data-v="theme:dark"]');
     const th = await q.evaluate(() => ({ root: document.querySelector(".rx-stage .ap-rx").dataset.theme, page: (document.querySelector('[data-rx="theme"][aria-pressed="true"]') || {}).dataset.v, chip: document.querySelector('.rx-stage .ap-rx [data-act="pf-set"][data-v="theme:dark"]').getAttribute("aria-checked") }));
+    /* in dark, a switch that's on is Cream, as a picked chip is: Ray means "your usual" */
+    await ptap('[data-act="pf-research"]');
+    const dsw = await q.evaluate(() => { const o = document.querySelector(".rx-stage .ap-rx .ap-o--t-pf"), t = o.querySelector('[data-act="pf-research"] .pf-sw-t'), pr = document.createElement("i"); o.appendChild(pr); pr.style.background = "var(--ap-chart)"; const ray = getComputedStyle(pr).backgroundColor; pr.style.background = "var(--ap-ink)"; const ink = getComputedStyle(pr).backgroundColor; pr.remove(); return { on: t.closest("[aria-checked]").getAttribute("aria-checked"), bg: getComputedStyle(t).backgroundColor, ray, ink }; });
+    await ptap('[data-act="pf-research"]');
+    ok(dsw.on === "true" && dsw.bg !== dsw.ray && dsw.bg === dsw.ink, `profile, dark: a switch that's on is Cream, never Ray (${dsw.bg})`);
     await ptap('[data-act="pf-set"][data-v="mealUI:detailed"]');
     const ml = await pv();
     await ptap('[data-act="pf-set"][data-v="mealUI:quick"]'); await ptap('[data-act="pf-set"][data-v="theme:light"]');
@@ -1349,11 +1394,13 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* reminders: the BM reminder sheet saves; the check-in day uses the check-in's own sheet, only with it on */
     await popen("profile");
     await ptap('[data-act="pf-rem"]'); await ptap('[data-act="pf-rem-pick"][data-v="20"]'); await ptap('[data-act="pf-rem-save"]');
-    ok((await ptop()).type === "pf" && /Every day at 8:00 PM/.test((await ptop()).text), "profile: the BM reminder sheet saves, and Profile shows it");
+    const fr1 = await q.evaluate(() => document.activeElement && document.activeElement.dataset.act);
+    ok((await ptop()).type === "pf" && /Every day at 8:00 PM/.test((await ptop()).text) && fr1 === "pf-rem", `profile: the BM reminder sheet saves, Profile shows it, and focus is back on its row (${fr1})`);
     await ptap('[data-act="ck-day"]');
     const ckt = (await ptop()).type;
     await ptap('[data-act="ckd-dow"][data-v="3"]'); await ptap('[data-act="ckd-save"]');
-    ok(ckt === "ckday" && (await ptop()).type === "pf" && /Due Wednesday evenings/.test((await ptop()).text), "profile: the check-in day opens the check-in's own sheet, and Profile shows the new day");
+    const fr2 = await q.evaluate(() => document.activeElement && document.activeElement.dataset.act);
+    ok(ckt === "ckday" && (await ptop()).type === "pf" && /Due Wednesday evenings/.test((await ptop()).text) && fr2 === "ck-day", `profile: the check-in day opens the check-in's own sheet, Profile shows the new day, and focus is back on its row (${fr2})`);
     await ppick("checkin", "false"); await popen("profile");
     ok(!/check-in|\bcheck in\b/i.test((await ptop()).text), "profile, check-in off: nothing in Profile names it");
     await popen("onb-short"); { let k = 0; while ((await ptop()).step !== "rem" && k++ < 8) await ptap('[data-act="onb-skip"]'); }
@@ -1376,6 +1423,13 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ptap('[data-act="pf-research"]');
     const rs2 = await q.evaluate(() => document.querySelector('.rx-stage .ap-rx [data-act="pf-research"]').getAttribute("aria-checked"));
     ok(rs0 === "false" && rs1 === "true" && rs2 === "false", "profile: research sharing is off until turned on, and turns off again");
+    await ptap('[data-act="pf-research"]'); await ptap('[data-act="pf-info"][data-v="privacy"]');
+    const pv1 = (await ptop()).text;
+    await q.keyboard.press("Escape"); await pw();
+    await ptap('[data-act="pf-research"]'); await ptap('[data-act="pf-info"][data-v="privacy"]');
+    const pv2 = (await ptop()).text;
+    await q.keyboard.press("Escape"); await pw();
+    ok(/You chose to share/.test(pv1) && !/stays off unless/.test(pv1) && /stays off unless/.test(pv2) && !/You chose to share/.test(pv2), "profile: the Privacy sheet's research line follows the person's choice, on and off");
     for (const k of ["apple", "oura", "cycle"]) {
       await ptap(`[data-act="pf-app"][data-v="${k}"]`);
       const t = await ptop();
@@ -1386,6 +1440,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ptap('[data-act="pf-del"]');
     const del = await q.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); const y = o.querySelector('[data-act="pf-del-yes"]'); return { text: o.textContent, red: y ? getComputedStyle(y).backgroundColor : "" }; });
     ok(new RegExp(`all ${n0} entries`).test(del.text) && /can't be undone/.test(del.text) && /Keep my logs/.test(del.text), `profile: Delete my logs asks first, naming the ${n0} entries (${del.red})`);
+    const dk = await q.evaluate(() => { const M = window.FLORIN_EXT.api.M(), c = { bm: 0, sym: 0, meal: 0, nobm: 0 }; M.days.forEach((x) => x.logged && x.entries.forEach((e) => c[e.kind]++)); c.ck = M.checkins.filter((k) => k.answers && !k.skipped).length; return c; });
+    ok(dk.bm + dk.sym + dk.meal + dk.nobm === n0 && [`${dk.bm} BMs`, `${dk.sym} symptom logs`, `${dk.meal} meal logs`, `${dk.nobm} No BM day`, `and ${dk.ck} weekly check-ins`].every((x) => del.text.includes(x)), `profile: the delete sheet's count names every kind it counts, and the ${dk.ck} check-ins on their own (${dk.bm} + ${dk.sym} + ${dk.meal} + ${dk.nobm} = ${n0})`);
     await ptap('[data-act="pf-del-yes"]');
     ok(await q.evaluate(() => window.FLORIN_EXT.api.M().mode === "fresh" && window.FLORIN_EXT.api.S.tab === "today" && !document.querySelector(".rx-stage .ap-rx .ap-o:not(.is-out)")) && /logs are deleted/.test(await q.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-tst").textContent)), "profile: confirmed, the logs go and Today is day 1 again");
     await ppick("data", "est");
@@ -1411,7 +1467,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         ok(good, `onboarding ${flow} in ${f}: Skip moves on from every step, Step N of ${n} each time (${seen.join(" > ")})`);
         ok(!named.length, `onboarding ${flow} in ${f}: no step names the scale or IBD, or says normal, ideal or healthy (${named.join(", ") || "none"})`);
         ok(!bad.length, `onboarding ${flow} in ${f}: every step passes the claims check (${bad.join("; ") || `${n} steps`})`);
-        if (f !== "C") { await q.keyboard.press("Escape"); await pw(); continue; }
+        if (f !== "C") { await popen("today"); continue; }
         /* all skipped: finish */
         await ptap(`[data-act="onb-done"][data-v="${flow === "short" ? "today" : "bm"}"]`, 500);
         const land = await q.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); return { mode: M.mode, day: L.learnDay(M), tab: api.S.tab, top: o ? [...o.classList].find((c) => c.indexOf("ap-o--t-") === 0).slice(8) : null, layer: document.querySelector(".rx-stage .ap-rx .ap-layer").textContent, page: (document.querySelector('[data-rx="data"][aria-pressed="true"]') || {}).dataset.v }; });
@@ -1419,7 +1475,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         if (flow === "full") { await q.keyboard.press("Escape"); await pw(); }
         await popen("profile");
         const sk = await q.evaluate(() => [...document.querySelectorAll('.rx-stage .ap-rx [data-act="pf-edit"]')].map((x) => x.querySelector("em").textContent));
-        ok(sk.length === (flow === "short" ? 4 : 13) && sk.every((x) => x === "Skipped"), `onboarding ${flow}, every step skipped: Profile's About you says Skipped on each of its ${sk.length} rows`);
+        /* the first name is the account's: skipped, the row says so and Today still greets the person */
+        ok(sk.length === (flow === "short" ? 4 : 13) && sk[0] === "Sarah, from sign-up" && sk.slice(1).every((x) => x === "Skipped"), `onboarding ${flow}, every step skipped: Profile's About you says Skipped on each of its ${sk.length - 1} other rows, and the first name is the one from sign-up (${sk[0]})`);
+        const rmx = await q.evaluate(() => document.querySelector('.rx-stage .ap-rx [data-act="pf-rem"] em').textContent);
+        ok(rmx === (flow === "short" ? "Skipped" : "Not set"), `onboarding ${flow}, every step skipped: Profile's BM reminder says ${flow === "short" ? "Skipped" : "Not set, as the full survey has no reminder step"} (${rmx})`);
         await ppick("data", "est");
       }
     }
@@ -1454,13 +1513,28 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ptap('[data-act="pf-edit"][data-v="periods"]');
     const ed = await ptop();
     await ptap('[data-act="onb-pick"][data-v="periods:yes"]'); await ptap('[data-act="onb-save"]');
-    ok(ed.type === "onb" && ed.step === "periods" && await q.evaluate(() => window.FLORIN_EXT.api.key()) === "profile-day1" && /Periods\s*Yes/.test((await ptop()).text) && await q.evaluate(() => window.FLORIN_EXT.api.M().P.cycle === true), "profile: an answer reopens its own step, and Save brings the new answer back to Profile");
+    const fr3 = await q.evaluate(() => document.activeElement && `${document.activeElement.dataset.act}:${document.activeElement.dataset.v}`);
+    ok(ed.type === "onb" && ed.step === "periods" && await q.evaluate(() => window.FLORIN_EXT.api.key()) === "profile-day1" && /Periods\s*Yes/.test((await ptop()).text) && await q.evaluate(() => window.FLORIN_EXT.api.M().P.cycle === true) && fr3 === "pf-edit:periods", `profile: an answer reopens its own step, Save brings the new answer back to Profile, and focus is back on its row (${fr3})`);
+    /* the first name cleared: the account's name comes back, and Clear says so */
+    await ptap('[data-act="pf-edit"][data-v="name"]');
+    const nmSub = await q.evaluate(() => document.querySelector(".rx-stage .ap-rx .pf-onb .ap-ck-recall").textContent);
+    await ptap('[data-act="onb-clear"]');
+    const nmc = await q.evaluate(() => ({ row: document.querySelector('.rx-stage .ap-rx .ap-o--t-pf [data-act="pf-edit"][data-v="name"] em').textContent, you: document.querySelector('.rx-stage .ap-rx [data-pf="name"]').textContent, tst: document.querySelector(".rx-stage .ap-rx .ap-tst").textContent, hello: document.querySelector(".rx-stage .ap-rx .ap-layer .ap-hello").textContent }));
+    ok(/Clear it, and Florin uses the name you signed up with, Sarah/.test(nmSub) && nmc.row === "Sarah, from sign-up" && nmc.you === "Sarah" && /signed up with, Sarah/.test(nmc.tst) && /Good evening, Sarah/.test(nmc.hello), `profile: a cleared first name gives the one from sign-up back, on the row, in You and on Today, and Clear says so (${nmc.row})`);
+    await ptap('[data-act="pf-edit"][data-v="name"]'); await q.fill(`${ph} [data-pf-in="name"]`, "Robin"); await pw(100); await ptap('[data-act="onb-save"]');
     await ptap('[data-act="close"]');
     /* the person's name stays theirs across a change of person */
     await ppick("persona", "marcus");
     const mk = await q.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-layer").textContent);
     await ppick("persona", "sarah");
     ok(/Good evening, Marcus/.test(mk) && /Good evening, Robin/.test(await q.evaluate(() => document.querySelector(".rx-stage .ap-rx .ap-layer").textContent)), "onboarding: each demo person keeps their own answers");
+    /* Reset the demo starts the answers again: Sarah's own name and answers, not the onboarding's */
+    await q.evaluate(() => document.querySelector('[data-rx="reset"]').click()); await pw(500);
+    const rst = await q.evaluate(() => ({ hello: document.querySelector(".rx-stage .ap-rx .ap-layer .ap-hello").textContent, av: document.querySelector(".rx-stage .ap-rx .ap-avatar").textContent.trim() }));
+    await q.click(`${ph} .ap-avatar`); await pw();
+    const rsp = (await ptop()).text;
+    await ptap('[data-act="close"]');
+    ok(/Good evening, Sarah/.test(rst.hello) && rst.av === "S" && !/Robin/.test(rsp) && /Every day at 8:00 AM/.test(rsp), `onboarding: Reset the demo gives each person their own answers back (${rst.hello})`);
     await ppick("data", "est");
 
     /* a sign that needs a clinician: blood, black stools and waking at night each bring the Teal note on the step */
@@ -1478,7 +1552,19 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const nn = await q.evaluate(() => ({ alarm: !!document.querySelector(".rx-stage .ap-rx .pf-alarm"), on: [...document.querySelectorAll('.rx-stage .ap-rx [data-act="onb-tog"][aria-pressed="true"]')].map((x) => x.dataset.v) }));
     ok(off && /A black or tar-like stool/.test(bl) && /Waking at night to go/.test(nt) && !nn.alarm && nn.on.join() === "sym:none", "onboarding: black or tar-like stools and waking at night bring it too; None of these clears the rest");
     ok(!/rgb\((2[0-9]{2}), ([0-9]{1,2}), ([0-9]{1,2})\)/.test(tone), `onboarding: the clinician note is Teal, never red (${tone.slice(0, 60)})`);
-    await q.keyboard.press("Escape"); await pw();
+    await popen("today");
+
+    /* the full survey's ready step: its research line follows the answer, and it offers Larger text and simpler screens */
+    await popen("onb-full");
+    { let k = 0; while ((await ptop()).step !== "research" && k++ < 14) await ptap('[data-act="onb-skip"]', 150); }
+    await ptap('[data-act="onb-pick"][data-v="rchoice:yes"]'); await ptap('[data-act="onb-next"]');
+    const rdy = await ptop();
+    await ptap('[data-act="onb-easy"]', 400);
+    const rz1 = await q.evaluate(() => ({ v: window.FLORIN_EXT.api.V().easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v, sw: document.querySelector('.rx-stage .ap-rx [data-act="onb-easy"]').getAttribute("aria-checked"), step: document.querySelector(".rx-stage .ap-rx .pf-onb").dataset.step }));
+    await ptap('[data-act="onb-easy"]', 400);
+    const rz2 = await pv();
+    ok(rdy.step === "ready" && /You chose to share anonymized logs/.test(rdy.text) && !/stays off unless/.test(rdy.text) && rz1.v === true && rz1.page === "true" && rz1.sw === "true" && rz1.step === "ready" && rz2.easy === false, "onboarding: Ready follows the research answer and offers Larger text and simpler screens, which flips V.easy and the left bar, and back");
+    await popen("today");
 
     /* every screen of the group, in both themes, Free and Member, new and just joined: reads, with a note of its own */
     const NOTE = { "onb-short": "Onboarding, short", "onb-full": "Onboarding, the full survey", "onb-sign": "Onboarding: a sign that needs a clinician", profile: "Profile", "profile-day1": "Profile on day 1" };
@@ -1498,6 +1584,23 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ppick("easy", "true");
     const ez = [];
     for (const id of Object.keys(NOTE)) { await popen(id); const t = await ptop(); if (!t || !["onb", "pf"].includes(t.type) || /\bundefined\b|\bNaN\b/.test(t.text)) ez.push(id); }
+    /* Easy's type on Profile's own parts: no chip spills, headings as big as its rows, no text under 16px; the full
+       survey's Most often, lately? as big rows, not the small tiles */
+    const zsmall = () => q.evaluate(() => { const o = [...document.querySelectorAll(".rx-stage .ap-rx .ap-o:not(.is-out)")].pop(); let min = 99, at = ""; const tw = document.createTreeWalker(o, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { if (!n.textContent.trim()) continue; const p = n.parentElement; if (!p || p.closest(".sr, svg")) continue; const r = p.getBoundingClientRect(), cs = getComputedStyle(p); if (r.width < 2 || r.height < 2 || cs.visibility === "hidden") continue; const f = parseFloat(cs.fontSize); if (f < min) { min = f; at = n.textContent.trim().slice(0, 32); } } return { min, at }; });
+    await popen("profile");
+    const zp = await q.evaluate(() => ({ spill: [...document.querySelectorAll(".rx-stage .ap-rx .ap-o--t-pf .ap-ch")].filter((c) => c.scrollWidth > c.clientWidth + 1).map((c) => c.textContent), h3: parseFloat(getComputedStyle(document.querySelector(".rx-stage .ap-rx .pf-sec h3")).fontSize), row: parseFloat(getComputedStyle(document.querySelector(".rx-stage .ap-rx .pf-sec .ap-ea-m b")).fontSize) }));
+    const zpt = await zsmall();
+    ok(!zp.spill.length && zp.h3 >= zp.row && zpt.min >= 16, `profile, Easy version: no chip spills (${zp.spill.join(", ") || "none"}), section headings ${zp.h3}px over rows of ${zp.row}px, no text under 16px (${zpt.min}px, "${zpt.at}")`);
+    await ppick("onboard", "full"); await popen("onb-full");
+    { let k = 0; while ((await ptop()).step !== "usual" && k++ < 8) await ptap('[data-act="onb-skip"]', 150); }
+    const zu0 = await q.evaluate(() => ({ rows: document.querySelectorAll(".rx-stage .ap-rx .pf-onb .pf-fo-b").length, tiles: document.querySelectorAll(".rx-stage .ap-rx .pf-onb .ap-fm-b").length }));
+    const zut = await zsmall();
+    await ptap('.pf-fo-b[data-form="4"]');
+    const zu1 = await q.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .pf-onb .pf-fo-b")].map((x) => x.getAttribute("aria-checked")).join(""));
+    await ptap('[data-act="onb-next"]');
+    const zu2 = (await ptop()).step;
+    ok(zu0.rows === 7 && !zu0.tiles && zut.min >= 16 && zu1 === "falsefalsefalsetruefalsefalsefalse" && zu2 === "sym", `onboarding, Easy version: Most often, lately? is ${zu0.rows} big rows with no text under 16px (${zut.min}px), and a pick moves on`);
+    await popen("today"); await ppick("onboard", "short");
     await ppick("easy", "false"); await ppick("data", "est");
     ok(!ez.length, `profile and onboarding, Easy version on: every screen opens and reads (${ez.join(", ") || "all five"})`);
     ok(!pe.length, `profile and onboarding: no console errors or module warnings${pe.length ? ": " + pe.slice(0, 2).join(" | ") : ""}`);
@@ -2078,11 +2181,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(await zpressed("easy") === "true" && await zkey() === "ez-today", "Easy version: Today in the Screens list shows Easy, and the toggle follows");
     await zgo("ez-bm");
     ok(await zkey() === "ez-bm" && /What did it look like\?/.test(await ztop()), "Easy version: log a BM opens step 1");
+    /* fix-easy: in Easy, History's filters wrap, none off the edge */
+    await ez.evaluate(() => document.querySelector('.rx-stage .ap-rx .ap-tb [data-tab="history"]').click()); await zw();
+    ok(await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), f = r.querySelector(".ap-hist-f"); return r.classList.contains("ap--easy") && !!f && f.scrollWidth <= f.clientWidth + 1; }), "Easy History: the filters all show, wrapped, none off the edge");
     await zgo("history");
-    /* fix-easy: like every screen in the list that sets its decision, Easy stays on; History's filters wrap, none off the edge */
-    ok(await zpressed("easy") === "true" && await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), f = r.querySelector(".ap-hist-f"); return r.classList.contains("ap--easy") && !!f && f.scrollWidth <= f.clientWidth + 1; }), "leaving the Easy screens from the list keeps Easy on, and History's filters all show, wrapped");
+    ok(await zpressed("easy") === "false" && await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), p = r.querySelector(".ap-tb-plus"); return !r.classList.contains("ap--easy") && p.getAttribute("aria-label") === "Log something" && !p.querySelector(".ap-ez-tbl") && getComputedStyle(r.querySelector('.ap-tb [data-tab="insights"]')).display !== "none"; }), "leaving the Easy screens from the list gives the standard version back, tab bar and all");
+    /* fix-easy: a version picked on the left while previewing stays */
+    await zgo("ez-today"); await zset("easy", "false"); await zset("easy", "true"); await zgo("history");
+    ok(await zpressed("easy") === "true", "a version picked on the left while previewing stays when the list moves on");
     await zset("easy", "false");
-    ok(await zpressed("easy") === "false" && await ez.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx"), p = r.querySelector(".ap-tb-plus"); return !r.classList.contains("ap--easy") && p.getAttribute("aria-label") === "Log something" && !p.querySelector(".ap-ez-tbl") && getComputedStyle(r.querySelector('.ap-tb [data-tab="insights"]')).display !== "none"; }), "turning Easy off gives the standard version back, tab bar and all");
     ok(!ee.length, `no console or page errors in the Easy checks${ee.length ? ": " + ee.slice(0, 3).join(" | ") : ""}`);
     await ez.close();
     /* fix-easy: a 360px phone: on plus, no word breaks inside itself, in A, B or C */
