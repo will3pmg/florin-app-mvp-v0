@@ -1,0 +1,427 @@
+/* Look: Oura. Every rule scoped under .lk-oura.
+   Dark first: on the dark theme every card is lifted Forest with a Teal and Plum atmosphere at its top, and the
+   FloraScore hero is the full atmosphere, a Forest to Teal to Plum glow with a horizon, made from the brand colours
+   (no photos). On the light theme the cards turn Cream and the hero stays dark, the one dark card.
+   The reading (markers, lines, numerals) is the ink, Cream on dark and Forest on light, the way Oura's marks are white.
+   Your usual is Ray on dark and Plum on light, a shift is Gold, context is Teal. Colours come from the app tokens (--ap-*)
+   or derive from the six brand colours; nothing is a literal. Spacing and radii are on the DESIGN.md scales. Lines are
+   solid (no dashes anywhere). All motion sits inside prefers-reduced-motion: no-preference and only animates from a
+   state, so the still page is the final page. */
+
+/* ---------- the card ---------- */
+.lk-oura .ou {
+  --ou-ground: var(--ap-card);
+  --ou-ink: var(--ap-ink);
+  --ou-ink2: var(--ap-ink2);
+  --ou-ink3: var(--ap-ink3);
+  --ou-read: var(--ap-ink);
+  --ou-usual: var(--ap-usual-ink);
+  --ou-band: var(--ap-band);
+  --ou-band-edge: var(--ap-band-edge);
+  --ou-shift: var(--ap-shift);
+  --ou-shift-ink: var(--ap-shift-ink);
+  --ou-ctx: var(--ap-teal);
+  --ou-trk: color-mix(in srgb, var(--ap-ink) 10%, transparent);
+  --ou-line: var(--ap-line);
+  --ou-st: 60ms;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 16px; border-radius: 24px;
+  background: var(--ou-ground); color: var(--ou-ink); box-shadow: var(--ap-shadow);
+  font-family: var(--sans);
+}
+.lk-oura .ou > * { position: relative; }
+.lk-oura .ou :where(p, h3, h4, ul, ol, dl, dd, dt, figure) { margin: 0; }
+.lk-oura .ou :where(ul, ol) { list-style: none; padding: 0; }
+.lk-oura .ou-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lk-oura .ou [hidden] { display: none; }
+
+/* dark: lifted Forest, a soft Teal glow from the top left and Plum from the top right */
+.lk-oura[data-theme="dark"] .ou {
+  --ou-ground: oklch(from var(--forest) calc(l - .035) calc(c * .8) h);
+  --ou-trk: color-mix(in srgb, var(--cream) 12%, transparent);
+  background-color: var(--ou-ground);
+  background-image:
+    radial-gradient(90% 60% at 0% 0%, color-mix(in srgb, var(--teal) 22%, transparent), transparent 70%),
+    radial-gradient(70% 50% at 100% 0%, color-mix(in srgb, var(--plum) 30%, transparent), transparent 72%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 7%, transparent);
+}
+
+/* the hero: always dark. A Forest sky, Plum high on the right, and a horizon of Teal and Plum light at the foot of the
+   gauge, where Oura puts its mountain line.
+   Listed twice so it holds on the dark theme too, where every card has its own ground */
+.lk-oura .ou.ou--hero, .lk-oura[data-theme="dark"] .ou.ou--hero {
+  --ou-ground: oklch(from var(--forest) calc(l - .07) calc(c * .85) h);
+  --ou-ink: var(--cream);
+  --ou-ink2: color-mix(in srgb, var(--cream) 78%, transparent);
+  --ou-ink3: color-mix(in srgb, var(--cream) 58%, transparent);
+  --ou-read: var(--cream);
+  --ou-usual: var(--ray);
+  /* the app's ring band on dark (--ap-ring-band there), written out because the hero stays dark on the light theme too */
+  --ou-band: color-mix(in srgb, var(--ray) 55%, transparent);
+  --ou-shift: oklch(from var(--gold) calc(l + .03) calc(c * 1.2) h);
+  --ou-shift-ink: oklch(from var(--gold) calc(l + .09) calc(c * 1.1) h);
+  --ou-trk: color-mix(in srgb, var(--cream) 16%, transparent);
+  --ou-line: color-mix(in srgb, var(--cream) 14%, transparent);
+  background-color: var(--ou-ground);
+  background-image:
+    radial-gradient(70% 18% at 24% 52%, color-mix(in srgb, var(--teal) 46%, transparent), transparent 100%),
+    radial-gradient(60% 16% at 86% 52%, color-mix(in srgb, var(--plum) 70%, transparent), transparent 100%),
+    radial-gradient(140% 44% at 50% 52%, color-mix(in srgb, var(--teal) 48%, transparent), transparent 72%),
+    radial-gradient(70% 46% at 100% 0%, color-mix(in srgb, var(--plum) 85%, transparent), transparent 70%),
+    radial-gradient(60% 40% at 0% 6%, color-mix(in srgb, var(--teal) 42%, transparent), transparent 72%),
+    radial-gradient(64% 34% at 50% 34%, color-mix(in srgb, var(--teal) 30%, transparent), transparent 100%),
+    linear-gradient(180deg, oklch(from var(--forest) calc(l - .1) calc(c * .7) h), var(--ou-ground) 40%, oklch(from var(--teal) calc(l - .2) calc(c * .8) h) 100%);
+  box-shadow: var(--ap-shadow);
+}
+/* a faint haze behind the gauge, so the numeral sits in light */
+.lk-oura .ou--hero .ou-gauge::before { content: ""; position: absolute; inset: 0; background: radial-gradient(50% 46% at 50% 56%, color-mix(in srgb, var(--teal) 30%, transparent), transparent 100%); pointer-events: none; }
+
+/* ---------- type ---------- */
+.lk-oura .ou-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
+.lk-oura .ou-h > h3.ou-k { white-space: nowrap; }
+.lk-oura .ou-k { font-family: var(--mono); font-size: 11px; font-weight: 400; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; color: var(--ou-ink2); }
+.lk-oura .ou-date { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: var(--ou-ink2); }
+/* state words as coloured small caps, read against the person's own usual */
+.lk-oura .ou-state { font-family: var(--mono); font-size: 11px; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; color: var(--ou-ink2); }
+.lk-oura .ou-state.is-usual { color: var(--ou-usual); }
+.lk-oura .ou-state.is-shift { color: var(--ou-shift-ink); }
+.lk-oura .ou-state.is-ctx { color: var(--ap-info-ink); }
+.lk-oura .ou--hero .ou-state.is-ctx { color: oklch(from var(--teal) calc(l + .32) c h); }
+/* the one big thing: Lora, the editorial voice */
+.lk-oura .ou-hl { font-family: var(--serif); font-size: 21px; line-height: 1.25; letter-spacing: -.005em; text-wrap: balance; color: var(--ou-ink); }
+.lk-oura .ou-hl.is-centre { text-align: center; font-size: 22px; }
+/* a flag today: the primary care sentence as the Teal note, never read against the usual */
+.lk-oura .ou-hl.is-flag { font-family: var(--sans); font-size: 16px; line-height: 1.4; text-align: left; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--teal) 42%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 70%, transparent); }
+.lk-oura .ou-state + .ou-hl { margin-top: -8px; }
+.lk-oura .ou-say { font-size: 14px; line-height: 1.5; color: var(--ou-ink2); text-wrap: pretty; }
+.lk-oura .ou--hero .ou-say { text-align: center; }
+.lk-oura .ou-lead { display: flex; flex-direction: column; gap: 8px; }
+.lk-oura .ou-big { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; font-size: 48px; line-height: 1; font-weight: 300; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+.lk-oura .ou-of { font-size: 14px; line-height: 1.3; letter-spacing: 0; font-weight: 400; color: var(--ou-ink2); }
+.lk-oura .ou-ans { font-family: var(--serif); font-size: 16px; line-height: 1.45; color: var(--ou-ink); text-wrap: pretty; }
+.lk-oura .ou-how { font-size: 12px; line-height: 1.5; color: var(--ou-ink2); }
+.lk-oura .ou--hero .ou-how { text-align: center; }
+.lk-oura .ou-chip { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 500; line-height: 1; white-space: nowrap; background: var(--ap-card2); color: var(--ap-ink2); }
+.lk-oura .ou-chip.is-usual { background: var(--ap-usual-bg); color: var(--ap-usual-ink); }
+.lk-oura .ou-chip.is-ctx { background: var(--ap-info-bg); color: var(--ap-info-ink); }
+.lk-oura .ou-care { padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 12.5px; line-height: 1.45; }
+.lk-oura .ou-pnote { padding-top: 12px; border-top: 1px solid var(--ou-line); font-size: 12px; line-height: 1.45; color: var(--ou-ink2); }
+
+/* ---------- legends: every colour has a word ---------- */
+.lk-oura .ou-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 11.5px; line-height: 1.3; color: var(--ou-ink2); }
+.lk-oura .ou-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.lk-oura .ou-sw { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ou-read); }
+.lk-oura .ou-sw--usual { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-usual); }
+.lk-oura .ou-sw--shift { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-shift); }
+.lk-oura .ou-sw--either { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-ink3); }
+.lk-oura .ou-sw--read { width: 16px; height: 4px; border-radius: 999px; background: var(--ou-read); }
+.lk-oura .ou-sw--flag { width: 16px; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--ou-ctx) 24%, transparent); box-shadow: inset 0 0 0 1.5px var(--ou-ctx); }
+.lk-oura .ou-sw--zero-flag { width: 16px; height: 3px; border-radius: 2px; background: var(--ou-ctx); }
+.lk-oura .ou-sw--ctx { width: 8px; height: 8px; background: var(--ou-ctx); }
+.lk-oura .ou-sw--sym { width: 6px; height: 6px; background: var(--ou-ctx); }
+.lk-oura .ou-sw--tick { width: 2px; height: 12px; border-radius: 2px; background: var(--ou-read); }
+.lk-oura .ou-sw--tick-usual { width: 2px; height: 12px; border-radius: 2px; background: var(--ou-usual); }
+.lk-oura .ou-sw--tick-shift { width: 2px; height: 12px; border-radius: 2px; background: var(--ou-shift); }
+.lk-oura .ou-sw--line { width: 16px; height: 2px; border-radius: 2px; background: var(--ou-read); }
+.lk-oura .ou-sw--line-shift { width: 16px; height: 2px; border-radius: 2px; background: var(--ou-shift); }
+.lk-oura .ou-sw--band { width: 16px; height: 10px; border-radius: 2px; background: var(--ou-band); box-shadow: inset 0 0 0 1px var(--ou-band-edge); }
+.lk-oura .ou-sw--uband { width: 16px; height: 8px; border-radius: 4px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--ou-usual); }
+.lk-oura .ou-sw--now, .lk-oura .ou-sw--now-shift { width: 10px; height: 10px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ou-read) 22%, transparent); }
+.lk-oura .ou-sw--now-shift { background: var(--ou-shift); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ou-shift) 30%, transparent); }
+.lk-oura :is(.ou-sw--zero-shift, .ou-sw--zero-usual, .ou-sw--zero-read) { width: 16px; height: 3px; border-radius: 2px; background: var(--ou-shift); }
+.lk-oura .ou-sw--zero-usual { background: var(--ou-usual); }
+.lk-oura .ou-sw--lw { width: 8px; height: 8px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--ou-ink2); }
+.lk-oura .ou-sw--cband { width: 16px; height: 12px; border-radius: 999px; background: var(--ou-band); box-shadow: inset 0 0 0 1.5px var(--ou-usual); }
+.lk-oura .ou-sw--zero-read { background: var(--ou-read); }
+.lk-oura .ou-sw--nocount { width: 5px; height: 5px; background: var(--ou-ink3); }
+.lk-oura .ou-sw--gap { background: transparent; box-shadow: inset 0 0 0 1px var(--ou-ink3); }
+.lk-oura .ou-sw--s1, .lk-oura .ou-sw--s2, .lk-oura .ou-sw--s3, .lk-oura .ou-sw--s0 { width: 16px; height: 4px; border-radius: 999px; }
+.lk-oura .ou-sw--s1 { background: color-mix(in srgb, var(--ou-read) 40%, transparent); }
+.lk-oura .ou-sw--s2 { background: color-mix(in srgb, var(--ou-read) 70%, transparent); }
+.lk-oura .ou-sw--s3 { background: var(--ou-read); }
+.lk-oura .ou-sw--s0 { background: transparent; box-shadow: inset 0 0 0 1px var(--ou-read); }
+
+/* ---------- svg basics ---------- */
+.lk-oura .ou-svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* 11px in the viewBox, so a card drawn at 0.95 on a 390-wide phone still sets its smallest text above 10px */
+.lk-oura .ou-svg text { font-family: var(--mono); font-size: 11px; fill: var(--ou-ink3); }
+.lk-oura .ou-band { fill: var(--ou-band); }
+.lk-oura .ou-axis { stroke: var(--ou-line); stroke-width: 1; }
+.lk-oura .ou-grid { stroke: var(--ap-grid); stroke-width: 1; }
+.lk-oura .ou-svg .ou-xt.is-today { fill: var(--ou-ink); font-weight: 700; }
+.lk-oura .ou-now-halo { fill: color-mix(in srgb, var(--ou-read) 16%, transparent); stroke: color-mix(in srgb, var(--ou-read) 50%, transparent); stroke-width: 1; }
+.lk-oura .ou-now-halo.is-shift { fill: color-mix(in srgb, var(--ou-shift) 20%, transparent); stroke: var(--ou-shift); }
+.lk-oura .ou-now { fill: var(--ou-read); stroke: var(--ou-ground); stroke-width: 2; }
+.lk-oura .ou-now.is-shift { fill: var(--ou-shift); }
+
+/* ---------- FloraScore: shortcut rings, then the gauge ---------- */
+.lk-oura .ou-shorts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.lk-oura .ou-sr { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.lk-oura .ou-sr-r { position: relative; width: 44px; height: 44px; }
+.lk-oura .ou-sr-r svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.lk-oura .ou-sr-r b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.lk-oura .ou-sr-t { fill: none; stroke: var(--ou-trk); stroke-width: 3.5; }
+.lk-oura .ou-sr-a { fill: none; stroke: var(--ou-read); stroke-width: 3.5; stroke-linecap: round; }
+.lk-oura .ou-sr.is-usual .ou-sr-a { stroke: var(--ou-usual); }
+.lk-oura .ou-sr.is-shift .ou-sr-a { stroke: var(--ou-shift); }
+.lk-oura .ou-sr-l { font-size: 11.5px; line-height: 1.2; color: var(--ou-ink2); white-space: nowrap; }
+.lk-oura .ou-gauge { position: relative; margin-top: -8px; }
+.lk-oura .ou-gauge .ou-svg { position: relative; }
+.lk-oura .ou-g-trk { fill: none; stroke: var(--ou-trk); stroke-width: 4; stroke-linecap: round; }
+.lk-oura .ou-g-band { fill: none; stroke: var(--ou-band); stroke-width: 13; stroke-linecap: round; }
+.lk-oura .ou-g-arc { fill: none; stroke: var(--ou-read); stroke-width: 4; stroke-linecap: round; }
+.lk-oura .ou-g-dot { fill: var(--ou-read); stroke: var(--ou-ground); stroke-width: 3; }
+.lk-oura .ou-g-dot.is-shift { fill: var(--ou-shift); }
+.lk-oura .ou-g-seg { fill: none; stroke: var(--ou-trk); stroke-width: 6; stroke-linecap: round; }
+.lk-oura .ou-g-seg.is-on { stroke: var(--ou-read); }
+.lk-oura .ou-svg .ou-g-end { font-size: 11px; fill: var(--ou-ink3); }
+.lk-oura .ou-svg .ou-g-ue { font-size: 11px; font-weight: 700; fill: var(--ou-usual); }
+.lk-oura .ou-gauge-c { position: absolute; left: 0; right: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; pointer-events: none; }
+.lk-oura .ou-g-k { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ou-ink2); }
+.lk-oura .ou-g-n { font-size: 80px; line-height: .92; font-weight: 300; letter-spacing: -.055em; font-variant-numeric: tabular-nums; margin-right: 4px; }
+.lk-oura .ou-g-n.is-sm { font-size: 40px; letter-spacing: -.03em; margin: 8px 0 4px; }
+.lk-oura .ou-gauge-c .ou-state { max-width: 176px; font-size: 11.5px; text-wrap: balance; }
+
+/* ---------- Contributors rows ---------- */
+.lk-oura .ou-cts { display: flex; flex-direction: column; gap: 20px; }
+.lk-oura .ou-ct { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lk-oura .ou-ct-top { display: flex; align-items: baseline; gap: 8px; font-size: 15px; line-height: 1.3; }
+.lk-oura .ou-ct-top b { font-weight: 400; white-space: nowrap; }
+.lk-oura .ou-ct-top .ou-state { margin-left: auto; text-align: right; }
+.lk-oura .ou-ct-v { margin-left: auto; font-size: 12.5px; color: var(--ou-ink2); text-align: right; }
+.lk-oura .ou-chev { flex: none; align-self: center; width: 16px; height: 16px; fill: none; stroke: var(--ou-ink2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+/* the FloraScore parts: each row a button that opens what the part is, over a Vitals track. The number sits in its own
+   column so the four tracks line up; the state word is sentence case, as Oura's Contributors are */
+.lk-oura .ou-parts .ou-cts { gap: 16px; }
+.lk-oura .ou-parts .ou-ct { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 8px; row-gap: 4px; }
+.lk-oura .ou-parts .ou-ct > :is(.ou-ct-top, .ou-ct-trk) { grid-column: 1 / -1; }
+.lk-oura button.ou-ct-top { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ou-ink); font: 400 15px/1.3 var(--sans); text-align: left; cursor: pointer; }
+.lk-oura button.ou-ct-top:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; border-radius: 8px; }
+.lk-oura .ou-ct-top .ou-state { margin-left: auto; text-align: right; font-family: var(--sans); font-size: 14px; letter-spacing: 0; text-transform: none; }
+.lk-oura .ou-ct-top[aria-expanded="true"] .ou-chev { transform: rotate(90deg); }
+.lk-oura .ou-ct-body { grid-column: 1 / -1; display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 8px; align-items: center; }
+.lk-oura .ou-ct-n { font-size: 32px; line-height: 1; font-weight: 300; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.lk-oura .ou-ct-trk { position: relative; display: block; height: 4px; border-radius: 999px; background: var(--ou-trk); }
+.lk-oura .ou-ct-band { position: absolute; top: -4px; bottom: -4px; min-width: 8px; border-radius: 999px; background: var(--ou-band); box-shadow: inset 0 0 0 1.5px var(--ou-usual); }
+.lk-oura .ou-ct-band.is-pt { width: 32px; transform: translateX(-50%); }
+.lk-oura .ou-ct-m { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--ou-read); box-shadow: 0 0 0 3px var(--ou-ground); transform: translate(-50%, -50%); }
+.lk-oura .ou-ct-m.is-shift { background: var(--ou-shift); }
+.lk-oura .ou-ct-lw { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--ou-ground); box-shadow: inset 0 0 0 1.5px var(--ou-ink2); transform: translate(-50%, -50%); }
+.lk-oura .ou-parts .ou-ct-sub { grid-column: 2; }
+.lk-oura .ou-ct-more { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; padding-top: 8px; font-size: 13px; line-height: 1.45; color: var(--ou-ink2); }
+.lk-oura .ou-ct-more[hidden] { display: none; }
+.lk-oura .ou-ct-scale { margin-top: -8px; padding-left: 64px; }
+/* a thin bar, split by strength (symptoms) */
+.lk-oura .ou-bar { position: relative; display: block; height: 4px; border-radius: 999px; background: var(--ou-trk); }
+.lk-oura .ou-bar.is-stack .ou-bar-s { position: absolute; top: 0; bottom: 0; left: var(--x); width: var(--w); border-right: 2px solid var(--ou-ground); transform-origin: left center; }
+.lk-oura .ou-bar-s:first-child { border-radius: 999px 0 0 999px; }
+.lk-oura .ou-bar-s:last-child { border-right: 0; border-radius: 0 999px 999px 0; }
+.lk-oura .ou-bar-s:only-child { border-radius: 999px; }
+.lk-oura .ou-bar-s.is-s1 { background: color-mix(in srgb, var(--ou-read) 40%, transparent); }
+.lk-oura .ou-bar-s.is-s2 { background: color-mix(in srgb, var(--ou-read) 70%, transparent); }
+.lk-oura .ou-bar-s.is-s3 { background: var(--ou-read); }
+.lk-oura .ou-bar-s.is-s0 { background: transparent; box-shadow: inset 0 0 0 1px var(--ou-read); }
+.lk-oura .ou-ct-sub { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 10.5px; line-height: 1.3; color: var(--ou-ink2); }
+
+/* ---------- trends ---------- */
+.lk-oura .ou-pane { display: flex; flex-direction: column; gap: 16px; }
+.lk-oura .ou-plot { border-radius: 8px; outline-offset: 4px; touch-action: pan-y; }
+.lk-oura .ou-plot:focus-visible { outline: 2px solid var(--ap-teal); }
+.lk-oura .ou-zline { stroke: var(--ou-line); stroke-width: 1; }
+.lk-oura .ou-svg .ou-zl { font-family: var(--sans); font-size: 11px; fill: var(--ou-ink2); }
+.lk-oura .ou-svg .ou-zl.is-usual { fill: var(--ou-usual); font-weight: 500; }
+.lk-oura .ou-st-read { stop-color: var(--ou-read); }
+.lk-oura .ou-st-shift { stop-color: var(--ou-shift); }
+.lk-oura .ou-st-area { stop-color: var(--ou-read); stop-opacity: .07; }
+.lk-oura[data-theme="dark"] .ou-st-area { stop-opacity: .12; }
+.lk-oura .ou-st-none { stop-color: var(--ou-read); stop-opacity: 0; }
+.lk-oura .ou-line { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.lk-oura .ou-tdot { fill: var(--ou-read); stroke: var(--ou-ground); stroke-width: 1.5; }
+.lk-oura .ou-tdot.is-shift { fill: var(--ou-shift); }
+.lk-oura .ou-scrub-l { stroke: var(--ou-read); stroke-width: 1; }
+.lk-oura .ou-pill rect { fill: var(--ou-ink); }
+.lk-oura .ou-svg .ou-pill text { font-family: var(--sans); font-size: 12px; font-weight: 500; fill: var(--ou-ground); }
+.lk-oura .ou-empty { display: flex; flex-direction: column; justify-content: space-between; height: 120px; padding: 8px 0; }
+.lk-oura .ou-empty span { display: block; border-top: 1px solid var(--ap-grid); }
+/* the segmented pill that switches the span */
+.lk-oura .ou-seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--ap-card2); }
+.lk-oura[data-theme="dark"] .ou-seg { background: color-mix(in srgb, var(--cream) 8%, transparent); }
+.lk-oura .ou-seg button { position: relative; min-height: 28px; padding: 0 12px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--ou-ink2); }
+/* the pill is drawn 28px tall, and the press reaches 44: the hit area runs 8px above and below it */
+.lk-oura .ou-seg button::after { content: ""; position: absolute; inset: -8px 0; }
+.lk-oura .ou-seg button[aria-pressed="true"] { background: var(--ou-ink); color: var(--ou-ground); }
+.lk-oura .ou-seg button:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+
+/* ---------- this week and the month ---------- */
+.lk-oura .ou-wk .ou-band { fill: color-mix(in srgb, var(--ou-band) 60%, transparent); }
+.lk-oura .ou-blk { fill: var(--ou-read); }
+.lk-oura .ou-blk.is-usual { fill: var(--ou-usual); }
+.lk-oura .ou-blk.is-shift { fill: var(--ou-shift); }
+/* today with a flag: noted for a clinician, never read. Teal, the colour of the primary care note */
+.lk-oura .ou-blk.is-flag { fill: color-mix(in srgb, var(--ou-ctx) 24%, transparent); stroke: var(--ou-ctx); stroke-width: 1.5; }
+.lk-oura .ou-blk.is-either { fill: var(--ou-ink3); }
+.lk-oura .ou-blk.is-read { fill: var(--ou-read); }
+.lk-oura .ou-svg .ou-wk-d { fill: var(--ou-ink2); }
+.lk-oura .ou-svg .ou-wk-n { font-family: var(--sans); font-size: 13px; fill: var(--ou-ink); }
+.lk-oura .ou-svg .ou-wk-n.is-today { font-weight: 700; }
+.lk-oura .ou-wk-today rect { fill: var(--ou-ink); }
+.lk-oura .ou-svg .ou-wk-today text { font-family: var(--sans); font-size: 11px; font-weight: 500; fill: var(--ou-ground); }
+.lk-oura .ou-svg .ou-wk-note { font-size: 11px; fill: var(--ou-ink2); }
+.lk-oura .ou-svg .ou-band-l { font-size: 11px; fill: var(--ou-usual); }
+.lk-oura .ou-gapmark { fill: none; stroke: var(--ou-ink3); stroke-width: 1; }
+.lk-oura .ou-gapmark.is-pending { stroke: var(--ou-ink2); }
+.lk-oura .ou-nocount { fill: var(--ou-ink3); }
+.lk-oura .ou-symdot { fill: var(--ou-ctx); }
+/* the month's zone list: a bar as long as its count, the state, then the days */
+.lk-oura .ou-zones { display: flex; flex-direction: column; gap: 8px; }
+.lk-oura .ou-zr { display: grid; grid-template-columns: 104px minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 13px; line-height: 1.3; }
+.lk-oura .ou-zr b { font-weight: 400; }
+.lk-oura .ou-zr-b { position: relative; display: block; height: 12px; }
+.lk-oura .ou-zr-f { position: absolute; left: 0; top: 0; bottom: 0; width: max(4px, var(--w)); border-radius: 4px; background: var(--ou-read); transform-origin: left center; }
+.lk-oura .ou-zr-f.is-usual { background: var(--ou-usual); }
+.lk-oura .ou-zr-f.is-shift { background: var(--ou-shift); }
+.lk-oura .ou-zr-f.is-flag { background: color-mix(in srgb, var(--ou-ctx) 24%, transparent); box-shadow: inset 0 0 0 1.5px var(--ou-ctx); }
+.lk-oura .ou-zr-f.is-either, .lk-oura .ou-zr-f.is-nocount { background: var(--ou-ink3); }
+.lk-oura .ou-zr-f.is-gap, .lk-oura .ou-zr-f.is-pending { background: transparent; box-shadow: inset 0 0 0 1px var(--ou-ink3); }
+.lk-oura .ou-zr-v { font-family: var(--mono); font-size: 11.5px; color: var(--ou-ink2); white-space: nowrap; }
+
+/* ---------- timing: the curved clock of the morning ---------- */
+.lk-oura .ou-timing { background-image: linear-gradient(180deg, color-mix(in srgb, var(--teal) 9%, transparent), transparent 60%); }
+.lk-oura[data-theme="dark"] .ou-timing {
+  background-image:
+    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--teal) 40%, transparent), transparent 75%),
+    radial-gradient(60% 40% at 100% 100%, color-mix(in srgb, var(--plum) 26%, transparent), transparent 70%);
+}
+.lk-oura .ou-clock { width: calc(100% + 32px); margin: 0 -16px; }
+.lk-oura .ou-ck-trk { fill: none; stroke: var(--ou-trk); stroke-width: 6; }
+.lk-oura .ou-ck-itrk { fill: none; stroke: color-mix(in srgb, var(--ou-ink) 7%, transparent); stroke-width: 12; }
+.lk-oura .ou-ck-band { fill: none; stroke: var(--ou-usual); stroke-width: 6; stroke-linecap: round; }
+.lk-oura .ou-ck-tick { stroke: var(--ou-read); stroke-width: 1.6; stroke-linecap: round; opacity: .8; }
+.lk-oura .ou-ck-tick.is-usual { stroke: var(--ou-usual); }
+.lk-oura .ou-ck-tick.is-shift { stroke: var(--ou-shift); opacity: 1; }
+.lk-oura .ou-svg .ou-ck-h { font-size: 11px; fill: var(--ou-ink2); }
+.lk-oura .ou-ck-dot { fill: var(--ou-ink3); }
+.lk-oura .ou-svg .ou-ck-ul { font-family: var(--sans); font-size: 11px; font-weight: 500; fill: var(--ou-usual); }
+.lk-oura .ou-stats { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr) minmax(0, .8fr); gap: 12px; padding-top: 16px; border-top: 1px solid var(--ou-line); }
+/* the value on top and its label under it; values share one top line however the labels wrap */
+.lk-oura .ou-stats div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 4px; min-width: 0; }
+.lk-oura .ou-stats dt { font-size: 11.5px; line-height: 1.3; color: var(--ou-ink2); }
+.lk-oura .ou-stats dd { font-size: 14px; line-height: 1.25; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* ---------- a Vitals track: n cells, your usual tinted and outlined, a marker for now ---------- */
+.lk-oura .ou-vital { display: flex; flex-direction: column; gap: 8px; }
+.lk-oura .ou-vt-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lk-oura .ou-vt-top .ou-state { text-align: right; }
+.lk-oura .ou-vt-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start; }
+.lk-oura .ou-vital.is-stack .ou-vt-body { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.lk-oura .ou-vt-k { font-size: 13px; line-height: 1.3; color: var(--ou-ink2); }
+.lk-oura .ou-vt-big { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; font-size: 36px; line-height: 1.05; font-weight: 300; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.lk-oura .ou-vt-r { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lk-oura .ou-vt { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; height: 24px; align-items: center; }
+.lk-oura .ou-vt-c { display: block; height: 6px; border-radius: 999px; background: var(--ou-trk); }
+.lk-oura .ou-vt-c.is-band { background: var(--ou-band); }
+.lk-oura .ou-vt-c.is-on { background: color-mix(in srgb, var(--ou-ctx) 55%, transparent); }
+.lk-oura .ou-vt-band { position: absolute; top: 4px; bottom: 4px; border-radius: 8px; box-shadow: inset 0 0 0 1.5px var(--ou-usual); pointer-events: none; }
+.lk-oura .ou-vt-m { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 999px; background: var(--ou-read); box-shadow: 0 0 0 3px var(--ou-ground); transform: translate(-50%, -50%); }
+.lk-oura .ou-vt-m[style*="--span:2"] { width: calc(200% / var(--n) - 4px); }
+.lk-oura .ou-vt-m.is-shift { background: var(--ou-shift); }
+.lk-oura .ou-vt-m.is-either { background: var(--ou-ink3); }
+.lk-oura .ou-vt-m[data-n]::after { content: attr(data-n); position: absolute; inset: 0; display: grid; place-items: center; font-size: 10px; font-weight: 700; line-height: 1; color: var(--ou-ground); }
+.lk-oura .ou-vt-ticks { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; font-size: 10.5px; line-height: 1.2; color: var(--ou-ink3); text-align: center; }
+.lk-oura .ou-vt-ticks span { min-width: 0; overflow-wrap: anywhere; }
+.lk-oura .ou-vt-ticks .is-band { color: var(--ou-usual); font-weight: 500; }
+.lk-oura .ou-dir { display: flex; justify-content: space-between; margin-top: -8px; font-family: var(--mono); font-size: 10.5px; color: var(--ou-ink3); }
+.lk-oura .ou-dir span:first-child::before { content: "\2190  "; }
+.lk-oura .ou-dir span:last-child::after { content: "  \2192"; }
+.lk-oura .ou-dir.is-days span::before, .lk-oura .ou-dir.is-days span::after { content: none; }
+
+/* ---------- habits: bars one under another, with the values written in ---------- */
+.lk-oura .ou-habits { display: flex; flex-direction: column; gap: 16px; }
+.lk-oura .ou-hb-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.3; color: var(--ou-ink2); }
+.lk-oura .ou-hb-top span { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.lk-oura .ou-hb-top b { font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--ou-ink); white-space: nowrap; }
+.lk-oura .ou-hb { position: relative; display: block; height: 8px; border-radius: 999px; background: var(--ou-trk); }
+.lk-oura .ou-hb-f { position: absolute; top: 0; bottom: 0; left: var(--x); width: var(--w); border-radius: 999px; background: var(--ou-read); transform-origin: left center; }
+.lk-oura .ou-hb-f + .ou-hb-f { border-left: 2px solid var(--ou-ground); }
+.lk-oura .ou-hb-f.is-usual { background: var(--ou-usual); }
+.lk-oura .ou-hb-f.is-shift { background: var(--ou-shift); }
+.lk-oura .ou-hb-f.is-either { background: var(--ou-ink3); }
+.lk-oura .ou-hb-f.is-ctx { background: var(--ou-ctx); }
+.lk-oura .ou-hb-f.is-uband { background: var(--ou-band); box-shadow: inset 0 0 0 1.5px var(--ou-usual); }
+.lk-oura .ou-hb-band { position: absolute; top: -4px; bottom: -4px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--ou-usual); pointer-events: none; }
+.lk-oura .ou-hb-need { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--ou-ink); }
+.lk-oura .ou-hb-sub { margin-top: 8px; font-size: 11.5px; line-height: 1.35; color: var(--ou-ink2); }
+.lk-oura .ou-ctxdot { flex: none; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ou-ctx); }
+
+/* ---------- weekly check-in: key-metric tracks, then the after-a-change card ---------- */
+/* four tiles, two by two: the question, the latest answer, how it sits against your first weeks, and the track. Each
+   tile's parts sit on a shared row (subgrid), so the two tracks in a row line up however their words wrap */
+.lk-oura .ou-kms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; row-gap: 4px; align-items: start; }
+.lk-oura .ou-km { display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 4px; min-width: 0; margin-bottom: 20px; }
+.lk-oura .ou-kms.is-empty .ou-km { grid-row: span 3; margin-bottom: 12px; }
+.lk-oura .ou-km:nth-last-child(-n + 2) { margin-bottom: 0; }
+.lk-oura .ou-km-k { font-family: var(--mono); font-size: 10.5px; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; color: var(--ou-ink2); }
+.lk-oura .ou-km .ou-km-k { align-self: end; }
+.lk-oura .ou-km .ou-state { letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: 12.5px; font-weight: 500; line-height: 1.25; }
+.lk-oura .ou-km-v { font-size: 22px; line-height: 1.15; font-weight: 300; letter-spacing: -.015em; }
+.lk-oura .ou-km-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ou-ink3); }
+.lk-oura .ou-tagcard { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background-color: var(--ap-card2); background-image: radial-gradient(90% 90% at 100% 0%, color-mix(in srgb, var(--plum) 10%, transparent), transparent 70%); }
+.lk-oura[data-theme="dark"] .ou-tagcard { background-color: color-mix(in srgb, var(--cream) 6%, transparent); background-image: radial-gradient(90% 90% at 100% 0%, color-mix(in srgb, var(--plum) 40%, transparent), transparent 70%), radial-gradient(70% 80% at 0% 100%, color-mix(in srgb, var(--teal) 26%, transparent), transparent 70%); }
+.lk-oura .ou-tc-h { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.lk-oura .ou-tc-h h4 { margin: 0; font-size: 16px; font-weight: 500; }
+.lk-oura .ou-tc-ic { width: 20px; height: 20px; fill: none; stroke: var(--ou-ink); stroke-width: 1.5; stroke-linejoin: round; }
+.lk-oura .ou-tc-x { margin-left: auto; display: grid; place-items: center; width: 44px; height: 44px; margin-top: -12px; margin-bottom: -12px; margin-right: -12px; border-radius: 999px; color: var(--ou-ink); }
+.lk-oura .ou-tc-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.lk-oura .ou-tc-q { font-size: 14px; line-height: 1.45; color: var(--ou-ink); }
+.lk-oura .ou-tc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lk-oura .ou-tag { position: relative; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; background: color-mix(in srgb, var(--ou-ink) 9%, transparent); color: var(--ou-ink); }
+/* a 36px chip with a 44px press: the hit area runs 4px above and below it, inside the 8px gap between rows */
+.lk-oura .ou-tag::after { content: ""; position: absolute; inset: -4px 0; }
+.lk-oura .ou-tag[aria-pressed="true"] { background: var(--ou-ink); color: var(--ou-ground); }
+.lk-oura .ou-tag:focus-visible, .lk-oura .ou-tc-x:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+.lk-oura .ou-tc-n { font-size: 11.5px; line-height: 1.35; color: var(--ou-ink2); text-wrap: pretty; }
+.lk-oura .ou-cta { display: flex; }
+.lk-oura .ou-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ray); color: var(--forest); font: 500 14px/20px var(--sans); cursor: pointer; }
+.lk-oura .ou-btn:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+.lk-oura:not([data-theme="dark"]) .ou-btn { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 12%, transparent); }
+
+/* ---------- a possible pattern ---------- */
+.lk-oura .ou-sure { display: flex; flex-direction: column; gap: 4px; }
+.lk-oura .ou-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; font-size: 11px; line-height: 1.25; color: var(--ou-ink2); text-align: center; }
+.lk-oura .ou-tiers .is-on { color: var(--ou-ink); font-weight: 500; }
+
+/* ---------- motion: arcs sweep, numbers count (in JS), bars fill, markers and the pill fade in ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .lk-oura .ou { animation: ouIn .6s var(--ap-ease) both; }
+  .lk-oura .ou-sweep { stroke-dasharray: 1; animation: ouSweep 1.1s calc(150ms + var(--i, 0) * var(--ou-st)) var(--ap-ease) both; }
+  .lk-oura .ou-sweep--slow { animation-duration: 1.5s; }
+  .lk-oura .ou-sweep--fast { animation-duration: .7s; animation-delay: 80ms; }
+  .lk-oura .ou-g-seg.ou-sweep { animation-duration: .4s; animation-delay: calc(150ms + var(--i, 0) * 70ms); }
+  .lk-oura .ou-sr-a.ou-sweep { animation-delay: calc(300ms + var(--i, 0) * 90ms); }
+  .lk-oura .ou-grow { transform-box: fill-box; transform-origin: center bottom; animation: ouGrowY .7s calc(200ms + var(--i, 0) * 40ms + var(--k, 0) * 90ms) var(--ap-ease) both; }
+  .lk-oura .ou-month .ou-grow { animation-delay: calc(150ms + var(--i, 0) * 18ms); }
+  .lk-oura :is(.ou-bar-s, .ou-hb-f, .ou-zr-f) { animation: ouGrowX .9s calc(300ms + var(--i, 0) * 90ms) var(--ap-ease) both; }
+  .lk-oura :is(.ou-vt-m, .ou-ct-m) { animation: ouMark .6s calc(700ms + var(--i, 0) * 90ms) var(--ap-ease) both; }
+  .lk-oura .ou-chev { transition: transform .2s var(--ap-ease); }
+  .lk-oura :is(.ou-hb-band, .ou-vt-band, .ou-ct-band, .ou-ct-lw, .ou-band, .ou-band-l, .ou-zl, .ou-g-ue) { animation: ouFade .6s .2s var(--ap-ease) both; }
+  .lk-oura .ou-area { animation: ouFade .9s .6s var(--ap-ease) both; }
+  .lk-oura .ou-ck-tick { animation: ouFade .4s calc(400ms + var(--i, 0) * 20ms) var(--ap-ease) both; }
+  .lk-oura .ou-scrub:not(.is-moved) { animation: ouFade .5s 1.3s var(--ap-ease) both; }
+  .lk-oura :is(.ou-now, .ou-now-halo, .ou-g-dot) { transform-box: fill-box; transform-origin: center; animation: ouPop .5s 1.1s var(--ap-ease) both; }
+  .lk-oura .ou-timing :is(.ou-now, .ou-now-halo) { animation-delay: .8s; }
+  .lk-oura .ou-gauge-c, .lk-oura .ou-tagcard { animation: ouFade .7s .3s var(--ap-ease) both; }
+  /* the state word waits for the numeral to finish counting, so the two never disagree on the way up */
+  .lk-oura .ou-gauge-c .ou-state { animation: ouFade .5s 1.2s var(--ap-ease) both; }
+  .lk-oura .ou-btn { transition: transform .2s var(--ap-ease); }
+  .lk-oura .ou-tag { transition: background-color .2s var(--ap-ease), color .2s var(--ap-ease), transform .2s var(--ap-ease); }
+  .lk-oura .ou-btn:active, .lk-oura .ou-tag:active { transform: scale(.97); }
+  .lk-oura .ou-scrub-l, .lk-oura .ou-scrub circle { transition: none; }
+}
+@keyframes ouIn { from { opacity: 0; transform: translateY(12px); } }
+@keyframes ouSweep { 0% { stroke-dashoffset: 1; opacity: 0; } 8% { opacity: 1; } 100% { stroke-dashoffset: 0; } }
+@keyframes ouGrowY { from { transform: scaleY(0); } }
+@keyframes ouGrowX { from { transform: scaleX(0); } }
+@keyframes ouMark { from { opacity: 0; transform: translate(-50%, -50%) scale(.3); } }
+@keyframes ouPop { from { opacity: 0; transform: scale(.3); } }
+@keyframes ouFade { from { opacity: 0; } }

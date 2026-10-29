@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-page="flow">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Florin Study</title>
+<meta name="description" content="A study of an early version of the Florin app, by Florin Health. Prototype only. Not for patients.">
+<!-- Florin focus group test: the participant's flow, self-guided, on their own phone. The plan is
+     claude/Florin focus group plan.md; the data contract is CONTRACT.md. Installable: the manifest, the icons, the
+     apple mobile-web-app metas and a small service worker (sw.js, registered on the built site). -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Florin">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Florin">
+<meta name="theme-color" content="#F9F7F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#00352B" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="css/focus-tokens.css">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="proto/css/app.css">
+<link rel="stylesheet" href="css/fx-base.css">
+<link rel="stylesheet" href="css/focus.css">
+</head>
+<body>
+<div class="ap fx" id="fx" data-theme="light">
+  <main class="fx-page" id="fxPage" tabindex="-1"><p class="fx-loading">Loading the study...</p></main>
+  <div class="fx-appview" id="fxAppView" hidden>
+    <header class="fx-strip" id="fxStrip" aria-label="Your task"></header>
+    <div class="fx-frame-wrap"><iframe id="fxFrame" class="fx-frame" title="The Florin app" src="about:blank"></iframe></div>
+    <section class="fx-sheet" id="fxSheet" hidden></section>
+  </div>
+  <div class="fx-more" id="fxMore" hidden></div>
+</div>
+<script src="config.js"></script>
+<script src="js/focus.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/fx-comment.js"></script>
+<script src="js/qr.js"></script>
+<!-- the app's model files, for its one alarm net (L.alarmsIn) on the boxes people type in -->
+<script src="proto/js/lib.js"></script>
+<script src="proto/js/data-app.js"></script>
+<script src="proto/js/refresh-data.js"></script>
+<script src="js/flow.js"></script>
+</body>
+</html>

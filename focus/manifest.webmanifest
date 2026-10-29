@@ -1,0 +1,17 @@
+{
+  "name": "Florin",
+  "short_name": "Florin",
+  "description": "A prototype of the Florin app, for a Florin Health study. Prototype only. Not for patients.",
+  "id": "./",
+  "start_url": "./?src=home",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F9F7F2",
+  "theme_color": "#F9F7F2",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

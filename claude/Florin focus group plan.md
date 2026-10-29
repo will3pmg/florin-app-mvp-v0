@@ -13,11 +13,11 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 
 | | |
 |---|---|
-| Length | About 30 minutes, in one sitting. About 40 to 45 for people 65 or over. The soft launch times it |
+| Length | 30 to 45 minutes, in one sitting, and participants are told so. About 32 for most, 40 to 45 for people 65 or over. The soft launch times it |
 | Who | 24 completed sessions, from 32 invited, in the US: people with gut symptoms or an interest in tracking them, recruited to the personas in section 2 |
 | Where | Their own iPhone or Android phone, from a link. No account. The tasks run in the phone's browser; the last task puts the app on the home screen, and the rest runs from there |
 | How | Self-guided: the flow walks each person through alone. Nobody watches or records them |
-| What they do | Consent, nine intake questions, eight tasks with a rating and a few questions each, two short comparisons (three for Oura users), putting the app on the phone, two minutes of free use with double-tap comments, an exit survey |
+| What they do | Consent, nine intake questions, eight tasks with a rating and a few questions each, two short comparisons (three for Oura users), putting the app on the phone, two minutes of free use with comments, an exit survey |
 | What they see | The Florin app as the prototype draws it, with our recommended decisions, the week card Will picks, and Sarah's 12 weeks of logs. Home and History are each shown half one way, half the other |
 | Where it lands | One Google Sheet, five tabs (sessions, answers, tasks, comments, events), through a Google Apps Script web app. Thank-you codes go to a separate sheet for the recruiter. We summarise it when Will asks |
 | The app | A static web app in `focus/`, hosted on Netlify (publish directory `focus/site`), loading the prototype's files and one focus module. Settings in `focus/config.js` |
@@ -35,7 +35,7 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 2. **The script.** Deploy the Apps Script once, from the Florin Health Google account that owns the Sheet (not a
    personal account), and confirm the Workspace settings allow "Anyone" access to a web app. Create the recruiter's
    separate sheet. Paste the web app URL into `focus/config.js`, with `study`, `team`, `contact`, `recruiter`,
-   `thanksHow` and `keepMonths`.
+   `thanksHow`, `tokenHow` and `keepMonths`. The build lists any of these still empty.
 3. **Build and pin.** Run the build that copies the prototype's and the library's files, and the chosen week card,
    into `focus/site`. Commit that pinned `focus/site`. Netlify: import this GitHub repo, publish directory `focus/site`,
    and turn auto-deploys off for the fieldwork, so another workflow's change to `prototype/` never reaches a
@@ -61,6 +61,11 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 - **The thank-you:** how much, who pays it, and how (it goes in the consent).
 - **The research team** named in the consent (`team`).
 - **How long to keep the data** (`keepMonths`; we suggest 6 months from when the study closes).
+- **Two promises in the consent** (since October 29, from the participant walkthrough): "We never sell your answers or
+  use them for ads" and "a private Google Sheet that only the research team can open". Confirm both are true, or we
+  take them out.
+- **How participants get the thank-you code to the recruiter** (`tokenHow`). Until it's set, the thanks screen says to
+  reply to the message the study link came in, with the code.
 - **The optional follow-up contact** (`followUp`, off by default), kept apart from the answers.
 
 ---
@@ -129,10 +134,10 @@ Above the first question, word for word:
 | S0 | Do you live in the United States? | Yes · No | No: end | The study is set up for the US |
 | S1 | Are you 18 or over? | Yes · No | No: end | The study is for adults only |
 | S2 | Which phone do you use most days? | An iPhone · An Android phone · Another phone · I don't have a smartphone | Another or none: end | The test runs on the person's own phone |
-| S3 | Could you spend about 30 minutes on your phone, somewhere quiet, in the next week? | Yes · No | No: end | Self-guided sessions need one sitting |
+| S3 | Could you spend 30 to 45 minutes on your phone, somewhere quiet, in the next week? | Yes · No | No: end | Self-guided sessions need one sitting |
 | S4 | How often do you notice gut symptoms, such as bloating, belly pain or a sudden urge to go? | Most days · A few times a week · A few times a month · Rarely or never | Quota | Most of the group should have symptoms to log |
 | S5 | What would you most want from an app for your gut? Pick one. | To see what tends to come before a rough day · Something simple, with big buttons and plain words · To fit in with the health apps or wearable I already use · My own numbers, in detail, to dig into · A record I can show a clinician · I'm not sure yet | Quota | Fills the persona groups (same words as IN1) |
-| S6 | Do either of these describe you? | I have IBS-D · I've been told I might have IBS · Neither · Prefer not to say | Quota | The core audience quota, and nothing more. The words are the app's own set-up options |
+| S6 | Do any of these describe you? | I have IBS-D · I have another type of IBS · I've been told I might have IBS · None of these · Prefer not to say | Quota | The core audience quota, and nothing more. The words are the app's own set-up options, with another type of IBS added (October 29: a walkthrough's 67-year-old with mixed-type IBS had no box) |
 | S7 | Have you used the Florin app before? | Yes, I use it now · Yes, I've tried it · No · Not sure | Quota | Current users know today's words and flows |
 | S8 | Your age range | 18 to 24 · 25 to 34 · 35 to 44 · 45 to 54 · 55 to 64 · 65 or over · Prefer not to say | Quota | The Easy version's person is 65 or over |
 | S9 | How do you describe your gender? | Woman · Man · Another way · Prefer not to say | Quota | Balance only; the study never asks |
@@ -144,7 +149,7 @@ Above the first question, word for word:
 
 The invitation, word for word:
 
-> Florin Health is testing an early version of the Florin app. Would you try it on your phone for about 30 minutes
+> Florin Health is testing an early version of the Florin app. Would you try it on your phone for 30 to 45 minutes
 > and tell us what you think? There's no account to make. Open this link on your phone, in Safari or Chrome: {link}
 > Prototype only. Not for patients.
 
@@ -189,9 +194,10 @@ and week card option twice, and every 5 see each rotated task in each place once
 ends, it picks at random and the session row says `assigned: phone`.
 
 **The version.** Everyone 65 or over uses the Easy version, so the five people it's for all test it. IN9 asks everyone
-which version they'd choose, as a stated preference; under 65, the answer sets the version. A person 65 or over who
-picked Standard sees: "For this test, you'll try the version with larger text and simpler screens. You can switch in
-Profile at any time." Anyone can switch in Profile; it's recorded.
+which version they'd choose, as a stated preference; under 65, the answer sets the version. For people 65 or over, IN9
+says so first, so their answer is a preference and never overruled: "For this test, you'll use the version with
+larger text and simpler screens. You can switch in Profile at any time." then "If you used Florin every day, which
+would you choose for yourself?" Anyone can switch in Profile; it's recorded.
 
 ---
 
@@ -206,18 +212,20 @@ Profile at any time." Anyone can switch in Profile; it's recorded.
 | 3 | The tour: eight tasks, each with an ease rating and its own questions | Browser | 13 | 16.5 |
 | 4 | Two comparisons (three for Oura users), and one box for anything to add | Browser | 2 | 18.5 |
 | 5 | Put Florin on your phone: the last task | Browser, then the home screen | 4 to 6 | 23.5 |
-| 6 | Free use, with double-tap comments | The installed app, or the browser | 2 | 25.5 |
-| 7 | Exit survey, with a look at the membership page | The same | 6 | 31.5 |
-| 8 | Submit, and thanks | The same | 0.5 | 32 |
+| 6 | Free use, with comments | The installed app, or the browser | 2 | 25.5 |
+| 7 | Exit survey, with a look at the membership page | The same | 8 | 33.5 |
+| 8 | Submit, and thanks | The same | 0.5 | 34 |
 
 Medians, from about 8 seconds a closed question, 30 seconds a box when answered, and 60 to 90 seconds a task. That comes
-to about 32 minutes; participants are told about 30. People 65 or over, in Easy, run about 40 to 45 minutes. The soft
-launch times it, and the cut list in Before launch 6 brings it back if it runs long.
+to about 34 minutes; participants are told 30 to 45, and that their place is saved if they stop. People 65 or over, in
+Easy, run about 40 to 45 minutes (the walkthrough's 67-year-old: about 25 minutes of reading and deciding alone). The
+exit survey is 29 to 31 screens, about 8 minutes. The soft launch times it, and the cut list in Before launch 6 brings
+it back if it runs long.
 
 Install comes after the tasks, as Will set the order, so a phone that can't install loses nothing but the home screen.
-The tasks run with the browser's address bar showing; the code is needed only for the last part. Comments work from the
-tour to the end, by double tap or the Comment button. Every piece is sent as it happens (6.1), so a session that stops
-halfway still counts for what it reached.
+The tasks run with the browser's address bar showing; the code is needed only for the last part. Every piece is sent as
+it happens (6.1), so a session that stops halfway still counts for what it reached. Comments work from the tour to the
+end: tap Comment, then the part of the app meant (that tap presses nothing), or double-tap a card or some words.
 
 ### 3.2 Before the welcome: the phone and the browser
 
@@ -225,15 +233,21 @@ halfway still counts for what it reached.
   phone's camera to open it there." with a QR code of the link and the link written out.
 - **Inside another app's browser** (a link opened from Instagram, Facebook or an email app), the welcome, intake and
   tour all run; the install step asks them to open the page in Safari or Chrome (3.7).
-- **A returning person** (a session stored in this browser, or `?c=` in the address) goes straight back to where they
-  were, with one line at the top: "Welcome back. You were on {step}." Start again is under More, and sends the old code
-  as `restart_of`. If the phone reloaded during a task, that task starts again; the time task, whose BM went with the
-  logs in memory, says "Welcome back. Log a BM for {name} first, then change its time."
+- **A returning person** (a session stored in this browser) goes straight back to where they were, with one line at
+  the top: "Welcome back. You were on {step}." Start again is under More, and sends the old code as `restart_of`; the
+  new session numbers its pieces from 1 under new ids (6.1). If the phone reloaded during a task, that task starts
+  again; the time task, whose BM went with the logs in memory, says "Welcome back. Log a BM for {name} first, then
+  change its time.", and its words name the new BM's time once it's logged.
+- **Another browser** (`?c=` in the address: an app's own browser left for Safari, Chrome on iPhone left for Safari)
+  carries on where the person was, from what the script holds (the code lookup, 6.1): the first task with no row, then
+  the first comparison not answered, then the box, then install, where Safari's own steps show. One line at the top:
+  "Welcome back. You can carry on here." A question already answered isn't asked again.
 - **The study closed** (`open: false` in config.js): "This study has closed. Thank you for your interest."
 - **On Android, in the browser**, pull to refresh is off (`overscroll-behavior-y: contain`), since a reload puts the
   logs in memory back.
 
-Nothing is sent before consent.
+Nothing is sent, and nothing is asked of the script, before consent. Closing the study is `open: false` in config.js;
+a closed script also answers the end of intake with "closed", and the phone shows the closed screen.
 
 ### 3.3 Welcome and consent (2 minutes)
 
@@ -241,8 +255,10 @@ Nothing is sent before consent.
 
 > **Help shape the Florin app**
 >
-> Florin Health is testing an early version of the Florin app, and we'd like your view. It takes about 30 minutes on
+> Florin Health is testing an early version of the Florin app, and we'd like your view. It takes 30 to 45 minutes on
 > this phone. You'll answer a few questions, try the app with a sample person's logs, then tell us what you thought.
+>
+> If you stop partway, your place is saved on this phone.
 >
 > Prototype only. Not for patients.
 >
@@ -253,16 +269,26 @@ bracketed clause shows only when `followUp` is on.
 
 > **Before you start**
 >
+> In short
+>
+> - 30 to 45 minutes, trying the app with a sample person's logs, not your own.
+> - No account and no name. Your answers go to Florin Health's research team under a random code, and are never sold.
+> - You can stop at any time.
+>
+> In full
+>
 > - This is research to improve an app, not a medical study. The Florin app here is a prototype. It isn't ready to use
 >   for your own care, and it can't give medical advice. You're welcome to take part.
 > - There's no account. We don't ask your name or contact details[, unless you choose to leave them at the end, kept
 >   apart from your answers].
-> - Your answers, ratings, comments, the taps you make in the app and how long you spend on each screen go to {team},
->   Florin Health's research team, under a random code. They're stored in a private Google Sheet. This site is hosted
->   by Netlify.
-> - We also send a few details about your phone: its type, its system version, its screen width, and whether it's set
->   to light or dark. Not its location, and not your contacts.
-> - We use all of this to improve the app, and delete it {keepMonths} months after the study closes.
+> - Your answers, ratings and comments go to {team}, Florin Health's research team, under a random code. We also see
+>   which parts of the app you tap and how long you spend on each screen, never what you log or type in the app
+>   itself. Everything is kept in a private Google Sheet that only the research team can open. This site is hosted by
+>   Netlify.
+> - We also send a few details about your phone: its type, its system version, its browser, its screen width, its text
+>   size setting, and whether it's set to light or dark. Not its location, and not your contacts.
+> - We use all of this only to improve the app. We never sell your answers or use them for ads, and we delete them
+>   {keepMonths} months after the study closes.
 > - The app shows a sample person's logs. You don't need to log anything real. Anything you log or type in the Florin
 >   app itself, such as a BM, a note or a question to Ask Florin, stays on this phone, is never sent to us, and is
 >   cleared when you close the app.
@@ -282,13 +308,15 @@ bracketed clause shows only when `followUp` is on.
 >
 > [Start] [No thanks]
 
-Start is enabled once both boxes are ticked. No thanks shows: "Thanks for your time. You can close this page." and sends
-nothing. Counsel reads this screen before launch.
+Start works once both boxes are ticked; tapped before then, it says "Tick both boxes to start." No thanks shows:
+"Thanks for your time. You can close this page." and sends nothing. Counsel reads this screen before launch, with the
+summary at the top and the two promises in Calls for Will.
 
 ### 3.4 Intake (1.5 minutes)
 
 One question a screen, each with Skip. The heading over the first: "First, a little about you. Every question can be
-skipped." The nine questions are in section 4.1. When intake ends, the phone makes the study code, the script settles it
+skipped." The nine questions are in section 4.1. Ticking "Something else" brings its box into view, above the Back
+and Next bar, with the cursor in it. Android's back gesture goes to the question before. When intake ends, the phone makes the study code, the script settles it
 and the arms (2.4), and the page writes `?c={code}` into its own address (`history.replaceState`), so a move to another
 browser, or the home screen, carries the session.
 
@@ -306,18 +334,27 @@ Sarah, 12, Sunday and October 11; 7 tasks when the check-in is off):
 >
 > Some questions check whether the app is clear. If something's hard to tell, that's the app's problem, not yours.
 >
-> Double-tap anything in the app to comment on it, at any time. You can also tap Comment at the top.
+> To comment on anything in the app, at any time, tap Comment at the top, then tap the part you mean. You can also
+> double-tap a card or some words.
 >
 > Prototype only. Not for patients.
 >
 > [Start the first task]
 
 **The task menu.** A strip at the top of the screen, above the app (the app moves down to make room, through its
-safe-area inset). First row: "Task 2 of 8" and the task, wrapping to up to three lines. Second row: Done, Skip and
-Comment, then Hint (after 45 seconds, `hintAfter`) and More, each 44px. More holds: Your study code, Reload, Start this
-task again (puts {name}'s logs back as they were when the task started), and Stop the study ("Stop here? What you've
-answered so far stays with the team, under your code." [Stop] [Keep going]), and the line "Prototype only. Not for
-patients." The strip must fit at 360 wide, in Easy's type and at Android's largest font (Before launch 4).
+safe-area inset). First line: "Task 2 of 8", with Hint at its right once it's ready (after 45 seconds, `hintAfter`; 25
+in Easy, `hintAfterEasy`). Then the task, folded to two lines once the person is using the app (tapping it opens it
+again), so the strip stays short at a large text size. Then one row: Done, Skip, Comment and More, each 44px; under
+340px wide, Comment shows its icon alone. More holds: Your study code, Your comments, Reload (while the app is in use,
+never during a task's questions, which would ask them twice), Start this task again (puts {name}'s logs back as they
+were when the task started), Start the study again, and Stop the study ("Stop here? What you've answered so far stays
+with the team, under your code." [Stop] [Keep going]), and the line "Prototype only. Not for patients." The strip must
+fit at 360 wide, in Easy's type and at Android's largest font (Before launch 4).
+
+**Comment.** Tapping Comment turns the strip into "Tap the part of the app you mean." with This whole screen and
+Cancel, and a Teal frame round the app. The next tap in the app picks the spot and presses nothing; the comment box
+opens about what was tapped (section 4.5). A quick second tap on any button, in the app or the study's own screens,
+is caught, so the button acts once and nothing that moved under the finger is pressed.
 
 **Detecting the goal.** The focus module watches the phone through `FLORIN_EXT` (the screen key, the acts, the model)
 and marks a task "seen" when the goal is reached; the strip then says "Done. Tap Next for a few quick questions." Done
@@ -334,7 +371,7 @@ follow the session's row of a Latin square (2.4). T6 is left out when `checkin` 
 when its question shows, from the phone's live logs.
 
 **T1 Log a BM** (`bm`, fixed, about 2 minutes)
-- Task: "Log a BM for {name}, as if they just had one. Pick any word that fits."
+- Task: "Log a BM for {name}, as if it happened just now. Pick any word that fits."
 - Hint: "Tap the plus button at the bottom of the screen." Day first, which has a row of words on Today: "Tap a word
   under today's logs, or the plus button at the bottom of the screen." Easy: "Tap I had a BM on Today."
 - Goal: `RU.bmCount(M)` goes up.
@@ -343,10 +380,15 @@ when its question shows, from the phone's live logs.
 - Then: BM1, BM2, TE, TR (six chips).
 
 **T2 Change its time** (`time`, fixed, about 1.25 minutes)
-- Task: "Say {name} actually had that BM an hour ago. Change its time."
-- Hint: "On Today, tap the BM you just logged." Easy: "On Today, tap the BM you just logged, under Today's logs."
-- Goal: the BM saved in T1, or one logged in its place, has a time 45 to 75 minutes before the time T1 saved. Easy picks
-  the nearest hour, so there 30 to 120 minutes.
+- Task: "{name}'s BM at {time} was really an hour earlier. Change its time to about {earlier}." {time} is the time T1
+  saved, in the app's words (7:40 PM), and {earlier} an hour before it (6:40 PM): the app's clock is set to the evening,
+  so "an hour ago" can't be read off the phone's. After a reload, when T1's BM has gone with the logs in memory: "Log a
+  BM for {name} first, as if it happened just now. Then change its time to an hour earlier.", and the words above once
+  it's logged.
+- Hint: "On Today, tap the BM at {time}." Easy: "On Today, under Today's logs, tap the BM at {time}."
+- Goal: the BM saved in T1, or one logged in its place during this task, has a time 45 to 75 minutes before the time it
+  was saved at. Easy picks the hour, so there 30 to 120 minutes. Another of today's BMs moved to that time doesn't
+  count (a walkthrough moved the 7:42 AM BM to 7:00 PM, and the old check passed it).
 - Path: opened the BM and changed the time; undid it and logged it again; gave up (skipped).
 - Then: TE, TR (six chips).
 
@@ -356,10 +398,13 @@ when its question shows, from the phone's live logs.
   "It's at the top of Today."; the note, "It's under FloraScore." Easy: "On Today, scroll down to Your last 7 days."
 - Goal: the week's answer line and its row of days in view together for 2 seconds (a design with no row of days, its
   answer line alone); then Done. Each week card marks its own goal elements.
-- Then: WK1, WK2, WK3 (designs that draw a mark per day), TE, TR (eight chips).
+- Then: WK1, WK2, WK3 (designs that draw a mark per day), TE, TR (eight chips). While they show, the week's row of
+  days (not the card's top) is scrolled into the part of the screen the sheet leaves showing, and WK2's days sit in two
+  columns, so Today and the last two answers show without scrolling the sheet.
 
 **T4 FloraScore** (`score`, rotated, about 1.5 minutes)
-- Task: "Open the page that explains {name}'s FloraScore."
+- Task: "Open the page that explains {name}'s FloraScore." Easy: "Find where the app explains {name}'s FloraScore."
+  (Easy has no FloraScore page, and its FloraScore card on Today isn't a button.)
 - Hint: Score first, "Tap Details on the FloraScore card."; Day first, "Tap FloraScore at the top of Today." Easy: "Tap
   More about your weeks on Today."
 - Goal: the screen key is `i-score`. Easy has no FloraScore page: the screen key is `ez-weeks` with its FloraScore card
@@ -369,9 +414,11 @@ when its question shows, from the phone's live logs.
 
 **T5 Possible patterns** (`patterns`, rotated, about 2 minutes)
 - Task: "Find a food that tends to come before a change for {name}."
-- Hint: "Open the Insights tab and scroll to Possible patterns." Easy: "Tap More about your weeks on Today, then
-  scroll to Possible patterns."
-- Goal: the Possible patterns card, or a pattern's page, in view for 2 seconds; then Done.
+- Hint: "Open the Insights tab and scroll down to Possible patterns." Easy: "Tap More about your weeks on Today, then
+  scroll down to A possible pattern." (the card's own title there)
+- Goal: the food's pattern line on the Possible patterns card (its name and count), Easy's "A possible pattern" lead,
+  or a pattern's page, in view for 2 seconds; then Done. The line, not the whole card, which is taller than a short
+  screen under the strip.
 - Then: PT1, IV1, IV2, TE, TR (eight chips). Left out when no pattern with a food is found.
 
 **T6 The weekly check-in** (`checkin`, rotated, about 1.5 minutes)
@@ -386,8 +433,8 @@ when its question shows, from the phone's live logs.
   only one); with two, the task says "on two days in {month}. Find one of them in History."
 - Hint: Calendar, "Tap History at the bottom of the screen, then go back a month."; List, "Tap History at the bottom of
   the screen, then scroll back to {month}." Easy the same.
-- Goal: Calendar, that day itself opened (`vr-cal-day` with its date); List, that day's row in view for 2 seconds;
-  then Done.
+- Goal: Calendar, that day itself opened (`vr-cal-day` with its date); List, that day's header (its date and "Nothing
+  logged") in view for 2 seconds; then Done.
 - Path: the arm; the months moved.
 - Then: HI1, TE, TR (six chips).
 
@@ -407,7 +454,8 @@ session's row.
 - **CP1, Home** (Standard only): the phone switches Home to the other option and opens Today. "Here's another way Today
   could open. Find today's FloraScore on it, then tap Next." Then Home goes back.
 - **CP2, History**: the phone switches History to the other option and opens History. "Here's another way History could
-  look. Find what {name} logged on {weekday}, {date}, then tap Next." {date} is a day in the last 7 with a BM logged.
+  look. Find what {name} logged {day}, then tap Next." {day} is the latest day in the last 7 with a BM logged:
+  "yesterday, Saturday, October 10" when it's yesterday (the list labels it Yesterday), else "on Thursday, October 8".
   Then History goes back.
 - **CP3, FloraScore in the Oura style** (Standard, and only for people who picked An Oura ring at IN6): the phone sets
   Data style to Oura and opens Today. "Here's another way FloraScore could look on Today. Have a look, then tap Next."
@@ -419,7 +467,9 @@ Then one box for the whole tour: TW (4.2).
 
 The last task. Before the steps show, the page waits until the script confirms it holds everything sent so far ("Sending
 your answers..."), since answers left in Safari stay there on iPhone. If it can't confirm in 20 seconds: "Your phone
-hasn't sent your answers yet. Please finish here, so nothing is lost." with only Finish here.
+hasn't sent your answers yet. Check that you're online, then try again. Or finish here, so nothing is lost." with Try
+again and Finish here. (Events never take more than 7 in 10 of the phone's sending budget, 6.1, so the answers have
+room.) The window that shows the steps sends when they first showed (`install_at`), for the install task's time.
 
 The page knows the phone, the system version and the browser, and shows only the steps for them, each with a picture.
 Above the steps:
@@ -432,18 +482,29 @@ Above the steps:
 **iPhone, in Safari**, word for word. A page can't read which Safari layout is set, so on iOS 26 the first step shows
 both pictures.
 
-> **Your study code: K7M 4PX**
-> You may need it once, when you open Florin from your home screen. Keep this screen open until then.
+> **Your study code**
+> **K7M 4PX** (large)
+> Write this code down. You may need it once, when you open Florin from your home screen.
+> [Copy the code]
 >
 > 1. Find the Share button. If you see three dots beside the address, tap them, then tap Share. If you see a square
 >    with an arrow pointing up, tap that.
-> 2. Scroll down and tap Add to Home Screen. If you don't see it, tap the Safari compass to open this page in Safari,
->    then start again.
+> 2. Scroll down and tap Add to Home Screen.
 > 3. If you see Open as Web App, leave it on. Tap Add.
 > 4. Go to your home screen and open Florin. It may be on your last home screen page: swipe left, or swipe down and
 >    type Florin.
 >
+> No Add to Home Screen? This page may be open inside another app. Tap the compass at the bottom to open it in Safari,
+> then start again.
+>
 > [I've added it] [Finish here instead]
+
+Each step's picture sits after a small "Look for", drawn quietly, so it doesn't read as a button (a walkthrough tapped
+them). The compass line is under the steps, not in step 2: in Safari it doesn't apply, and a mail app's Safari view
+can't be told apart from Safari.
+
+After I've added it: "Now open Florin from your home screen." with the code again, large, under "If it asks for your
+study code", and It didn't open. Continue here.
 
 On iOS 18 and earlier, step 1 reads: "Tap the Share button at the bottom of the screen: a square with an arrow pointing
 up."
@@ -457,15 +518,22 @@ screen, open this page in your phone's browser first: tap the menu (often three 
 here instead stays available. Mail apps' in-app Safari views can't be told apart from Safari, so step 2's compass line
 covers them, and the invitation says to open the link in Safari or Chrome.
 
-**Android, in Chrome**, word for word:
+**Android, in Chrome**, word for word. The steps follow what Chrome offers. Until it offers its Install prompt:
+
+> 1. Tap the three dots at the top right, then Add to Home screen or Install app.
+> 2. Tap Install.
+> 3. Open Florin from your home screen or your list of apps. It may be on your last home screen page.
+>
+> [I've added it] [Finish here instead]
+
+Once it has (the page redraws when it does):
 
 > 1. Tap Install below, then Install again in the box that opens.
 > 2. Open Florin from your home screen or your list of apps. It may be on your last home screen page.
 >
-> [Install] [Finish here instead]
+> [Install] [I've added it] [Finish here instead]
 
-If Chrome hasn't offered the prompt, the Install button is replaced by: "Tap the three dots at the top right, then
-Add to Home screen or Install app. Tap Install." **Samsung Internet:** "Tap the menu (three lines) at the bottom, then
+**Samsung Internet:** "Tap the menu (three lines) at the bottom, then
 Add page to, then Home screen." Android shares this page's storage with the installed app, so no code is asked for.
 When the installed app opens, the browser tab says: "Florin is open from your home screen. You can close this tab."
 
@@ -483,7 +551,14 @@ that fails its check character: "That code doesn't look right. Check it and try 
 "We couldn't find that code. Check it and try again." The link under it, "I don't have my code", says: "Go back to
 Safari: your code is on the screen there. You can also finish in Safari instead." With no connection: "Florin needs a
 connection to pick up where you were. Check your connection and tap Try again." When the script has seen the installed
-app, a reopened Safari tab says "Florin is open from your home screen. You can close this tab." instead of picking up.
+app, a Safari tab opened again on any install step (reloaded, or dropped by iOS and opened) says "Florin is open from
+your home screen. You can close this tab. If Florin closed, open it from your home screen again." instead of the steps,
+with no Finish here, so one session never runs in two places. A lookup the script can't answer just now ("rate" or
+"server") reads "Florin couldn't check your code just now. Wait a minute and try again."
+
+The app on the home screen carries on from what the script holds (6.1): a `-test` session stays `-test`, the install
+task's time starts at `install_at`, its place follows the tasks this session had, and the comments sent from Safari
+are listed at Submit (what they were about and CM1's words, never the words typed), where they can be deleted.
 
 **Then:** IS1 (4.4) in the installed app, or IS2 then IS1 for anyone who chose Finish here instead (IS1 is left out
 after "I'd rather not add it"). The installed app starts {name}'s logs again as they were, and picks up at free use.
@@ -501,13 +576,14 @@ session's id (`sid`) is a separate long random id, made on the phone at consent.
 taken, so the phone draws another before the code is shown or written into the address. The code is shown again under
 More and on the last screen.
 
-### 3.8 Free use, with double-tap comments (2 minutes)
+### 3.8 Free use, with comments (2 minutes)
 
 Word for word:
 
 > **Look around**
 >
-> Find one thing you like and one thing you'd change. Double-tap each and tell us.
+> Find one thing you like and one thing you'd change. For each, tap Comment at the top, then tap the thing, and tell
+> us.
 >
 > The microphone in the app plays a sample; it doesn't listen.
 >
@@ -516,16 +592,18 @@ Word for word:
 The strip shows the time left from {freeMinutes} minutes. At the end: "Time's up. Tap Next when you're ready." Nothing
 is cut off.
 
-**Comments.** A double tap anywhere opens the comment sheet, pinned to the spot, with a small marker there until it
-closes. If the first tap of a double tap pressed a button, the second tap is caught, so the button acts once; the
-comment then belongs to the screen it led to. The Comment button in the strip does the same without a double tap, for
-anyone with a tremor or using VoiceOver or TalkBack (where a double tap is how a button is pressed). The sheet's words
-are in section 4.5.
+**Comments.** Comment, then a tap on the part meant, opens the comment sheet about that part, pinned to the spot, with a
+small marker there until it closes; the tap presses nothing, so it works on a button or a tab too, and for anyone using
+VoiceOver or TalkBack (where a double tap is how a button is pressed). This whole screen comments on the screen. A
+double tap on a card or some words (anything that doesn't act) opens the sheet as well, up to half a second apart, so
+a slow double tap counts. On a button or a link, a double tap is caught after the first tap, so the button acts once
+and no sheet opens: its first tap may change the screen, and the comment would land on the wrong thing (the end-to-end
+test saw a BM tile's comment filed as "FloraScore"). The sheet's words are in section 4.5.
 
 ### 3.9 Exit survey (6 minutes)
 
 > **Last part: what you thought**
-> About 6 minutes. Every question can be skipped.
+> About 8 minutes. Every question can be skipped.
 
 The order: comfort again (EX1) first, then the SUS (10, one statement a screen, with large buttons), trust (TR1 to TR4,
 with TR2b and TR4b when they apply), favourite (FV1, FV2), friction (FR1, FR2), missing (MS1, MS2), text size (TX1,
@@ -552,10 +630,15 @@ Then, word for word:
 >
 > Your answers are in.
 >
-> Your study code: {code}. Keep it if you may want your answers removed: email {contact} with it. Clearing this session
-> erases it from this phone.
+> **Write these codes down**, or copy them somewhere safe. They stay on this phone until you clear this session.
 >
-> Your thank-you code: {token}. {recruiter} uses it to send your thank-you, and never sees your answers.
+> Your study code: **K7M 4PX** (large). Keep it if you may want your answers removed: email {contact} with it.
+> [Copy the study code]
+>
+> Your thank-you code: **TQ4K X7MC** (large, in two groups of four). To get your thank-you, {tokenHow}. {recruiter}
+> uses it to send your thank-you, and never sees your answers. [Copy the thank-you code]
+>
+> ({tokenHow} by default: "reply to the message your study link came in, with this code".)
 >
 > If you're worried about your gut, talk to a clinician. If you see blood in a BM, have a black or tar-like BM, a
 > fever, vomiting that won't stop, weight loss you can't explain, or you wake at night to go, contact your primary
@@ -568,8 +651,13 @@ Then, word for word:
 > [Clear this session from this phone]
 
 The thank-you code is random, one per person, and goes to the recruiter's separate sheet at a random row, with no
-session id and no time, so it can't be joined to anyone's answers. Clear this session removes the codes, the stored
-decisions and the queue (once it's empty) from the phone, then says "Cleared."
+session id and no time, so it can't be joined to anyone's answers. It's posted alone, 4 to 12 seconds after Submit and
+never within 3 seconds of a session piece. Clear this session asks first, with both codes in the question: "Clear this
+session from this phone? This phone won't show your study code, K7M 4PX, or your thank-you code, TQ4K X7MC, again.
+Write them down first." [Clear it] [Keep it]. Then ("Clearing... Sending the last of your answers first.") it sends
+and confirms whatever is still queued, the events and the thank-you code too, for up to 20 seconds, removes the codes,
+the stored decisions and the queue from the phone, and says "Cleared." A thank-you code still waiting when the page is
+closed goes in a beacon of its own.
 
 When `followUp` is on, the thanks screen adds: "Could we contact you about a follow-up? Optional. What you give here is
 kept apart from your code and your answers." with one box.
@@ -596,14 +684,14 @@ person can still send:
 | ID | Question, word for word | Answers | Why it's asked |
 |---|---|---|---|
 | IN1 | What would you most want from an app for your gut? Pick one. | To see what tends to come before a rough day · Something simple, with big buttons and plain words · To fit in with the health apps or wearable I already use · My own numbers, in detail, to dig into · A record I can show a clinician · I'm not sure yet | Places each person in a persona (2.3), so every result can be read by what people came for |
-| IN2 | What brings you to an app like this? Pick any that fit. | I have IBS-D · I've been told I might have IBS · Some foods don't sit well with me · My gut feels unsettled a lot · I'm active, and my gut gets in the way · I'm curious about my gut · I want a record to show a clinician · Something else (a box for words) · Prefer not to say | The app's own set-up options, word for word (`refresh-profile.js`): tells us who came, and whether those options cover why people come (Something else) |
+| IN2 | What brings you to an app like this? Pick any that fit. | I have IBS-D · I have another type of IBS · I've been told I might have IBS · Some foods don't sit well with me · My gut feels unsettled a lot · I'm active, and my gut gets in the way · I'm curious about my gut · I want a record to show a clinician · Something else (a box for words) · Prefer not to say | The app's own set-up options, word for word (`refresh-profile.js`), with another type of IBS added: tells us who came, and whether those options cover why people come (Something else). Whether the app's set-up should add it too is for Will |
 | IN3 | How often do you notice gut symptoms, such as bloating, belly pain or a sudden urge to go? | Most days · A few times a week · A few times a month · Rarely or never · Prefer not to say | Whether the app works for people who'd log often; a cut for every result |
 | IN4 | How do you keep track of your gut now? Pick any. | I don't · In my head · Notes on my phone or on paper · A gut, food or symptom app · A diary a clinician gave me · Something else | Finds trackers, and gives a habit to read US2 and US3 against |
 | IN5 | Have you used the Florin app before today? | Yes, I use it now · Yes, I've tried it · No · Not sure | Today's users know its five words and its slider; C keeps the five, adds Pellets and Soft, and narrows Hard and Loose to one kind each (G3) |
 | IN6 | Do you use any of these? Pick any. | An Oura ring · An Apple Watch · Another watch or fitness band · Apple Health · Another health or fitness app · None of these | Finds the fits-my-stack persona; picks who sees CP3; reads against MS2's "Linking Apple Health or another app" |
 | IN7 | Your age range | 18 to 24 · 25 to 34 · 35 to 44 · 45 to 54 · 55 to 64 · 65 or over · Prefer not to say | Finds the Easy version's person (2.4) and checks the spread. A range only, never a birth date |
 | IN8 | How comfortable would you be keeping a record of your BMs on your phone? | Very uncomfortable · Somewhat uncomfortable · Neither · Somewhat comfortable · Very comfortable | A trust baseline, asked again first thing in the exit (EX1), so we see whether trying the app moves it |
-| IN9 | Florin has a version with larger text and simpler screens. Which would you choose for yourself? | Standard · Larger text and simpler screens, each with a small picture of Today in that version | Who picks Easy when it's offered (G8). Sets the version under 65 (2.4). The words are Profile's own name for the setting |
+| IN9 | Florin has a version with larger text and simpler screens. Which would you choose for yourself? 65 or over (IN7): "For this test, you'll use the version with larger text and simpler screens. You can switch in Profile at any time." over "If you used Florin every day, which would you choose for yourself?" | Standard · Larger text and simpler screens, each with a small picture of Today in that version | Who picks Easy when it's offered (G8). Sets the version under 65 (2.4); 65 or over, a preference that's never overruled. The words are Profile's own name for the setting |
 
 Whether the phone's text is set large is asked in the exit (TX2), so it doesn't steer IN9.
 
@@ -624,11 +712,11 @@ draws her today.
 | BM1 | bm | Were any of these words unclear? Pick any. | The seven words as the tiles show them, in the tiles' order (today: Pellets · Hard · Firm · Formed · Soft · Loose · Watery, from `L.TYPES`) · None were unclear | None | Which of C's words need work before counsel reads them, and whether today's users stumble on the new ones (G3) |
 | BM2 | bm | Were any two words hard to tell apart? Pick up to two. | The same seven, in order · None | None | Which neighbours blur. Two picks make one pair |
 | WK1 | week | Why does {name}'s week count {known} days, not 7? | {Gap} had nothing logged · Today isn't over yet · One day was outside {name}'s usual · I'm not sure ({Gap}: "One day", or "Two days") | The days with nothing logged, from `L.tally(L.span(M, 7))` (Sarah: One day had nothing logged) | Whether a gap reads as a gap, not a day outside the usual. Left out when all 7 were read, or today is flagged |
-| WK2 | week | Which days were outside {name}'s usual? Pick any. | The seven days in order, by weekday, today as Today · None of them · I couldn't tell | The days `L.span(M, 7)` reads as shifted (Sarah: Wednesday and Friday, plus today if T1 moved it) | Whether the week shows which days differed, in any design. Right when the picks match exactly; each pick is kept |
+| WK2 | week | Which days were outside {name}'s usual? Pick any. | The seven days in order, by weekday, today as Today, in two columns · None of them · I couldn't tell | The days `L.span(M, 7)` reads as shifted (Sarah: Wednesday and Friday, plus today if T1 moved it) | Whether the week shows which days differed, in any design. Right when the picks match exactly; each pick is kept |
 | WK3 | week | On that week, what did a day marked in gold show? | A day outside {name}'s usual · A day with symptoms · A highlight, like a gold star · Today · I'm not sure | A day outside {name}'s usual | Gold can read as a reward. Checks the colour rule against a real reading. Only for designs that draw a mark per day |
 | SC1 | score | Which comes closest to what FloraScore tells you? | How {name}'s recent days compare with {name}'s own usual · How {name} compares with other people · A grade out of 100 · A medical result · I'm not sure | The first | The three misreadings FloraScore has to avoid: a ranking, a grade, a medical result (G2, G6). Reported by version |
 | SC2 | score | Was today's FloraScore in its usual range? | In its usual range · Above its usual range · Below its usual range · I couldn't tell | From `RU.scoreRel`, a little above counting as above (Sarah: 83 against 74 to 82, Above, until T1 changes it) | Whether the range bar reads |
-| PT1 | patterns | Which food tends to come before a change for {name}? | The food in {name}'s first possible pattern that has a food, and three foods Insights checked with nothing found (`L.patterns(M, mode).found` and `.quiet`; Sarah: Pizza, with three of the quiet foods) · I couldn't find one | Any food in `.found` (Sarah: Pizza) | Whether people find and read the possible patterns, the value membership sells |
+| PT1 | patterns | Which food tends to come before a change for {name}? | The food in {name}'s first possible pattern that has a food, and three foods Insights checked with nothing found (`L.patterns(M, mode).found` and `.quiet`; Sarah: Pizza, with three of the quiet foods) · I couldn't find one | Any food in `.found`, each once (Sarah: Pizza) | Whether people find and read the possible patterns, the value membership sells |
 | IV1 | patterns | Have a look at the cards on Insights. Which two would you look at most? Pick two. | The live card titles, in a random order. Easy: the cards in Your weeks | None | Which cards lead (G9) |
 | IV2 | patterns | Which one would you not miss? | The same titles · I'd miss all of them | None | Which cards could fold into a detail page or go (G9) |
 | CK1 | checkin | How often would you answer a check-in like this? | Every week · Most weeks · Now and then · Never · Not sure | None | Decision 5: is the check-in worth its weekly ask (G5) |
@@ -661,7 +749,7 @@ draws her today.
 
 | ID | Words, word for word | Answers | Why it's asked |
 |---|---|---|---|
-| CM1 | What do you think of this? | Pick any: I like it · It's confusing · Something's missing · Something didn't work · I have an idea | What people liked, missed and tripped on, tied to the exact screen and spot |
+| CM1 | What do you think of this? (under it, "About: {what was tapped}", or the screen's name for This whole screen) | Pick any: I like it · It's confusing · Something's missing · Something didn't work · I have an idea | What people liked, missed and tripped on, tied to the exact screen and spot |
 | CM2 | Say more (optional) | A box for words | The reason in their words |
 
 Buttons: Send · Cancel. After sending: "Comment sent."
@@ -677,8 +765,9 @@ In the order they're asked (3.9). Agreement items use Strongly disagree · Disag
 
 **SUS.** One statement a screen, with large buttons. Over each: "Thinking about the app you just tried, how much do
 you agree?" Each is answered with the agreement scale (1 to 5). These are the standard ten statements, with "system"
-read as "app" and "cumbersome" as "awkward" (an accepted substitution), free to use with attribution. A line at the
-foot of each screen says so: "System Usability Scale. John Brooke (1996), SUS: a quick and dirty usability scale."
+read as "app" and "cumbersome" as "awkward" (an accepted substitution), free to use with attribution. The attribution
+is a line at the foot of the first screen only: "These ten statements are the System Usability Scale, by John Brooke
+(1996)." (On every screen, with the paper's title, it added reading and read as flippant to a walkthrough.)
 
 | ID | Statement, word for word |
 |---|---|
@@ -700,8 +789,10 @@ when all ten are answered.
 | ID | Question, word for word | Answers | Why it's asked |
 |---|---|---|---|
 | TR1 | I understood how the app came up with its numbers. | Agreement, 1 to 5 | Whether "from your logs, against your usual" comes through (G6) |
-| TR2 | Did anything in the app sound like a diagnosis, or a judgment about {name}'s health? | Yes · No · Not sure | The claims guardrails, checked from the reader's side, without catching the app's own "talk to a clinician" lines (G6) |
+| TR2 | Did anything in the app sound like it named a condition? | Yes · No · Not sure | The claims guardrails, checked from the reader's side, without catching the app's own "talk to a clinician" lines (G6). One question, not two in one (October 29) |
 | TR2b | Where? (optional, after Yes) | A box for words | Which screen, in their words |
+| TR5 | Did anything in the app sound like a judgment about {name}'s health? | Yes · No · Not sure | The other half of the old TR2: a judging word, read against the claims rules (G6) |
+| TR5b | Where? (optional, after Yes) | A box for words | Which screen, in their words |
 | TR3 | I would trust what the app told me about my own logs. | Agreement, 1 to 5 | Trust in the readings, for themselves (G6) |
 | TR4 | Did anything in the app worry you? | Yes · No · Not sure | Whether any screen alarms people without a reason (G6) |
 | TR4b | What worried you? (optional, after Yes) | A box for words | Which screen, in their words |
@@ -791,9 +882,10 @@ the person changes in Profile (say, Larger text and simpler screens) goes throug
 recorded as an event; the study doesn't stop it.
 
 `focus/config.js` holds, as well: `study` (the id on every row), `endpoint` (the Apps Script URL), `open`, `team`,
-`contact`, `recruiter`, `thanksHow`, `keepMonths`, `people` (2.4), `weekCard`, `compare` (the comparisons), `tasks`
-(which tasks run), `freeMinutes` (2), `hintAfter` (45 seconds) and `followUp` (off). A link with `?test=1` tags the
-session's study id with `-test`, for Will's own runs.
+`contact`, `recruiter`, `thanksHow`, `tokenHow` (how the thank-you code reaches the recruiter), `keepMonths`, `people`
+(2.4), `weekCard`, `compare` (the comparisons), `tasks` (which tasks run), `freeMinutes` (2), `hintAfter` (45 seconds),
+`hintAfterEasy` (25 seconds) and `followUp` (off). A link with `?test=1` tags the session's study id with `-test`,
+for Will's own runs; it carries into the app on an iPhone's home screen through the code lookup.
 
 ### 5.3 Ask Florin
 
@@ -829,14 +921,23 @@ Each piece (an answer, a task result, a comment, a batch of events) carries the 
 
 - `sid` is a long random id made at consent and kept in `localStorage`. The study code is only a lookup the script
   resolves to it.
-- `cid` and its `seq` are kept in `sessionStorage`, one per browser tab or app window, so Android's tab and installed
-  app, which share `localStorage`, never collide.
+- `cid` and its `seq` are kept in `sessionStorage`, one per browser tab or app window and per session, so Android's
+  tab and installed app, which share `localStorage`, never collide, and a new session in the same tab (Start again,
+  or Clear and the link again) numbers from 1 under new ids. (Before October 29 it kept the old numbering, and the
+  script could never confirm the new session's pieces.)
 - Unsent pieces wait in `localStorage`, each with its own `cid` and `seq`, and retry every 20 seconds and on every open.
+  After a post fails, nothing more is posted for 20 seconds, so an outage isn't met with the whole queue on every new
+  piece.
 - To confirm receipt, the app asks the script by JSONP (a GET whose `doGet` returns ContentService JavaScript) for the
   highest `seq` it holds for this `sid` and `cid`, and clears the queue up to it. The same call settles the code and
-  the arms at the end of intake, looks a code up in the installed app (returning the session's stage, arms and
-  version), and says whether the installed app has been seen.
-- Events are batched every 10 seconds or 25 events, each keeping its own `seq`.
+  the arms at the end of intake, and says whether the installed app has been seen.
+- The code lookup (another window: the app on an iPhone's home screen, or Safari after an app's own browser) returns
+  the session's stage, arms and version, and what that window needs to carry on: whether it's a `-test` session, when
+  the install steps showed, the tasks with a row, the ids of the questions answered, the option codes of the few
+  answers later steps depend on (IN6, IN7, IN9, IS2, TR2, TR4, TR5, FV1, FR1, MG1 and the SUS), and the comments sent
+  (their ids, targets and CM1's words). Never anything typed.
+- Events are batched every 10 seconds or 25 events, each keeping its own `seq`. They never take more than 7 in 10 of
+  the phone's 50 a minute, so answers always have room; `net: flushed` goes at most once a minute.
 
 The script runs from the Florin Health account that owns the Sheet ("Execute as: me, Who has access: Anyone", so
 phones can post without signing in). It appends rows under a lock, writes each tab's header row the first time, and
@@ -859,7 +960,10 @@ and refuses more than 60 pieces a minute or 1,500 in all from one `sid`.
 
 ### 6.3 The tabs
 
-**sessions**: one row per `sid`, updated as pieces arrive. No row before consent.
+**sessions**: one row per `sid`, updated as pieces arrive. No row before consent. A session's pieces come from more than
+one window and can arrive out of order, so each column keeps its newest value (by when it happened on the phone), the
+stage keeps the furthest, install never goes back from seen, and submitted never from yes. The counts are the script's
+own, never a window's part of them.
 
 | Column | What it holds |
 |---|---|
@@ -867,8 +971,8 @@ and refuses more than 60 pieces a minute or 1,500 in all from one `sid`.
 | `code` | The study code (K7M4PX), the lookup for a removal request |
 | `restart_of` | The code of the session this one started again from, if any |
 | `first_at`, `last_at` | The first and latest piece's `at` |
-| `active_minutes` | Minutes with the page visible (from `visibilitychange`), so time in Safari fetching the code doesn't count |
-| `minutes` | From `first_at` to Submit |
+| `active_minutes` | Minutes with the page visible (from `visibilitychange`), so time away fetching the code doesn't count: each window (Safari, the app on the home screen) counts its own, and this is their sum |
+| `minutes` | From `first_at` to the first Submit, worked out by the script |
 | `platform` | iPhone, Android or other |
 | `os` | The system's major version (26, say) |
 | `browser` | Safari, Chrome, Samsung Internet, Firefox, an in-app browser, or other. Parsed from the user agent; the string itself isn't stored |
@@ -885,9 +989,10 @@ and refuses more than 60 pieces a minute or 1,500 in all from one `sid`.
 | `decisions` | The config on the phone, one line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built onboard=short weekCard=card plan=member data=est meals=all` |
 | `install` | seen, said, browser, or couldn't (3.7) |
 | `installed` | yes once any piece comes from the installed app |
+| `install_at` | When the install steps first showed |
 | `stage` | The furthest step reached: consent, intake, tour, compare, install, free, exit, done, or stopped |
-| `tasks_seen` | How many tasks the app saw done, 0 to 9 |
-| `comments` | How many comments were sent |
+| `tasks_seen` | How many tasks the app saw done, 0 to 9, from the tasks rows |
+| `comments` | How many comments were sent and not deleted, from the comments rows, whichever window sent them |
 | `sus` | 0 to 100, once all ten are answered |
 | `submitted` | yes or no |
 
@@ -942,7 +1047,7 @@ and refuses more than 60 pieces a minute or 1,500 in all from one `sid`.
 | `kind` | CM1's words, joined with " \| " |
 | `words` | CM2, after removal |
 | `alarm_note` | yes when the primary care note showed |
-| `how` | double tap or button |
+| `how` | double tap (twice on a card or some words), or button (Comment, then a tap on the part meant, or This whole screen; `tx`, `ty`, `x`, `y` blank for the whole screen) |
 
 **events**: one row per event, sent in batches.
 
@@ -1055,7 +1160,7 @@ subgroup on at least 3. Each pair of bars meets, so every result falls on one si
 | 8 Version: Easy as a setting | The Easy group's task outcomes and words; IN9 against TX2; TX1 | No bar: read as problems found, since the Easy group is about five people | A task stuck or broken for 2 or more of the Easy group: fix that screen first |
 | The week card | WK1, WK2, WK3, the week task's outcome, seconds and chips, comments on it; by `week` when two are tested | WK1 and WK2 right for 4 in 5 | Fewer than 4 in 5: the design goes back before it ships. With two designs, a difference under 3 people reads as no difference |
 | Delivery for a pilot | `install` by platform and age, IS1, IS2 | 3 in 4 of those who try add it and open it from the home screen | Fewer: two options to Will, an app store build, or a plain link with no install. "I'd rather not add it" is counted apart, as a choice |
-| Words and trust | TR2, TR2b, TR4, TR4b, comments marked confusing | Fewer than 1 in 5 answer Yes to TR2, and to TR4 | 1 in 5 or more: the screens they name go to counsel with the claims rules. Any screen named in TR2b goes to counsel, whatever the count |
+| Words and trust | TR2, TR2b, TR5, TR5b, TR4, TR4b, comments marked confusing | Fewer than 1 in 5 answer Yes to TR2, to TR5 and to TR4 | 1 in 5 or more: the screens they name go to counsel with the claims rules. Any screen named in TR2b or TR5b goes to counsel, whatever the count |
 | Membership and price | VA2, VA3, Start membership taps | No bar: direction only. What people tap counts beside what they say, and VA3 isn't anchored to a price | |
 | Messaging | MG1, MG2, by segment | No bar: direction for Will's call | |
 
@@ -1080,3 +1185,55 @@ people's own words, by screen. Then the decisions it moves, as calls for Will.
 - The week card holds only for the designs recorded in `week`.
 - The meal sheet and Ask Florin on Free aren't tested.
 - English only, US prices.
+
+---
+
+## 8. After the end-to-end test and the walkthroughs (October 29)
+
+An end-to-end run on emulated iPhones and Android phones against the local back end, and two walkthroughs as
+participants (a 67-year-old on iPhone with reading glasses, in Easy; a 31-year-old on Android, dark mode, Day first),
+changed the study as follows. The sections above say what it does now.
+
+- **Moving between windows.** A session opened in another browser (from an app's own browser to Safari) carries on
+  where the person was, from the code lookup, instead of jumping to the install question and recording an install that
+  didn't happen. A Safari tab opened again after Florin went on the home screen says Florin is open there, with no
+  Finish here. The app on the home screen learns `-test`, the install's start, the tasks done and the comments sent
+  from Safari, which it lists at Submit and can delete.
+- **The sessions row.** Each column keeps its newest value; install never goes back from seen; comments, tasks seen
+  and minutes are the script's own counts; active minutes are each window's own, summed.
+- **Starting again.** Start again, and Clear then the link again, number the new session's pieces from 1 under new ids,
+  so the script can confirm them. Clear asks first, with both codes, and sends what's left before clearing.
+- **Sending.** Events take at most 7 in 10 of the budget; the install wait has Try again; nothing is posted for 20
+  seconds after a failed post; the thank-you code is never posted within 3 seconds of a session piece; nothing is asked
+  of the script before consent; "(555) 010-9999." is scrubbed to "[removed]."
+- **Comments.** Comment, then a tap on the part meant, is the main way, and presses nothing. A double tap comments only
+  on cards and words; on a button it's caught after the first tap. The study's own buttons catch a quick second tap
+  too (a double tap on Next had skipped the ease rating).
+- **Tasks.** The time task names the times and counts only the BM from task 1; Easy's FloraScore task asks where the
+  app explains it, with hints at 25 seconds in Easy; the patterns goal is the food's line, the History list's the
+  day's header; the week's questions show its row of days, WK2 in two columns; CP2 says "yesterday" when it is; PT1's
+  right answer is each food once.
+- **Words.** The consent has a summary, never sold, only the research team, taps but never what's typed, browser and
+  text size; "Tick both boxes to start."; 30 to 45 minutes; IN2 has another type of IBS; IN9 tells people 65 or over
+  first; TR2 is two questions (TR2, TR5); the SUS credit shows once; the exit says about 8 minutes; the thanks screen
+  has the codes large, Copy, "Write these codes down" and how the thank-you code reaches the recruiter; the iPhone
+  install has "Write this code down" and the compass line under the steps; Android's steps follow whether Chrome has
+  offered Install.
+- **The strip.** One row of buttons, Hint beside "Task 2 of 8", the task's words folded to two lines once the app is in
+  use; the 7-point scale's digits centred and at least 44px wide at 360; Reload left out of More during a task's
+  questions.
+
+**For the prototype team** (the app itself, not the study; `prototype/` isn't the study's to edit):
+
+1. Easy Today's FloraScore card isn't a button. A walkthrough tapped it and was stuck 47 seconds. It could open Your
+   weeks at the FloraScore card.
+2. Ask Florin's answers worked out from the logs ignore a food named in the question: "is pizza what's causing my
+   bloating" got a 30-day symptom summary that never mentions pizza.
+3. Easy Today's greeting shows a focus ring when it loads (it's focused for screen readers), which reads as a box to
+   type in. The study hides it (`focus/css/focus-app.css`); the same rule belongs in `refresh.css`.
+4. Easy's hour picker starts at midnight, so an evening time needs a long scroll. Starting it near the BM's own time
+   would fix it.
+5. Ask's chart label "Today 73" overlaps the line.
+6. For the week card redesign: in dark mode, days within the usual (pale) and outside it (Gold) both read as yellow; a
+   walkthrough answered WK3 wrong for it.
+7. The core hook proposed in 5.1 (`window.FLORIN_PAGE = { chrome: false }`) still stands; the study runs without it.

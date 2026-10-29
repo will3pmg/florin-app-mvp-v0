@@ -1,7 +1,8 @@
 /* Florin focus group test: every word a participant reads in the study's own screens, in one place. window.FXQ
-   From claude/Florin focus group plan.md, sections 3 and 4, word for word, with two changes for the claims rules
-   (claims-rules.js): TR2 asks whether anything "named a condition" rather than "sounded like a diagnosis", and the
-   SUS attribution line keeps the paper's title. Rules for every word: no medical claims; never normal, healthy,
+   From claude/Florin focus group plan.md, sections 3 and 4, word for word. For the claims rules (claims-rules.js), TR2
+   asks whether anything "named a condition" rather than "sounded like a diagnosis", and TR5 asks about a judgment of
+   the person's health on its own. The SUS is credited once, on its first screen. Rules for every word: no medical
+   claims; never normal, healthy,
    improving or worsening; no em or en dashes, no exclamation points, no humour; no licensed scale named; FloraScore
    one word; Ask Florin.
    A question: { id, q (text or (c) => text), type: one | many | box | scale, opts: [[code, words], ...], last: codes
@@ -16,25 +17,29 @@
 
   const intake = [
     { id: "IN1", q: "What would you most want from an app for your gut? Pick one.", type: "one", opts: [["pattern", "To see what tends to come before a rough day"], ["simple", "Something simple, with big buttons and plain words"], ["stack", "To fit in with the health apps or wearable I already use"], ["tracker", "My own numbers, in detail, to dig into"], ["record", "A record I can show a clinician"], ["unsure", "I'm not sure yet"]] },
-    { id: "IN2", q: "What brings you to an app like this? Pick any that fit.", type: "many", opts: [["ibsd", "I have IBS-D"], ["ibs", "I've been told I might have IBS"], ["foods", "Some foods don't sit well with me"], ["unsettled", "My gut feels unsettled a lot"], ["active", "I'm active, and my gut gets in the way"], ["curious", "I'm curious about my gut"], ["record", "I want a record to show a clinician"], ["other", "Something else"], ["pnts", "Prefer not to say"]], box: "other", excl: "pnts" },
+    { id: "IN2", q: "What brings you to an app like this? Pick any that fit.", type: "many", opts: [["ibsd", "I have IBS-D"], ["ibso", "I have another type of IBS"], ["ibs", "I've been told I might have IBS"], ["foods", "Some foods don't sit well with me"], ["unsettled", "My gut feels unsettled a lot"], ["active", "I'm active, and my gut gets in the way"], ["curious", "I'm curious about my gut"], ["record", "I want a record to show a clinician"], ["other", "Something else"], ["pnts", "Prefer not to say"]], box: "other", excl: "pnts" },
     { id: "IN3", q: "How often do you notice gut symptoms, such as bloating, belly pain or a sudden urge to go?", type: "one", opts: [["most", "Most days"], ["week", "A few times a week"], ["month", "A few times a month"], ["rarely", "Rarely or never"], ["pnts", "Prefer not to say"]] },
     { id: "IN4", q: "How do you keep track of your gut now? Pick any.", type: "many", opts: [["dont", "I don't"], ["head", "In my head"], ["notes", "Notes on my phone or on paper"], ["app", "A gut, food or symptom app"], ["diary", "A diary a clinician gave me"], ["else", "Something else"]], excl: "dont" },
     { id: "IN5", q: "Have you used the Florin app before today?", type: "one", opts: [["now", "Yes, I use it now"], ["tried", "Yes, I've tried it"], ["no", "No"], ["unsure", "Not sure"]] },
     { id: "IN6", q: "Do you use any of these? Pick any.", type: "many", opts: [["oura", "An Oura ring"], ["watch", "An Apple Watch"], ["band", "Another watch or fitness band"], ["health", "Apple Health"], ["app", "Another health or fitness app"], ["none", "None of these"]], excl: "none" },
     { id: "IN7", q: "Your age range", type: "one", opts: [["18", "18 to 24"], ["25", "25 to 34"], ["35", "35 to 44"], ["45", "45 to 54"], ["55", "55 to 64"], ["65", "65 or over"], ["pnts", "Prefer not to say"]] },
     { id: "IN8", q: "How comfortable would you be keeping a record of your BMs on your phone?", type: "one", opts: COMFORT },
-    { id: "IN9", q: "Florin has a version with larger text and simpler screens. Which would you choose for yourself?", type: "one", opts: [["standard", "Standard"], ["easy", "Larger text and simpler screens"]], pics: true }
+    /* 65 or over (IN7), the test uses the version with larger text for them: IN9 says so first, then asks which they'd
+       choose, as a preference (the flow swaps in q65 and head65) */
+    { id: "IN9", q: "Florin has a version with larger text and simpler screens. Which would you choose for yourself?", type: "one", opts: [["standard", "Standard"], ["easy", "Larger text and simpler screens"]], pics: true,
+      q65: "If you used Florin every day, which would you choose for yourself?", head65: "For this test, you'll use the version with larger text and simpler screens. You can switch in Profile at any time." }
   ];
 
   /* the tasks: the words on the strip and the hints. c: the context (name, version, arms, figures) */
   const tasks = {
     bm: {
-      title: (c) => `Log a BM for ${c.name}, as if they just had one. Pick any word that fits.`,
+      title: (c) => `Log a BM for ${c.name}, as if it happened just now. Pick any word that fits.`,
       hint: (c) => (c.easy ? "Tap I had a BM on Today." : c.home === "day" ? "Tap a word under today's logs, or the plus button at the bottom of the screen." : "Tap the plus button at the bottom of the screen.")
     },
+    /* the times are the app's own (its clock is set to the evening), so "an hour ago" can't be read off the phone's */
     time: {
-      title: (c) => (c.t1 ? `Say ${c.name} actually had that BM an hour ago. Change its time.` : `Log a BM for ${c.name} first, then change its time to an hour ago.`),
-      hint: (c) => (c.easy ? "On Today, tap the BM you just logged, under Today's logs." : "On Today, tap the BM you just logged.")
+      title: (c) => (c.t1 ? `${c.name}'s BM at ${c.t1time} was really an hour earlier. Change its time to about ${c.target}.` : `Log a BM for ${c.name} first, as if it happened just now. Then change its time to an hour earlier.`),
+      hint: (c) => (c.t1 ? (c.easy ? `On Today, under Today's logs, tap the BM at ${c.t1time}.` : `On Today, tap the BM at ${c.t1time}.`) : c.easy ? "Tap I had a BM on Today." : "Tap the plus button at the bottom of the screen.")
     },
     week: {
       title: (c) => `Find ${c.name}'s last 7 days on Today and read them. Tap Done when you have.`,
@@ -44,12 +49,12 @@
         : "On Today, scroll down past today's logs to Your last 7 days.")
     },
     score: {
-      title: (c) => `Open the page that explains ${c.name}'s FloraScore.`,
+      title: (c) => (c.easy ? `Find where the app explains ${c.name}'s FloraScore.` : `Open the page that explains ${c.name}'s FloraScore.`),
       hint: (c) => (c.easy ? "Tap More about your weeks on Today." : c.home === "day" ? "Tap FloraScore at the top of Today." : "Tap Details on the FloraScore card.")
     },
     patterns: {
       title: (c) => `Find a food that tends to come before a change for ${c.name}.`,
-      hint: (c) => (c.easy ? "Tap More about your weeks on Today, then scroll to Possible patterns." : "Open the Insights tab and scroll to Possible patterns.")
+      hint: (c) => (c.easy ? "Tap More about your weeks on Today, then scroll down to A possible pattern." : "Open the Insights tab and scroll down to Possible patterns.")
     },
     checkin: {
       title: (c) => `${c.name}'s weekly check-in is due tonight. Answer it. Pick any answers you like.`,
@@ -76,7 +81,7 @@
     BM1: (c) => ({ id: "BM1", q: "Were any of these words unclear? Pick any.", type: "many", opts: c.words.concat([["none", "None were unclear"]]), excl: "none" }),
     BM2: (c) => ({ id: "BM2", q: "Were any two words hard to tell apart? Pick up to two.", type: "many", max: 2, opts: c.words.concat([["none", "None"]]), excl: "none" }),
     WK1: (c) => ({ id: "WK1", q: `Why does ${c.name}'s week count ${c.known} days, not 7?`, type: "one", shuffle: true, last: ["unsure"], opts: [["gap", `${c.gapWord} had nothing logged`], ["today", "Today isn't over yet"], ["outside", `One day was outside ${c.name}'s usual`], ["unsure", "I'm not sure"]] }),
-    WK2: (c) => ({ id: "WK2", q: `Which days were outside ${c.name}'s usual? Pick any.`, type: "many", opts: c.days.concat([["none", "None of them"], ["cant", "I couldn't tell"]]), excl: ["none", "cant"] }),
+    WK2: (c) => ({ id: "WK2", q: `Which days were outside ${c.name}'s usual? Pick any.`, type: "many", grid: 7, opts: c.days.concat([["none", "None of them"], ["cant", "I couldn't tell"]]), excl: ["none", "cant"] }),
     WK3: (c) => ({ id: "WK3", q: "On that week, what did a day marked in gold show?", type: "one", shuffle: true, last: ["unsure"], opts: [["outside", `A day outside ${c.name}'s usual`], ["sym", "A day with symptoms"], ["star", "A highlight, like a gold star"], ["today", "Today"], ["unsure", "I'm not sure"]] }),
     SC1: (c) => ({ id: "SC1", q: "Which comes closest to what FloraScore tells you?", type: "one", shuffle: true, last: ["unsure"], opts: [["own", `How ${c.name}'s recent days compare with ${c.name}'s own usual`], ["others", `How ${c.name} compares with other people`], ["grade", "A grade out of 100"], ["medical", "A medical result"], ["unsure", "I'm not sure"]] }),
     SC2: () => ({ id: "SC2", q: "Was today's FloraScore in its usual range?", type: "one", shuffle: true, last: ["cant"], opts: [["in", "In its usual range"], ["above", "Above its usual range"], ["below", "Below its usual range"], ["cant", "I couldn't tell"]] }),
@@ -96,7 +101,7 @@
       q: { id: "CP1", q: "Which would you rather see first when you open the app?", type: "one", shuffle: true, last: ["none"], opts: [["score", "The FloraScore card"], ["day", "The day and its logs"], ["none", "No preference"]] }
     },
     history: {
-      id: "CP2", text: (c) => `Here's another way History could look. Find what ${c.name} logged on ${c.cpDay}, then tap Next.`,
+      id: "CP2", text: (c) => `Here's another way History could look. Find what ${c.name} logged ${c.cpDay}, then tap Next.`,
       q: { id: "CP2", q: "Which would you rather use to look back at past days?", type: "one", shuffle: true, last: ["none"], opts: [["calendar", "A month at a glance"], ["list", "A list of days"], ["none", "No preference"]] }
     },
     oura: {
@@ -124,15 +129,17 @@
     "I needed to learn a lot of things before I could get going with this app."
   ];
   const SUS_HEAD = "Thinking about the app you just tried, how much do you agree?";
-  const SUS_CREDIT = "System Usability Scale. John Brooke (1996), SUS: a quick and dirty usability scale.";
+  const SUS_CREDIT = "These ten statements are the System Usability Scale, by John Brooke (1996).";
 
   /* the exit survey, in the order it's asked (plan 3.9). "pay" is the look at the membership page */
   const exit = (c) => [
     { id: "EX1", q: "How comfortable would you be keeping a record of your BMs on your phone?", type: "one", opts: COMFORT },
-    ...SUS.map((s, i) => ({ id: `SUS${i + 1}`, q: s, head: SUS_HEAD, credit: SUS_CREDIT, type: "one", opts: AGREE, sus: true })),
+    ...SUS.map((s, i) => ({ id: `SUS${i + 1}`, q: s, head: SUS_HEAD, credit: i === 0 ? SUS_CREDIT : "", type: "one", opts: AGREE, sus: true })),
     { id: "TR1", q: "I understood how the app came up with its numbers.", head: "How much do you agree?", type: "one", opts: AGREE },
-    { id: "TR2", q: `Did anything in the app sound like it named a condition, or judged ${c.name}'s health?`, type: "one", opts: [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]] },
+    { id: "TR2", q: "Did anything in the app sound like it named a condition?", type: "one", opts: [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]] },
     { id: "TR2b", q: "Where? (optional)", type: "box", when: (A) => A.TR2 === "yes" },
+    { id: "TR5", q: `Did anything in the app sound like a judgment about ${c.name}'s health?`, type: "one", opts: [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]] },
+    { id: "TR5b", q: "Where? (optional)", type: "box", when: (A) => A.TR5 === "yes" },
     { id: "TR3", q: "I would trust what the app told me about my own logs.", head: "How much do you agree?", type: "one", opts: AGREE },
     { id: "TR4", q: "Did anything in the app worry you?", type: "one", opts: [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]] },
     { id: "TR4b", q: "What worried you? (optional)", type: "box", when: (A) => A.TR4 === "yes" },

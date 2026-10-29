@@ -1,0 +1,175 @@
+/* Look: Easy read. Every rule scoped under .lk-easy.
+   Made for a 70-year-old with reading glasses: the answer at 28px, the number at 64px, nothing a person must read under
+   16px, text in Ink (Ink 2 only for secondary lines at 18px or more), no small caps and no mono. One picture a card at
+   most, with its words on it. Colours are the app tokens (--ap-*) or the six brand colours; nothing is a literal.
+   Spacing and radii are on the DESIGN.md scales. Motion is a short fade and rise, once, inside
+   prefers-reduced-motion: no-preference, and only animates *from* a state, so the still page is the final page. */
+
+/* ---------- the card ---------- */
+.lk-easy .ez {
+  --ez-usual: var(--ap-usual-ink);
+  --ez-on-usual: var(--cream);
+  --ez-shift: var(--ap-shift);
+  --ez-on-shift: var(--forest);
+  --ez-read: var(--ap-chart);
+  --ez-on-read: var(--ap-card);
+  --ez-trk: color-mix(in srgb, var(--ap-ink) 9%, transparent);
+  --ez-hair: color-mix(in srgb, var(--ap-ink) 45%, transparent);
+  /* your usual window on the time bar: Plum at 40% on light; on dark the app's own usual band, Ray at 17%, because
+     Ray at 40% over Forest mixes to a new green */
+  --ez-band: color-mix(in srgb, var(--ez-usual) 40%, transparent);
+  /* a day logged with no BMs said: a plain grey disc, dark enough to see as a disc even without its date */
+  --ez-nocount: color-mix(in srgb, var(--ap-ink) 22%, var(--ap-card));
+  display: flex; flex-direction: column; gap: 24px;
+  padding: 24px; border-radius: 24px;
+  background: var(--ap-card); color: var(--ap-ink); box-shadow: var(--ap-shadow);
+  font-family: var(--sans); font-size: 18px; line-height: 1.45;
+}
+/* on dark, your usual is Ray, so what sits on it is Forest. The app's dark Gold is nearly as light as Ray, so a
+   shift here is a deeper Gold: the two then differ in lightness as well as hue, for eyes that see little colour. A
+   reading is Ink 2, so it never looks like your usual where the two meet (the score ring, the time bar). Tracks need a
+   little more to show on Forest */
+.lk-easy[data-theme="dark"] .ez {
+  --ez-on-usual: var(--forest);
+  --ez-shift: oklch(from var(--gold) calc(l - .1) calc(c * 1.25) h);
+  --ez-read: var(--ap-ink2);
+  --ez-on-read: var(--forest);
+  --ez-trk: color-mix(in srgb, var(--ap-ink) 13%, transparent);
+  --ez-hair: color-mix(in srgb, var(--ap-ink) 50%, transparent);
+  --ez-band: var(--ap-band);
+}
+.lk-easy .ez :where(p, h3, ul, ol, li) { margin: 0; }
+.lk-easy .ez :where(ul, ol) { list-style: none; padding: 0; }
+.lk-easy .ez-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- type ---------- */
+.lk-easy .ez-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.lk-easy .ez-t { font-size: 22px; line-height: 1.25; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-side { font-size: 18px; line-height: 1.3; color: var(--ap-ink2); }
+.lk-easy .ez-lead { display: flex; flex-direction: column; gap: 12px; }
+.lk-easy .ez-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.lk-easy .ez-n { font-size: 64px; line-height: 1; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.lk-easy .ez-unit { font-size: 20px; line-height: 1.3; color: var(--ap-ink); }
+.lk-easy .ez-ans { font-size: 28px; line-height: 1.25; font-weight: 400; color: var(--ap-ink); text-wrap: pretty; }
+/* a shift's sentence starts with a Gold dot, the colour of the mark it describes */
+.lk-easy .ez-dot { display: inline-block; vertical-align: .06em; width: 16px; height: 16px; margin-right: 12px; border-radius: 50%; background: var(--ez-shift); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 25%, transparent); }
+.lk-easy .ez-body { font-size: 18px; line-height: 1.45; color: var(--ap-ink2); text-wrap: pretty; }
+.lk-easy .ez-body.is-strong { font-size: 20px; line-height: 1.35; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-note { font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--ap-ink2); text-wrap: pretty; }
+.lk-easy .ez-care { font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--ap-ink); text-wrap: pretty; }
+.lk-easy .ez-sure { font-size: 20px; line-height: 1.35; color: var(--ap-ink); }
+.lk-easy .ez-sure b { font-weight: 500; }
+
+/* ---------- tags: a word, sometimes with the colour it names ---------- */
+.lk-easy .ez-tag { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 18px; line-height: 1.2; font-weight: 500; background: var(--ap-card2); color: var(--ap-ink); }
+.lk-easy .ez-tag.is-usual { background: var(--ap-usual-bg); color: var(--ap-usual-ink); }
+.lk-easy .ez-tag.is-shift { background: var(--ap-shift-bg); color: var(--ap-shift-ink); }
+.lk-easy .ez-tag.is-either { background: transparent; box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+
+/* ---------- thick bars, the count written on them ---------- */
+.lk-easy .ez-bars { display: flex; flex-direction: column; gap: 20px; }
+.lk-easy .ez-row { display: flex; flex-direction: column; gap: 8px; }
+.lk-easy .ez-row-l { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.lk-easy .ez-row-name { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-row-aside { font-size: 18px; line-height: 1.3; color: var(--ap-ink2); }
+.lk-easy .ez-bar { display: flex; align-items: center; height: 44px; border-radius: 999px; background: var(--ez-trk); }
+.lk-easy .ez-fill { display: flex; align-items: center; justify-content: flex-end; flex: none; height: 100%; min-width: 8px; border-radius: 999px; background: var(--ez-read); color: var(--ez-on-read); }
+.lk-easy .ez-fill:has(b) { padding: 0 12px; }
+.lk-easy .ez-fill.is-usual { background: var(--ez-usual); color: var(--ez-on-usual); }
+.lk-easy .ez-fill.is-shift { background: var(--ez-shift); color: var(--ez-on-shift); }
+.lk-easy .ez-fill.is-either { background: var(--ap-card2); color: var(--ap-ink); box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+.lk-easy .ez-fill b, .lk-easy .ez-out, .lk-easy .ez-row-n { font-size: 20px; line-height: 1; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lk-easy .ez-out { padding-left: 12px; color: var(--ap-ink); }
+/* a count that fits neither on its bar nor after it sits at the end of the bar's name line */
+.lk-easy .ez-row-n { margin-left: auto; line-height: 1.3; color: var(--ap-ink); }
+/* on light, Gold is pale against the card and the track, so a Gold fill or circle carries a thin Gold-ink edge */
+.lk-easy:not([data-theme="dark"]) :is(.ez-fill.is-shift, .ez-dot) { box-shadow: inset 0 0 0 2px var(--ap-shift-ink); }
+
+/* ---------- days: the app's one day mark (RU.dayMark; its rules are refresh.css's .ap-day) at Easy read's size ----------
+   A day looks the same here as on every screen of the app: a Plum circle within your usual (Ray on dark), a Gold circle
+   outside it with its Shift Ink edge in light, an Ink 3 circle for a day logged but not counted, the date alone for a
+   day with nothing logged, a Teal ring for a flagged today, today ringed. Easy read sets it at 32px with every word at
+   16px or more, and the date alone in Ink 2 (Easy reads nothing in Ink 3). The library has no phone root, so the
+   colours the date sits in are set here too, the same as the phone's */
+.lk-easy { --ap-day-on: var(--cream); --ap-day-on-shift: var(--forest); --ap-day-edge: var(--ap-shift-ink); --ap-day-gap: var(--ap-card); }
+.lk-easy[data-theme="dark"] { --ap-day-on: var(--ap-card); --ap-day-on-shift: var(--ap-card); --ap-day-edge: transparent; }
+.lk-easy .ap-day { --ap-day-d: 32px; }
+.lk-easy .ap-day-c { font-size: 16px; }
+.lk-easy :is(.ap-day--none, .ap-day--before) .ap-day-c { color: var(--ap-ink2); }
+.lk-easy .ap-day--flag .ap-day-c .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+.lk-easy .ap-day-w { font-family: var(--sans); font-size: 16px; line-height: 1.2; font-weight: 500; letter-spacing: 0; color: var(--ap-ink); }
+.lk-easy .ap-day-t { font-size: 16px; line-height: 1.2; white-space: nowrap; }
+.lk-easy .ap-day-s { width: 12px; height: 12px; }
+
+/* the last 7 days: seven columns, today at the right */
+.lk-easy .ez-days { row-gap: 8px; }
+/* the answer as a line, on a screen that already carries a big number: its mark, then the count in words */
+.lk-easy .ez-ans--line { display: flex; align-items: center; gap: 12px; font-size: 24px; }
+.lk-easy .ez-ans--line b { font-weight: 500; }
+.lk-easy .ez-ans--line .ap-day-k { width: 16px; height: 16px; }
+
+/* the lines under the days: each starts with the mark it explains, so the lines are the legend */
+.lk-easy .ez-lines { display: flex; flex-direction: column; gap: 12px; }
+.lk-easy .ez-lines li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 12px; align-items: start; font-size: 18px; line-height: 1.4; color: var(--ap-ink); text-wrap: pretty; }
+.lk-easy .ez-lines .ap-day-k { width: 16px; height: 16px; margin-top: 4px; }
+.lk-easy .ez-lines .ap-day-k--sym::before { width: 12px; height: 12px; }
+.lk-easy .ez-lines .ap-day-k--flag .ic { display: none; }
+
+/* the wall calendar: the same marks, seven to a row, today ringed */
+.lk-easy .ez-cal { display: flex; flex-direction: column; gap: 8px; }
+.lk-easy .ez-cal-h, .lk-easy .ez-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.lk-easy .ez-cal-g { row-gap: 4px; }
+.lk-easy .ez-cal-h li { text-align: center; font-size: 16px; line-height: 1.2; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-md { display: flex; justify-content: center; min-width: 0; }
+
+/* a narrow card (a 320px phone, or large text zoom): the marks step down to the app's 28px, so today's ring still
+   clears its neighbours. The container is the picture's own wrapper, never the card: a card with inline-size
+   containment has no width of its own, and collapses wherever the page sizes it to its content */
+.lk-easy .ez-fit { container-type: inline-size; }
+@container (max-width: 300px) {
+  .lk-easy .ap-day { --ap-day-d: 28px; }
+  .lk-easy .ap-day-w, .lk-easy .ap-day-t { font-size: 16px; }
+}
+
+/* ---------- timing: one thick time bar ---------- */
+.lk-easy .ez-tl { display: flex; flex-direction: column; gap: 12px; }
+.lk-easy .ez-tl-trk { position: relative; height: 32px; border-radius: 999px; background: var(--ez-trk); }
+.lk-easy .ez-tl-band { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: var(--ez-band); box-shadow: inset 0 0 0 2px var(--ez-usual); }
+.lk-easy .ez-tl-mark { position: absolute; top: 50%; width: 32px; height: 32px; border-radius: 50%; background: var(--ez-read); box-shadow: 0 0 0 4px var(--ap-card); transform: translate(-50%, -50%); }
+.lk-easy .ez-tl-mark.is-shift { background: var(--ez-shift); }
+.lk-easy:not([data-theme="dark"]) .ez-tl-mark.is-shift { box-shadow: 0 0 0 4px var(--ap-card), inset 0 0 0 2px var(--ap-shift-ink); }
+/* a label sits by what it names and stays inside the bar: it moves with its point, and slides back over that point by
+   the same share of its own width, so at the bar's ends it lines up with the end */
+.lk-easy .ez-tl-l { position: relative; left: calc(var(--x) * 1%); width: max-content; max-width: 100%; transform: translateX(calc(var(--x) * -1%)); }
+.lk-easy .ez-tl-l.is-mark { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-tl-l.is-band { font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--ap-usual-ink); }
+
+/* ---------- weekly check-in: four answers in words ---------- */
+.lk-easy .ez-cks { display: flex; flex-direction: column; }
+.lk-easy .ez-ck { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }
+.lk-easy .ez-ck:first-child { padding-top: 0; }
+.lk-easy .ez-ck:last-child { padding-bottom: 0; }
+.lk-easy .ez-ck + .ez-ck { border-top: 1px solid var(--ap-line); }
+.lk-easy .ez-ck-q { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
+.lk-easy .ez-ck-a { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.lk-easy .ez-ck-a b { font-size: 24px; line-height: 1.25; font-weight: 400; }
+.lk-easy .ez-ck-f { font-size: 18px; line-height: 1.4; color: var(--ap-ink2); }
+
+/* ---------- a possible pattern ---------- */
+.lk-easy .ez-pbars { display: flex; flex-direction: column; gap: 16px; }
+
+/* ---------- the one button a card can have: 56px, easy to hit with an unsteady hand ---------- */
+.lk-easy .ez-cta { display: flex; }
+.lk-easy .ez-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ap-accent); color: var(--ap-on-accent); font: 500 20px/1.2 var(--sans); text-align: center; cursor: pointer; }
+.lk-easy:not([data-theme="dark"]) .ez-btn { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--forest) 35%, transparent); }
+.lk-easy .ez-btn:focus-visible { outline: 3px solid var(--ap-teal); outline-offset: 4px; }
+
+/* ---------- motion: each part of a card fades and rises in, once ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .lk-easy .ez > * { animation: ezRise .45s var(--ap-ease) both; }
+  .lk-easy .ez > :nth-child(2) { animation-delay: 60ms; }
+  .lk-easy .ez > :nth-child(3) { animation-delay: 120ms; }
+  .lk-easy .ez > :nth-child(4) { animation-delay: 180ms; }
+  .lk-easy .ez > :nth-child(n + 5) { animation-delay: 240ms; }
+}
+@keyframes ezRise { from { opacity: 0; transform: translateY(8px); } }

@@ -1,0 +1,44 @@
+/* Florin focus group test: the page tokens, the prototype page's own (prototype/_local.html), so both pages of the
+   study and the app inside them read the same six brand colours. DESIGN.md v1.1. */
+:root {
+  --forest: #00352B; --cream: #F9F7F2; --ray: #EEFFA3; --plum: #4F2641; --teal: #396E7C; --gold: #D1BD7E;
+  --raydeep: oklch(from var(--ray) calc(l - .43) c h);
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --serif: "Lora", Georgia, "Times New Roman", serif;
+  --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bg: oklch(from var(--cream) calc(l - .04) calc(c * 1.1) h);
+  --panel: oklch(from var(--cream) calc(l + .024) calc(c * .3) h);
+  --ink: var(--forest);
+  --ink-2: oklch(from var(--forest) calc(l + .12) c h);
+  --ink-3: oklch(from var(--forest) calc(l + .22) calc(c * .7) h); /* 4.5:1 or more on the page ground and the panels */
+  --line: color-mix(in srgb, var(--forest) 14%, transparent);
+  --line-2: color-mix(in srgb, var(--forest) 8%, transparent);
+  --signal: var(--raydeep);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: oklch(from var(--forest) calc(l - .085) calc(c * .7) h);
+    --panel: oklch(from var(--forest) calc(l - .02) calc(c * .85) h);
+    --ink: var(--cream);
+    --ink-2: oklch(from var(--cream) calc(l - .14) calc(c * 1.4) h);
+    --ink-3: oklch(from var(--cream) calc(l - .32) calc(c * 1.2) h);
+    --line: color-mix(in srgb, var(--cream) 16%, transparent);
+    --line-2: color-mix(in srgb, var(--cream) 8%, transparent);
+    --signal: var(--ray);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: oklch(from var(--forest) calc(l - .085) calc(c * .7) h);
+  --panel: oklch(from var(--forest) calc(l - .02) calc(c * .85) h);
+  --ink: var(--cream);
+  --ink-2: oklch(from var(--cream) calc(l - .14) calc(c * 1.4) h);
+  --ink-3: oklch(from var(--cream) calc(l - .32) calc(c * 1.2) h);
+  --line: color-mix(in srgb, var(--cream) 16%, transparent);
+  --line-2: color-mix(in srgb, var(--cream) 8%, transparent);
+  --signal: var(--ray);
+  color-scheme: dark;
+}
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font-family: var(--sans); -webkit-font-smoothing: antialiased; }

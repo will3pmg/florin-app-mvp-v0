@@ -1,0 +1,827 @@
+/* Look: Field journal. Editorial science. Each card states its answer first, in one Lora sentence in the person's own
+   terms, then draws one figure the way a good science magazine would: dot plots, strip plots, small multiples, direct
+   labels and thin leader lines instead of legends, hairline rules, and a one-line mono figure caption. Cream paper on
+   light, a night edition on dark. Every number comes from D (library/js/looks-data.js); nothing is typed. */
+(function () {
+  /* the figure's width in the app: a 350 card on a 390pt phone, less 16 a side. SVG text is sized so that it stays at
+     10px or more down to a 375pt phone */
+  const W = 318;
+  const FIG = { score: 1, parts: 2, trend: 3, week: 4, month: 5, timing: 6, often: 7, form: 8, symptoms: 9, checkin: 10, pattern: 11 };
+  const DOWL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
+  const DOWI = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+
+  const f1 = (v) => String(Math.round(v * 10) / 10);
+  const lin = (d0, d1, r0, r1) => (v) => r0 + ((v - d0) * (r1 - r0)) / (d1 - d0 || 1);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lower1 = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+  const up = (s) => String(s).toUpperCase();
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
+  const andList = (a, last = "and") => (a.length < 2 ? a[0] || "" : `${a.slice(0, -1).join(", ")} ${last} ${a[a.length - 1]}`);
+  const uniq = (a) => a.filter((x, i) => a.indexOf(x) === i);
+  const ptsWord = (v) => { const a = Math.abs(v), s = Number.isInteger(a) ? String(a) : a.toFixed(1); return `${s} ${a === 1 ? "point" : "points"}`; };
+  const shortWeek = (s) => String(s).replace(/^Week of /, "");
+  /* "k of n", or "all n" when every one counts */
+  const ofAll = (k, n, noun) => (k === n ? `all ${n} ${noun}` : `${k} of the ${n} ${noun}`);
+  /* Space Mono is fixed-width: 0.6em a character, plus tracking. Used to keep direct labels inside the figure */
+  const mw = (s, size = 10.5, ls = 0.04) => String(s).length * size * (0.6 + ls);
+  const fitX = (x, w, anchor, lo = 0, hi = W) => (anchor === "end" ? clamp(x, lo + w, hi) : anchor === "middle" ? clamp(x, lo + w / 2, hi - w / 2) : clamp(x, lo, hi - w));
+  const curly = (s) => String(s).replace(/&#39;|'/g, "’");
+
+  /* the role a mark plays, as a class. In the answer, your usual is underlined and a shift is highlighted, so the two
+     differ by shape as well as hue */
+  const mk = (html, role) => `<span class="jr-mk jr-mk--${role}">${html}</span>`;
+  const sw = (role) => `<i class="jr-sw jr-sw--${role}" aria-hidden="true"></i>`;
+  const key = (role, word) => `<span class="jr-key">${sw(role)}${word}</span>`;
+  const capT = (s) => `<span class="jr-ct">${s}</span>`;
+  const tx = (x, y, s, cls, anchor) => `<text${cls ? ` class="${cls}"` : ""} x="${f1(x)}" y="${f1(y)}"${anchor && anchor !== "start" ? ` text-anchor="${anchor}"` : ""}>${s}</text>`;
+  const ln = (x1, y1, x2, y2, cls, style) => `<line class="${cls}" x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}"${style ? ` style="${style}"` : ""}/>`;
+  const dot = (x, y, r, cls, i, st, more) => `<circle class="${cls}" cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}"${i != null ? ` style="--i:${i}${st ? `;--st:${st}` : ""}${more ? `;${more}` : ""}"` : ""}/>`;
+  const svg = (ctx, h, aria, body, cls) => `<svg class="jr-svg${cls ? " " + cls : ""}" viewBox="0 0 ${W} ${f1(h)}"${aria == null ? ' aria-hidden="true"' : ` role="img" aria-label="${ctx.esc(aria)}"`}>${body}</svg>`;
+  /* a label that sits above a figure and points down to what it names */
+  const leader = (x, y1, y2, cls) => `${ln(x, y1, x, y2, `jr-lead ${cls || ""}`)}${dot(x, y2, 1.75, `jr-lead-end ${cls || ""}`)}`;
+  const path = (pts) => pts.map((p, k) => `${k ? "L" : "M"}${f1(p[0])},${f1(p[1])}`).join("");
+
+  /* the card: running head, the answer in Lora, one figure, a one-line caption, then whatever closes the card */
+  function shell(k, o) {
+    return curly(`<article class="jr jr--${k}">
+      <header class="jr-head"><h3 class="jr-kick">${o.kicker}</h3>${o.meta ? `<span class="jr-meta">${o.meta}</span>` : ""}</header>
+      <div class="jr-text"><p class="jr-lede">${o.lede}</p>${o.deck ? `<p class="jr-deck">${o.deck}</p>` : ""}</div>
+      ${o.fig ? `<figure class="jr-fig">${o.fig}<figcaption class="jr-cap"><span class="jr-fn">Fig. ${FIG[k]}</span>${o.cap}</figcaption></figure>` : ""}
+      ${o.foot || ""}
+    </article>`);
+  }
+  const note = (s, disc) => `<p class="jr-note"${disc ? " data-disclaimer" : ""}>${s}</p>`;
+  /* a stretch in words: on day 1 it is today, never "Last 1 days" or "Oct 11 to Oct 11" */
+  const lastN = (days) => (days.length === 1 ? "Today" : `Last ${days.length} days`);
+  const lastOf = (n, noun) => (n === 1 ? "today" : `last ${n} ${noun}s`);
+  const span = (days) => (days.length === 1 ? (days[0].today ? "Today" : days[0].label) : `${days[0].label} to ${days[days.length - 1].label}`);
+  /* when your usual is ready, in words: the day it starts while Florin is still learning */
+  const whenUsual = (D) => (D.learning ? `on day ${D.learning.of}` : "once Florin knows your usual");
+
+  /* labels at the right end of a band: how many readings sat above it and below it. Returns the gutter it needs */
+  const endLabels = (labels) => { const L = labels.filter(Boolean); return L.length ? Math.ceil(Math.max(...L.map((s) => mw(s)))) + 10 : 0; };
+  /* the newest point's label sits over its leader; when it would crowd the usual label on the same row, it drops to a
+     second row. Returns its x and whether it moved */
+  const headLabel = (x, label, usualEnd) => { const w = mw(label), cx = fitX(x, w, "middle"); return { x: cx, row2: usualEnd != null && cx - w / 2 < usualEnd + 24 }; };
+
+  /* the first weeks: a row of days, the ones behind you filled, today ringed, the day your usual is ready named */
+  function learnFig(D, ctx) {
+    const Lr = D.learning, n = Lr.of, d = Lr.day, cy = 30, x = lin(0, n - 1, 8, W - 8);
+    let b = ln(8, cy, W - 8, cy, "jr-grid");
+    for (let i = 0; i < n; i++) b += dot(x(i), cy, i < d ? 5 : 3.5, i < d ? "jr-read jr-pop" : "jr-open jr-pop", i, "40ms");
+    b += dot(x(d - 1), cy, 8, "jr-today jr-pop", d, "40ms");
+    const tl = `TODAY, DAY ${d}`, tX = fitX(x(d - 1), mw(tl), "middle");
+    if (tX - mw(tl) / 2 > x(0) + mw("FIRST DAY") + 8) b += tx(x(0), cy + 28, "FIRST DAY", "");
+    b += tx(tX, cy + 28, tl, "tk", "middle");
+    b += tx(W, cy - 16, up(`Your usual, day ${n}`), "tu", "end");
+    b += ln(x(n - 1), cy - 12, x(n - 1), cy - 6, "jr-lead tu-s");
+    return svg(ctx, cy + 34, `Day ${d} of ${n}. Florin knows your usual from day ${n}.`, b);
+  }
+  const learnCap = (D) => capT(`Your first ${D.learning.of} days, today ringed`);
+
+  /* ---------------- 1. FloraScore today ---------------- */
+  function ringFig(ctx, o) {
+    const cx = 236, cy = 92, r = 70, H = 186;
+    const P = (v, rr = r) => { const a = (Math.min(v, 99.99) / 100) * Math.PI * 2; return [cx + rr * Math.sin(a), cy - rr * Math.cos(a)]; };
+    const arc = (v0, v1, rr = r) => { const [x0, y0] = P(v0, rr), [x1, y1] = P(v1, rr); return `M${f1(x0)},${f1(y0)}A${rr},${rr} 0 ${v1 - v0 > 50 ? 1 : 0} 1 ${f1(x1)},${f1(y1)}`; };
+    let b = "";
+    /* the dial, in score units: a hairline every 5, a longer one every 25. Not while learning: the ring counts days then */
+    if (!o.learn) for (let t = 0; t < 100; t += 5) { const [x0, y0] = P(t, t % 25 ? r - 10 : r - 14), [x1, y1] = P(t, r - 6); b += ln(x0, y0, x1, y1, t % 25 ? "jr-tick" : "jr-tick jr-tick--major"); }
+    b += `<circle class="jr-trk" cx="${cx}" cy="${cy}" r="${r}"/>`;
+    const numY = 106;
+    let aria;
+    if (o.learn) {
+      const n = o.learn.of, d = o.learn.day, seg = 100 / n;
+      for (let i = 0; i < n; i++) {
+        const a0 = i * seg + 0.9, a1 = (i + 1) * seg - 0.9;
+        b += `<path class="${i < d ? "jr-arc jr-draw" : "jr-arc-off"}" pathLength="1" d="${arc(a0, a1)}" style="--d:${100 + i * 50}ms;--dur:500ms"/>`;
+      }
+      b += tx(cx, cy - 4, "LEARNING", "tk-2", "middle") + `<text class="jr-ital" x="${cx}" y="${cy + 16}" text-anchor="middle">your usual</text>`;
+      b += `<text class="jr-big jr-big--learn" x="-2" y="${numY - 8}">Day <tspan data-count="${d}" data-dur="900">${d}</tspan></text>` + tx(0, numY + 14, `OF ${n}`);
+      aria = `Learning your usual: day ${d} of ${n}. FloraScore starts on day ${n}.`;
+    } else {
+      const u = o.usual, v = o.value;
+      /* your usual first: a Plum arc on the ring, its edges ruled and numbered outside the ring, named in the middle */
+      b += `<path class="jr-band-arc" d="${arc(u[0], u[1])}"/>`;
+      [u[0], u[1]].forEach((t) => {
+        const [x0, y0] = P(t, r - 8), [x1, y1] = P(t, r + 8), [lx, ly] = P(t, r + 18);
+        b += ln(x0, y0, x1, y1, "jr-bandedge") + tx(lx, ly + 3.5, t, "tu", "middle");
+      });
+      b += tx(cx, cy - 2, "YOUR USUAL", "tu", "middle") + tx(cx, cy + 12, "RANGE", "tu", "middle");
+      if (v == null) {
+        b += `<text class="jr-big jr-big--none" x="0" y="${numY - 14}">No score</text>` + tx(0, numY + 8, "NOT SCORED") + tx(0, numY + 22, "TODAY");
+        aria = `No FloraScore today. ${o.why || ""} Your usual range is ${u[0]} to ${u[1]}.`;
+      } else {
+        b += `<path class="jr-arc jr-draw" pathLength="1" d="${arc(0, v)}" style="--d:100ms;--dur:1100ms"/>`;
+        const [vx, vy] = P(v);
+        b += dot(vx, vy, 5.5, "jr-read jr-vdot jr-pop", 0, null, "--d0:820ms");
+        b += `<text class="jr-big" x="-4" y="${numY}" data-count="${v}" data-dur="1100">${v}</text>` + tx(0, numY + 22, "OUT OF 100");
+        aria = o.flag ? `FloraScore ${v} out of 100. ${o.relation}: a log is noted for a clinician.` : `FloraScore ${v} out of 100, ${lower1(o.relation)} of ${u[0]} to ${u[1]}.`;
+      }
+    }
+    return svg(ctx, H, aria, b, "jr-ring");
+  }
+
+  function score(D, ctx) {
+    const S = D.score, e = ctx.esc;
+    if (S.learning) {
+      const Lr = S.learning;
+      return shell("score", {
+        kicker: "FloraScore", meta: e(D.todayLabel), lede: e(Lr.line),
+        fig: ringFig(ctx, { learn: Lr }),
+        cap: capT(`Your first ${Lr.of} days, one segment each`),
+        foot: note("FloraScore will compare you with you. It isn't a medical score, and a lower number isn't a diagnosis.", true)
+      });
+    }
+    const v = S.value, u = S.usual, within = S.relation === "In its usual range";
+    const lede = v == null
+      ? `No FloraScore today: ${e(lower1(S.why))} Your ${mk("usual range", "usual")} is ${u[0]} to ${u[1]}.`
+      : S.flag ? `Today's FloraScore is ${v}. ${e(S.relation)}: a log is noted for a clinician. Your ${mk("usual range", "usual")} is ${u[0]} to ${u[1]}.`
+      : `Today sits ${mk(e(lower1(S.relation)), within ? "usual" : "shift")} of ${u[0]} to ${u[1]}.`;
+    /* the week's change from the two rounded averages shown, so the figures always add up */
+    const dW = S.weekAvg != null && S.lastWeekAvg != null ? S.weekAvg - S.lastWeekAvg : null;
+    const stats = dW != null ? `<div class="jr-stats">
+        <div class="jr-stat"><span>This week</span><b data-count="${S.weekAvg}" data-dur="1000">${S.weekAvg}</b><em>${dW ? `${dW > 0 ? "+" : "−"}${Math.abs(dW)} on last week` : "Same as last week"}</em></div>
+        <div class="jr-stat"><span>Last week</span><b data-count="${S.lastWeekAvg}" data-dur="1000">${S.lastWeekAvg}</b><em>Average</em></div>
+      </div>` : "";
+    return shell("score", {
+      kicker: "FloraScore", meta: e(D.todayLabel), lede,
+      fig: ringFig(ctx, { value: v, usual: u, relation: S.relation || "", why: S.why, flag: S.flag }),
+      cap: capT("FloraScore today, out of 100"),
+      foot: stats + note(e(S.how), true)
+    });
+  }
+
+  /* ---------------- 2. The four parts ---------------- */
+  function parts(D, ctx) {
+    const S = D.score, e = ctx.esc;
+    if (D.learning) return shell("parts", { kicker: "What makes up the score", meta: `Day ${D.learning.day} of ${D.learning.of}`, lede: `The parts of your FloraScore appear on day ${D.learning.of}, once Florin knows your usual.`, fig: learnFig(D, ctx), cap: learnCap(D) });
+    const P = S.parts || [];
+    if (!P.length) return shell("parts", { kicker: "What makes up the score", meta: "This week", lede: "There aren't enough logs across the last two weeks to compare the parts." });
+    /* what each part did to FloraScore, in whole points that add up to the change shown (pts, from L.scoreMoved): never
+       a decimal of a point. A tie names every part that moved most */
+    const pt = (p) => (p.pts != null ? p.pts : Math.round(p.delta));
+    const most = Math.max(...P.map((p) => Math.abs(pt(p))));
+    const tops = P.filter((p) => most && Math.abs(pt(p)) === most), top = tops[0] || P[0];
+    const moved = (p) => !!pt(p);
+    const whole = (v) => (v > 0 ? `+${v}` : v < 0 ? `−${Math.abs(v)}` : "0");
+    /* this card compares two weeks, not your usual, so it carries no usual and no shift colour */
+    const lede = !most
+      ? `No part moved your FloraScore since last week.`
+      : tops.length > 1 && tops.every((p) => Math.sign(pt(p)) === Math.sign(pt(top)))
+        ? `${e(andList(tops.map((p) => p.label)))} moved your FloraScore most this week, ${pt(top) > 0 ? "adding" : "taking off"} ${ptsWord(most)} each.`
+        : `${e(top.label)} moved your FloraScore most this week, ${pt(top) > 0 ? "adding" : "taking off"} ${ptsWord(most)}.`;
+    const vals = P.flatMap((p) => [p.now, p.before]);
+    const lo = Math.max(0, Math.floor((Math.min(...vals) - 4) / 10) * 10), hi = 100;
+    const x0 = 128, x1 = 266, X = lin(lo, hi, x0, x1), top0 = 26, rowH = 50;
+    const yc = (i) => top0 + i * rowH + 18;
+    const axisY = top0 + P.length * rowH;
+    let b = tx(W, 10, "POINTS", "", "end");
+    [lo, (lo + hi) / 2, hi].forEach((t) => { b += ln(X(t), top0 - 4, X(t), axisY - 6, "jr-grid") + tx(X(t), axisY + 8, f1(t), "t3", "middle"); });
+    /* direct labels on the row whose two weeks sit furthest apart */
+    const wide = P.reduce((m, p, i) => (Math.abs(p.now - p.before) > Math.abs(P[m].now - P[m].before) ? i : m), 0);
+    P.forEach((p, i) => {
+      const y = yc(i), xb = X(p.before), xn = X(p.now), isTop = tops.includes(p) && moved(p);
+      b += `<text class="tl${isTop ? " tl--b" : ""}" x="0" y="${y + 1}">${e(p.label)}</text>` + tx(0, y + 17, `${Math.round(p.weight * 100)}% OF SCORE`);
+      b += ln(x0, y, x1, y, "jr-grid");
+      if (Math.abs(xn - xb) > 1) b += `<path class="jr-db jr-draw" pathLength="1" d="M${f1(xb)},${y}L${f1(xn)},${y}" style="--d:${200 + i * 90}ms;--dur:700ms"/>`;
+      b += dot(xb, y, 4.5, "jr-open-ink") + dot(xn, y, 5.5, "jr-read jr-pop", i, "90ms", "--d0:550ms");
+      b += `<text class="tm${isTop ? " tb" : ""}" x="${W}" y="${y + 4}" text-anchor="end">${whole(pt(p))}</text>`;
+      if (i === wide) {
+        const gap = Math.abs(xn - xb), dir = p.now >= p.before;
+        if (gap >= 6) {
+          /* the paper halo lifts the labels off the gridlines, wherever the data puts them */
+          b += tx(dir ? xb + 3 : xb - 3, y - 12, "LAST WEEK", "jr-halo", dir ? "end" : "start");
+          const tw = mw("THIS WEEK"), tAnchor = dir ? "start" : "end";
+          b += tx(fitX(dir ? xn - 3 : xn + 3, tw, tAnchor, 0, x1 + 24), y - 12, "THIS WEEK", "tk jr-halo", tAnchor);
+        } else b += tx(xn, y - 12, "BOTH WEEKS", "jr-halo", "middle");
+      }
+    });
+    const aria = `${P.map((p) => `${p.label} ${p.before} last week, ${p.now} this week, ${pt(p) ? `${pt(p) > 0 ? "added" : "took"} ${ptsWord(Math.abs(pt(p)))}` : "didn't move the score"}`).join("; ")}.`;
+    return shell("parts", {
+      kicker: "What makes up the score", meta: "This week vs last", lede,
+      fig: svg(ctx, axisY + 12, aria, b),
+      cap: capT(`The ${P.length} parts, this week against last`)
+    });
+  }
+
+  /* ---------------- 3. FloraScore over 30 days ---------------- */
+  function trend(D, ctx) {
+    const S = D.score;
+    if (D.learning || !S.series) return shell("trend", { kicker: "FloraScore over time", meta: D.learning ? `Day ${D.learning.day} of ${D.learning.of}` : "", lede: D.learning ? `Your FloraScore over time starts on day ${D.learning.of}, once Florin knows your usual.` : "No FloraScore yet.", fig: D.learning ? learnFig(D, ctx) : "", cap: D.learning ? learnCap(D) : "" });
+    const ser = S.series[30], u = S.usual, n = ser.length;
+    const vs = ser.filter((s) => s.value != null).map((s) => s.value);
+    /* a flagged today keeps its point, read against nothing: in none of the counts, and said */
+    const rv = ser.filter((s) => s.value != null && !s.flag).map((s) => s.value), fl = ser.some((s) => s.flag);
+    const inN = rv.filter((v) => v >= u[0] && v <= u[1]).length, ab = rv.filter((v) => v > u[1]).length, be = rv.filter((v) => v < u[0]).length;
+    const lede = `Your FloraScore sat ${mk("in its usual range", "usual")} on ${inN === rv.length ? `all ${rv.length} days` : `${inN} of ${rv.length} days`}.${fl && D.flagLine ? ` ${ctx.esc(D.flagLine)}` : ""}`;
+    const dmin = Math.floor((Math.min(...vs, u[0]) - 3) / 5) * 5, dmax = Math.ceil((Math.max(...vs, u[1]) + 3) / 5) * 5;
+    const left = 26;
+    /* the days above and below the band are counted at its right end, in words: FloraScore is a reading, never Gold */
+    const lA = ab ? `ABOVE, ${ab}` : null, lB = be ? `BELOW, ${be}` : null, gut = endLabels([lA, lB]);
+    const pr = W - (gut || 8);
+    const X = lin(0, n - 1, left + 6, pr - (gut ? 8 : 4));
+    const li = n - 1 - ser.slice().reverse().findIndex((s) => s.value != null), lv = ser[li].value;
+    const lbl = up(`Your usual range, ${u[0]} to ${u[1]}`), tl = `${ser[li].today ? "TODAY" : up(ser[li].label)}, ${lv}`;
+    const hl = headLabel(X(li), tl, left + mw(lbl));
+    const top = hl.row2 ? 44 : 30, ph = 120, bot = top + ph, Y = lin(dmin, dmax, bot, top), tlY = hl.row2 ? 24 : 10;
+    const step = dmax - dmin > 20 ? 10 : 5;
+    let b = "";
+    for (let t = Math.ceil(dmin / step) * step; t <= dmax; t += step) b += ln(left, Y(t), pr, Y(t), "jr-grid") + tx(left - 6, Y(t) + 3.5, t, "t3", "end");
+    /* your usual, drawn first and named with a leader */
+    b += `<rect class="jr-band jr-band-in" x="${left}" y="${f1(Y(u[1]))}" width="${f1(pr - left)}" height="${f1(Y(u[0]) - Y(u[1]))}"/>`;
+    b += ln(left, Y(u[1]), pr, Y(u[1]), "jr-bandedge") + ln(left, Y(u[0]), pr, Y(u[0]), "jr-bandedge");
+    b += tx(left, 10, lbl, "tu") + leader(left, 14, Y(u[1]), "tu-s");
+    if (gut) b += ln(pr + 6, Y(u[1]), W, Y(u[1]), "jr-bandedge") + ln(pr + 6, Y(u[0]), W, Y(u[0]), "jr-bandedge");
+    if (lA) b += tx(W, Y(u[1]) - 5, lA, "", "end");
+    if (lB) b += tx(W, Y(u[0]) + 13, lB, "", "end");
+    /* day ticks along the base, longer on Mondays */
+    ser.forEach((s, i) => { b += ln(X(i), bot + 3, X(i), bot + (s.dow === "Mon" ? 9 : 6), "jr-tick"); });
+    const mid = Math.floor((n - 1) / 2);
+    b += tx(X(0), bot + 22, up(ser[0].label), "t3", "start") + tx(X(mid), bot + 22, up(ser[mid].label), "t3", "middle") + tx(fitX(X(n - 1), mw("TODAY"), "middle"), bot + 22, "TODAY", "tk", "middle");
+    /* the readings: a hairline through them, Gold where they leave the band */
+    const runs = [];
+    let cur = [];
+    ser.forEach((s, i) => { if (s.value == null) { if (cur.length) runs.push(cur); cur = []; } else cur.push([X(i), Y(s.value)]); });
+    if (cur.length) runs.push(cur);
+    runs.forEach((r) => { if (r.length > 1) b += `<path class="jr-trace jr-draw" pathLength="1" d="${path(r)}" style="--d:200ms"/>`; });
+    /* FloraScore is a reading, never a day's state: every point in the reading colour, inside the band or not */
+    ser.forEach((s, i) => { if (s.value != null) b += dot(X(i), Y(s.value), 3.2, "jr-read jr-pop", i); });
+    /* the lowest point and the newest, labelled directly */
+    const minV = Math.min(...vs), mi = ser.findIndex((s) => s.value === minV);
+    if (minV < u[0]) {
+      const s = `LOWEST, ${minV} ON ${up(ser[mi].label)}`, w = mw(s);
+      if (Y(minV) + 16 > bot - 6) {
+        /* too near the base: set it beside the point */
+        const right = X(mi) + 8 + w <= pr;
+        b += tx(right ? X(mi) + 8 : X(mi) - 8, Y(minV) + 4, s, "jr-halo tk", right ? "start" : "end");
+      } else {
+        const anchor = X(mi) + w < pr ? "start" : "end";
+        b += tx(fitX(anchor === "start" ? X(mi) - 4 : X(mi) + 4, w, anchor, 0, pr), Y(minV) + 16, s, "jr-halo tk", anchor);
+      }
+    }
+    b += dot(X(li), Y(lv), 5.2, "jr-today jr-pop", n);
+    b += tx(hl.x, tlY, tl, "tk", "middle") + ln(X(li), tlY + 4, X(li), Y(lv) - 7, "jr-lead");
+    const extra = [ab ? `above it on ${ab}` : "", be ? `below it on ${be}` : ""].filter(Boolean);
+    const aria = `FloraScore over ${n} days: in its usual range of ${u[0]} to ${u[1]} on ${inN} of ${rv.length} days${extra.length ? `, ${andList(extra)}` : ""}. ${ser[li].today ? "Today" : ser[li].label} ${lv}${ser[li].flag ? `, ${lower1(S.relation)}` : ""}.${minV < u[0] ? ` Lowest ${minV} on ${ser[mi].label}.` : ""}`;
+    return shell("trend", {
+      kicker: "FloraScore over time", meta: lastN(ser), lede,
+      fig: svg(ctx, bot + 26, aria, b),
+      cap: capT(`FloraScore, last ${n} days`)
+    });
+  }
+
+  /* ---------------- day facts shared by the week and the month ---------------- */
+  const stateRole = (s) => ({ usual: "usual", shifted: "shift", unsure: "either", flag: "flag", nocount: "nocount", logged: "read", none: "open" }[s] || "open");
+  const ROLE_ORDER = ["usual", "shift", "either", "flag", "nocount", "read", "open"];
+  const rolesIn = (days) => ROLE_ORDER.filter((r) => days.some((f) => stateRole(f.state) === r));
+  /* the app's shared words for a day (claude/Florin data viz.md, section 1): never "shifted" or "not logged" */
+  const STATE_WORD = { usual: "within your usual", shift: "outside your usual", either: "could be either", flag: "noted for a clinician", nocount: "logged without a BM count", read: "logged", open: "nothing logged" };
+  function why(D, f) {
+    const r = [], tu = D.timing.usual, ou = D.often.usual;
+    if (f.inWin === false && tu) r.push(`First BM at ${f.firstText}, ${f.first > tu[1] ? "later" : "earlier"} than your usual window`);
+    if (f.inCount === false && ou) r.push(f.count === 0 ? "No BM, fewer than usual" : `${plural(f.count, "BM")}, ${f.count > ou[1] ? "more" : "fewer"} than usual`);
+    const out = uniq(f.forms.filter((x) => x.within === false).map((x) => x.name));
+    if (out.length) r.push(`${andList(out)}, outside your usual forms`);
+    return r;
+  }
+  /* a day's disc: a Plum tint for within your usual, solid Gold for shifted, half the usual tint and half open for
+     could be either (never Gold: it isn't a shift), a hairline ring for not logged, and a ring with a centre dot for a
+     day logged without a BM count. dy moves that dot off a numeral */
+  function disc(x, y, r, role, i, st, dy = 0) {
+    if (role === "either") {
+      return `<g class="jr-pop" style="--i:${i};--st:${st}"><path class="jr-either-r" d="M${f1(x)},${f1(y - r)}A${r},${r} 0 0 1 ${f1(x)},${f1(y + r)}Z"/><path class="jr-usual" d="M${f1(x)},${f1(y - r)}A${r},${r} 0 0 0 ${f1(x)},${f1(y + r)}Z"/></g>`;
+    }
+    if (role === "nocount") return `<g class="jr-pop" style="--i:${i};--st:${st}">${dot(x, y, r - 0.75, "jr-open-ink")}${dot(x, y + dy, 1.5, "jr-nc")}</g>`;
+    /* today with a flag or an alarm feature logged: noted for a clinician, never read. A Teal ring */
+    if (role === "flag") return dot(x, y, r - 1, "jr-flag jr-pop", i, st);
+    const cls = { usual: "jr-usual", shift: "jr-shift", read: "jr-read", open: "jr-open" }[role];
+    return dot(x, y, role === "open" ? r - 0.75 : r, `${cls} jr-pop`, i, st);
+  }
+
+  /* ---------------- 4. This week ---------------- */
+  function week(D, ctx) {
+    const days = D.days[7], e = ctx.esc, learning = !!D.learning;
+    const lg = days.filter((f) => f.logged);
+    const by = (s) => days.filter((f) => f.state === s);
+    const nm = (f) => (f.today ? "today" : DOWL[f.dow]);
+    let lede;
+    if (learning) lede = `${!lg.length ? "Nothing is logged yet" : days.length === 1 ? "You logged today" : `You logged ${lg.length} of the last ${days.length} days`}; Florin learns your usual over your first ${D.learning.of} days.`;
+    else if (!lg.length) lede = "Nothing is logged this week yet.";
+    else {
+      const sh = by("shifted").map(nm), un = by("unsure").map(nm), nc = by("nocount").map(nm);
+      /* counted over the days read, within or outside your usual, as Today's card and Insights count them (D.tally): a
+         day that could be either, one with nothing about BMs and a flagged today are named, never counted */
+      const T7 = D.tally[7];
+      lede = !T7.known ? "This week, no day you logged can be read against your usual yet" : `This week, ${ofAll(T7.within, T7.known, T7.known === 1 ? "day counted" : "days counted")} sat ${mk("within your usual", "usual")}`;
+      if (sh.length) lede += `, and ${andList(sh)} ${sh.length === 1 ? "was" : "were"} ${mk("outside your usual", "shift")}`;
+      if (un.length) lede += `; ${andList(un)} could be either`;
+      if (nc.length) lede += `; ${andList(nc)} ${nc.length === 1 ? "was" : "were"} logged without a BM count`;
+      lede += ".";
+      if (D.flagLine && by("flag").length) lede += ` ${D.flagLine}`;
+    }
+    const left = 74, cw = (W - left) / days.length, cx = (i) => left + cw * i + cw / 2;
+    const hasScore = days.some((f) => f.score != null);
+    const yDow = 10, yDate = 32, yDisc = 58, rows = [["Timing", 96], ["How often", 116], ["Form", 136], ["Symptoms", 156]], yScore = hasScore ? 184 : 160;
+    let b = "";
+    const ti = days.findIndex((f) => f.today);
+    if (ti >= 0) b += `<rect class="jr-col" x="${f1(cx(ti) - cw / 2 + 1)}" y="0" width="${f1(cw - 2)}" height="${yScore + 10}" rx="8"/>`;
+    b += ln(0, 78, W, 78, "jr-grid") + (hasScore ? ln(0, 168, W, 168, "jr-grid") + tx(0, yScore, "SCORE", "") : "");
+    b += tx(0, yDisc + 3.5, "THE DAY", "") + rows.map(([l, y]) => tx(0, y + 3.5, up(l), "")).join("");
+    const role3 = (ok) => (ok === true ? "usual" : ok === false ? "shift" : "open");
+    let nil = false, flagRows = false;
+    const dash = (x, y) => { nil = true; return ln(x - 3, y, x + 3, y, "jr-nil"); };
+    days.forEach((f, i) => {
+      const x = cx(i), st = "50ms";
+      b += tx(x, yDow, f.today ? "TODAY" : up(f.dow), f.today ? "tk" : "", "middle");
+      b += `<text class="jr-date" x="${f1(x)}" y="${yDate}" text-anchor="middle">${f.date}</text>`;
+      const role = stateRole(f.state);
+      b += disc(x, yDisc, 11, role, i, st);
+      if (!f.logged) return;
+      /* a flagged today reads nothing: its timing, count and forms drawn as logged, never within or shifted */
+      const read = learning || role === "flag";
+      if (role === "flag" && (f.first != null || f.count != null || f.forms.length)) flagRows = true;
+      const tRole = read ? (f.first != null ? "read" : "open") : f.first == null ? "open" : role3(f.inWin);
+      const cRole = read ? (f.count != null ? "read" : "open") : f.count == null ? "open" : role3(f.inCount);
+      const fw = f.forms.map((x) => x.within);
+      const fRole = !f.forms.length ? "open" : read ? "read" : fw.includes(false) ? "shift" : fw.includes(null) ? "either" : "usual";
+      [tRole, cRole, fRole].forEach((r, k) => { b += r === "open" ? dash(x, rows[k][1]) : disc(x, rows[k][1], 4.5, r, i + k + 2, st); });
+      const sMax = f.sym.length ? Math.max(...f.sym.map((s) => s.strength || 0)) : -1;
+      b += sMax < 0 ? dash(x, rows[3][1]) : sMax === 0 ? dot(x, rows[3][1], 3.5, "jr-open-ink jr-pop", i + 5, st) : dot(x, rows[3][1], 2 + sMax * 1.4, "jr-sym jr-pop", i + 5, st);
+      if (f.score != null) b += tx(x, yScore, f.score, f.today ? "tk" : "", "middle");
+    });
+    const notes = learning ? [] : days.filter((f) => f.state === "shifted").map((f) => [f.today ? "Today" : f.dow, why(D, f)]).filter((x) => x[1].length);
+    const foot = notes.length ? `<ul class="jr-notes" aria-label="Why a day was outside your usual">${notes.slice(0, 3).map(([d, r]) => `<li><b>${e(d)}</b><span>${e(r.join(". "))}.</span></li>`).join("")}${notes.length > 3 ? `<li><b></b><span>${plural(notes.length - 3, "more day")} outside your usual.</span></li>` : ""}</ul>` : "";
+    const roles = rolesIn(days);
+    const aria = days.map((f) => `${f.today ? "Today" : DOWL[f.dow]}: ${STATE_WORD[stateRole(f.state)]}${f.score != null ? `, FloraScore ${f.score}` : ""}`).join(". ") + ".";
+    return shell("week", {
+      kicker: "This week", meta: e(span(days)), lede,
+      fig: svg(ctx, yScore + 10, aria, b),
+      /* a flagged today's timing, count and form are drawn but never read, and the key says so */
+      cap: roles.map((r) => key(r, STATE_WORD[r])).join("") + (flagRows && !roles.includes("read") ? key("read", "today's logs, not read against your usual") : "") + (nil ? key("nil", "nothing to read") : ""),
+      foot
+    });
+  }
+
+  /* ---------------- 5. The last month ---------------- */
+  function month(D, ctx) {
+    const days = D.days[30], learning = !!D.learning, n = days.length;
+    const lg = days.filter((f) => f.logged), cnt = (s) => days.filter((f) => f.state === s).length;
+    const nu = cnt("usual"), ns = cnt("shifted"), nE = cnt("unsure"), nN = cnt("nocount"), nF = cnt("flag");
+    let lede;
+    if (learning) lede = `${!lg.length ? "Nothing is logged yet" : n === 1 ? "You logged your first day" : `You logged ${lg.length} of your first ${n} days`}; Florin learns your usual over your first ${D.learning.of} days.`;
+    else if (!lg.length) lede = "Nothing is logged this month yet.";
+    else if (nu === lg.length) lede = `All ${lg.length} days you logged sat ${mk("within your usual", "usual")}.`;
+    else if (!nu && !ns) lede = "No day you logged this month can be read against your usual yet.";
+    else {
+      /* counted over the days read, within or outside your usual (D.tally); the rest are named after */
+      const read = [`${nu} sat ${mk("within your usual", "usual")}`, ns ? mk(`${ns} sat outside your usual`, "shift") : ""].filter(Boolean);
+      const rest = [nE ? `${nE} could be either` : "", nN ? `${nN} ${nN === 1 ? "was" : "were"} logged without a BM count` : "", nF ? "today, noted for a clinician" : ""].filter(Boolean);
+      lede = `Of the ${plural(nu + ns, "day")} counted, ${andList(read)}.${rest.length ? ` Not counted: ${andList(rest)}.` : ""}`;
+    }
+    const cw = 37, r = 14, top = 28, rh = 38;
+    /* weeks run Monday to Sunday, one row each */
+    let row = 0;
+    const cells = days.map((f, i) => { if (i && DOWI[f.dow] === 0) row++; return { f, col: DOWI[f.dow], row }; });
+    const nRows = row + 1, cy = (rw) => top + rw * rh + r + 2, H = cy(nRows - 1) + r + 8;
+    let b = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"].map((d, i) => tx(i * cw + cw / 2, 10, d, "", "middle")).join("");
+    /* each week's count down the right, once there is something to count (day 1, nothing logged, has none) */
+    const counts = !learning || lg.length > 0;
+    if (counts) b += tx(W, 10, learning ? "LOGGED" : "IN USUAL", "", "end");
+    /* each week's count, kept for the figure's label too, since text inside it isn't read out */
+    const perWeek = [];
+    for (let rw = 0; rw < nRows; rw++) {
+      if (rw) b += ln(0, cy(rw) - rh / 2, W, cy(rw) - rh / 2, "jr-grid");
+      const rc = cells.filter((c) => c.row === rw), rl = rc.filter((c) => c.f.logged);
+      const t = learning ? `${rl.length} of ${rc.length}` : `${rc.filter((c) => c.f.state === "usual").length} of ${rc.filter((c) => c.f.state === "usual" || c.f.state === "shifted").length}`;
+      perWeek.push(t);
+      if (counts) b += `<text class="tm" x="${W}" y="${f1(cy(rw) + 4)}" text-anchor="end">${t}</text>`;
+    }
+    cells.forEach(({ f, col, row: rw }, i) => {
+      const x = col * cw + cw / 2, y = cy(rw), role = stateRole(f.state);
+      b += disc(x, y, r, role, i, "20ms", 8.5);
+      if (role === "either") b += dot(x, y, r - 5, "jr-paperfill");
+      b += `<text class="jr-dnum on-${role}" x="${f1(x)}" y="${f1(y + (role === "nocount" ? 2 : 3.5))}" text-anchor="middle">${f.date}</text>`;
+      if (f.today) b += dot(x, y, r + 3.5, "jr-today jr-pop", i + 2, "20ms");
+    });
+    const roles = rolesIn(days);
+    const byWeek = counts && perWeek.length > 1 ? ` ${learning ? "Logged" : "Within your usual"} by week, Monday to Sunday: ${perWeek.join(", ")}.` : "";
+    const aria = (learning ? (lg.length ? `${lg.length} of ${plural(n, "day")} logged.` : "Nothing logged yet.") : `${nu} of ${plural(nu + ns, "day")} counted within your usual, ${ns} outside your usual${nE ? `, ${nE} could be either` : ""}${nN ? `, ${nN} logged without a BM count` : ""}, ${n - lg.length} with nothing logged.`) + byWeek;
+    return shell("month", {
+      kicker: learning ? "Your first days" : "The last month", meta: span(days), lede,
+      fig: svg(ctx, H, aria, b),
+      cap: roles.map((x) => key(x, STATE_WORD[x])).join("")
+    });
+  }
+
+  /* ---------------- 6. Timing: a time-by-date strip, one dot a morning ---------------- */
+  function timing(D, ctx) {
+    const days = D.days[30], tu = D.timing.usual, T = ctx.T, n = days.length;
+    const mor = days.map((f, i) => ({ f, i })).filter((m) => m.f.first != null);
+    if (!mor.length) return shell("timing", { kicker: "Timing", meta: lastN(days), lede: "No first BM is logged yet." });
+    const firsts = mor.map((m) => m.f.first), tLo = Math.min(...firsts), tHi = Math.max(...firsts);
+    /* outside the window, as the model reads it: later or earlier than its middle */
+    const out = tu ? mor.filter((m) => m.f.inWin === false) : [];
+    const later = out.filter((m) => m.f.first > (tu[0] + tu[1]) / 2).length, earlier = out.length - later;
+    const tm = D.timing;
+    const lede = tu
+      ? `Your first BM came ${mk("in your usual window", "usual")} on ${tm.inWin30 === tm.mornings30 ? `all ${tm.mornings30} mornings you logged` : `${tm.inWin30} of ${tm.mornings30} mornings`}.${D.flagToday && D.flagLine && mor.some((m) => m.f.flag) ? ` ${ctx.esc(D.flagLine)}` : ""}`
+      : `On the ${plural(mor.length, "morning")} you logged, your first BM came ${tLo === tHi ? `at ${T(tLo)}` : `between ${T(tLo)} and ${T(tHi)}`}; your usual window appears ${whenUsual(D)}.`;
+    /* time runs down the page, earlier at the top; the days run across, ending on today */
+    const tmin = Math.floor(Math.min(tLo, tu ? tu[0] : 24) - 0.25), tmax = Math.max(tmin + 3, Math.ceil(Math.max(tHi, tu ? tu[1] : 0) + 0.25));
+    const step = tmax - tmin > 4 ? 2 : 1, hours = [];
+    for (let h = Math.ceil(tmin / step) * step; h <= tmax; h += step) hours.push(h);
+    const ap = (h) => (h % 24 >= 12 ? "PM" : "AM");
+    const hl = hours.map((h, k) => (k === 0 || ap(h) !== ap(hours[k - 1]) ? up(T(h, { short: true })) : String(h % 12 === 0 ? 12 : h % 12)));
+    const left = Math.ceil(Math.max(...hl.map((s) => mw(s)))) + 8;
+    const lE = earlier ? `EARLIER, ${earlier}` : null, lL = later ? `LATER, ${later}` : null, gut = endLabels([lE, lL]);
+    const pr = W - (gut || 6);
+    const X = lin(0, n - 1, left + 6, pr - (gut ? 8 : 4));
+    /* the newest morning is ringed and named: today, or the last one logged */
+    const nw = mor.find((m) => m.f.today) || mor[mor.length - 1];
+    const nwL = `${nw.f.today ? "TODAY" : up(nw.f.label)}, ${up(nw.f.firstText)}`;
+    const uL = tu ? up(`Your usual window, ${tm.usualText}`) : "";
+    const hd = headLabel(X(nw.i), nwL, tu ? left + mw(uL) : null), nwX = hd.x, row2 = hd.row2;
+    const top = row2 ? 44 : 30, ph = 116, bot = top + ph, Y = lin(tmin, tmax, top, bot), nwY = row2 ? 24 : 10;
+    let b = "";
+    hours.forEach((h, k) => { b += ln(left, Y(h), pr, Y(h), "jr-grid") + tx(left - 6, Y(h) + 3.5, hl[k], "t3", "end"); });
+    if (tu) {
+      b += `<rect class="jr-band jr-band-in" x="${left}" y="${f1(Y(tu[0]))}" width="${f1(pr - left)}" height="${f1(Y(tu[1]) - Y(tu[0]))}"/>`;
+      b += ln(left, Y(tu[0]), pr, Y(tu[0]), "jr-bandedge") + ln(left, Y(tu[1]), pr, Y(tu[1]), "jr-bandedge");
+      b += tx(left, 10, uL, "tu") + leader(left, 14, Y(tu[0]), "tu-s");
+      if (gut) b += ln(pr + 6, Y(tu[0]), W, Y(tu[0]), "jr-bandedge") + ln(pr + 6, Y(tu[1]), W, Y(tu[1]), "jr-bandedge");
+      if (lE) b += tx(W, Y(tu[0]) - 5, lE, "ts", "end");
+      if (lL) b += tx(W, Y(tu[1]) + 13, lL, "ts", "end");
+    }
+    days.forEach((f, i) => { b += ln(X(i), bot + 3, X(i), bot + (f.dow === "Mon" ? 9 : 6), "jr-tick"); });
+    const mid = Math.floor((n - 1) / 2);
+    b += tx(X(0), bot + 22, up(days[0].label), "t3", "start");
+    if (n > 6) b += tx(X(mid), bot + 22, up(days[mid].label), "t3", "middle");
+    b += tx(fitX(X(n - 1), mw("TODAY"), "middle"), bot + 22, "TODAY", "tk", "middle");
+    /* a morning outside the window hangs from the edge it crossed, so the distance shows */
+    const r = 3.2;
+    mor.forEach((m) => {
+      const x = X(m.i), y = Y(m.f.first), off = tu && m.f.inWin === false;
+      if (off) { const edge = m.f.first > (tu[0] + tu[1]) / 2 ? Y(tu[1]) : Y(tu[0]); if (Math.abs(y - edge) > r + 1) b += `<path class="jr-stem jr-draw" pathLength="1" d="M${f1(x)},${f1(edge)}L${f1(x)},${f1(y + (y > edge ? -r : r))}" style="--d:${300 + m.i * 20}ms;--dur:400ms"/>`; }
+      b += dot(x, y, r, `${off ? "jr-shift" : "jr-read"} jr-pop`, m.i, "20ms");
+    });
+    b += dot(X(nw.i), Y(nw.f.first), r + 2, "jr-today jr-pop", nw.i + 1, "20ms");
+    b += tx(nwX, nwY, nwL, "tk", "middle") + ln(X(nw.i), nwY + 4, X(nw.i), Y(nw.f.first) - r - 3, "jr-lead");
+    const aria = tu
+      ? `First BM in your usual window, ${tm.usualText}, on ${tm.inWin30} of ${tm.mornings30} mornings${later ? `, later on ${later}` : ""}${earlier ? `, earlier on ${earlier}` : ""}. ${nw.f.today ? "Today" : nw.f.label} ${nw.f.firstText}.`
+      : `First BMs between ${T(tLo)} and ${T(tHi)} on ${plural(mor.length, "morning")}.`;
+    return shell("timing", {
+      kicker: "Timing", meta: lastN(days), lede,
+      fig: svg(ctx, bot + 26, aria, b),
+      cap: capT(`First BM, ${lastOf(n, "morning")}`)
+    });
+  }
+
+  /* ---------------- 7. How often: beads, one per BM, one column per day ---------------- */
+  function often(D, ctx) {
+    const days = D.days[30], ou = D.often.usual, n = days.length;
+    const k0 = days.filter((f) => f.count != null);
+    if (!k0.length) return shell("often", { kicker: "How often", meta: lastN(days), lede: "No BMs are logged yet." });
+    /* the days read: a flagged today keeps its beads, read against nothing, and is in none of the counts */
+    const k = k0.filter((f) => !f.flag), fl = k0.length > k.length;
+    const inN = k.filter((f) => f.inCount).length;
+    const lede = ou
+      ? `Your BMs a day sat ${mk("within your usual", "usual")} on ${ofAll(inN, k.length, "days you logged")}, ${D.often.avg30} a day on average.${fl && D.flagLine ? ` ${ctx.esc(D.flagLine)}` : ""}`
+      : `Over the ${plural(k.length, "day")} you logged, you averaged ${D.often.avg30} BMs a day; your usual appears ${whenUsual(D)}.`;
+    const out = ou ? k.filter((f) => f.inCount === false) : [];
+    const more = out.filter((f) => !ou[0] || f.count > (ou[0] + ou[1]) / 2).length, fewer = out.length - more;
+    const lM = more ? `MORE, ${more}` : null, lF = fewer ? `FEWER, ${fewer}` : null, gut = endLabels([lM, lF]);
+    const maxC = Math.max(...k0.map((f) => f.count));
+    const levels = Math.max(3, maxC, ou ? ou[1] + 1 : 0);
+    const left = 20, pr = W - (gut ? gut + 4 : 0), slot = (pr - left) / n, cx = (i) => left + slot * i + slot / 2, pitch = 15, r = Math.min(3.8, slot / 2 - 1.2);
+    const ti = days.findIndex((f) => f.today), tf = ti >= 0 ? days[ti] : null;
+    const tS = !tf ? "" : tf.pending ? "TODAY, NOTHING LOGGED YET" : tf.count == null ? "TODAY, NO BM COUNT YET" : tf.count === 0 ? "TODAY, NO BM" : `TODAY, ${plural(tf.count, "BM")}`.toUpperCase();
+    const uS = ou ? up(`Your usual, ${D.often.usualText}`) : "";
+    const hl = tf ? headLabel(cx(ti), tS, ou ? left - 4 + mw(uS) : null) : { row2: false };
+    const top = hl.row2 ? 44 : 30, base = top + levels * pitch + 4, yL = (lv) => base - lv * pitch;
+    let b = "";
+    for (let lv = 0; lv <= levels; lv++) b += tx(6, yL(lv) + 3.5, lv, "t3", "middle");
+    if (ou) {
+      const y0 = yL(ou[1]) - pitch / 2, y1 = yL(ou[0]) + pitch / 2;
+      b += `<rect class="jr-band jr-band-in" x="${left - 4}" y="${f1(y0)}" width="${f1(pr - left + 4)}" height="${f1(y1 - y0)}" rx="4"/>`;
+      b += tx(left - 4, 10, uS, "tu") + leader(left + 2, 14, y0, "tu-s");
+      if (gut) b += ln(pr + 6, y0, W, y0, "jr-bandedge") + ln(pr + 6, y1, W, y1, "jr-bandedge");
+      if (lM) b += tx(W, y0 - 5, lM, "ts", "end");
+      if (lF) b += tx(W, y1 + 13, lF, "ts", "end");
+    }
+    if (ti >= 0) b += `<rect class="jr-col" x="${f1(cx(ti) - slot / 2)}" y="${top - 4}" width="${f1(slot)}" height="${f1(base - top + 12)}" rx="4"/>`;
+    days.forEach((f, i) => { b += ln(cx(i), base + 8, cx(i), base + (f.dow === "Mon" ? 13 : 11), "jr-tick"); });
+    b += tx(cx(0) - slot / 2, base + 26, up(days[0].label), "t3") + tx(fitX(cx(n - 1), mw("TODAY"), "middle"), base + 26, "TODAY", "tk", "middle");
+    let q = 0;
+    days.forEach((f, i) => {
+      if (f.count == null) return;
+      if (f.count === 0) { b += dot(cx(i), yL(0), r - 0.6, `${!ou || f.flag || f.inCount ? "jr-open-ink" : "jr-open-shift"} jr-pop`, q++, "14ms"); return; }
+      const role = !ou || f.flag || f.inCount ? "jr-read" : "jr-shift";
+      for (let c = 1; c <= f.count; c++) b += dot(cx(i), yL(c), r, `${role} jr-pop`, q++, "14ms");
+    });
+    /* the latest day logged with no BM is named where it sits */
+    const zi = days.map((f, i) => (f.count === 0 ? i : -1)).filter((i) => i >= 0).pop();
+    if (zi != null) {
+      const zf = days[zi], cls = `jr-halo ${!ou || zf.inCount ? "tk-2" : "ts"}`, w = mw("NO BM"), rt = cx(zi) + r + 4 + w <= pr;
+      b += tx(rt ? cx(zi) + r + 4 : cx(zi) - r - 4, yL(0) + 3.5, "NO BM", cls, rt ? "start" : "end");
+    }
+    if (tf) {
+      const yTop = tf.count ? yL(tf.count) - r - 3 : yL(0) - r - 3, ty = hl.row2 ? 24 : 10;
+      b += tx(hl.x, ty, tS, "tk", "middle") + ln(cx(ti), ty + 4, cx(ti), yTop, "jr-lead");
+    }
+    const aria = ou ? `BMs a day within your usual of ${D.often.usualText} on ${inN} of ${k.length} logged days${more ? `, more on ${more}` : ""}${fewer ? `, fewer on ${fewer}` : ""}; average ${D.often.avg30}.` : `Average ${D.often.avg30} BMs a day over ${k.length} logged days.`;
+    return shell("often", {
+      kicker: "How often", meta: lastN(days), lede,
+      fig: svg(ctx, base + 30, aria, b),
+      cap: capT(`BMs a day, ${lastOf(n, "day")}`)
+    });
+  }
+
+  /* ---------------- 8. Form: a dot histogram in this option's own words ---------------- */
+  function form(D, ctx) {
+    const Fm = D.form, e = ctx.esc, days = D.days[30], A = D.mode === "A";
+    const name = (b) => (A ? `Type ${b.label}` : b.label);
+    /* the days read: a flagged today's BMs are noted for a clinician, in none of the rows, and said */
+    const rd = days.filter((f) => !f.flag), fl = days.some((f) => f.flag && f.forms.length);
+    const all = rd.flatMap((f) => f.forms);
+    const either = Fm.usual ? all.filter((x) => x.within === null).length : 0;
+    if (!Fm.total30) return shell("form", { kicker: "Form", meta: lastN(days), lede: "No BMs are logged yet." });
+    let lede;
+    if (!Fm.usual) {
+      const topB = Fm.bins.slice().sort((a, b) => b.count - a.count)[0];
+      lede = `You’ve logged ${plural(Fm.total30, "BM")} so far, most often ${e(name(topB))}; your usual forms appear ${whenUsual(D)}.`;
+    } else if (Fm.within30 === Fm.total30) {
+      lede = `All ${Fm.total30} of your BMs sat ${mk("within your usual forms", "usual")}, ${e(Fm.usualText)}.`;
+    } else {
+      lede = `Of your ${Fm.total30} BMs, ${Fm.within30} sat ${mk("within your usual forms", "usual")}, ${e(Fm.usualText)}${either ? `, and ${either} could be either` : ""}.`;
+    }
+    if (fl && Fm.usual && D.flagLine) lede += ` ${e(D.flagLine)}`;
+    const rows = Fm.bins.map((b) => ({ label: name(b), count: b.count, role: b.inUsual === false && b.count ? "shift" : "read", inU: !!b.inUsual }));
+    if (either) rows.push({ label: "Either", count: either, role: "either", inU: false });
+    const left = 84, rowH = 22, top = 6, maxC = Math.max(1, ...rows.map((x) => x.count));
+    const pitch = Math.min(10, 152 / maxC), r = Math.min(3.8, pitch / 2 - 0.6);
+    const yc = (i) => top + i * rowH + rowH / 2;
+    let b = "";
+    const ui = rows.map((x, i) => (x.inU ? i : -1)).filter((i) => i >= 0);
+    if (ui.length) {
+      const y0 = yc(ui[0]) - rowH / 2, y1 = yc(ui[ui.length - 1]) + rowH / 2;
+      b += `<rect class="jr-band jr-band-in" x="0" y="${f1(y0)}" width="${W}" height="${f1(y1 - y0)}" rx="8"/>`;
+      const mid = (y0 + y1) / 2;
+      b += tx(W - 8, mid - 2, "YOUR", "tu", "end") + tx(W - 8, mid + 10, "USUAL", "tu", "end");
+    }
+    /* the rows outside your usual are named where they sit, one label for each run of rows */
+    const groups = [];
+    rows.forEach((x, i) => { if (x.role === "shift") { const g = groups[groups.length - 1]; if (g && g[1] === i - 1) g[1] = i; else groups.push([i, i]); } });
+    groups.forEach(([a, z]) => { b += tx(W - 8, (yc(a) + yc(z)) / 2 + 3.5, "OUTSIDE", "ts", "end"); });
+    const lastDay = rd.slice().reverse().find((f) => f.forms.length), lastF = lastDay ? lastDay.forms[lastDay.forms.length - 1] : null;
+    const latestRow = !lastF ? -1 : Fm.usual && lastF.within === null && either ? rows.length - 1 : Fm.bins.findIndex((x) => x.k === lastF.level);
+    let q = 0;
+    const fst = `${Math.max(6, Math.min(16, Math.round(600 / Math.max(1, rows.reduce((t, x) => t + x.count, 0)))))}ms`;
+    rows.forEach((row, i) => {
+      const y = yc(i), ring = i === latestRow;
+      b += `<text class="tl tl--sm" x="8" y="${f1(y + 4)}">${e(row.label)}</text>`;
+      if (!row.count) { b += ln(left, y, left + 6, y, "jr-nil") + tx(left + 14, y + 3.5, "0"); return; }
+      /* the ringed latest dot sits a little apart, so its ring clears its neighbour */
+      const xAt = (c) => left + r + c * pitch + (ring && c === row.count - 1 ? 4 : 0);
+      for (let c = 0; c < row.count; c++) b += row.role === "either" ? disc(xAt(c), y, r, "either", q++, fst) : dot(xAt(c), y, r, `${row.role === "shift" ? "jr-shift" : "jr-read"} jr-pop`, q++, fst);
+      if (ring) b += dot(xAt(row.count - 1), y, r + 2, "jr-today jr-pop", q, fst);
+      b += tx(xAt(row.count - 1) + r + (ring ? 8 : 5), y + 3.5, row.count, row.role === "shift" ? "ts" : "tk");
+    });
+    const H = top + rows.length * rowH + 6;
+    const aria = Fm.usual ? `${Fm.within30} of ${Fm.total30} BMs within your usual forms, ${Fm.usualText}. ${rows.filter((x) => x.count).map((x) => `${x.label} ${x.count}${x.role === "shift" ? ", outside your usual" : ""}`).join("; ")}.` : `${rows.filter((x) => x.count).map((x) => `${x.label} ${x.count}`).join(", ")}.`;
+    return shell("form", {
+      kicker: "Form", meta: lastN(days), lede,
+      fig: svg(ctx, H, aria, b),
+      cap: capT(`Every BM by form, ${lastOf(days.length, "day")}`)
+    });
+  }
+
+  /* ---------------- 9. Symptoms: one strip per symptom ---------------- */
+  function symptoms(D, ctx) {
+    const Sy = D.symptoms, e = ctx.esc, days = D.days[30], n = days.length;
+    const rows = Sy.rows;
+    /* how often now, in the same words as your usual, and which way it sits */
+    const every = Sy.withSym30 ? Math.max(1, Math.round(Sy.logged30 / Sy.withSym30)) : null;
+    const nowText = every == null ? "Rarely" : every <= 1 ? "Most days" : `About 1 day in ${every}`;
+    const toN = (t) => (/^Rarely/i.test(t) ? Infinity : /^Most days/i.test(t) ? 1 : +((t.match(/(\d+)\s*$/) || [])[1] || Infinity));
+    let lede;
+    if (!Sy.logged30) lede = "No days are logged yet.";
+    else if (!Sy.withSym30) lede = `No symptoms came up on the ${plural(Sy.logged30, "day")} you logged${Sy.usualText ? `; your usual is ${e(lower1(Sy.usualText))}` : ""}.`;
+    else {
+      const head = `Symptoms came up on ${ofAll(Sy.withSym30, Sy.logged30, "days you logged")}, ${lower1(nowText)}`;
+      if (Sy.usualText) {
+        const a = toN(nowText), u = toN(Sy.usualText);
+        lede = `${head}, ${a === u ? mk("the same as your usual", "usual") : mk(`${a < u ? "more" : "less"} often than your usual`, "shift") + ` of ${e(lower1(Sy.usualText))}`}.`;
+      } else lede = `${head}, ${rows.length === 1 ? `each time ${e(lower1(rows[0].name))}` : `${e(lower1(rows[0].name))} most often`}.`;
+    }
+    const alarm = `<aside class="jr-alarm"><span class="jr-alarm-k">When to see a clinician</span><p>Blood, black or tar-like stools, a fever, vomiting that won’t stop, weight loss, or waking at night to go: talk to your primary care clinician first.</p></aside>`;
+    /* nothing logged yet (day 1): no figure of empty rows and zero days, only the answer */
+    if (!Sy.logged30) return shell("symptoms", { kicker: "Symptoms", meta: lastN(days), lede, foot: alarm });
+    const anyRow = { name: "Any symptom", days: Sy.withSym30, cells: days.map((f) => (!f.logged ? null : f.sym.length ? Math.max(...f.sym.map((s) => s.strength || 0)) : false)), any: true };
+    const R = [anyRow, ...rows];
+    /* the strip sits between the names and the day counts, each given the room it needs */
+    const left = 92, right = Math.ceil(Math.max(...R.map((x) => mw(plural(x.days, "day")))) + 10), slot = (W - left - right) / n, bx = (i) => left + slot * i + slot / 2;
+    const bw = clamp(slot - 1.5, 2, 6), hS = [0, 7, 12, 17];
+    const uWord = Sy.usualText ? `USUAL ${up(Sy.usualText.replace(/^About 1 day in /i, "1 in "))}` : null;
+    /* row baselines: the any-symptom row, its usual under it, a rule, then one row per symptom */
+    const y0 = 46, sep = uWord ? y0 + 22 : y0 + 9;
+    const yRow = (j) => (j === 0 ? y0 : sep + 25 + (j - 1) * 30);
+    let b = "";
+    /* the key for strength sits on the figure, next to what it explains */
+    const hasZero = R.some((x) => x.cells.includes(0));
+    const KEY = [["MILD", 1], ["MODERATE", 2], ["STRONG", 3]];
+    const kw = mw("STRENGTH") + 8 + KEY.reduce((s, [l]) => s + bw + 4 + mw(l) + 8, 0) + (hasZero ? 9 + mw("NOT SAID") : -8);
+    let kx = Math.max(0, Math.min(left, W - kw));
+    b += tx(kx, 10, "STRENGTH", "");
+    kx += mw("STRENGTH") + 8;
+    KEY.forEach(([l, s]) => { b += `<rect class="jr-symbar" x="${f1(kx)}" y="${f1(12 - hS[s])}" width="${f1(bw)}" height="${hS[s]}" rx="2"/>` + tx(kx + bw + 4, 10, l, ""); kx += bw + 8 + 4 + mw(l); });
+    if (hasZero) b += dot(kx + 2.6, 7, 2.6, "jr-open-ink") + tx(kx + 9, 10, "NOT SAID", "");
+    const ti = days.findIndex((f) => f.today), yLast = yRow(R.length - 1);
+    if (ti >= 0) b += `<rect class="jr-col" x="${f1(bx(ti) - slot / 2 - 1)}" y="${y0 - 22}" width="${f1(slot + 2)}" height="${f1(yLast - y0 + 26)}" rx="2"/>`;
+    b += ln(0, sep, W, sep, "jr-grid");
+    R.forEach((row, j) => {
+      const y = yRow(j);
+      b += `<text class="tl tl--sm${row.any ? " tl--b" : ""}" x="0" y="${f1(y)}">${e(row.name)}</text>`;
+      /* a hairline under each day logged, so a break in it is a day not logged */
+      row.cells.forEach((c, i) => { if (c !== null) b += ln(bx(i) - slot / 2, y + 0.5, bx(i) + slot / 2, y + 0.5, "jr-grid"); });
+      b += tx(W, y, plural(row.days, "day").toUpperCase(), row.any ? "tk" : "", "end");
+      if (row.any && uWord) b += tx(W, y + 14, uWord, "tu", "end");
+      row.cells.forEach((c, i) => {
+        if (c === null || c === false) return;
+        if (c === 0) { b += dot(bx(i), y - 4, Math.min(2.6, bw / 2 + 0.6), "jr-open-ink jr-pop", i, "18ms"); return; }
+        b += `<rect class="jr-symbar jr-gy" x="${f1(bx(i) - bw / 2)}" y="${f1(y - hS[c])}" width="${f1(bw)}" height="${hS[c]}" rx="2" style="--i:${i};--st:16ms"/>`;
+      });
+    });
+    const yA = yLast + 18;
+    b += tx(left, yA, up(days[0].label), "t3") + tx(W - right + 4, yA, "TODAY", "tk", "end");
+    const aria = `Symptoms on ${Sy.withSym30} of ${Sy.logged30} logged days${Sy.usualText ? `, ${lower1(nowText)}, against a usual of ${lower1(Sy.usualText)}` : ""}. ${rows.map((x) => `${x.name} on ${plural(x.days, "day")}`).join(", ")}.`;
+    return shell("symptoms", {
+      kicker: "Symptoms", meta: lastN(days), lede,
+      fig: svg(ctx, yA + 4, aria, b),
+      cap: capT(`Symptoms by day, ${lastOf(n, "day")}`),
+      foot: alarm
+    });
+  }
+
+  /* ---------------- 10. The weekly check-in: small multiples, one per question ---------------- */
+  function checkin(D, ctx) {
+    const C = D.checkin, e = ctx.esc, Q = C.questions;
+    const has = Q.some((q) => q.weeks.some((w) => w.v != null));
+    const btn = C.due ? `<button type="button" class="jr-btn">Start this week’s check-in</button>` : "";
+    if (!has) {
+      const rowsH = Q.map((q) => {
+        const nt = q.ticks.length, x = lin(0, nt - 1, 6, W - 6);
+        const anc = (i) => (i === 0 ? "start" : i === nt - 1 ? "end" : "middle");
+        /* when two neighbouring answers would touch, every other one drops to a second line */
+        const ext = q.ticks.map((t, i) => { const w = mw(t), a = anc(i), x0 = a === "start" ? x(i) : a === "end" ? x(i) - w : x(i) - w / 2; return [x0, x0 + w]; });
+        const clash = ext.some((g, i) => i && g[0] < ext[i - 1][1] + 6);
+        const body = ln(6, 14, W - 6, 14, "jr-axis") + q.ticks.map((t, i) => dot(x(i), 14, 4, "jr-open-ink jr-pop", i, "60ms") + tx(fitX(x(i), mw(t), anc(i)), 34 + (clash && i % 2 ? 12 : 0), e(t), "", anc(i))).join("");
+        return `<div class="jr-ck-row"><div class="jr-ck-h"><span class="jr-ck-l">${e(q.label)}</span></div>${svg(ctx, clash ? 50 : 38, null, body)}</div>`;
+      }).join("");
+      return shell("checkin", {
+        kicker: "Weekly check-in", meta: C.due ? "Ready" : "", lede: `Your first weekly check-in ${C.due ? "is ready" : "comes after your first week"}; each answer will be read against ${mk("your first weeks", "usual")}.`,
+        fig: `<div class="jr-ck" role="img" aria-label="${e(`The ${Q.length} check-in questions, not answered yet.`)}">${rowsH}</div>`,
+        cap: capT(`The ${Q.length} questions, each on its own scale`), foot: btn
+      });
+    }
+    /* the last check-in is the latest week answered on any question */
+    const answered = Q.filter((q) => q.latest), lw = Math.max(...answered.map((q) => q.latest.w));
+    const read = Q.filter((q) => q.cmp), same = read.filter((q) => q.cmp.k === "same");
+    let lede;
+    const lastWhen = answered.find((q) => q.latest.w === lw).latest.when;
+    /* before the first three there is nothing to read against: the check-in is saved, and said so */
+    if (!read.length) lede = `${C.count === 1 ? "Your first check-in" : "Your last check-in"}, ${e(lastWhen)}, is saved; once you have ${["one", "two", "three", "four", "five"][C.baseWeeks - 1] || C.baseWeeks}, Florin reads each answer against ${mk("your first weeks", "usual")}.`;
+    else if (same.length === read.length) lede = `On your last check-in, ${e(lastWhen)}, ${read.length === 1 ? "your answer" : `all ${read.length} answers`} sat ${mk("about the same as your first weeks", "usual")}.`;
+    else if (!same.length) lede = `On your last check-in, ${e(lastWhen)}, ${read.length === 1 ? "your answer" : `all ${read.length} answers`} ${mk("moved from your first weeks", "shift")}.`;
+    else lede = `On your last check-in, ${e(lastWhen)}, ${same.length} of ${read.length} answers sat ${mk("about the same as your first weeks", "usual")}.`;
+    const nw = Q[0].weeks.length, PW = W - 92, X = lin(0, nw - 1, 8, PW - 8), Y = (v) => 40 - v * 10;
+    const rowsH = Q.map((q, qi) => {
+      let body = "";
+      body += ln(0, Y(0) + 5, PW, Y(0) + 5, "jr-axis") + ln(0, Y(q.ticks.length - 1) - 5, PW, Y(q.ticks.length - 1) - 5, "jr-grid");
+      if (q.band) body += `<rect class="jr-band jr-band-in" x="0" y="${f1(Y(q.band.hi) - 5)}" width="${PW}" height="${f1((q.band.hi - q.band.lo) * 10 + 10)}" rx="4"/>`;
+      const runs = [];
+      let cur = [];
+      q.weeks.forEach((w, i) => { if (w.v == null) { if (cur.length) runs.push(cur); cur = []; } else cur.push([X(i), Y(w.v)]); });
+      if (cur.length) runs.push(cur);
+      runs.forEach((r) => { if (r.length > 1) body += `<path class="jr-trace jr-draw" pathLength="1" d="${path(r)}" style="--d:${200 + qi * 60}ms;--dur:1000ms"/>`; });
+      q.weeks.forEach((w, i) => { if (w.v != null) body += dot(X(i), Y(w.v), 3.6, "jr-read jr-pop", i + qi * 3, "30ms"); });
+      if (q.latest) {
+        const li = q.weeks.findIndex((w) => w.w === q.latest.w);
+        body += dot(X(li), Y(q.latest.v), 5.6, "jr-today jr-pop", li + qi * 3 + 1, "30ms");
+        const word = up(q.ticks[q.latest.v]);
+        body += ln(X(li) + 8, Y(q.latest.v), W - mw(word) - 6, Y(q.latest.v), "jr-lead") + tx(W, Y(q.latest.v) + 3.5, e(word), "tk", "end");
+      }
+      const chip = q.cmp ? `<span class="jr-tag jr-tag--${q.cmp.k === "same" ? "usual" : "shift"}">${e(q.cmp.text)}</span>` : "";
+      return `<div class="jr-ck-row"><div class="jr-ck-h"><span class="jr-ck-l">${e(q.label)}</span>${chip}</div>${svg(ctx, 46, null, body)}</div>`;
+    }).join("");
+    /* the weeks' axis: the first week and the latest, or the one week when there is only one */
+    const axis = svg(ctx, 14, null, nw > 1 ? tx(X(0), 10, up(shortWeek(Q[0].weeks[0].label)), "t3") + tx(PW - 8, 10, up(shortWeek(Q[0].weeks[nw - 1].label)), "t3", "end") : tx(X(0), 10, up(shortWeek(Q[0].weeks[0].label)), "t3"));
+    const aria = Q.map((q) => `${q.label}: ${q.latest ? q.opts[q.latest.v] : "not answered"}${q.cmp ? `, ${lower1(q.cmp.text)}` : ""}`).join(". ") + ".";
+    return shell("checkin", {
+      kicker: "Weekly check-in", meta: `${plural(nw, "week")}`, lede,
+      fig: `<div class="jr-ck" role="img" aria-label="${e(aria)}">${rowsH}${axis}</div>`,
+      cap: (Q.some((q) => q.band) ? key("band", "your first weeks") : "") + key("ring", "your last answer"),
+      foot: btn
+    });
+  }
+
+  /* ---------------- 11. A possible pattern: two groups of mornings, one dot each ---------------- */
+  /* strips of days: a mark on each day the row holds */
+  function rug(D, ctx, R) {
+    const days = D.days[30], n = days.length, left = 104, right = 52, slot = (W - left - right) / n, bx = (i) => left + slot * i + slot / 2, bw = clamp(slot - 1.5, 2, 6);
+    let b = "";
+    R.forEach(([l, on, cls], j) => {
+      const y = 8 + j * 28, k = days.filter(on).length;
+      b += `<text class="tl tl--sm" x="0" y="${y + 11}">${l}</text>` + ln(left, y + 14.5, W - right + 2, y + 14.5, "jr-axis");
+      days.forEach((f, i) => { if (on(f)) b += `<rect class="${cls} jr-gy" x="${f1(bx(i) - bw / 2)}" y="${y}" width="${f1(bw)}" height="14" rx="2" style="--i:${i};--st:16ms"/>`; });
+      b += tx(W, y + 11, plural(k, "day").toUpperCase(), "tk", "end");
+    });
+    const yA = 8 + R.length * 28 + 10;
+    b += tx(left, yA, up(days[0].label), "t3") + tx(W - right + 2, yA, "TODAY", "tk", "end");
+    return svg(ctx, yA + 4, R.map(([l, on]) => `${l} on ${days.filter(on).length} of ${n} days`).join("; ") + ".", b);
+  }
+  const MEALS = ["Meals logged", (f) => f.meals > 0, "jr-ctx"], SHIFTED = ["Days outside your usual", (f) => f.state === "shifted", "jr-shift"];
+  const SYMPTOM = ["With a symptom", (f) => f.logged && f.sym.length > 0, "jr-symbar"];
+  const mic = `<svg class="jr-mic" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg>`;
+  function pattern(D, ctx) {
+    const Pt = D.patterns, e = ctx.esc, foot = (x) => (x || "") + note(e(Pt.note));
+    const days = D.days[30], n = days.length;
+    if (D.learning) return shell("pattern", { kicker: "A possible pattern", meta: `Day ${D.learning.day} of ${D.learning.of}`, lede: `Florin starts looking for patterns on day ${D.learning.of}, once it knows your usual; you’re on day ${D.learning.day}.`, fig: learnFig(D, ctx), cap: learnCap(D), foot: foot() });
+    const p = Pt.found[0];
+    if (!p) {
+      /* no meals at all: an ordinary state, since meals are optional. Say what would let Florin look, by voice */
+      if (!Pt.coverage) {
+        return shell("pattern", {
+          kicker: "A possible pattern", meta: "No meals logged",
+          lede: `No meals are logged in the last ${n} days, so there is nothing to compare yet.`,
+          /* ordinary days too: meals logged only on rough days pick out ordinary foods by selection, so the model holds
+             every meal pattern back until meals cover most days you log */
+          deck: "Meals are optional. Say what you ate on ordinary days as well as rough ones, and Florin can start to look.",
+          fig: rug(D, ctx, [SHIFTED]), cap: capT(`Days outside your usual, last ${n} days`),
+          foot: foot(`<button type="button" class="jr-btn">${mic}Log a meal by voice</button>`)
+        });
+      }
+      if (Pt.sparse) {
+        /* the model's own reason, in its own window (the last 90 days), so the figures match the other looks: meals
+           cover too few of the days you log, or fall mostly on days with a symptom. The strip shows the last 30 days */
+        const [s1, ...rest] = String(Pt.sparseLine).split(/(?<=\.)\s+/);
+        return shell("pattern", {
+          kicker: "A possible pattern", meta: "Not enough meals",
+          lede: e(s1), deck: rest.length ? e(rest.join(" ")) : "",
+          fig: rug(D, ctx, [MEALS, SYMPTOM]), cap: capT(`Meals and days with a symptom, last ${n} days`),
+          foot: foot(`<button type="button" class="jr-btn">Start a food check</button>`)
+        });
+      }
+      return shell("pattern", {
+        kicker: "A possible pattern", meta: "None yet",
+        lede: "Nothing stands out in your logs right now; Florin names a pattern only when it holds often.",
+        fig: rug(D, ctx, [MEALS, SHIFTED]), cap: capT(`Meals and days outside your usual, last ${n} days`), foot: foot()
+      });
+    }
+    const food = p.food ? lower1(p.food) : "";
+    const G = p.kind === "late"
+      ? [["After a later dinner", p.occ, p.hit, p.n], ["After an earlier dinner", p.oth, p.oh, p.on]]
+      : p.kind === "loose"
+        ? [[`The morning after ${food}`, p.occ, p.hit, p.n], ["Other mornings", p.oth, p.oh, p.on]]
+        : [[`The day after ${food}`, p.occ, p.hit, p.n], ["Other days", p.oth, p.oh, p.on]];
+    /* a later first BM is outside your usual window, so it is a shift; a looser form or bloating is just the reading */
+    const hitCls = p.kind === "late" ? "jr-shift" : "jr-read";
+    const [what, not] = p.kind === "late" ? ["Later first BM", "Not later"] : p.kind === "loose" ? ["Looser first BM", "Not looser"] : ["Bloating", "No bloating"];
+    const pitch = 11, r = 4, per = Math.floor((W - 6 + pitch - 2 * r) / pitch);
+    let y = 0, b = "", q = 0;
+    const pst = `${Math.max(4, Math.min(12, Math.round(600 / (p.occ.length + p.oth.length))))}ms`;
+    G.forEach(([label, hits, h, nn], gi) => {
+      y += 18;
+      b += (gi === 0 ? `<rect class="jr-ctx" x="0" y="${y - 11}" width="4" height="14" rx="2"/>` : "") + `<text class="tl" x="${gi === 0 ? 12 : 0}" y="${y}">${e(label)}</text>`;
+      b += `<text class="jr-ratio" x="${W}" y="${y + 1}" text-anchor="end">${h} <tspan class="jr-ratio-of">of</tspan> ${nn}</text>`;
+      y += 10;
+      hits.forEach((hit, i) => {
+        const last = gi === 0 && i === hits.length - 1;
+        const cx = r + (i % per) * pitch + (last ? 4 : 0), cy = y + r + Math.floor(i / per) * pitch;
+        b += dot(cx, cy, hit ? r : r - 0.75, hit ? `${hitCls} jr-pop` : "jr-open-ink jr-pop", q++, pst);
+        if (last) b += dot(cx, cy, r + 2, "jr-today jr-pop", q, pst);
+      });
+      y += Math.ceil(hits.length / per) * pitch + 8;
+    });
+    y += 6;
+    b += dot(r, y, r, hitCls) + tx(r + 10, y + 3.5, up(what)) + dot(r + 24 + mw(what), y, r - 0.75, "jr-open-ink") + tx(r + 34 + mw(what), y + 3.5, up(not));
+    const more = Pt.found.length - 1;
+    const aria = `${G[0][0]}: ${lower1(what)} ${G[0][2]} of ${G[0][3]} times. ${G[1][0]}: ${G[1][2]} of ${G[1][3]}.`;
+    /* the answer is the pattern's first sentence; the figure carries the comparison */
+    const line1 = String(p.line).split(/(?<=\.)\s+/)[0];
+    return shell("pattern", {
+      kicker: "A possible pattern", meta: `${e(p.tier)} <svg class="jr-meter" viewBox="0 0 16 12" width="16" height="12" aria-hidden="true">${[6, 9, 12].map((h, i) => `<rect x="${i * 6}" y="${12 - h}" width="4" height="${h}" rx="2"${i < p.tierK ? ' class="on"' : ""}/>`).join("")}</svg>`,
+      lede: e(line1),
+      fig: svg(ctx, y + 8, aria, b),
+      cap: capT(e(p.title)),
+      foot: foot(more > 0 ? `<button type="button" class="jr-link">${plural(more, "more possible pattern")} in Insights<span aria-hidden="true">→</span></button>` : "")
+    });
+  }
+
+  (window.FLOOKS = window.FLOOKS || []).push({
+    id: "journal",
+    name: "Field journal",
+    idea: "Each card answers in one sentence, then proves it with one figure drawn like a science magazine’s: dots, direct labels and a one-line caption.",
+    components: { score, parts, trend, week, month, timing, often, form, symptoms, checkin, pattern }
+  });
+})();

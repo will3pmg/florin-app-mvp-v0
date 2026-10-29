@@ -1,6 +1,6 @@
 # Florin focus group test: the payload contract
 
-Version 1, October 29, 2026. Between the participant web app (`focus/`, built into `focus/site/`) and the Google Apps
+Version 1.1, October 29, 2026 (after the end-to-end test: newest-wins session fields, counts worked out by the script, lanes per session, a fuller lookup). Between the participant web app (`focus/`, built into `focus/site/`) and the Google Apps
 Script web app that writes the study's Google Sheet. The plan this serves is `claude/Florin focus group plan.md`
 (section 6 is the data). If the two disagree, this file is what the code does; change both together.
 
@@ -19,7 +19,14 @@ be safe to repeat, and every GET must be cheap.
 | Time | Every `at` is the phone's clock in UTC, to the second: `2026-10-29T14:03:12Z`. The script adds `received` in the Sheet's time zone |
 
 Retries: the phone keeps every unconfirmed piece in `localStorage` and posts it again every 20 seconds, on every open,
-and when the page comes back online. A piece is posted many times; the script keeps it once (section 4).
+and when the page comes back online. A piece is posted many times; the script keeps it once (section 4). After a post
+fails (no connection, or the connection dropped), nothing more is posted for 20 seconds, unless the phone comes back
+online or a step is waiting on the script (before the install steps, at Submit, at Clear).
+
+Pace: the phone posts at most `sendPerMinute` pieces a minute (config.js, 50), under the script's 60, answers, tasks,
+comments and the session's row first, then the thank-you code, then the events. Events take at most 7 in 10 of a
+minute's budget, so an answer always has room. A burst of events waits on the phone and drains over the next minutes.
+`net: flushed` is sent at most once a minute, with the count of answers sent since the last.
 
 ## 2. The POST body
 
@@ -45,7 +52,7 @@ There are two families of piece:
 | `study` | string | Must be a known study id, or a known id followed by `-test`. `^[a-z0-9-]{3,40}$` | `study` |
 | `build` | string | The focus app's version, `^[a-z0-9.-]{1,24}$` | `build` |
 | `sid` | string | The session id: 24 characters, `^[A-Za-z0-9_-]{24}$`. Made on the phone at consent | `sid` |
-| `cid` | string | Which browser tab or app window sent it: `^[a-z0-9]{6}$`. One per tab or window (kept in `sessionStorage`) | `cid` |
+| `cid` | string | Which browser tab or app window sent it, and in which lane: `^[a-z0-9]{6}$`, kept in `sessionStorage`. A tab or window sends its events under one cid and everything else under another, so the events can wait behind the answers without leaving a gap in the answers' `seq` (see 3.1). The two cids belong to the session as well as the tab: a new session in the same tab (Start again, or Clear and open the link again) gets two new cids, so its numbers start at 1 | `cid` |
 | `seq` | integer | 1, 2, 3, and on, per `sid` and `cid`. Never reused for another piece | `seq` |
 | `at` | string | ISO 8601 UTC to the second, `^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$` | `at` |
 | `phase` | string | Where in the study it happened: `consent`, `intake`, a task id (`bm`, `time`, `week`, `score`, `patterns`, `checkin`, `history`, `ask`), `tour`, `cp1`, `cp2`, `cp3`, `install`, `free`, `exit`, `done` | `phase` (comments, events) |
@@ -53,8 +60,13 @@ There are two families of piece:
 
 ### 2.2 `session`: the sessions tab, one row per `sid`
 
-Upserted: the first `session` piece for a `sid` makes its row; each later one overwrites only the fields it carries
-(a missing field leaves the cell as it is). Every field but the envelope is optional.
+Upserted: the first `session` piece for a `sid` makes its row; each later one changes only the fields it carries (a
+missing field leaves the cell as it is). Every field but the envelope is optional.
+
+A session's pieces come from more than one window (Safari and the app on the home screen; a closed tab's queue, taken
+over later), so they can arrive out of order. Each field keeps its **newest** value, by the piece's `at`, then `seq`,
+then `cid`: a piece that arrives late never undoes a newer one. `stage` keeps the furthest (below). `install` never goes
+back from `seen`, and `submitted` never from `yes`.
 
 | Field | Type, values |
 |---|---|
@@ -77,16 +89,23 @@ Upserted: the first `session` piece for a `sid` makes its row; each later one ov
 | `assigned` | `script`, `phone` |
 | `decisions` | One line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built easy=off onboard=short weekCard=card plan=member data=est meals=all persona=sarah` |
 | `install` | `seen`, `said`, `browser`, `couldnt` |
+| `install_at` | When the install steps first showed, ISO 8601 UTC. Sent once, by the window that showed them; the code lookup gives it to the app on the home screen, for the install task's `seconds` |
 | `stage` | `consent`, `intake`, `tour`, `compare`, `install`, `free`, `exit`, `done`, `stopped`. Keep the furthest by that order; `stopped` always wins over every stage but `done` |
-| `tasks_seen` | integer 0 to 9 |
-| `comments` | integer, comments sent and not deleted |
 | `sus` | number 0 to 100, as computed (it can end in .5), only once all ten SUS items are answered |
 | `submitted` | `yes`, `no` |
-| `active_minutes` | number, one decimal: minutes with the page visible |
-| `minutes` | number, one decimal: from the first piece to Submit |
+| `active_minutes` | number, one decimal: minutes this window has been visible. Each window sends its own count (with each stage, when it's hidden, and at Submit); the row holds the sum of each window's latest |
 
-The script works out and writes itself: `first_at` and `last_at` (the smallest and largest `at` of any piece for the
-`sid`), and `installed` (`yes` once any piece for the `sid` has `standalone: true`).
+The script works out and writes itself, and takes no value the phone sends for them (an app on an iPhone's home
+screen holds only its part of the session):
+
+| Column | How |
+|---|---|
+| `first_at`, `last_at` | The smallest and largest `at` of any piece for the `sid` |
+| `installed` | `yes` once any piece for the `sid` has `standalone: true` |
+| `comments` | Comments added and not deleted, from the comments ledger |
+| `tasks_seen` | Tasks with a `task` row whose `outcome` is `seen`, each task once, install not counted |
+| `minutes` | From `first_at` to the `at` of the earliest piece with `submitted: "yes"` |
+| `active_minutes` | The sum above |
 
 ### 2.3 `answer`: the answers tab, one row per question answered or skipped
 
@@ -136,14 +155,14 @@ The same `qid` can come more than once in a session (FR2 once per part; a task t
 | `screen` | The app's screen key, from the allow-list in section 7.3 |
 | `state` | The decisions on the phone, one line |
 | `target` | What was tapped, in the app's interface words, from an allow-list on the phone (a card's title, a tab, a named control, a screen's title), else one of `a log entry`, `a log sheet`, `the chat`, `a text box`, `a sheet`, `the screen` |
-| `x`, `y` | Where on the app's screen, as shares of its width and height, 0 to 1, two decimals. Blank for a comment from the Comment button |
-| `tx`, `ty` | Where inside the target, as shares of its width and height, 0 to 1, two decimals. Blank for the Comment button |
+| `x`, `y` | Where on the app's screen, as shares of its width and height, 0 to 1, two decimals. Blank for a comment on the whole screen (Comment, then This whole screen) |
+| `tx`, `ty` | Where inside the target, as shares of its width and height, 0 to 1, two decimals. Blank for the whole screen |
 | `vw`, `vh` | integers, the app's viewport in CSS pixels |
 | `scroll` | integer, how far the screen was scrolled, in CSS pixels |
 | `cm_kind` | CM1's words, joined with ` \| `: `I like it`, `It's confusing`, `Something's missing`, `Something didn't work`, `I have an idea`. Written to the `kind` column (the piece's own `kind` is `comment`) |
 | `words` | CM2, scrubbed (section 4.3) |
 | `alarm_note` | `yes`, `no` |
-| `how` | `double tap`, `button` |
+| `how` | `double tap` (twice on a card or some words, not a control), `button` (Comment, then a tap on the part meant, which presses nothing; or Comment, then This whole screen) |
 
 `op: "add"` makes the row. `op: "edit"` (same `sid` and `cmid`) overwrites `cm_kind`, `words` and `alarm_note` on that row
 and keeps the rest. `op: "delete"` removes the row, words and all: the person took the comment back before submitting.
@@ -211,12 +230,23 @@ says `assigned: "phone"`. A later claim isn't made for that session.
 
 ```json
 { "ok": true, "sid": "Qx7...24 chars", "code": "K7M4PX", "stage": "install", "version": "standard", "person": "sarah",
-  "home": "score", "history": "calendar", "week": "card", "order": 3, "easy_by_age": false }
+  "home": "score", "history": "calendar", "week": "card", "order": 3,
+  "study": "florin-fg-1-test", "install_at": "2026-10-29T14:22:05Z", "done": ["bm", "time", "week"],
+  "qids": ["IN1", "IN2", "TE", "TR", "BM1"], "a": { "IN6": "oura|watch", "IN7": "35" },
+  "comments": [{ "cmid": "k3j9x2mq", "target": "FloraScore", "kind": "It's confusing" }] }
 ```
 
-`bad_code` when the check character fails, `unknown` when no session holds it. The script returns what the sessions row
-holds; `easy_by_age` is optional and may be omitted. Rate limit lookups to 20 a minute from all callers together for
-codes that come back `unknown`, so guessing codes is slow.
+`bad_code` when the check character fails, `unknown` when no session holds it, `rate` while lookups are held back.
+Rate limit lookups to 20 a minute from all callers together for codes that come back `unknown`, so guessing codes is
+slow.
+
+The rest is what another window needs to carry on where the person was (the app on an iPhone's home screen, or Safari
+after an app's own browser): `study` (so a `-test` run stays one), `install_at`, `done` (the tasks with a row, install
+not counted), `qids` (every question answered or skipped, ids only), `a` (the option codes of the few answers later
+steps depend on: `IN6`, `IN7`, `IN9`, `IS2`, `TR2`, `TR4`, `TR5`, `FV1`, `FR1`, `MG1`, `SUS1` to `SUS10`) and
+`comments` (each comment's id, target and CM1's words, so it can be listed and deleted there). Never the words anyone
+typed. The phone carries on at the first task with no row, then the first comparison not answered, then the box (TW),
+then install; after install, at its stage; and skips any question already answered.
 
 ### 3.4 `op=token`: the thank-you code arrived
 
@@ -242,7 +272,9 @@ codes that come back `unknown`, so guessing codes is slow.
 { "ok": true, "open": true }
 ```
 
-`open: false` after the study is closed on the script's side; the phone then says the study has closed.
+`open: false` after the study is closed on the script's side. The phone doesn't call it: nothing is sent, and nothing
+asked of the script, before consent, so closing the study is `open: false` in config.js, and a closed script answers a
+claim with `closed`, which the phone shows as "This study has closed." It stays for Will's check from the address bar.
 
 ## 4. What the script checks
 
@@ -294,7 +326,8 @@ code is only a lookup that resolves to it.
 
 ## 6. The unlinked pieces: the recruiter's sheet
 
-Posted alone, one per POST, with no envelope, a few seconds apart from any session piece:
+Posted alone, one per POST, with no envelope, a few seconds apart from any session piece: the phone posts a
+thank-you code 4 to 12 seconds after Submit, never within 3 seconds of a session piece either way:
 
 ```json
 { "v": 1, "pieces": [ { "kind": "token", "study": "florin-fg-1", "token": "TQ4KX7MC" } ] }
@@ -317,15 +350,18 @@ token with the rest of the queue until `op=token` says `have: true`.
 
 Intake: `IN1` to `IN9`. Tasks: `TE`, `TR`, `BM1`, `BM2`, `WK1`, `WK2`, `WK3`, `SC1`, `SC2`, `PT1`, `IV1`, `IV2`, `CK1`,
 `HI1`, `AS1`, `SKIP`. Tour: `TW`. Comparisons: `CP1`, `CP2`, `CP3`, `CP3b`. Install: `IS1`, `IS2`. Exit: `EX1`, `SUS1`
-to `SUS10`, `TR1`, `TR2`, `TR2b`, `TR3`, `TR4`, `TR4b`, `FV1`, `FV2`, `FR1`, `FR2`, `MS1`, `MS2`, `TX1`, `TX2`, `US1`,
-`US2`, `US3`, `FV3`, `VA2`, `VA3`, `MG1`, `MG2`, `LS1`.
+to `SUS10`, `TR1`, `TR2`, `TR2b`, `TR5`, `TR5b`, `TR3`, `TR4`, `TR4b`, `FV1`, `FV2`, `FR1`, `FR2`, `MS1`, `MS2`,
+`TX1`, `TX2`, `US1`, `US2`, `US3`, `FV3`, `VA2`, `VA3`, `MG1`, `MG2`, `LS1`. `TR2` asks whether anything named a
+condition, and `TR5` whether anything sounded like a judgment about the demo person's health (one question each since
+October 29).
 
 `SKIP` is the answer to "Why are you skipping?" on a task (its `value`: `stuck`, `declined`, `broken`).
 
 ### 7.2 Option codes (`value`)
 
 Each option has a short code, sent in `value`; the words shown go in `answer`. Scales send their number. The codes for
-every question are in `focus/js/questions.js` (`FXQ`), the one place the words live.
+every question are in `focus/js/questions.js` (`FXQ`), the one place the words live. IN2 has `ibso`, "I have another
+type of IBS", since October 29.
 
 ### 7.3 Screen keys (`screen`)
 
@@ -358,3 +394,62 @@ script does, as written.
    writes them to the `kind` column of the comments tab.
 2. **`sus` can end in .5.** The score is the sum times 2.5 (72.5, say), so the script takes 0 to 100 with one decimal.
    Send it as computed, unrounded.
+
+### Open, from the back end (October 29, after reading focus.js, fx-comment.js, focus-ext.js and questions.js)
+
+3. **The check character can't catch every one-character slip with 21 characters.** Luhn mod n catches every single
+   wrong character only when n is even. With 21, ten pairs look the same to it in the doubled places (C and R, D and T,
+   E and W, F and X, H and Y, J and 3, K and 4, M and 6, N and 7, P and 9), so it misses 2.4% of one-character slips
+   (measured over every slip of 2,000 codes, in `focus/apps-script/test.js`). A slip it misses still almost always
+   comes back `unknown`, since only a few dozen of the 4 million codes are in use, so nothing breaks. But section 5 and
+   the plan (3.7) say it catches any one wrong character. **Ask:** drop one character to make 20 (`N` is the one I'd
+   drop: said aloud it's the nearest to `M`). Luhn mod 20 then misses no one-character slip, and swaps stay at about
+   0.8% missed. It's one line on each side: `ALPHA` in `focus/js/focus.js` and `CODE_ALPHABET` in Code.gs (every
+   pattern in Code.gs is built from it). Change both together, or neither; `node focus/apps-script/contract-test.js`
+   fails when they differ.
+4. **What the script also does, so the phone needn't:**
+   - A whole number sent with a fraction (`scroll: 120.5`) is rounded, not refused; only `seq` must be whole. An
+     event's `name` over 60 characters, `detail` over 80 and a comment's `target` over 80 are cut, not refused (the
+     phone's scrub can make a `detail` a little longer). Every other field outside its rule or list refuses the piece.
+   - `""` is taken wherever a field's own pattern or list takes it (the install task's `state`, a box's `value`, an
+     empty `path`), and an `at` from a phone whose clock is days out is kept as it is (anything from 2000 to a year
+     ahead), since `received` says when it really came.
+   - Every refusal is written to the hidden `_log` tab with the reason and the field's name, never its value (`field`,
+     `qid`), so a list that drifts between the two sides shows up at once in a local run.
+   - `PAY` is accepted as a `qid` (questions.js has a `PAY` step). If the flow sends it as an answer, add it to 7.1;
+     if not, it's harmless.
+   - `value` takes any text without `< > { } \`, at most 400 characters, since PT1's and IV1's codes are foods and card
+     titles.
+   - Pieces 26 and on in one POST are refused one by one, not the whole body; the queue sends them again.
+   - A `session` piece whose `code` another sid already holds is kept, without the code, and `_log` says
+     `code_taken`. Only the offline path (`assigned: "phone"`) can reach it.
+   - The sessions row is written when a `session` piece comes, when the session is new, when the installed app is
+     first seen, or when an earlier piece arrives late; otherwise at most once a minute. So `last_at` can trail the
+     newest piece by up to a minute. It saves about a third of the Sheets calls on most posts, and every post waits
+     on the one lock.
+   - `ack` also returns `have` (every seq held, as ranges such as `1-40,42`), `known`, `stage`, and `limit`
+     (`minute` or `session`) while a limit holds pieces back. The phone can ignore them.
+   - `claim`: when Home, History and the week card each have one or two options, a standard session's three come
+     from the rows of a 2 by 2 by 2 orthogonal array, in blocks of 4 per platform, so the arms cross exactly (each
+     pair of options together once in a block). An arm with three or four options gets its own counter. Easy draws
+     History from its own blocks of 2, so History stays balanced within Standard and within Easy. The counters are
+     keyed by the study id, so `-test` runs use their own.
+   - A GET with no `callback` answers JSON, and one with no `op` and no `callback` answers a plain line ("The Florin
+     focus group endpoint is running."), so Will can check the deployment from his browser's address bar. A JSONP
+     reply starts with `/**/` (`/**/cb({...});`), which a script tag reads the same.
+   - Thank-you codes: at most 30 a minute from everyone together; the rest wait for the phone's retry. The follow-up
+     nonce is kept in the script's cache for 6 hours, never in a sheet.
+5. **For the phone, please check** (done October 29: a lookup that comes back `rate` or `server` now reads "Florin
+   couldn't check your code just now. Wait a minute and try again."): `build`, as `build.js` stamps it, must match `^[a-z0-9.-]{1,24}$` (lower case);
+   `phase` is always one of section 2.1's values or `""` (a piece with any other phase is refused); a `view` name only
+   ever comes from `cardTitles`, never a pattern's food. And in flow.js, a lookup that fails reads "We couldn't find
+   that code" whatever the error. Two errors mean something else: `rate` (20 codes found nothing in the last minute,
+   from everyone, so every lookup waits for the next minute) and `server` (the script was busy). For both, a line
+   such as "Florin couldn't check your code just now. Wait a minute and try again." keeps a person with the right
+   code from being told it's wrong.
+6. **The local endpoint** for your Playwright runs: `node focus/mock-endpoint.js --fresh [--site focus/site]` serves
+   `http://localhost:8788/exec` (and the site on 8787, another origin, as Netlify and Google are). It runs Code.gs
+   itself. `GET /__mock/rows/<tab>` gives a tab's rows as JSON; `POST /__mock/fail?mode=down|error|slow&times=3`
+   makes the next requests fail; `POST /__mock/reset` starts a fresh Sheet. `focus/apps-script/contract-test.js` posts
+   focus.js's own queue to Code.gs, and `focus/apps-script/browser-test.js` checks no-cors, sendBeacon and JSONP on
+   emulated phones.

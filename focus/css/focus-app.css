@@ -22,6 +22,11 @@ html.fx-app-on, html.fx-app-on body { height: 100%; overflow: hidden; }
 .ap-rx, .ap-rx * { touch-action: manipulation; }
 .ap-rx .ap-layer { overscroll-behavior-y: contain; }
 
+/* a sheet shorter than its content scrolls; nothing in it is squeezed. Under the study's strip the app is shorter than
+   a phone, and the membership page's hero (overflow hidden, in a flex column) was cut off. For prototype/: the same
+   one line in refresh.css fixes it on a short phone too */
+.ap-rx .ap-psh > * { flex-shrink: 0; }
+
 /* where a double tap landed, while its comment box is open */
 .fx-mark { position: fixed; z-index: 400; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%; box-shadow: 0 0 0 3px var(--teal), 0 0 0 6px color-mix(in srgb, var(--cream) 80%, transparent); pointer-events: none; animation: fxMark .3s both; }
 @keyframes fxMark { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -43,3 +48,10 @@ html.fx-has-demobar { --rx-sat: 0px; }
 @media (prefers-reduced-motion: reduce) {
   .fx-mark, .ap-rx .fx-pulse { animation: none !important; }
 }
+
+/* Comment, then a tap: a Teal frame round the app says the next tap only picks */
+html.fx-picking .ap-rx { cursor: crosshair; }
+html.fx-picking body::after { content: ""; position: fixed; inset: 0; z-index: 1000; box-shadow: inset 0 0 0 3px var(--teal); pointer-events: none; }
+/* a heading the app focuses when a screen opens (so a screen reader starts there) shows no ring: it isn't something to
+   press, and on Easy's Today the ring read as a box to type in. For prototype/: the same rule in refresh.css */
+.ap-rx [tabindex="-1"]:focus:not(:focus-visible), .ap-rx h1[tabindex="-1"]:focus, .ap-rx h2[tabindex="-1"]:focus { outline: none !important; box-shadow: none !important; }

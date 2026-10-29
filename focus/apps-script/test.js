@@ -222,7 +222,8 @@ test("each piece is checked on its own: a bad one is refused and logged by reaso
     Object.assign(answer(s, "IN2"), { seq: 0 }),
     Object.assign(answer(s, "IN2"), { seq: 2.5 }),
     Object.assign(answer(s, "IN2"), { at: "2026-11-03T15:00:00.123Z" }),
-    Object.assign(answer(s, "IN2"), { at: iso(clock + 5 * 86400000) }),
+    Object.assign(answer(s, "IN2"), { at: "2026-13-45T25:61:00Z" }),
+    Object.assign(answer(s, "IN2"), { at: iso(clock + 400 * 86400000) }),
     Object.assign(answer(s, "IN2"), { kind: "secret" }),
     Object.assign(answer(s, "IN2"), { qid: "IN99" }),
     Object.assign(answer(s, "IN2"), { phase: "elsewhere" }),
@@ -254,6 +255,28 @@ test("each piece is checked on its own: a bad one is refused and logged by reaso
   assert.ok(!all.includes("<img") && !all.includes("teleport") && !all.includes("I hate it"), "a refused value is never stored");
 });
 
+test("blank values the app sends are taken: a box left empty, a comment with no state, a skipped question", () => {
+  const { g, c } = fresh();
+  const s = session();
+  const r = post(c, [
+    answer(s, "TW", { section: "tour", value: "", answer: "", words: "" }),
+    answer(s, "IN3", { value: "", answer: "", skipped: "yes" }),
+    s.piece("comment", { cmid: "bl12cd34", op: "add", screen: "today", state: "", target: "", x: "", y: "", tx: "", ty: "", vw: 390, vh: 844, scroll: 0, cm_kind: "", words: "", alarm_note: "no", how: "button" }),
+    s.piece("task", { task: "time", path: "", chips: "", checks: "", ease: "" }),
+    event(s, "flow", "task_start", { screen: "", detail: "" }),
+    s.piece("session", { os: "", segment: "", version_picked: "", home: "", week: "" }),
+  ]);
+  assert.strictEqual(r.accepted, 6, JSON.stringify(g.rowsOf("_log")));
+});
+
+test("a phone whose clock is days out still gets its pieces in, with its own at", () => {
+  const { g, c } = fresh();
+  const s = session();
+  const ahead = iso(clock + 10 * 86400000), behind = iso(Date.UTC(2019, 0, 1));
+  assert.strictEqual(post(c, [answer(s, "IN1", {}, { at: ahead }), answer(s, "IN2", {}, { at: behind })].map((p, i) => Object.assign(p, { at: i ? behind : ahead }))).accepted, 2);
+  assert.deepStrictEqual(g.rowsOf("Answers").map((r) => r.at), [ahead, behind]);
+});
+
 test("unknown fields are dropped, long words are cut, emails and phone numbers are removed, formulas stay text", () => {
   const { g, c } = fresh();
   const s = session();
@@ -272,6 +295,22 @@ test("unknown fields are dropped, long words are cut, emails and phone numbers a
   assert.strictEqual(b.words.length, 1000);
   assert.strictEqual(g.rowsOf("Comments")[0].target, "Card for [removed]");
   assert.deepStrictEqual(g.log.formulas, [], "nothing became a formula");
+});
+
+test("a fraction where a whole number is asked is rounded, and an event's name and detail over their length are cut", () => {
+  const { g, c } = fresh();
+  const s = session();
+  const r = post(c, [
+    s.piece("comment", { cmid: "rr12cd34", op: "add", screen: "today", target: "T".repeat(120), vw: 390.4, vh: 843.6, scroll: 120.5, x: 0.4567, how: "button" }),
+    event(s, "view", "A card with a long title that goes on " + "and on ".repeat(5), { detail: "d".repeat(100) }),
+    s.piece("task", { task: "bm", seconds: 12.7, ease: 5.2 }),
+  ]);
+  assert.strictEqual(r.accepted, 3, JSON.stringify(g.rowsOf("_log")));
+  const cm = g.rowsOf("Comments")[0];
+  assert.deepStrictEqual([cm.vw, cm.vh, cm.scroll, cm.x, cm.target.length], [390, 844, 121, 0.46, 80]);
+  const ev = g.rowsOf("Events")[0];
+  assert.deepStrictEqual([ev.name.length, ev.detail.length], [60, 80]);
+  assert.deepStrictEqual([g.rowsOf("Tasks")[0].seconds, g.rowsOf("Tasks")[0].ease], [13, 5]);
 });
 
 test("a body that isn't JSON, has no pieces, or is too big is refused whole; piece 26 and on are refused one by one", () => {
@@ -344,7 +383,9 @@ test("the sessions row: fields overwrite only what they carry, the stage keeps t
   post(c, [s.piece("session", { stage: "done", submitted: "yes", sus: 72.5, minutes: 31.4, active_minutes: 29.0, tasks_seen: 8, comments: 3 })]);
   post(c, [s.piece("session", { stage: "stopped" })]);
   row = g.rowsOf("Sessions")[0];
-  assert.deepStrictEqual([row.stage, row.submitted, row.sus, row.minutes, row.tasks_seen, row.comments], ["done", "yes", 72.5, 31.4, 8, 3]);
+  /* minutes, tasks_seen and comments are the script's own count, whatever the phone says: 3 minutes from the first
+     piece to Submit, no task rows and no comments here */
+  assert.deepStrictEqual([row.stage, row.submitted, row.sus, row.minutes, row.tasks_seen, row.comments, row.active_minutes], ["done", "yes", 72.5, 3, 0, 0, 29]);
   /* an earlier piece arriving late moves first_at back */
   post(c, [s.piece("answer", { section: "intake", qid: "IN1", value: "pattern", answer: "x", skipped: "no", alarm_note: "no" }, { at: iso(t0 - 30000) })]);
   row = g.rowsOf("Sessions")[0];
@@ -457,13 +498,85 @@ test("lookup finds a session by its code, refuses a broken code, and slows down 
   const cl = jsonp(c, claimQ(s.sid, code));
   post(c, [s.piece("session", { stage: "install", person: "sarah", version: "standard" })]);
   const r = jsonp(c, { op: "lookup", code: code.toLowerCase().slice(0, 3) + " " + code.slice(3).toLowerCase() });
-  assert.deepStrictEqual(r, { ok: true, sid: s.sid, code, stage: "install", version: "standard", person: "sarah", home: cl.home, history: cl.history, week: cl.week, order: cl.order });
+  assert.deepStrictEqual(r, { ok: true, sid: s.sid, code, stage: "install", version: "standard", person: "sarah", home: cl.home, history: cl.history, week: cl.week, order: cl.order, study: STUDY, install_at: "", done: [], qids: [], a: {}, comments: [] });
   assert.deepStrictEqual(jsonp(c, { op: "lookup", code: code.slice(0, 5) + (code[5] === "A" ? "C" : "A") }), { ok: false, error: "bad_code" });
   for (let i = 0; i < 20; i++) assert.deepStrictEqual(jsonp(c, { op: "lookup", code: newCode() }), { ok: false, error: "unknown" });
   assert.deepStrictEqual(jsonp(c, { op: "lookup", code: newCode() }), { ok: false, error: "rate" });
   assert.deepStrictEqual(jsonp(c, { op: "lookup", code }), { ok: false, error: "rate" }, "a real code waits too, so guessing is slow");
   clock += 60000;
   assert.strictEqual(jsonp(c, { op: "lookup", code }).ok, true);
+});
+
+test("the sessions row keeps each field's newest value: a late piece never undoes a newer one, seen and submitted never go back", () => {
+  const { g, c } = fresh();
+  const safari = session(), app = session({ sid: safari.sid });
+  /* Safari says "I've added it" first, but its piece arrives after the installed app's */
+  const said = safari.piece("session", { install: "said" });
+  clock += 30000;
+  post(c, [app.piece("session", { install: "seen", version: "easy" }, { standalone: true })]);
+  post(c, [said]);
+  let row = g.rowsOf("Sessions")[0];
+  assert.deepStrictEqual([row.install, row.installed, row.version], ["seen", "yes", "easy"]);
+  /* a newer piece does change it, except back from seen */
+  clock += 1000;
+  post(c, [safari.piece("session", { install: "browser", version: "standard" })]);
+  row = g.rowsOf("Sessions")[0];
+  assert.deepStrictEqual([row.install, row.version], ["seen", "standard"]);
+  /* submitted: a late "no" (the consent piece, from a queue taken over) never undoes "yes" */
+  const early = safari.piece("session", { submitted: "no" }, { at: iso(clock - 600000) });
+  post(c, [app.piece("session", { submitted: "yes" })]);
+  post(c, [early]);
+  assert.strictEqual(g.rowsOf("Sessions")[0].submitted, "yes");
+});
+
+test("the sessions row's counts are the script's: each window's active minutes summed, comments and tasks seen from the rows", () => {
+  const { g, c } = fresh();
+  const tabA = session(), tabB = session({ sid: tabA.sid }), app = session({ sid: tabA.sid });
+  const t0 = clock;
+  post(c, [tabA.piece("session", { stage: "consent", active_minutes: 0.2 })]);
+  clock += 120000;
+  post(c, [tabB.piece("session", { active_minutes: 2.6 })]);
+  /* the closed tab's last count, taken over and sent late, is still its own window's, so it adds, never replaces */
+  post(c, [tabA.piece("session", { active_minutes: 0.8 })]);
+  post(c, [tabA.piece("session", { active_minutes: 0.5 }, { at: iso(t0) })]);
+  assert.strictEqual(g.rowsOf("Sessions")[0].active_minutes, 3.4);
+  /* comments: two added in Safari, one in the installed app, one of Safari's deleted there */
+  const add = (s, id) => s.piece("comment", { cmid: id, op: "add", screen: "today", state: "form=C", target: "FloraScore", x: 0.4, y: 0.2, tx: 0.5, ty: 0.5, vw: 390, vh: 844, scroll: 0, cm_kind: "I like it", words: "w", alarm_note: "no", how: "double tap" });
+  post(c, [add(tabB, "aaaaaaa1"), add(tabB, "aaaaaaa2"), tabB.piece("session", { comments: 2 })]);
+  post(c, [add(app, "aaaaaaa3"), app.piece("comment", { cmid: "aaaaaaa1", op: "delete", screen: "today", how: "double tap" }), app.piece("session", { comments: 1 })]);
+  let row = g.rowsOf("Sessions")[0];
+  assert.strictEqual(row.comments, 2, "the phone's own count (1) is not what the row holds");
+  /* tasks seen: each task once, install never */
+  const task = (s, id, outcome) => s.piece("task", { task: id, n: 1, version: "standard", state: "", started_at: iso(clock), seconds: 5, active_seconds: 5, outcome, hint: "no", path: "", screens: 0, backs: 0, ease: 5, chips: "", checks: "" });
+  post(c, [task(tabB, "bm", "seen"), task(tabB, "time", "said"), task(tabB, "bm", "seen"), task(app, "install", "seen"), tabB.piece("session", { tasks_seen: 0 })]);
+  row = g.rowsOf("Sessions")[0];
+  assert.strictEqual(row.tasks_seen, 1);
+  /* minutes: from the first piece to the earliest Submit, whichever window sent it */
+  clock = t0 + 30 * 60000;
+  post(c, [app.piece("session", { submitted: "yes", stage: "done" })]);
+  clock += 60000;
+  post(c, [tabB.piece("session", { submitted: "yes", stage: "done", minutes: 1.1 })]);
+  row = g.rowsOf("Sessions")[0];
+  assert.strictEqual(row.minutes, 30);
+});
+
+test("lookup gives another window what it needs to carry on: the study id, install_at, tasks done, questions answered, a few codes and the comments (never words)", () => {
+  const { c } = fresh();
+  const s = session(), code = newCode();
+  jsonp(c, claimQ(s.sid, code, { study: STUDY + "-test" }));
+  const ts = s.piece("session", { stage: "install", install_at: iso(clock) }, { study: STUDY + "-test" });
+  const ans = (qid, value, extra) => s.piece("answer", Object.assign({ section: "intake", task: "", qid, question: "q", answer: "a", value, correct: "", right: "", words: "my words", alarm_note: "no", skipped: "no" }, extra || {}), { study: STUDY + "-test" });
+  const task = (id) => s.piece("task", { task: id, n: 1, version: "standard", state: "", started_at: iso(clock), seconds: 5, active_seconds: 5, outcome: "seen", hint: "no", path: "", screens: 0, backs: 0, ease: 5, chips: "", checks: "" }, { study: STUDY + "-test" });
+  const add = s.piece("comment", { cmid: "bbbbbbb1", op: "add", screen: "today", state: "form=C", target: "FloraScore", x: 0.4, y: 0.2, tx: 0.5, ty: 0.5, vw: 390, vh: 844, scroll: 0, cm_kind: "It's confusing", words: "private words", alarm_note: "no", how: "double tap" }, { study: STUDY + "-test" });
+  post(c, [ts, ans("IN6", "oura|watch"), ans("IN2", "foods"), ans("TW", "", { section: "tour" }), task("bm"), task("time"), add]);
+  const r = jsonp(c, { op: "lookup", code });
+  assert.strictEqual(r.study, STUDY + "-test");
+  assert.strictEqual(r.install_at, iso(clock));
+  assert.deepStrictEqual(r.done, ["bm", "time"]);
+  assert.deepStrictEqual(r.qids.sort(), ["IN2", "IN6", "TW"]);
+  assert.deepStrictEqual(r.a, { IN6: "oura|watch" }, "only the codes later steps depend on");
+  assert.deepStrictEqual(r.comments, [{ cmid: "bbbbbbb1", target: "FloraScore", kind: "It's confusing" }]);
+  assert.ok(JSON.stringify(r).indexOf("words") < 0, "no typed words travel back");
 });
 
 /* ------------------------------------------------------------------ comments */

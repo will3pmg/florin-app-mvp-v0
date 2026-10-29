@@ -1,0 +1,106 @@
+/* Florin app refresh: styles for js/refresh-profile.js, Profile and onboarding (V.onboard), opened from the Today
+   avatar (data-act="profile"). Both are full screens built from the app's own parts: the check-in's screen (.ap-ck),
+   its progress bar and big option rows, the log forms' chips and footer, cards and rows. This file adds only what
+   those don't have: the Profile's sections, a switch, the consistency words and the onboarding's points list.
+   Every padding, margin, gap, inset and radius is on the DESIGN.md scale; every colour comes from the app tokens. */
+
+/* ---------- Profile ---------- */
+.ap-rx .pf .ap-ck-b { gap: 24px; }
+.ap-rx .pf .ap-ck-h h2:focus { outline: none; }
+.pf-sec { display: flex; flex-direction: column; gap: 8px; }
+.pf-sec .ap-card-h { margin-bottom: 0; }
+.pf-sec .ap-card-h h3 { font-size: 17px; letter-spacing: -.01em; font-weight: 500; }
+.pf-note { padding: 0 4px; line-height: 1.45; }
+
+/* you: the initial, the first name and how long they've logged */
+.pf-you { display: flex; align-items: center; gap: 16px; }
+/* neutral, as the Today avatar is: Plum on light screens means only "your usual" */
+.pf-av { flex: none; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--ap-card2); color: var(--ap-ink); font-size: 28px; font-weight: 300; letter-spacing: -.02em; }
+.pf-you-m { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pf-you-n { font-size: 22px; font-weight: 400; letter-spacing: -.015em; line-height: 1.15; overflow-wrap: anywhere; }
+.pf-you-m em { font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--ap-ink2); }
+
+/* rows that only say something, beside the rows that open something (.ap-ea-row) */
+.pf-us { list-style: none; margin: 0; padding: 0 16px; }
+.pf-us li + li { border-top: 1px solid var(--ap-line); }
+.pf-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 12px 0; }
+.pf-us .ap-ea-m { gap: 4px; }
+.pf-us .ap-k { font-size: 10.5px; }
+/* a usual figure reads in the usual's colour: Plum on light, Ray on dark */
+.pf-us-v { font-size: 20px; font-weight: 300; letter-spacing: -.015em; line-height: 1.2; color: var(--ap-usual-ink); }
+.pf-us .ap-ea-m em { font-size: 12px; color: var(--ap-ink2); }
+.pf-learn { display: flex; flex-direction: column; gap: 12px; }
+.pf-learn .pf-us { padding: 0; }
+.pf-learn .ap-chip { flex: none; }
+
+/* logging and display: labelled controls in one card */
+.pf-log { display: flex; flex-direction: column; gap: 20px; }
+/* the words are a list to read, not chips to tap: two columns, hardest first down the first */
+.pf-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--r, 4), auto); grid-auto-flow: column; gap: 8px 16px; }
+.pf-words li { --gl-bg: var(--ap-card); display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: 14px; line-height: 1.25; color: var(--ap-ink); }
+.pf-wd-ic { display: grid; place-items: center; width: 20px; height: 20px; }
+.pf-wd-ic .ap-gl { width: 20px; height: 20px; }
+
+/* a switch: the whole row is the control, the track only shows its state */
+.pf-sw-t { position: relative; flex: none; width: 44px; height: 24px; border-radius: 999px; background: var(--ap-card2); box-shadow: inset 0 0 0 1.5px var(--ap-line); transition: background .2s, box-shadow .2s; }
+.pf-sw-t::after { content: ""; position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--ap-ink3); transition: transform .25s var(--ap-ease), background .2s; }
+.pf-sw[aria-checked="true"] .pf-sw-t { background: var(--ap-chart); box-shadow: none; }
+.pf-sw[aria-checked="true"] .pf-sw-t::after { transform: translateX(20px); background: var(--ap-card); }
+/* in dark, Ray means "your usual", so a switch that's on is Cream, as a picked chip is */
+.ap-rx[data-theme="dark"] .pf-sw[aria-checked="true"] .pf-sw-t { background: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .pf-sw[aria-checked="true"] .pf-sw-t::after { background: var(--ap-bg); }
+.pf .ap-ea-row .ap-chip { flex: none; }
+
+/* the sheets over Profile */
+.pf-sh .ap-gd-lede + .ap-gd-lede { margin-top: -8px; }
+.pf-sh .ap-chs--wrap .ap-ch { white-space: normal; text-align: left; }
+
+/* ---------- onboarding: the check-in's screen, one step at a time ---------- */
+.ap-rx .pf-onb .ap-ck-prog { grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); }
+.ap-rx .pf-onb .ap-ck-q { margin-top: 8px; }
+.ap-rx .pf-onb .ap-ck-q h3:focus { outline: none; }
+.pf-onb .ap-fsh-f .ap-fsh-hint[hidden] { display: none; }
+/* the long answers wrap inside their chips */
+.pf-onb .ap-chs--wrap .ap-ch { white-space: normal; text-align: left; min-height: 36px; padding-block: 8px; line-height: 1.25; }
+.pf-count { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+.pf-count.is-flash { animation: apNudge .4s var(--ap-ease); color: var(--ap-ink); }
+.pf-onb .ap-fm-line { margin-top: 4px; }
+.ap-rx .pf-onb .ap-fsh-del { position: relative; }
+.ap-rx .pf-onb .ap-fsh-del::after { content: ""; position: absolute; inset: -4px 0; }
+/* a field in a column keeps its own height (.ap-in grows along a row) */
+.pf-onb .ap-f .ap-in { flex: none; }
+/* the ready step's one switch */
+.pf-onb-easy { margin: 0; }
+
+/* most often, lately, in the Easy version: the option's words as big one-choice rows, each with its mark */
+.pf-fo-b { --gl-bg: var(--ap-card2); justify-content: flex-start; gap: 16px; }
+.pf-fo-b.is-on { --gl-bg: var(--ap-chart); }
+.ap-rx[data-theme="dark"] .pf-fo-b.is-on { --gl-bg: var(--ap-ink); }
+.pf-fo-g { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--gl-bg); }
+.pf-fo-g .ap-gl { width: 28px; height: 28px; }
+.pf-fo-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pf-fo-t b { font-weight: 500; }
+.pf-fo-t em { font-style: normal; font-weight: 400; font-size: .85em; line-height: 1.35; }
+.pf-fo-b .ic { flex: none; }
+.pf-fo-guide { align-self: flex-start; }
+/* a word picked in B, seen in A or C, covers this step: outlined and named, never filled (as Easy's Log a BM) */
+.pf-fo-b.is-maybe { box-shadow: inset 0 0 0 2px var(--ap-ink2); }
+.pf-fo-maybe { align-self: flex-start; padding: 0 8px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-ink); color: var(--ap-ink); font-size: .85em; line-height: 1.5; font-weight: 500; }
+
+/* ---------- the Easy version: its type sizes, on the parts this file adds ---------- */
+.ap-rx[data-easy="true"] .pf-sec .ap-card-h h3 { font-size: 22px; }
+.ap-rx[data-easy="true"] .pf-log .ap-chs { flex-direction: column; }
+.ap-rx[data-easy="true"] .pf-log .ap-chs > .ap-ch { flex: none; width: 100%; white-space: normal; }
+.ap-rx[data-easy="true"] .pf-words { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; }
+.ap-rx[data-easy="true"] .pf-words li { font-size: 18px; min-height: 36px; }
+.ap-rx[data-easy="true"] .pf-wd-ic, .ap-rx[data-easy="true"] .pf-wd-ic .ap-gl { width: 28px; height: 28px; }
+
+/* the welcome, and what Florin is and isn't: a short list with a mark beside each line */
+.pf-pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pf-pts li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--ap-line); }
+.pf-pts li:last-child { border-bottom: 1px solid var(--ap-line); }
+.pf-pt-ic { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ap-card2); color: var(--ap-ink); }
+.pf-pt-ic .ic { width: 16px; height: 16px; }
+.pf-pts li > span:last-child { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+.pf-pts b { font-size: 15px; font-weight: 500; line-height: 1.3; }
+.pf-pts em { font-style: normal; font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }

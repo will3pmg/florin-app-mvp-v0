@@ -45,7 +45,7 @@ var TABS = {
   Sessions: ["received", "updated", "sid", "study", "build", "code", "restart_of", "first_at", "last_at",
     "active_minutes", "minutes", "platform", "os", "browser", "width", "theme", "text_reported", "segment", "person",
     "version", "version_picked", "home", "history", "week", "order", "assigned", "decisions", "install", "installed",
-    "stage", "tasks_seen", "comments", "sus", "submitted"],
+    "install_at", "stage", "tasks_seen", "comments", "sus", "submitted"],
   Answers: COMMON.concat(["section", "task", "qid", "question", "answer", "value", "correct", "right", "words",
     "alarm_note", "skipped"]),
   Tasks: COMMON.concat(["task", "n", "version", "state", "started_at", "seconds", "active_seconds", "outcome", "hint",
@@ -65,9 +65,9 @@ var RECRUITER_TABS = { tokens: ["token"], followup: ["week", "contact"] };
 var QIDS = ["IN1", "IN2", "IN3", "IN4", "IN5", "IN6", "IN7", "IN8", "IN9",
   "TE", "TR", "BM1", "BM2", "WK1", "WK2", "WK3", "SC1", "SC2", "PT1", "IV1", "IV2", "CK1", "HI1", "AS1", "SKIP",
   "TW", "CP1", "CP2", "CP3", "CP3b", "IS1", "IS2",
-  "EX1", "SUS1", "SUS2", "SUS3", "SUS4", "SUS5", "SUS6", "SUS7", "SUS8", "SUS9", "SUS10", "TR1", "TR2", "TR2b", "TR3",
-  "TR4", "TR4b", "FV1", "FV2", "FR1", "FR2", "MS1", "MS2", "TX1", "TX2", "US1", "US2", "US3", "FV3", "VA2", "VA3",
-  "MG1", "MG2", "LS1"];
+  "EX1", "SUS1", "SUS2", "SUS3", "SUS4", "SUS5", "SUS6", "SUS7", "SUS8", "SUS9", "SUS10", "TR1", "TR2", "TR2b", "TR5",
+  "TR5b", "TR3", "TR4", "TR4b", "FV1", "FV2", "FR1", "FR2", "MS1", "MS2", "TX1", "TX2", "US1", "US2", "US3", "FV3", "VA2", "VA3",
+  "MG1", "MG2", "LS1", "PAY"];
 var TASK_IDS = ["bm", "time", "week", "score", "patterns", "checkin", "history", "ask", "install"];
 var PHASES = ["consent", "intake", "bm", "time", "week", "score", "patterns", "checkin", "history", "ask", "tour",
   "cp1", "cp2", "cp3", "install", "free", "exit", "done"];
@@ -101,8 +101,9 @@ var CODE_ALPHABET = "ACDEFHJKMNPRTWXY34679";
 /* t: s text, n number, yn yes or no, b true or false, time, code (a study code), parts (words from a list, joined
    with " | "). max: a length. re: a pattern. of: a list. free: words people typed, cut at 1,000 characters and
    scrubbed of email addresses and phone numbers. scrub: scrubbed too. cut: cut at max rather than refused. blank: ""
-   is allowed. col: the column it's written to, when that isn't its own name. A field that breaks its rule refuses the
-   piece; a field with no rule is dropped. */
+   is allowed. whole: a number that must already be whole (others are rounded to dp places). col: the column it's
+   written to, when that isn't its own name. A field that breaks its rule refuses the piece; a field with no rule is
+   dropped. */
 function S_(max, re, o) { return mix_({ t: "s", max: max, re: re }, o); }
 function OF_(list, o) { return mix_({ t: "s", max: 60, of: list }, o); }
 function INT_(min, max, o) { return mix_({ t: "n", min: min, max: max, dp: 0 }, o); }
@@ -116,7 +117,7 @@ var BLANK = { blank: true };
 
 var ENVELOPE = {
   study: S_(40, /^[a-z0-9-]{3,40}$/), build: S_(24, /^[a-z0-9.-]{1,24}$/), sid: S_(24, /^[A-Za-z0-9_-]{24}$/),
-  cid: S_(6, /^[a-z0-9]{6}$/), seq: INT_(1, 1000000), at: { t: "time" }, phase: OF_(PHASES, BLANK),
+  cid: S_(6, /^[a-z0-9]{6}$/), seq: INT_(1, 1000000, { whole: true }), at: { t: "time" }, phase: OF_(PHASES, BLANK),
   standalone: { t: "b" }
 };
 
@@ -131,7 +132,7 @@ var KINDS = {
       person: OF_(["sarah", "marcus", "alex"]), version: OF_(["standard", "easy"]),
       version_picked: OF_(["standard", "easy"], BLANK), home: OF_(ARMS.home, BLANK), history: OF_(ARMS.history),
       week: OF_(ARMS.week, BLANK), order: INT_(1, 9), assigned: OF_(["script", "phone"]), decisions: S_(400, LINE),
-      install: OF_(["seen", "said", "browser", "couldnt"]), stage: OF_(STAGES.concat(["stopped"])),
+      install: OF_(["seen", "said", "browser", "couldnt"]), install_at: { t: "time" }, stage: OF_(STAGES.concat(["stopped"])),
       tasks_seen: INT_(0, 9), comments: INT_(0, 10000), sus: NUM_(0, 100, 1), submitted: YN,
       active_minutes: NUM_(0, 1440, 1), minutes: NUM_(0, 1440, 1)
     }
@@ -140,7 +141,7 @@ var KINDS = {
     tab: "Answers",
     fields: {
       section: OF_(["intake", "task", "tour", "compare", "install", "exit"]), task: OF_(TASK_IDS, BLANK),
-      qid: OF_(QIDS), question: FREE, answer: FREE, value: S_(400, /^[A-Za-z0-9_.:'\- |]*$/),
+      qid: OF_(QIDS), question: FREE, answer: FREE, value: S_(400, /^[^<>{}\\]*$/),
       correct: OF_(["yes", "no"], BLANK), right: FREE, words: FREE, alarm_note: YN, skipped: YN
     },
     need: ["qid"]
@@ -160,7 +161,7 @@ var KINDS = {
     tab: "Comments",
     fields: {
       cmid: S_(8, /^[a-z0-9]{8}$/), op: OF_(["add", "edit", "delete"]), screen: OF_(SCREENS), state: S_(400, LINE),
-      target: S_(80, /^[^<>{}\\]*$/, { scrub: true }), x: NUM_(0, 1, 2, BLANK), y: NUM_(0, 1, 2, BLANK),
+      target: S_(80, /^[^<>{}\\]*$/, { scrub: true, cut: true }), x: NUM_(0, 1, 2, BLANK), y: NUM_(0, 1, 2, BLANK),
       tx: NUM_(0, 1, 2, BLANK), ty: NUM_(0, 1, 2, BLANK), vw: INT_(0, 10000), vh: INT_(0, 10000),
       scroll: INT_(0, 1000000), cm_kind: PARTS_(CM_KINDS, { blank: true, col: "kind" }), words: FREE, alarm_note: YN,
       how: OF_(["double tap", "button"])
@@ -171,7 +172,7 @@ var KINDS = {
     tab: "Events",
     fields: {
       type: OF_(["flow", "screen", "act", "set", "view", "depth", "vis", "install", "net", "error"]),
-      screen: OF_(SCREENS, BLANK), name: S_(60, /^[^<>{}\\]*$/), detail: S_(80, /^[^<>{}\\]*$/, BLANK)
+      screen: OF_(SCREENS, BLANK), name: S_(60, /^[^<>{}\\]*$/, { cut: true }), detail: S_(80, /^[^<>{}\\]*$/, { blank: true, cut: true })
     },
     need: ["type", "name"]
   },
@@ -342,13 +343,15 @@ function clean_(v, rule) {
     if (v === "" && rule.blank) return { ok: true, v: "" };
     var n = typeof v === "number" ? v : (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : NaN);
     if (!isFinite(n) || n < rule.min || n > rule.max) return no;
-    if (rule.dp === 0 && Math.floor(n) !== n) return no;
+    /* a whole number with a fraction (a scroll of 120.5) is rounded, except where it's a key, as seq is */
+    if (rule.whole && Math.floor(n) !== n) return no;
     var f = Math.pow(10, rule.dp);
     return { ok: true, v: Math.round(n * f) / f };
   }
   if (typeof v !== "string") return no;
   v = v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
-  if (v === "") return rule.blank || rule.free || (rule.t === "s" && !rule.re && !rule.of) ? { ok: true, v: "" } : no;
+  /* "" is a value like any other: it fits when the rule says blank, or its pattern or list takes it */
+  if (v === "") return rule.blank || rule.free || (rule.of ? rule.of.indexOf("") >= 0 : rule.re ? rule.re.test("") : rule.t === "s") ? { ok: true, v: "" } : no;
   if (rule.t === "parts") {
     var parts = v.split(" | ");
     for (var i = 0; i < parts.length; i++) if (rule.of.indexOf(straight_(parts[i])) < 0) return no;
@@ -370,11 +373,12 @@ function clean_(v, rule) {
 /* A curly apostrophe reads as a straight one when a word is matched to its list. */
 function straight_(s) { return String(s).replace(/\u2019/g, "'"); }
 
-/* A time from the phone, ISO 8601 in UTC to the second. Not before 2025, and not more than two days ahead. */
+/* A time from the phone, ISO 8601 in UTC to the second. A phone's clock can be well out, so anything from 2000 to a
+   year ahead is taken as it is (received says when it really came); only a time that can't be a date is refused. */
 function time_(v) {
   if (typeof v !== "string" || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(v)) return "";
   var t = new Date(v).getTime();
-  if (!(t >= Date.UTC(2025, 0, 1)) || t > Date.now() + 2 * 86400000) return "";
+  if (!(t >= Date.UTC(2000, 0, 1)) || t > Date.now() + 366 * 86400000) return "";
   return v;
 }
 
@@ -430,7 +434,7 @@ function store_(v, pieces, res) {
     touched[key] = one; touched[p.sid + "|*"] = tot;
     res.accepted++;
 
-    var s = sessions[p.sid] || (sessions[p.sid] = { sid: p.sid, study: p.study, build: p.build, f: {}, first: p.at, last: p.at, tot: tot });
+    var s = sessions[p.sid] || (sessions[p.sid] = { sid: p.sid, study: p.study, build: p.build, f: {}, k: {}, first: p.at, last: p.at, tot: tot });
     s.study = p.study;
     if (p.build) s.build = p.build;
     if (p.at < s.first) s.first = p.at;
@@ -438,17 +442,32 @@ function store_(v, pieces, res) {
     if (p.standalone) s.installed = true;
 
     if (p.kind === "session") {
+      /* each field keeps its newest value, by the piece's at, seq and cid, so a piece that arrives late (a closed tab's
+         queue, taken over later; Safari's install answer, sent after the installed app's) never undoes a newer one */
+      var ok = orderKey_(p);
       Object.keys(p.f).forEach(function (k) {
-        s.f[k] = k === "stage" ? furthest_(s.f.stage, p.f.stage) : p.f[k];
+        if (k === "stage") { s.f.stage = furthest_(s.f.stage, p.f.stage); return; }
+        /* each window counts its own visible minutes; the row holds their sum */
+        if (k === "active_minutes") { var am = s.am = s.am || {}; am[p.cid] = Math.max(am[p.cid] || 0, p.f[k]); return; }
+        if (k === "submitted" && p.f[k] === "yes" && (!s.submitAt || p.at < s.submitAt)) s.submitAt = p.at;
+        if (DERIVED_.indexOf(k) >= 0) return;
+        if (!s.k[k] || ok >= s.k[k]) { s.f[k] = p.f[k]; s.k[k] = ok; }
       });
       return;
     }
+    if (p.kind === "task" && p.f.outcome === "seen" && p.f.task !== "install") {
+      tot.notes = tot.notes || {};
+      var seenT = tot.notes.ts = tot.notes.ts || {};
+      if (!seenT[p.f.task]) { seenT[p.f.task] = 1; s.derived = true; }
+    }
+    if (p.kind === "comment") s.derived = true;
     var row = { received: now, sid: p.sid, cid: p.cid, seq: p.seq, at: p.at, study: p.study, build: p.build, phase: p.phase };
     Object.keys(p.f).forEach(function (k) { row[k] = p.f[k]; });
     if (p.kind === "comment") {
       var led = ledger_(tot, p.f.cmid);
       if (p.f.op !== "add") { cmOps.push({ p: p, tot: tot }); return; }
       if (led.del) return;                      // taken back before it arrived: never written
+      if (led.add) return;                      // its row is there already (an add sent again under a new seq)
       if (led.edit) { ["kind", "words", "alarm_note"].forEach(function (k) { if (led.edit[k] !== undefined) row[k] = led.edit[k]; }); led.edit = null; }
       led.add = true;
       delete row.op;
@@ -476,9 +495,15 @@ function furthest_(a, b) {
 /* The session's row. It's written when a session piece comes, when the session is new, when the installed app is
    first seen, or when an earlier piece arrives late; otherwise at most once a minute, to keep last_at current. So
    last_at can trail the newest piece by up to a minute. The ledger in _index remembers when it was last written. */
+/* Worked out here, never taken from the phone, which may hold only part of the session (the app on an iPhone's home
+   screen has storage of its own): comments (added and not deleted, from the comments ledger), tasks_seen (tasks
+   whose goal the app saw, each once), and minutes (from first_at to the earliest Submit). active_minutes is each
+   window's own count, summed. */
+var DERIVED_ = ["comments", "tasks_seen", "minutes"];
+var NEVER_BACK_ = { install: "seen", submitted: "yes" };
 function updateSession_(v, s, now, res) {
   var n = s.tot.notes = s.tot.notes || {};
-  var due = Object.keys(s.f).length > 0 || !n.w || (s.installed && !n.inst) || (n.f && s.first < n.f) || now.getTime() - (n.w || 0) >= 60000;
+  var due = Object.keys(s.f).length > 0 || s.derived || s.am || s.submitAt || !n.w || (s.installed && !n.inst) || (n.f && s.first < n.f) || now.getTime() - (n.w || 0) >= 60000;
   if (!due) return;
   var t = open_(v, "Sessions");
   var found = null;
@@ -496,16 +521,34 @@ function updateSession_(v, s, now, res) {
   if (s.build) next.build = s.build;
   if (!next.first_at || s.first < String(next.first_at)) next.first_at = s.first;
   if (!next.last_at || s.last > String(next.last_at)) next.last_at = s.last;
+  var fk = n.fk = n.fk || {};
   Object.keys(s.f).forEach(function (k) {
     var val = s.f[k];
     if (k === "stage") { next.stage = furthest_(String(next.stage || ""), val); return; }
+    /* an older value than the one the row holds, from a piece that came late */
+    if (fk[k] && s.k[k] && s.k[k] < fk[k]) return;
+    /* seen and submitted never go back */
+    if (NEVER_BACK_[k] && String(next[k] || "") === NEVER_BACK_[k] && val !== NEVER_BACK_[k]) return;
     if (k === "code") {
       if (String(next.code || "") === val) return;
       var held = find_(t, "code", val);
       if (held && String(held.obj.sid) !== s.sid) { res.log.push({ what: "code_taken", kind: "session", field: "code", sid: s.sid }); return; }
     }
     next[k] = val;
+    if (s.k[k]) fk[k] = s.k[k];
   });
+  if (s.am) {
+    var am = n.am = n.am || {}, sum = 0;
+    Object.keys(s.am).forEach(function (c) { am[c] = Math.max(Number(am[c]) || 0, s.am[c]); });
+    Object.keys(am).forEach(function (c) { sum += Number(am[c]) || 0; });
+    next.active_minutes = Math.round(sum * 10) / 10;
+  }
+  if (s.submitAt && (!n.sub || s.submitAt < n.sub)) n.sub = s.submitAt;
+  if (n.sub && next.first_at) next.minutes = Math.max(0, Math.round((Date.parse(n.sub) - Date.parse(String(next.first_at))) / 6000) / 10);
+  var cmN = 0;
+  Object.keys(n.cm || {}).forEach(function (id) { if (n.cm[id].add && !n.cm[id].del) cmN++; });
+  next.comments = cmN;
+  next.tasks_seen = Object.keys(n.ts || {}).length;
   if (s.installed) next.installed = "yes";
   if (!next.installed) next.installed = "no";
   var r = found ? found.row : t.last + 1;
@@ -606,7 +649,7 @@ function claim_(p) {
     next.sid = sid; next.study = String(p.study); next.code = code;
     if (!next.received) next.received = now;
     next.updated = now;
-    next.platform = platform; next.version = next.version || version;
+    next.platform = platform; next.version = version;
     next.home = arms.home; next.history = arms.history; next.week = arms.week; next.order = arms.order;
     next.assigned = "script";
     if (!next.stage) next.stage = "intake";
@@ -702,12 +745,45 @@ function lookup_(p) {
     }
     return { ok: false, error: "unknown" };
   }
-  var o = row.obj;
-  return {
-    ok: true, sid: String(o.sid), code: code, stage: String(o.stage || ""), version: String(o.version || "standard"),
+  var o = row.obj, sid = String(o.sid);
+  var out = {
+    ok: true, sid: sid, code: code, stage: String(o.stage || ""), version: String(o.version || "standard"),
     person: String(o.person || ""), home: String(o.home || ""), history: String(o.history || ""),
     week: String(o.week || ""), order: Number(o.order) || 1
   };
+  /* what another window needs to carry on where the person was: the study id (a -test run stays one), when the install
+     steps first showed, the tasks with a row, the questions answered (ids only), the few answers later questions depend
+     on (option codes, never words), and the comments sent (their ids, what they were about and CM1's words, never the
+     words typed), so they can be listed and deleted there */
+  var v = view_(book_());
+  out.study = String(o.study || "");
+  out.install_at = String(o.install_at || "");
+  var tk = open_(v, "Tasks", true), an = open_(v, "Answers", true), cmt = open_(v, "Comments", true);
+  out.done = [];
+  rowsBy_(tk, "sid", sid).forEach(function (r) { var id = String(r.task || ""); if (id && id !== "install" && out.done.indexOf(id) < 0) out.done.push(id); });
+  out.qids = []; out.a = {};
+  rowsBy_(an, "sid", sid).forEach(function (r) {
+    var q = String(r.qid || "");
+    if (!q) return;
+    if (out.qids.indexOf(q) < 0) out.qids.push(q);
+    if (RESUME_QIDS_.indexOf(q) >= 0 && String(r.skipped) !== "yes") out.a[q] = String(r.value || "");
+  });
+  out.comments = rowsBy_(cmt, "sid", sid).map(function (r) { return { cmid: String(r.cmid || ""), target: String(r.target || ""), kind: String(r.kind || "") }; })
+    .filter(function (c) { return /^[a-z0-9]{8}$/.test(c.cmid); });
+  return out;
+}
+/* the answers a later question or step depends on: who sees the Oura comparison, the exit survey's follow-ups, the
+   SUS score, IS2's "rather not" */
+var RESUME_QIDS_ = ["IN6", "IN7", "IN9", "IS2", "TR2", "TR4", "TR5", "FV1", "FR1", "MG1", "SUS1", "SUS2", "SUS3", "SUS4", "SUS5",
+  "SUS6", "SUS7", "SUS8", "SUS9", "SUS10"];
+/* every row of a tab whose col holds value, in one read of the tab (a lookup reads three tabs this way) */
+function rowsBy_(t, col, value) {
+  if (!t || t.last < 2 || !value) return [];
+  var c = t.head.indexOf(col);
+  if (c < 0) return [];
+  var out = [];
+  t.sh.getRange(2, 1, t.last - 1, t.head.length).getValues().forEach(function (r) { if (String(r[c]) === value) out.push(obj_(t.head, r)); });
+  return out;
 }
 
 /* token: whether the recruiter's tokens tab holds this thank-you code */

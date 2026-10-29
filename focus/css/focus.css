@@ -1,0 +1,197 @@
+/* Florin focus group test: the flow's own screens (index.html): the pages (welcome, consent, intake, the tour's
+   start, install, the exit survey, thanks), the task strip over the app, the question sheet, and More. Mobile first:
+   one column, 17px type, choices at least 56px tall, every control at least 44px; on a laptop the column centres and
+   the app keeps a phone's width. In the app's tokens (--ap-*), light and dark. Spacing 4 8 12 16 20 24 32 40 48 56 64
+   80 96 120; radius 2 4 8 12 16 24 32 full (DESIGN.md v1.1). Colours derive from the six brand tokens. */
+
+[hidden]:not([hidden="until-found" i]) { display: none !important; }
+html, body { min-height: 100%; }
+body { background: var(--cream); overscroll-behavior-y: contain; -webkit-text-size-adjust: 100%; }
+@media (prefers-color-scheme: dark) { body { background: oklch(from var(--forest) calc(l - .074) calc(c * .67) h); } }
+html.fx-in-app, html.fx-in-app body { height: 100%; overflow: hidden; }
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; /* grid-exempt: the visually-hidden pattern */ overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.ap.fx { min-height: 100vh; min-height: 100dvh; font-size: 17px; line-height: 1.45; background: var(--ap-bg); color: var(--ap-ink); }
+.fx :focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+/* a heading that takes focus when a screen opens (so a screen reader starts there) shows no ring */
+.fx [tabindex="-1"]:focus, .fx [tabindex="-1"]:focus-visible { outline: none; }
+.fx .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.fx .ic circle { fill: currentColor; stroke: none; }
+.fx-loading { padding: 40px 20px; color: var(--ap-ink2); }
+
+/* ---------- a page ---------- */
+.fx-page { max-width: 560px; margin: 0 auto; padding: env(safe-area-inset-top, 0px) max(20px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); outline: none; }
+.fx-top { display: flex; align-items: center; gap: 8px; min-height: 56px; padding-top: 4px; }
+.fx-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; }
+.fx-mark svg { width: 24px; height: 24px; fill: none; stroke: var(--ap-ink); stroke-width: 3; }
+.fx-top-t { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ap-ink2); }
+.fx-top-more { margin-left: auto; }
+.fx-body { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; }
+.fx-body--wide { max-width: none; }
+.fx h1 { margin: 0; font-weight: 300 !important; font-size: 32px; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; outline: none; }
+.fx h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 500 !important; }
+.fx-kick { margin: 0; font-family: var(--mono); font-size: 11.5px; line-height: 1.5; letter-spacing: .08em; text-transform: uppercase; color: var(--ap-ink2); }
+.fx-lede { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.5; color: var(--ap-ink); text-wrap: pretty; }
+.fx-proto { margin: 0; align-self: flex-start; padding: 8px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--ap-line); font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ap-ink); }
+.fx-fine { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ap-ink2); }
+.fx-note { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); font-size: 15px; line-height: 1.45; }
+.fx-resume { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--ap-card2); font-size: 15px; font-weight: 500; }
+.fx-act { display: flex; flex-direction: column; gap: 12px; margin: 8px 0 0; }
+.fx-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--ap-ink); font: 500 16px/1.3 var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.fx-err { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--ap-shift-bg); color: var(--ap-ink); font-size: 15px; font-weight: 500; }
+
+/* consent */
+.fx-consent { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.5; }
+.fx-consent li::marker { color: var(--ap-ink2); }
+.fx-checks { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+.fx-check { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 17px; font-weight: 500; cursor: pointer; }
+.fx-check input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--forest); }
+.ap[data-theme="dark"] .fx-check input { accent-color: var(--ray); }
+
+/* ---------- a question ---------- */
+.fx-qwrap { display: flex; flex-direction: column; gap: 16px; }
+.fx-q { font-size: 26px !important; line-height: 1.2 !important; }
+.fx-lead { margin: 0; font-family: var(--serif); font-size: 18px; line-height: 1.5; }
+.fx-head { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ap-ink2); }
+.fx-opts { display: flex; flex-direction: column; gap: 8px; }
+.fx-opt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); font: 400 17px/1.35 var(--sans); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s, color .15s; }
+.fx-opt-m { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
+.fx-opt[role="checkbox"] .fx-opt-m { border-radius: 8px; }
+.fx-opt.is-on { background: var(--ap-ink); color: var(--ap-bg); box-shadow: none; }
+.fx-opt.is-on .fx-opt-m { box-shadow: none; background: var(--ap-bg); color: var(--ap-ink); }
+.fx-opt .fx-opt-m .ic { width: 16px; height: 16px; stroke-width: 2.4; }
+.fx-opt[aria-disabled="true"] { color: var(--ap-ink3); cursor: default; }
+.fx-hintline { margin: 0; font-size: 14px; color: var(--ap-ink2); }
+.fx-scale { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.fx-sc { min-height: 56px; border: 0; border-radius: 12px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); font: 500 18px/1 var(--sans); cursor: pointer; }
+.fx-sc.is-on { background: var(--ap-ink); color: var(--ap-bg); box-shadow: none; }
+.fx-scale-l { display: flex; justify-content: space-between; gap: 12px; margin-top: -8px; font-size: 14px; color: var(--ap-ink2); }
+.fx-pairs { display: flex; flex-direction: column; gap: 8px; }
+.fx-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fx-pair .fx-ch { justify-content: center; min-height: 52px; text-align: center; white-space: normal; }
+.fx-box-l { font-size: 15px; font-weight: 500; }
+.fx-credit { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ap-ink2); }
+.fx-qnav { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(color-mix(in srgb, var(--ap-bg) 0%, transparent), var(--ap-bg) 16px); }
+.fx-qnav-r { display: flex; gap: 8px; margin-left: auto; }
+.fx-qnav .fx-btn { min-width: 88px; }
+/* IN9's two pictures of Today */
+.fx-pics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.fx-pic { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fx-pic svg { width: 100%; max-width: 132px; height: auto; }
+.fx-pic figcaption { font-size: 14px; line-height: 1.3; text-align: center; color: var(--ap-ink2); }
+.fx-pic .p-ph { fill: var(--ap-bg); stroke: var(--ap-line); stroke-width: 2; }
+.fx-pic .p-ln { fill: var(--ap-ink3); }
+.fx-pic .p-card { fill: var(--ap-card2); }
+.fx-pic .p-dark { fill: var(--forest); }
+.fx-pic .p-on, .fx-pic .p-btn { fill: var(--ray); }
+.fx-pic .p-on2 { fill: color-mix(in srgb, var(--cream) 60%, transparent); }
+.fx-pic .p-big { fill: var(--ap-ink); }
+.fx-pic .p-btn2 { fill: var(--ap-card); stroke: var(--ap-line); stroke-width: 2; }
+
+/* the study code, the QR code */
+.fx-codebox { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); font-size: 16px; line-height: 1.5; }
+.fx-codebox p { margin: 0; }
+.fx-codebox b { font-family: var(--mono); font-size: 20px; letter-spacing: .08em; white-space: nowrap; }
+.fx-codebox-k b { font-size: 24px; }
+.fx-code-in { display: block; width: 100%; height: 64px; padding: 0 16px; border: 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); font: 700 28px/1 var(--mono); letter-spacing: .2em; text-align: center; text-transform: uppercase; }
+.fx-follow-in { font: 400 17px/1.3 var(--sans); letter-spacing: 0; text-transform: none; text-align: left; height: 56px; }
+.fx-qr-box { align-self: flex-start; width: min(280px, 72vw); padding: 12px; border-radius: 16px; background: var(--cream); }
+.fx-qr { display: block; width: 100%; height: auto; }
+.fx-qr .fx-qr-bg { fill: var(--cream); }
+.fx-qr .fx-qr-fg { fill: var(--forest); }
+.fx-link-out { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.fx-link-out b { display: block; color: var(--ap-ink); font-weight: 500; overflow-wrap: anywhere; }
+
+/* the install steps, each with a small picture */
+.fx-isteps { margin: 0; padding: 0; list-style: none; counter-reset: st; display: flex; flex-direction: column; gap: 12px; }
+.fx-isteps li { counter-increment: st; display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "n t" "n p"; gap: 8px 12px; padding: 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); font-size: 16px; line-height: 1.5; }
+.fx-isteps li::before { content: counter(st); grid-area: n; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; background: var(--ap-ink); color: var(--ap-bg); font: 700 15px/1 var(--mono); }
+.fx-isteps li > span:last-child { grid-area: t; }
+.fx-ipics { grid-area: p; display: flex; gap: 8px; order: 2; }
+.fx-ipics:empty { display: none; }
+.fx-ipic { width: 40px; height: 40px; fill: none; stroke: var(--ap-ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.fx-ipic .f { fill: var(--ap-ink); stroke: none; }
+.fx-review { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
+
+/* ---------- the app, under the task strip ---------- */
+.fx-appview { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; background: var(--ap-bg); }
+.fx-strip { flex: none; position: relative; z-index: 3; padding: calc(8px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); background: var(--ap-card); box-shadow: 0 1px 0 var(--ap-line), 0 8px 24px -20px color-mix(in srgb, var(--forest) 60%, transparent); }
+.ap[data-theme="dark"] .fx-strip { background: var(--ap-card2); }
+.fx-strip-in { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 4px; }
+.fx-strip-k { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ap-ink2); }
+.fx-strip-t { margin: 0; font-size: 16px; line-height: 1.35; font-weight: 500; }
+.fx-strip-hint { margin: 4px 0 0; padding: 8px 12px; border-radius: 12px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); font-size: 15px; line-height: 1.4; }
+.fx-strip-resume { margin: 0 0 4px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
+.fx-strip-b { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.fx-strip-b [data-fx="comment"] { margin-left: auto; }
+.fx-strip-b .fx-btn { min-width: 64px; }
+.fx-btn--icon { width: 44px; min-width: 44px !important; padding: 0 !important; }
+.fx-frame-wrap { position: relative; flex: 1; min-height: 0; width: 100%; }
+.fx-frame { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; background: var(--ap-bg); }
+/* on a laptop, the app keeps a phone's width */
+@media (min-width: 620px) {
+  .fx-frame-wrap { max-width: 440px; margin: 0 auto; box-shadow: -1px 0 0 var(--ap-line), 1px 0 0 var(--ap-line); }
+  .fx-page { padding-top: 24px; }
+}
+
+/* the questions after a task: a sheet over the lower part of the app, with a handle that lowers it */
+.fx-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; max-width: 560px; max-height: 64%; margin: 0 auto; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px calc(4px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: var(--ap-bg); box-shadow: 0 -16px 40px -20px color-mix(in srgb, var(--forest) 60%, transparent), 0 -1px 0 var(--ap-line); animation: fxUp .3s var(--ap-ease, ease) both; }
+.ap[data-theme="dark"] .fx-sheet { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 10%, transparent); }
+.fx-sheet-grab { position: sticky; top: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 48px; padding: 8px 0; border: 0; background: var(--ap-bg); color: var(--ap-ink2); font: 500 14px/1.2 var(--sans); cursor: pointer; }
+.fx-sheet-bar { width: 40px; height: 4px; border-radius: 999px; background: var(--ap-ink3); }
+.fx-sheet-b { display: flex; flex-direction: column; gap: 16px; padding-bottom: 4px; }
+.fx-sheet .fx-q { font-size: 22px !important; }
+.fx-sheet .fx-opt { min-height: 52px; padding-block: 8px; font-size: 16px; }
+.fx-sheet.is-low { max-height: none; }
+.fx-sheet.is-low .fx-sheet-b { display: none; }
+
+/* More: a sheet over everything */
+.fx-more { position: fixed; inset: 0; z-index: 700; }
+.fx-more-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 40%, transparent); }
+.fx-more-p { position: absolute; left: 0; right: 0; bottom: 0; max-width: 560px; max-height: 88%; margin: 0 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: var(--ap-bg); animation: fxUp .3s var(--ap-ease, ease) both; }
+.fx-more-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fx-more-h h2 { outline: none; }
+.fx-more-code { margin: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 16px; background: var(--ap-card); }
+.fx-more-code span { font-size: 14px; color: var(--ap-ink2); }
+.fx-more-code b { font: 700 26px/1.2 var(--mono); letter-spacing: .1em; }
+.fx-more-list { display: flex; flex-direction: column; gap: 8px; }
+.fx-more-confirm { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--ap-card2); }
+.fx-more-confirm p { margin: 0; font-size: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-sheet, .fx-more-p, .fx-opt { animation: none !important; transition: none !important; }
+}
+
+/* ---------- fixes from the end-to-end test and the walkthroughs (October 29) ---------- */
+/* consent: three lines for a skimmer, then the full list */
+.fx-sum { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.fx-sum ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 16px; line-height: 1.45; }
+.fx-sum-h { font-family: var(--mono); font-size: 11.5px !important; letter-spacing: .08em; text-transform: uppercase; color: var(--ap-ink2); font-weight: 400 !important; }
+/* the 7-point scale: the digit centred, and every button at least 44px wide on a 360px phone */
+.fx-sc { display: flex; align-items: center; justify-content: center; padding: 0; text-align: center; min-width: 0; }
+@media (max-width: 380px) { .fx-scale { margin-inline: -8px; } }
+/* WK2's seven days in two columns, so Today and the last two answers show above the screen's edge */
+.fx-opts--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fx-opts--grid .fx-opt { min-height: 48px; padding-block: 8px; }
+.fx-opts--grid .fx-opt:nth-child(n + 8) { grid-column: span 1; }
+/* the codes, large, with a copy button */
+.fx-codebox--big .fx-codebox-k { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ap-ink2); }
+.fx-code-big { font: 700 32px/1.15 var(--mono) !important; letter-spacing: .12em; color: var(--ap-ink); }
+.fx-act--row { flex-direction: row; flex-wrap: wrap; margin: 0; }
+/* the install steps' pictures: small, quiet, and labelled as what to look for, so they don't read as buttons */
+.fx-ipics { align-items: center; }
+.fx-ipics-k { font-size: 13px; color: var(--ap-ink2); }
+.fx-ipic { width: 32px; height: 32px; stroke: var(--ap-ink2); stroke-width: 2; }
+.fx-ipic .f { fill: var(--ap-ink2); }
+/* the strip: Hint on the first line, the buttons in one row, the task's words folded to two lines once the app is in use */
+.fx-strip-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
+.fx-btn--hint { min-height: 44px; margin-block: -12px; padding: 0 12px; min-width: 0 !important; }
+.fx-strip-b { flex-wrap: nowrap; }
+.fx-strip-b .fx-btn { min-width: 0; padding: 0 12px; flex: none; }
+.fx-strip-b [data-fx="done"], .fx-strip-b [data-fx="cmp-next"], .fx-strip-b [data-fx="free-done"], .fx-strip-b [data-fx="pay-next"] { min-width: 72px; }
+.fx-strip-t--short { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; padding: 0; border: 0; background: none; color: var(--ap-ink); font: 500 16px/1.35 var(--sans); text-align: left; cursor: pointer; }
+@media (max-width: 339px) {
+  .fx-btn--cm { width: 44px; padding: 0 !important; }
+  .fx-btn--cm span { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; /* grid-exempt: the visually-hidden pattern */ overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+.fx-strip-in--pick { gap: 8px; }

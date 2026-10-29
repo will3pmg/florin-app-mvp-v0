@@ -14,6 +14,11 @@
   const save = (a) => FX.ls.set("comments", a);
   const kindWords = (ks) => ks.map((k) => (CQ.kinds.find(([c]) => c === k) || [, ""])[1]).filter(Boolean).join(" | ");
   const live = () => list().filter((c) => !c.deleted);
+  /* comments this session sent from another window (Safari, before Florin went on the home screen), from the code
+     lookup: what they were about and CM1's words, never the words typed. They can be deleted here */
+  const beforeAll = () => { const s = FX.session(); return (s && Array.isArray(s.before) ? s.before : []); };
+  const before = () => beforeAll().filter((c) => !c.deleted);
+  const count = () => live().length + before().length;
 
   let root = null, opts = null, lastFocus = null;
   const theme = () => (FX.dark() ? "dark" : "light");
@@ -134,7 +139,7 @@
       vw: d.vw || 0, vh: d.vh || 0, scroll: d.scroll || 0, cm_kind: kindWords(kinds), words: c.words,
       alarm_note: FX.alarm(words) ? "yes" : "no", how: c.how
     });
-    FX.emit("comments", live().length);
+    FX.emit("comments", count());
     return c;
   }
   function edit(cmid, f) {
@@ -143,24 +148,39 @@
     c.kinds = f.kinds; c.words = FX.scrub(f.words);
     save(a);
     FX.send("comment", { cmid, op: "edit", phase: c.phase, screen: c.screen, cm_kind: kindWords(c.kinds), words: c.words, alarm_note: FX.alarm(c.words) ? "yes" : "no", how: c.how });
-    FX.emit("comments", live().length);
+    FX.emit("comments", count());
   }
   function del(cmid) {
     const a = list(), c = a.find((x) => x.cmid === cmid);
-    if (!c) return;
+    if (!c) {
+      /* one sent from the other window */
+      const b = beforeAll(), x = b.find((y) => y.cmid === cmid);
+      if (!x) return;
+      x.deleted = true;
+      FX.patch({ before: b });
+      FX.send("comment", { cmid, op: "delete", phase: FX.phase || "", screen: "other", how: "button" });
+      FX.emit("comments", count());
+      return;
+    }
     /* gone from the phone too: only the id stays, so a retry can't bring it back */
     Object.assign(c, { deleted: true, words: "", kinds: [] });
     save(a);
     FX.send("comment", { cmid, op: "delete", phase: c.phase, screen: c.screen, how: c.how });
-    FX.emit("comments", live().length);
+    FX.emit("comments", count());
   }
 
   /* ---------- the list, for review ---------- */
   const time = (iso) => { try { const d = new Date(iso); return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } };
   function reviewHTML() {
-    const a = live();
-    if (!a.length) return `<p class="fx-p fx-muted">No comments yet. Double-tap anything in the app, or tap Comment, to leave one.</p>`;
-    return `<ul class="fx-cm-list">${a.map((c) => `<li>
+    const a = live(), b = before();
+    if (!a.length && !b.length) return `<p class="fx-p fx-muted">No comments yet. Tap Comment, then tap the part of the app you mean, to leave one.</p>`;
+    const old = b.map((c) => `<li>
+        <p class="fx-cm-li-h"><b>${esc(c.label)}</b><span>Sent earlier</span></p>
+        ${c.kinds.length ? `<p class="fx-cm-li-k">${esc(kindWords(c.kinds).split(" | ").join(", "))}</p>` : ""}
+        <p class="fx-cm-li-k">Left before you added Florin to your home screen. It's with the team already; its words show only there.</p>
+        <div class="fx-cm-li-a"><button type="button" class="fx-btn fx-btn--line fx-btn--s" data-cmd="${c.cmid}">Delete</button></div>
+      </li>`).join("");
+    return `<ul class="fx-cm-list">${old}${a.map((c) => `<li>
         <p class="fx-cm-li-h"><b>${esc(c.label)}</b><span>${esc(time(c.at))}</span></p>
         ${c.kinds.length ? `<p class="fx-cm-li-k">${esc(kindWords(c.kinds).split(" | ").join(", "))}</p>` : ""}
         ${c.words ? `<p class="fx-cm-li-w">${esc(c.words)}</p>` : ""}
@@ -175,7 +195,7 @@
       const ed = e.target.closest("[data-cme]"), dl = e.target.closest("[data-cmd]");
       if (ed) { const c = live().find((x) => x.cmid === ed.dataset.cme); if (c) open({ where: c.label }, { edit: { cmid: c.cmid, kinds: c.kinds.slice(), words: c.words }, onClose: paint }); }
       if (dl) {
-        const c = live().find((x) => x.cmid === dl.dataset.cmd);
+        const c = live().find((x) => x.cmid === dl.dataset.cmd) || before().find((x) => x.cmid === dl.dataset.cmd);
         if (!c) return;
         const li = dl.closest("li");
         if (li && !li.querySelector(".fx-cm-confirm")) {
@@ -190,5 +210,5 @@
     return paint;
   }
 
-  FX.comments = { open, close, add, edit, del, list: live, review, reviewHTML, toast, isOpen: () => !!ST };
+  FX.comments = { open, close, add, edit, del, list: live, before, count, review, reviewHTML, toast, isOpen: () => !!ST };
 })();

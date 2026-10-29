@@ -17,6 +17,8 @@ window.FOCUS_CONFIG = {
   contact: "",       /* the address for questions and removal requests: "research@..." */
   recruiter: "",     /* who recruits and pays the thank-you: "Acme Research" */
   thanksHow: "",     /* how the thank-you is paid, as a clause: "as a $40 gift card by email within a week" */
+  tokenHow: "",      /* how a participant gets their thank-you code to the recruiter, as a clause after "To get your
+                        thank-you,". Empty: "reply to the message your study link came in, with this code" */
   keepMonths: 6,     /* answers are deleted this many months after the study closes */
   followUp: false,   /* true asks, on the last screen, for an optional follow-up contact, kept apart from the answers */
 
@@ -56,5 +58,7 @@ window.FOCUS_CONFIG = {
   compare: { home: true, history: true, oura: true },
 
   freeMinutes: 2,    /* free use, in minutes */
+  hintAfterEasy: 25, /* the same, in the version with larger text and simpler screens: sooner */
+  sendPerMinute: 50, /* pieces a phone sends a minute at most, answers first: the back end takes 60 from one session */
   hintAfter: 45      /* seconds before a task's Hint shows */
 };

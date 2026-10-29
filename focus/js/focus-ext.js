@@ -6,9 +6,11 @@
      reads them; the demo person, logs, meals and plan are set through api.set after the phone's first draw.
    - It watches the phone for the flow: the screen key, every act, every set, what's in view and how far down a screen
      people went, and reports them as events (never what a log says). window.FOCUS_APP is what the flow calls.
-   - Comments: a double tap anywhere in the app opens the comment box at that spot (the box is drawn by the page that
-     owns FX: the flow, when it frames the app). The tap that a double tap's first half pressed acts once; the second
-     is caught. A Comment button does the same without a double tap.
+   - Comments: the Comment button (in the flow's strip, or the demo bar) asks for one tap: that tap says what the
+     comment is about, at that spot, and presses nothing. A double tap on a card or some words (anything that isn't a
+     control) opens the box too. A quick second tap on a control is caught, so the control acts once, and no box opens:
+     its first tap may have changed the screen, and the comment would land on the wrong thing. The box is drawn by the
+     page that owns FX: the flow, when it frames the app.
    Nothing here reads or sends what a person logs: the forms, symptoms, meals, notes, check-in answers and Ask Florin's
    questions stay on the phone. */
 (function () {
@@ -112,8 +114,10 @@
     iback: "Back", close: "Close", irange: "Range tabs", hmore: "Show more days", hfilter: "History filters", "vr-cal-day": "A day on the calendar",
     "vr-cal-m": "Month buttons", nobm: "No BM today", edit: "a log entry", undo: "Undo", "askx-ask": "A suggested question", "askx-send": "Send",
     "fx-wkday": "A day on the week strip", guide: "How to pick", "mq-mic": "Microphone", "plus-earlier": "An earlier day", "ask-clear": "Clear",
-    idetail: (b) => { const c = b.closest(".ap-ic"); return c ? cleanTitle(titleOf(c)) || "A card" : b.closest(".ap-hero") ? "FloraScore" : "A card"; }
+    /* a card's own title, or for a control that opens a detail, the detail's name (Day first's FloraScore chip) */
+    idetail: (b) => { const c = b.closest(".ap-ic"); if (c) return cleanTitle(titleOf(c)) || "A card"; if (b.closest(".ap-hero, .vr-sc, .vr-sc-row") || b.dataset.k === "score") return "FloraScore"; return IDETAIL_NAME[b.dataset.k] || "A card"; }
   };
+  const IDETAIL_NAME = { timing: "Timing", often: "How often", form: "Form", sym: "Symptoms", ck: "Weekly check-in", pat: "Possible patterns", days: "Your days" };
   const SCREEN_NAME = { today: "Today", "home-day": "Today", "ez-today": "Today", insights: "Insights", "ez-weeks": "Your weeks", history: "History", "hist-cal": "History", ask: "Ask Florin", "ask-about": "Ask Florin", "i-score": "FloraScore page", "i-timing": "Timing page", "i-often": "How often page", "i-form": "Form page", "i-sym": "Symptoms page", "i-ck": "Check-in page", "i-pat": "Possible patterns page", "i-pattern": "A pattern's page", "i-days": "Your days page", plus: "Plus menu", pay: "Membership page", pf: "Profile", ck: "Weekly check-in", ckdone: "Check-in saved", ckday: "When it's due", bm: "a log sheet", "ez-bm": "a log sheet", sym: "a log sheet", meal: "a log sheet", earlier: "An earlier day" };
   /* what a tap landed on: a named control, a card, else a neutral name. Never the words of a log, a note or a chat */
   function labelFor(t, api) {
@@ -155,7 +159,7 @@
     const api = EXT.api;
     if (!api || !FX.comments) return;
     const vw = window.innerWidth, vh = window.innerHeight;
-    const lab = o.how === "button" ? { label: SCREEN_NAME[api.key()] || "This screen", el: null } : labelFor(o.target, api);
+    const lab = o.target ? labelFor(o.target, api) : { label: SCREEN_NAME[api.key()] || "This screen", el: null };
     let tx = "", ty = "";
     if (lab.el && o.x != null) { const r = lab.el.getBoundingClientRect(); if (r.width && r.height) { tx = r2((o.x - r.left) / r.width); ty = r2((o.y - r.top) / r.height); } }
     const sc = scrollerNow(api);
@@ -178,23 +182,47 @@
   }
   function hideMarker() { if (marker) { marker.remove(); marker = null; } }
 
-  /* the double tap: the first tap acts as usual; a second one close by, quickly, opens the comment box instead of
-     pressing anything. Keyboard presses (detail 0) and taps in a text box are never caught */
+  /* the double tap. On a card or some words (nothing that acts), a second tap within 24px and 500ms opens the comment
+     box there: a slow double tap still counts, and a tap on words does nothing anyway. On a control, the first tap acts
+     as usual and a second within 450ms is caught, with no box. Keyboard presses (detail 0) and taps in a text box are
+     never caught */
+  const CONTROL = "button, a, input, textarea, select, label, summary, [data-act], [role='button'], [contenteditable]";
+  const DT_MS = 500, SWALLOW_MS = 450, NEAR = 24;
   let last = null;
-  document.addEventListener("mousedown", (e) => { if (commentsOn && e.detail > 1 && !e.target.closest("input, textarea, select")) e.preventDefault(); }, true);
+  /* Comment, then one tap: it says what the comment is about, and presses nothing */
+  let picking = false;
+  function pick(on) {
+    picking = !!on;
+    document.documentElement.classList.toggle("fx-picking", picking);
+    if (DEMO) demoPick(picking);
+    if (!picking) emit("pickend", true);
+  }
+  document.addEventListener("mousedown", (e) => { if ((commentsOn && e.detail > 1 && !e.target.closest("input, textarea, select")) || (picking && !e.target.closest(".fx-demobar"))) e.preventDefault(); }, true);
   document.addEventListener("click", (e) => {
     const api = EXT.api;
+    if (picking && api && !e.target.closest(".fx-demobar, .fx-demo-list")) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (!api.root.contains(e.target)) return;
+      const x = e.detail === 0 && e.target.getBoundingClientRect ? (() => { const r = e.target.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })() : { x: e.clientX, y: e.clientY };
+      pick(false);
+      last = null;
+      openComment({ how: "button", x: x.x, y: x.y, target: e.target });
+      return;
+    }
     if (!api || !api.root.contains(e.target)) return;
     if (commentsOn && e.detail > 0 && !(FX.comments && FX.comments.isOpen())) {
       const inField = !!e.target.closest("input, textarea, select, [contenteditable]");
+      const ctl = !!e.target.closest(CONTROL);
       const now = performance.now();
-      if (!inField && last && now - last.t < 380 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 30) {
+      const near = !inField && last && Math.hypot(e.clientX - last.x, e.clientY - last.y) < NEAR && now - last.t < (last.ctl ? SWALLOW_MS : DT_MS);
+      if (near && last.ctl) { e.preventDefault(); e.stopImmediatePropagation(); last = null; return; }
+      if (near && !ctl) {
         e.preventDefault(); e.stopImmediatePropagation();
         last = null;
         openComment({ how: "double tap", x: e.clientX, y: e.clientY, target: e.target });
         return;
       }
-      last = inField ? null : { t: now, x: e.clientX, y: e.clientY };
+      last = inField ? null : { t: now, x: e.clientX, y: e.clientY, ctl };
     }
     const b = e.target.closest("[data-act]");
     if (!b || !api.root.contains(b)) return;
@@ -320,7 +348,7 @@
 
   window.FOCUS_APP = {
     ready, on, mapKey, labelFor, titleOf, inView, reveal, pulse, cardTitles, snapshot, restore, setInsets,
-    api: () => EXT.api, L, RU,
+    api: () => EXT.api, L, RU, AD: window.FLORIN_APP,
     key: () => (EXT.api ? EXT.api.key() : ""),
     screen: () => (EXT.api ? mapKey(EXT.api.key()) : ""),
     V: () => EXT.api.V(), M: () => EXT.api.M(),
@@ -332,8 +360,9 @@
     top: () => EXT.api.top(),
     setWeek(id) { window.FOCUS_WEEK = id || "built"; if (EXT.api) EXT.api.renderTab(true); },
     setBottom(px) { insetB = Math.max(0, px || 0); },
-    comments(on) { commentsOn = !!on; },
+    comments(on) { commentsOn = !!on; if (!on && picking) pick(false); },
     comment() { openComment({ how: "button" }); },
+    pick,
     pay() { const api = EXT.api; api.closeAll(); return api.push("pay", { from: "" }); },
     /* the arms and the demo, from the session: on load, and again when intake ends */
     apply() {
@@ -354,6 +383,9 @@
       api.renderTab(true);
     },
     reset() { const api = EXT.api; api.closeAll(); api.reset(); },
+    /* a task starts on Today, with every tab back at its top: no Insights detail, no History month or filter, no card
+       loaded into Ask, left over from the task before */
+    home() { const api = EXT.api, S = api.S; api.closeAll(); S.ins = { range: 30, k: null, y: 0 }; S.hist = { filter: "all", n: 14 }; S.askCtx = null; api.go("today"); },
     framed: FRAMED
   };
 
@@ -372,17 +404,23 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else setTimeout(init, 0);
 
   /* ---------- app.html on its own (?demo=1): a slim bar with Comment and Your comments ---------- */
+  let demoPick = () => {};
   function demoBar() {
     const bar = document.createElement("nav");
     bar.className = "fx-demobar";
     bar.setAttribute("aria-label", "Comments");
-    bar.innerHTML = `<span class="fx-demobar-t">Florin app, prototype</span><button type="button" class="fx-btn fx-btn--line fx-btn--s" data-fxd="list">Your comments</button><button type="button" class="fx-btn fx-btn--s" data-fxd="comment">Comment</button>`;
+    const idle = `<span class="fx-demobar-t">Florin app, prototype</span><button type="button" class="fx-btn fx-btn--line fx-btn--s" data-fxd="list">Your comments</button><button type="button" class="fx-btn fx-btn--s" data-fxd="comment">Comment</button>`;
+    const asking = `<span class="fx-demobar-t" role="status">Tap the part you mean</span><button type="button" class="fx-btn fx-btn--line fx-btn--s" data-fxd="screen">Whole screen</button><button type="button" class="fx-btn fx-btn--line fx-btn--s" data-fxd="cancel">Cancel</button>`;
+    bar.innerHTML = idle;
+    demoPick = (on) => { bar.innerHTML = on ? asking : idle; };
     document.body.appendChild(bar);
     document.documentElement.classList.add("fx-has-demobar");
     bar.addEventListener("click", (e) => {
       const b = e.target.closest("[data-fxd]");
       if (!b) return;
-      if (b.dataset.fxd === "comment") openComment({ how: "button" });
+      if (b.dataset.fxd === "comment") pick(true);
+      else if (b.dataset.fxd === "screen") { pick(false); openComment({ how: "button" }); }
+      else if (b.dataset.fxd === "cancel") pick(false);
       else {
         let sh = document.querySelector(".fx-demo-list");
         if (sh) { sh.remove(); return; }

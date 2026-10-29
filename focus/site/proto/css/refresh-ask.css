@@ -1,0 +1,71 @@
+/* Florin app refresh: styles for js/refresh-ask.js (Ask Florin, interactive). Built on the chat components the studio
+   already has (.ap-ask-turn, .ap-ask-me, .ap-ask-body, .ap-ask-alarm, .ap-ask-compose in app.css) and the refresh's
+   (.ap-askq, .ap-askbar, .ap-shaped, .ap-chip), so a restyle of those, the Easy version's included, reaches the chat
+   too. Tokens only, light and dark from the same rules; every spacing and corner on the DESIGN.md scale. */
+
+/* the box sits last, in a dock that clears the tab bar, so the screen needs no padding of its own at the end. The
+   screen is at least as tall as the phone and the dock takes the space left over, so the box stays pinned to the
+   bottom when the chat is short */
+.ap-scr.ap-askx { padding-bottom: 0; min-height: 100%; }
+.ap-askx-th { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ap-askx-new { flex: none; }
+
+/* the conversation */
+.ap-askx-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.ap-askx-log > li { margin: 0; }
+.ap-askx-a { gap: 8px; }
+.ap-askx-who { color: var(--ap-teal); }
+.ap-askx-text:empty { display: none; }
+.ap-askx-text p { white-space: pre-line; }
+.ap-askx-try { font-size: 15px; font-weight: 500; line-height: 1.45; color: var(--ap-ink); }
+.ap-askx-note { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-askx-note .ic { width: 14px; height: 14px; color: var(--ap-ink2); }
+.ap-askx-think { animation: askxPulse 1.4s ease-in-out infinite; }
+@keyframes askxPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .ap-askx-think { animation: none; } }
+.ap-askx-a .ap-fine { padding: 0 4px; }
+
+/* the small chart in an answer: a card, the chart, then a word for every colour */
+.ap-askx-fig.ap-ask-chart { margin: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-askx-fig .c-spark { display: block; width: 100%; height: 48px; }
+.ap-askx-fig .c-range { margin: 4px 0 0; }
+
+/* From your logs: the lines an answer used, label and value */
+.ap-askx-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ap-askx-facts li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--ap-line); font-size: 13px; line-height: 1.4; }
+.ap-askx-facts li:first-child { border-top: 0; padding-top: 0; }
+.ap-askx-facts span { color: var(--ap-ink2); }
+.ap-askx-facts b { font-weight: 500; text-align: right; color: var(--ap-ink); }
+
+/* options under a redirect, and the clinician answer's urgent-care line, after primary care */
+.ap-askx .ap-ask-opt { min-height: 44px; }
+.ap-askx-a .ap-askx-urgent { font-weight: 500; color: var(--ap-ink); }
+
+/* the box: a card in a dock pinned to the bottom, clear of the floating tab bar, while the conversation scrolls under
+   it. The dock fades into the ground above the card and is solid ground behind the tab bar */
+.ap-askx-dock { position: sticky; bottom: 0; z-index: 3; margin: auto -20px 0; padding: 8px 20px 96px; background: linear-gradient(to bottom, transparent, var(--ap-bg) 8px); }
+.ap-askx-compose.ap-ask-compose { position: relative; bottom: auto; z-index: auto; margin: 0; padding: 8px; gap: 8px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow), inset 0 0 0 1px var(--ap-line); }
+.ap-askx-bar.ap-askbar { padding: 0 4px 0 0; background: var(--ap-bg); }
+/* the box takes the app's field focus: the line darkens, with no second ring on the input inside it */
+.ap-askx-bar:focus-within { box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
+.ap[data-theme="dark"] .ap-askx-bar:focus-within { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+.ap-rx .ap-askx-in:focus, .ap-rx .ap-askx-in:focus-visible { outline: none; }
+.ap-askx-in { flex: 1; min-width: 0; height: 48px; padding: 0 0 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--ap-ink); font-family: var(--sans); font-size: 15px; outline: none; }
+.ap-askx-in::placeholder { color: var(--ap-ink3); opacity: 1; }
+.ap-askx-send[aria-disabled="true"] { background: var(--ap-card2); color: var(--ap-ink3); cursor: default; }
+.ap-askx-stop .ic { fill: currentColor; stroke: none; }
+.ap-askx-ctx { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0 0 0 8px; }
+.ap-askx-ctx .ap-chip { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.ap-askx-src { padding: 0 8px 4px; font-size: 11.5px; line-height: 1.4; color: var(--ap-ink2); }
+
+/* the Easy version: the chat's own pieces grow with the rest of the app. Its tab bar is taller (64px buttons in 8px
+   of padding, 24px up from the edge), so the dock clears 104px plus 16 */
+.ap[data-easy="true"] .ap-askx-dock { padding-bottom: 120px; }
+.ap[data-easy="true"] .ap-askx-ctx { flex-wrap: wrap; padding: 0; }
+.ap[data-easy="true"] .ap-askx-in { font-size: 18px; }
+.ap[data-easy="true"] .ap-askx-try { font-size: 17px; }
+.ap[data-easy="true"] .ap-askx-facts li { font-size: 15px; }
+.ap[data-easy="true"] .ap-askx-src, .ap[data-easy="true"] .ap-askx-note { font-size: 13px; }
+/* the way out of a redirect: the same size as the Ask next chips beside it (refresh-easy.css, .ap-askq) */
+.ap[data-easy="true"] .ap-ask-opt { min-height: 64px; padding: 16px 20px; gap: 12px; font-size: 18px; line-height: 1.45; }
+.ap[data-easy="true"] .ap-ask-opt .ic { width: 20px; height: 20px; }

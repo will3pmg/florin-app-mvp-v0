@@ -1,0 +1,1015 @@
+/* ============ Florin app refresh · first pass ============
+   The page around the phone (.rx-) and the new app components (.ap-). The app reuses the studio's app.css tokens
+   (--ap-*), chips, buttons and chart kit. Every padding, margin, gap and corner sits on the DESIGN.md v1.1 scale:
+   spacing 4 8 12 16 20 24 32 40 48 56 64 80 96 120, radius 2 4 8 12 16 24 32 full. */
+
+/* ---------- page ---------- */
+/* the hidden attribute always wins, so a collapsed section stays collapsed whatever display a class gives it */
+[hidden]:not([hidden="until-found" i]) { display: none !important; }
+.rx { max-width: 1480px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; font-family: var(--sans); color: var(--ink); }
+.rx .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; /* grid-exempt: the standard visually-hidden pattern, not spacing */ overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.rx :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.rx-eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.rx-small { font-size: 12.5px; line-height: 1.45; color: var(--ink-3); margin: 0; }
+/* a slim header, the title beside its lede, so the whole phone fits under it at full size */
+.rx-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: 8px 32px; padding-block: 16px; }
+.rx-head-t { display: flex; flex-direction: column; gap: 4px; }
+.rx-head h1 { font-weight: 300; font-size: 24px; line-height: 1.1; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.rx-head-r { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rx-head-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13px; line-height: 1.45; }
+.rx-head-links a { color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent); text-underline-offset: 2px; }
+.rx-head-links a:hover { text-decoration-color: currentColor; }
+/* the first stop for the keyboard: hidden until focused, then it takes focus into the phone */
+.rx-skip { position: fixed; top: 8px; left: 16px; z-index: 100; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font: 500 14px/1.2 var(--sans); text-decoration: none; transform: translateY(-200%); }
+.rx-skip:focus { transform: none; }
+.rx-lede { font-family: var(--serif); font-size: 14px; line-height: 1.45; color: var(--ink-2); max-width: 96ch; margin: 0; text-wrap: pretty; }
+/* a toggle row: its name, then its options on the same line */
+.rx-ctl { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: center; gap: 8px; }
+.rx-ctl-l { font-family: var(--mono); font-size: 10.5px; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); overflow-wrap: anywhere; }
+/* segmented controls: equal columns, words wrap to two lines rather than run out of the bar */
+.rx-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+.rx-seg button, .rx-chips button { min-height: 32px; padding: 4px; border: 0; border-radius: 12px; background: none; font: 500 13px/1.15 var(--sans); color: var(--ink-2); cursor: pointer; text-wrap: balance; transition: background .2s, color .2s; }
+.rx-seg button:hover, .rx-chips button:hover { color: var(--ink); background: var(--line-2); }
+.rx-seg button[aria-pressed="true"], .rx-chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.rx-o1, .rx-o2 { display: block; }
+.rx-o1 { font-weight: 700; font-family: var(--mono); font-size: 12px; }
+.rx-o2 { font-size: 12px; }
+/* where the options don't fit in one bar (Data style): a grid of chips, three to a row */
+.rx-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.rx-chips button { min-height: 32px; padding: 0 4px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+.rx-chips button[aria-pressed="true"] { box-shadow: none; }
+.rx-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; transition: background .2s, color .2s; }
+.rx-btn:hover { background: var(--line-2); }
+.rx-btn--line { background: transparent; }
+
+/* left: Decisions, Demo, Screens. Middle: the phone, live. Right: notes */
+.rx-main { display: grid; grid-template-columns: 320px minmax(0, 1fr) 320px; grid-template-areas: "side stage notes"; gap: 24px 32px; align-items: start; }
+.rx-side--l { grid-area: side; }
+.rx-center { grid-area: stage; min-width: 0; }
+.rx-side--r { grid-area: notes; }
+/* each side bar scrolls on its own when it's taller than the window. refresh-app.js sets its height from where it sits
+   (under the header, then at the top as the page scrolls), so its end is always in reach */
+.rx-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 32px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: 24px; }
+.rx-panel { background: var(--panel); border-radius: 24px; padding: 16px; box-shadow: inset 0 0 0 1px var(--line-2); }
+.rx-h { font: 500 15px/1.2 var(--sans); margin: 0 0 12px; letter-spacing: -.005em; }
+/* the decisions, one line each: the name, the options, and a small info button at the end. Consistency's three
+   two-line options and Data style's six take a line of their own under the name */
+.rx-dec-lede { margin: -4px 0 12px; }
+.rx-decs { display: flex; flex-direction: column; gap: 8px; }
+.rx-dec { display: grid; grid-template-columns: 80px minmax(0, 1fr) 28px; grid-template-areas: "l c i"; align-items: center; gap: 8px; }
+.rx-dec > .rx-ctl-l { grid-area: l; }
+.rx-dec > .rx-seg, .rx-dec > .rx-chips { grid-area: c; }
+.rx-dec > .rx-info { grid-area: i; }
+.rx-dec--wide { grid-template-areas: "l l i" "c c c"; row-gap: 4px; }
+/* under Home and Data style while the Easy version is on: what the phone draws instead */
+.rx-dec > .rx-dec-shadow { grid-column: 1 / -1; color: var(--ink-2); }
+.rx-info { position: relative; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
+.rx-info::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
+.rx .rx-info .ic { width: 18px; height: 18px; }
+.rx-info:hover { color: var(--ink); background: var(--line-2); }
+.rx-info[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+/* the demo controls fold to one line that says what's showing. A plain line under the name says they change the demo
+   person, not the app, folded or open */
+.rx-panel--demo { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
+.rx-panel--demo > .rx-h { margin: 0; }
+.rx-panel--demo > .rx-demo, .rx-panel--demo > .rx-demo-sum, .rx-panel--demo > .rx-demo-lede { grid-column: 1 / -1; }
+.rx-demo-lede { margin-top: 4px; }
+.rx-demo-sum { margin-top: 8px; color: var(--ink-2); }
+.rx-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 8px 0 12px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); font: 500 13px/1 var(--sans); cursor: pointer; }
+.rx-fold:hover { color: var(--ink); background: var(--line-2); }
+.rx .rx-fold .ic { width: 16px; height: 16px; transform: rotate(90deg); transition: transform .2s; }
+.rx .rx-fold[aria-expanded="true"] .ic { transform: rotate(-90deg); }
+.rx-demo { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin-top: 12px; }
+.rx-demo-f { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 4px; }
+.rx-demo-r { display: flex; align-items: center; gap: 8px; }
+/* the screens to jump to */
+.rx-nav, .rx-nav ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rx-nav { gap: 16px; }
+.rx-nav ol { gap: 4px; margin-top: 8px; }
+.rx-nav-b { width: 100%; min-height: 36px; padding: 8px 12px; border: 0; border-radius: 12px; background: none; text-align: left; font: 400 14px/1.25 var(--sans); color: var(--ink-2); cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
+.rx-nav-b:hover:not(:disabled) { background: var(--line-2); color: var(--ink); }
+.rx-nav-b[aria-current="true"] { background: var(--ink); color: var(--bg); }
+.rx-nav-b:disabled { cursor: default; color: var(--ink-3); }
+.rx-nav-b em { font-style: normal; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.rx-stage { display: flex; justify-content: center; align-items: flex-start; }
+.rx-ph { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.rx-fit { position: relative; flex: none; }
+.rx-dev { transform-origin: top left; }
+.rx-mount { position: absolute; inset: 0; }
+.rx-mount > .ap { position: absolute; inset: 0; overflow: hidden; }
+
+/* notes beside the phone: the screen's, or the decision just changed */
+.rx-note h2 { font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: -.015em; margin: 8px 0; text-wrap: balance; }
+.rx-note-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink-2); margin: 0; }
+.rx-h3 { font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 24px 0 8px; }
+.rx-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rx-opts { gap: 4px; }
+.rx-opts li { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line-2); }
+.rx-opts li.is-on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+/* a decision's option, as a block: its name, then What it is, Why do it and Why not. The one we recommend is outlined
+   and tagged */
+.rx-opts { gap: 8px; }
+.rx-opt-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin: 0; }
+.rx-opt-h b { font-size: 14.5px; font-weight: 500; line-height: 1.3; }
+.rx-opts dl { display: flex; flex-direction: column; margin: 0; }
+.rx-opts dt { margin-top: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.rx-opts dd { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-opts li.is-rec { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.rx-tag { padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; line-height: 20px; }
+.rx-rec { margin: 16px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-rec b { font-weight: 500; color: var(--ink); }
+/* the top label's second line: what we recommend, on a line of its own, in Ink (the separator is for the text alone) */
+.rx-eb-sep { display: none; }
+.rx-eb-rec { display: block; margin-top: 4px; color: var(--ink); }
+.rx-answer { margin: 12px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-answer b { font-weight: 500; color: var(--ink); }
+.rx-about-l { margin-bottom: 8px; }
+.rx-q.rx-about-m { margin-top: 12px; font-size: 13.5px; }
+/* Still open, Try it, and a demo control's why: one plain paragraph each */
+.rx-line { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rx-line + .rx-line { margin-top: 8px; }
+/* a line under the question: Easy draws its own here; the meal sheet isn't the demo's meals */
+.rx-note-easy, .rx-aside { margin: 12px 0 0; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-note-easy { color: var(--ink); }
+/* a name and its line: the check-in's questions, a demo control's options */
+.rx-pairs { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.rx-h3 + .rx-pairs { margin-top: 0; }
+.rx-pairs li { display: flex; flex-direction: column; gap: 4px; padding-block: 8px; border-top: 1px solid var(--line-2); }
+.rx-pairs b { font-size: 14px; font-weight: 500; line-height: 1.35; }
+.rx-pairs span { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-pairs + .rx-line { margin-top: 8px; }
+.rx-q { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.rx-q li::marker { color: var(--ink); }
+.rx-lint { display: flex; gap: 8px; align-items: flex-start; margin: 24px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
+.rx-lint .ic { width: 16px; height: 16px; }
+.rx-lint.is-hit { background: color-mix(in srgb, var(--gold) 26%, transparent); color: var(--ink); }
+.rx-note-back { margin-top: 16px; }
+.rx-note-show { margin-top: 12px; }
+/* between 760 and 1019px the notes sit under the phone: a decision changed up in the bar points down to its note */
+/* it sits under the toggles column (refresh-app.js sets left to the column's middle), never over the phone */
+.rx-jump { position: fixed; left: 50%; bottom: 24px; z-index: 90; transform: translateX(-50%); max-width: 304px; min-height: 44px; padding: 0 20px; text-align: center; border: 0; border-radius: 999px; background: var(--ink); color: var(--bg); font: 500 14px/1.2 var(--sans); cursor: pointer; box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--forest) 50%, transparent); animation: apFadeOnly .3s both; }
+.rx-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+
+.rx-mbar, .rx-sheet { display: none; }
+
+@media (max-width: 1240px) {
+  .rx-main { grid-template-columns: 320px minmax(0, 1fr) 272px; gap: 24px; }
+}
+/* narrower: the notes and the workshop go under the phone; the toggles keep their bar */
+@media (max-width: 1020px) {
+  .rx-main { grid-template-columns: 320px minmax(0, 1fr); grid-template-areas: "side stage" "side notes"; }
+  .rx-side--r { position: static; max-height: none; overflow: visible; }
+  .rx-head { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- the app, inside the phone ---------- */
+/* the faintest ink, a step darker in light so 10px axis labels and small notes clear 4.5:1 on the card (4.07:1 in the
+   studio's token). The same specificity as Easy's .ap.ap--easy, which loads later and keeps its own mapping. To fold
+   back into the studio's app.css */
+.ap-rx:not([data-theme="dark"]) { --ap-ink3: oklch(from var(--forest) calc(l + .25) calc(c * .56) h); }
+.ap-rx .apx-status { z-index: 45; }
+.ap-rx .apx-island, .ap-rx .apx-homebar { z-index: 46; }
+.ap-rx.has-ovl .apx-status { background: none; }
+.ap-rx :focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+/* zero specificity, so a field keeps its own 16px (under 16px, iOS zooms the page on focus) */
+:where(.ap-rx) :is(input, select, textarea) { font: inherit; color: inherit; }
+.ap-gl { display: block; fill: currentColor; }
+.ap-gl .ap-gl-cut { fill: none; stroke: var(--gl-bg, var(--ap-card)); stroke-width: 1.4; stroke-linecap: round; }
+.ap-gl .ap-gl-st { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+.ap-btn--block { width: 100%; }
+.ap-btn--c { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.ap-btn[aria-disabled="true"] { background: var(--ap-card2); color: var(--ap-ink3); }
+.ap-btn--line[aria-disabled="true"] { background: transparent; }
+
+/* tab bar: four tabs and the plus */
+.ap-tb { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ap-card) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--forest) 35%, transparent), inset 0 0 0 1px var(--ap-line); transition: transform .4s var(--ap-ease), opacity .3s; }
+.ap-rx.has-full .ap-tb { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
+.ap-tb-b { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 64px; min-height: 44px; border-radius: 999px; font-size: 10.5px; font-weight: 500; line-height: 1; color: var(--ap-ink3); transition: background .25s, color .25s; }
+.ap-tb-b .ic { width: 19px; height: 19px; }
+.ap-tb-b[aria-current="true"] { background: var(--ap-card2); color: var(--ap-ink); }
+.ap-tb-plus { width: 44px; height: 44px; margin-inline: 4px; border-radius: 50%; background: var(--ray); color: var(--forest); display: grid; place-items: center; box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--forest) 60%, transparent); transition: transform .2s var(--ap-ease); }
+.ap-tb-plus:active { transform: scale(.94); }
+.ap-tb-plus .ic { width: 22px; height: 22px; stroke-width: 2; }
+
+/* overlays: a sheet, a tall sheet for the log forms, or the whole screen for the check-in */
+.ap-ovl { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+.ap-o { position: absolute; inset: 0; pointer-events: auto; display: flex; flex-direction: column; justify-content: flex-end; }
+.ap-o-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 40%, transparent); animation: apFadeOnly .3s both; cursor: pointer; }
+.ap-o-p { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.ap-o--sheet .ap-o-p { max-height: calc(100% - 56px); animation: apSheet .42s var(--ap-ease) both; }
+.ap-o--full .ap-o-p { height: calc(100% - 56px); animation: apSheet .45s var(--ap-ease) both; }
+.ap-o--screen .ap-o-p { height: 100%; animation: apRise .38s var(--ap-ease) both; }
+.ap-o.is-now .ap-o-scrim, .ap-o.is-now .ap-o-p { animation: none; }
+.ap-o.is-out { pointer-events: none; }
+.ap-o.is-out .ap-o-scrim { animation: apFadeOut .3s both; }
+.ap-o.is-out .ap-o-p { animation: apSheetOut .3s var(--ap-ease) both; }
+.ap-o--screen.is-out .ap-o-p { animation: apSink .3s var(--ap-ease) both; }
+@keyframes apSheetOut { to { transform: translateY(100%); } }
+@keyframes apFadeOut { to { opacity: 0; } }
+@keyframes apRise { from { transform: translateY(24px); opacity: 0; } }
+@keyframes apSink { to { transform: translateY(24px); opacity: 0; } }
+@keyframes apNudge { 30% { transform: translateX(-4px); } 60% { transform: translateX(4px); } }
+
+/* toast, with undo */
+.ap-tst { position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 60; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 8px 8px 16px; border-radius: 16px; background: var(--forest); color: var(--cream); font-size: 13.5px; line-height: 1.35; box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--forest) 45%, transparent); opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .3s var(--ap-ease); pointer-events: none; }
+.ap-tst.is-on { opacity: 1; transform: none; pointer-events: auto; }
+/* a faded toast is gone for real: no invisible Undo for the keyboard to find */
+.ap-tst { visibility: hidden; transition: opacity .25s, transform .3s var(--ap-ease), visibility 0s .3s; }
+.ap-tst.is-on { visibility: visible; transition-delay: 0s; }
+.ap-tst span { flex: 1; min-width: 0; }
+.ap-tst-b { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; background: color-mix(in srgb, var(--cream) 14%, transparent); color: var(--ray); font-size: 13.5px; font-weight: 500; flex: none; }
+.ap-tst-b .ic { width: 15px; height: 15px; }
+
+/* ---------- sheets ---------- */
+.ap-psh { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; scrollbar-width: none; background: var(--ap-bg); border-radius: 32px 32px 0 0; padding: 12px 20px 32px; }
+.ap-psh::-webkit-scrollbar { display: none; }
+/* the handle and the header take a drag down to close; the handle gets a finger-sized strip */
+.ap-psh .ap-sheet-grab { margin: -12px auto -16px; height: 5px; padding-block: 12px; background-clip: content-box; box-sizing: content-box; touch-action: none; cursor: grab; }
+.ap-psh-h { touch-action: none; }
+/* every close and back button reaches 44px for a finger without growing on screen */
+.ap-rx .ap-lg-x { position: relative; }
+.ap-rx .ap-lg-x::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.ap-psh-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ap-psh-h h2 { font-size: 22px; font-weight: 400 !important; letter-spacing: -.015em; line-height: 1.15; }
+
+/* the plus menu: BM first and largest */
+.ap-pbm { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); }
+.ap-pbm-h { display: grid; grid-template-columns: 44px minmax(0, 1fr) 20px; gap: 12px; align-items: center; text-align: left; }
+.ap-pbm-h > .ic { color: color-mix(in srgb, var(--cream) 70%, transparent); }
+.ap-pbm-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--ray); color: var(--forest); display: grid; place-items: center; --gl-bg: var(--ray); }
+.ap-pbm-ic .ap-gl { width: 26px; height: 26px; }
+.ap-pbm-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ap-pbm-t b { font-size: 20px; font-weight: 500; letter-spacing: -.01em; line-height: 1.1; }
+.ap-pbm-t em { font-style: normal; font-size: 13px; line-height: 1.35; color: color-mix(in srgb, var(--cream) 80%, transparent); }
+/* the tiles reach to 8px from the card's edge, so seven fit at 44px; corners nest (24 minus 8) */
+.ap-pbm .ap-fm, .ap-pbm .ap-fm-scale { margin-inline: -8px; }
+.ap-pbm .ap-fm-scale { color: color-mix(in srgb, var(--cream) 80%, transparent); margin-top: -4px; }
+.ap-pbm .ap-fm-scale .ap-gd-b { color: var(--cream); }
+.ap-pbm-sub { display: flex; justify-content: center; min-height: 36px; align-items: center; margin-top: -4px; }
+.ap-pbm-sub .ap-k { font-size: 12px; color: var(--ap-ink2); }
+.ap-psh-day { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 13.5px; line-height: 1.4; }
+.ap-psh-day .ic { width: 16px; height: 16px; flex: none; }
+.ap-psh-ago { align-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
+.ap-psh-ago .ic { width: 16px; height: 16px; }
+.ap-ea { list-style: none; margin: 0; padding: 0 16px; }
+.ap-ea li + li { border-top: 1px solid var(--ap-line); }
+.ap-ea-row { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; text-align: left; }
+.ap-ea-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ea-m b { font-size: 15px; font-weight: 500; }
+.ap-ea-m em { font-style: normal; font-size: 12.5px; color: var(--ap-ink2); }
+.ap-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ap-pt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-pt .ap-read-ic { margin-bottom: 8px; color: var(--ap-ink); }
+.ap-pt b { font-size: 16px; font-weight: 500; }
+.ap-pt em { font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-pck { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-pck .ap-read-ic { color: var(--ap-ink); }
+.ap-pck-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-pck-m b { font-size: 15px; font-weight: 500; }
+.ap-pck-m em { font-style: normal; font-size: 12.5px; color: var(--ap-ink2); }
+/* due is a reminder: neutral ink, never the Plum (or Ray) that means "your usual" */
+.ap-pck-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ap-ink2); flex: none; box-shadow: 0 0 0 4px var(--ap-card2); }
+.ap-pck.is-due .ap-pck-m em { color: var(--ap-ink2); }
+
+/* the form tiles: A has seven, B has five */
+.ap-fm { display: grid; gap: 4px; }
+.ap-fm--A { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ap-rx .ap-fm-b { position: relative; }
+.ap-rx .ap-fm--A .ap-fm-b::after { content: ""; position: absolute; inset: 0 -2px; }
+.ap-fm--B { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.ap-fm-b { --gl-bg: var(--ap-card); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-height: 80px; padding: 8px 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink2); transition: background .2s, color .2s, box-shadow .2s, transform .15s var(--ap-ease); }
+.ap-fm-b .ap-gl { width: 28px; height: 28px; flex: none; }
+/* A: the number, then a short word; B: the word. Words wrap to two lines at most */
+.ap-fm-n { font-family: var(--mono); font-size: 10px; line-height: 1; opacity: .8; }
+.ap-fm-w { font-family: var(--sans); font-size: 11.5px; font-weight: 500; line-height: 1.15; text-align: center; overflow-wrap: normal; hyphens: none; }
+/* under 380 wide the app is the screen, and seven tiles are 40px each: the word steps down so Formed stays one word */
+@media (max-width: 379px) { .ap-rx .ap-fm--A .ap-fm-w { font-size: 10.5px; letter-spacing: -.01em; } }
+.ap-fm--B .ap-fm-w { font-size: 12.5px; }
+.ap-fm-b:active { transform: scale(.95); }
+.ap-fm-b.is-on { --gl-bg: var(--ap-chart); background: var(--ap-chart); color: var(--ap-card); box-shadow: none; }
+.ap-fm--dark .ap-fm-b { --gl-bg: color-mix(in srgb, var(--cream) 10%, var(--ap-hero)); background: color-mix(in srgb, var(--cream) 10%, transparent); box-shadow: none; color: var(--cream); }
+.ap-fm--dark .ap-fm-b:hover { background: color-mix(in srgb, var(--cream) 16%, transparent); }
+.ap-fm-scale { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.ap-fm-scale .ap-gd-b { font-family: var(--sans); letter-spacing: 0; text-transform: none; }
+.ap-fm-line { min-height: 20px; font-size: 14px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-fm-line.is-set { color: var(--ap-ink2); }
+.ap-fm-line b { font-weight: 500; color: var(--ap-ink); }
+
+/* the tall log sheets */
+.ap-fsh { height: 100%; display: flex; flex-direction: column; background: var(--ap-bg); border-radius: 32px 32px 0 0; overflow: hidden; }
+.ap-fsh-h { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; padding: 16px 16px 8px; }
+.ap-fsh-t { text-align: center; min-width: 0; }
+.ap-fsh-t h2 { font-size: 17px; font-weight: 500 !important; letter-spacing: -.01em; line-height: 1.2; }
+.ap-fsh-t p { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--ap-ink2); margin-top: 4px !important; }
+.ap-fsh-sp { width: 36px; }
+.ap-fsh-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 8px 20px 24px; display: flex; flex-direction: column; gap: 24px; }
+.ap-fsh-b::-webkit-scrollbar { display: none; }
+.ap-fsh-f { display: flex; flex-direction: column; gap: 8px; padding: 12px 20px 32px; background: var(--ap-bg); box-shadow: 0 -1px 0 var(--ap-line); }
+.ap-fsh-hint { text-align: center; font-size: 12.5px; color: var(--ap-ink2); }
+.ap-fsh-hint.is-flash { animation: apNudge .4s var(--ap-ease); color: var(--ap-ink); }
+.ap-fsh-del { align-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; font-size: 13.5px; font-weight: 500; color: var(--ap-ink2); }
+.ap-fsh-del .ic { width: 16px; height: 16px; }
+
+.ap-f { display: flex; flex-direction: column; gap: 8px; }
+.ap-f-l { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.ap-f-lr { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.ap-f-h { font-size: 12px; color: var(--ap-ink3); }
+.ap-gd-b { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ap-gd-b .ic { width: 16px; height: 16px; }
+.ap-when { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 8px; }
+.ap-fld { position: relative; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border-radius: 16px; background: var(--ap-card2); color: var(--ap-ink); cursor: pointer; }
+.ap-fld .ic { width: 16px; height: 16px; color: var(--ap-ink3); }
+.ap-fld select, .ap-fld input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; font-size: 16px; line-height: 1; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.ap-fld select { padding-right: 24px; }
+/* the whole time field opens the picker; our clock icon stands in for the browser's */
+.ap-fld input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; opacity: 0; cursor: pointer; }
+.ap-fld .ap-fld-dn { position: absolute; right: 12px; pointer-events: none; }
+.ap-fld:focus-within { box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
+.ap-ta, .ap-in { width: 100%; border: 0; border-radius: 16px; background: var(--ap-card2); color: var(--ap-ink); font-size: 16px; }
+.ap-ta { min-height: 88px; padding: 12px 16px; line-height: 1.45; resize: vertical; }
+.ap-in { flex: 1; min-width: 0; height: 44px; padding: 0 16px; }
+.ap-ta::placeholder, .ap-in::placeholder { color: var(--ap-ink3); }
+.ap-ta:focus, .ap-in:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
+
+.ap-chs { display: flex; gap: 8px; }
+.ap-chs--wrap { flex-wrap: wrap; }
+.ap-chs:not(.ap-chs--wrap) > .ap-ch { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 8px; }
+.ap-ch { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 13.5px; font-weight: 500; line-height: 1.1; color: var(--ap-ink2); white-space: nowrap; transition: background .2s, color .2s, box-shadow .2s; }
+.ap-ch .ic { width: 14px; height: 14px; stroke-width: 2; }
+.ap-ch.is-on { background: var(--ap-chart); color: var(--ap-card); box-shadow: none; }
+.ap-ch--flag.is-on { background: var(--ap-info-bg); color: var(--ap-info-ink); box-shadow: inset 0 0 0 1.5px var(--ap-teal); }
+.ap-info { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); color: var(--ap-info-ink); font-size: 13px; line-height: 1.45; }
+/* the icon box is one line of text tall, so the icon centres on the first line without a nudge */
+.ap-info .ic { width: 16px; height: 1.45em; flex: none; }
+/* the sign on a flag day, on FloraScore's detail and Insights: Teal, never read */
+.ap-rx .ap-dhero-flag { box-shadow: inset 3px 0 0 var(--ap-teal); }
+
+/* the BM extras, shown under the form (Oct 14: no Add details tap), all optional */
+.ap-xt { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-xt-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ap-xt-l { font-size: 13.5px; font-weight: 500; color: var(--ap-ink2); }
+.ap-xt .ap-f { gap: 8px; }
+
+/* the (i) guide */
+.ap-gd-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-gd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ap-gd-list li { display: grid; grid-template-columns: 40px 88px minmax(0, 1fr); gap: 12px; align-items: center; padding-block: 8px; border-top: 1px solid var(--ap-line); }
+.ap-gd-ic { --gl-bg: var(--ap-card2); width: 40px; height: 40px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); display: grid; place-items: center; }
+.ap-gd-ic .ap-gl { width: 26px; height: 26px; }
+.ap-gd-list b { font-size: 14px; font-weight: 500; }
+.ap-gd-list li > span:last-child { font-size: 14px; line-height: 1.35; color: var(--ap-ink2); }
+
+/* after a flagged BM */
+.ap-fl-body { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-fl-act { display: flex; flex-direction: column; gap: 8px; }
+
+/* symptoms */
+.ap-sy-more { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 13.5px; font-weight: 500; color: var(--ap-ink2); }
+.ap-sy-more .ic { width: 14px; height: 14px; }
+.ap-sy-add { display: flex; gap: 8px; }
+
+/* meals */
+/* the meal: what Florin counted, the same meal again, foods to add */
+.ap-ml-count { display: flex; flex-direction: column; gap: 8px; }
+.ap-ml-counted { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ap-ml-cl { margin-right: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.ap-ml-why { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ml-same { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); text-align: left; }
+.ap-ml-same .ic { width: 18px; height: 18px; color: var(--ap-ink2); }
+.ap-ml-same span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ml-same b { font-size: 14px; font-weight: 500; }
+.ap-ml-same em { font-style: normal; font-size: 13px; color: var(--ap-ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-ml-foods { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.ap-ml-auto { margin-top: -16px; color: var(--ap-ink2); }
+.ap-f-h { color: var(--ap-ink2); }
+
+/* ---------- weekly check-in ---------- */
+.ap-ck { height: 100%; display: flex; flex-direction: column; background: var(--ap-bg); }
+.ap-ck-h { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; padding: 56px 16px 8px; }
+.ap-ck-later { position: relative; justify-self: end; min-height: 36px; padding: 0 12px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
+.ap-ck-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 8px 20px 56px; display: flex; flex-direction: column; gap: 24px; }
+.ap-ck-b::-webkit-scrollbar { display: none; }
+.ap-ck-prog { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.ap-ck-prog i { height: 4px; border-radius: 999px; background: var(--ap-card2); transition: background .3s; }
+.ap-ck-prog i.is-done { background: var(--ap-chart); }
+.ap-ck-prog i.is-on { background: color-mix(in srgb, var(--ap-chart) 40%, transparent); }
+.ap-ck-q { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.ap-ck-q h3 { font-size: 28px; font-weight: 300 !important; line-height: 1.15; letter-spacing: -.02em; text-wrap: balance; }
+.ap-ck-opts { display: flex; flex-direction: column; gap: 8px; }
+.ap-ck-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 16px; font-weight: 500; color: var(--ap-ink); text-align: left; transition: background .2s, color .2s, box-shadow .2s; }
+.ap-ck-opt .ic { width: 18px; height: 18px; stroke-width: 2; }
+.ap-ck-opt.is-on { background: var(--ap-chart); color: var(--ap-card); box-shadow: none; }
+.ap-ck-recall { font-size: 14px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ck-next { align-self: flex-start; }
+.ap-ck-fin { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+.ap-ckr { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.ap-ckr h3 { font-size: 28px; font-weight: 300 !important; line-height: 1.15; letter-spacing: -.02em; text-wrap: balance; }
+.ap-ckr-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-ckr-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ap-ckr-row { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px 8px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-ckr-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ap-ckr-row > b { font-size: 17px; font-weight: 500; }
+.ap-ckt { width: 100%; height: auto; display: block; overflow: visible; margin-top: 4px; }
+.ap-ckt-grid { stroke: var(--ap-grid); stroke-width: 1; }
+.ap-ckt-y, .ap-ckt-x { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
+.ap-ckt-ring { fill: none; stroke: var(--ap-chart); stroke-width: 1.5; }
+.ap-ckr-w { font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); padding-bottom: 4px; }
+.ap-ckt-dot { fill: var(--ap-ink3); }
+.ap-ckt-dot.is-now { fill: var(--ap-chart); }
+.ap-legend .ap-ckt-sw--past { background: var(--ap-ink3); }
+.ap-legend .ap-ckt-sw--now { background: var(--ap-chart); box-shadow: 0 0 0 2px var(--ap-bg), 0 0 0 3px var(--ap-chart); }
+.ap-ckr-note { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ckr-note .ic { width: 16px; height: 16px; }
+
+/* ---------- Today ---------- */
+.ap-hl { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); }
+.ap-hl-line { font-family: var(--serif); font-size: 20px; line-height: 1.32; }
+/* FloraScore on Today: the studio's hero, as one button into the detail */
+.ap-rx button.ap-hero { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; }
+.ap-rx .ap-hero-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ap-rx .ap-hero-line { display: block; color: var(--ap-hero-ink); }
+.ap-rx .ap-hero-sub { display: block; margin-top: 0 !important; font-size: 13px; line-height: 1.45; opacity: 1; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
+/* a flag or an alarm feature today: the Teal note, on the Forest card. Teal lifted for the edge and the mark, a Teal
+   wash behind Cream type; never red */
+.ap-rx .ap-hero-flag { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; color: var(--ap-hero-ink); background: color-mix(in srgb, var(--teal) 42%, transparent); box-shadow: inset 3px 0 0 oklch(from var(--teal) calc(l + .27) calc(c * .91) h); }
+.ap-rx .ap-hero-flag .ic { width: 16px; height: 16px; transform: translateY(1px); color: oklch(from var(--teal) calc(l + .36) calc(c * .7) h); }
+.ap-rx .ap-hero-flag > span { min-width: 0; }
+/* build-core (claude/Florin data viz.md, section 4): the label with the FloraScore glyph, the number with no count-up,
+   your usual range as a bar with today's dot, the sentence. Learning: Day 5 of 14 over 14 steps. The glyph is a plain
+   circle that names FloraScore and holds no value */
+.ap-rx .ap-hero-top, .ap-rx .ap-hero-n, .ap-rx .ap-sbar, .ap-rx .ap-hero-copy, .ap-rx .ap-hero-go { position: relative; z-index: 1; }
+/* fix-viz: the studio's 190px decorative circle (app.css .ap-hero::after) crossed the range bar and the sentence, and a
+   ring means today and nothing else. Off on the phone; for the studio to take back */
+.ap-rx .ap-hero::after { display: none; }
+.ap-rx .ap-hero-name { display: inline-flex; align-items: center; gap: 8px; }
+.ap-rx .c-ring.c-ring--glyph { display: block; width: auto; height: auto; flex: none; overflow: visible; }
+.ap-rx .c-ring-glyph { fill: none; stroke: currentColor; }
+.ap-rx .ap-hero .c-ring--glyph { color: var(--ray); }
+.ap-rx .ap-hero-n { display: block; margin-top: 4px; font-size: 64px; font-weight: 300; line-height: 1; letter-spacing: -.04em; color: var(--ap-hero-ink); }
+.ap-rx .ap-hero-n.ap-hero-none { font-size: 32px; letter-spacing: -.02em; }
+.ap-rx .ap-hero-day { margin-top: 8px !important; font-size: 32px; font-weight: 300; line-height: 1.1; letter-spacing: -.02em; color: var(--ap-hero-ink); }
+.ap-rx .ap-hero-steps { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; margin: 12px 0 8px; }
+.ap-rx .ap-hero-steps i { height: 8px; border-radius: 2px; background: color-mix(in srgb, var(--ap-hero-ink) 20%, transparent); }
+.ap-rx .ap-hero-steps i.is-on { background: var(--ap-hero-ink); }
+.ap-rx .ap-hero--learn { display: flex; flex-direction: column; gap: 4px; }
+.ap-rx .ap-hero-go { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; color: var(--ray); }
+/* FloraScore against its usual range: the band labelled with its numbers above it, the axis ends (or the last 90
+   days' lowest and highest) under it, today's dot never Gold. On the hero, Ray at 16% and a Cream dot ringed in the
+   hero's own surface, so it never sits Ray on Ray */
+.ap-sbar { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+.ap-sbar-u, .ap-sbar-ax { position: relative; height: 16px; font-family: var(--mono); font-size: 10.5px; line-height: 16px; color: var(--ap-ink2); }
+.ap-sbar-u span { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--ap-usual-ink); font-weight: 700; }
+.ap-sbar-trk { position: relative; height: 8px; border-radius: 999px; background: var(--ap-card2); }
+.ap-sbar-band { position: absolute; top: -4px; bottom: -4px; border-radius: 2px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
+.ap-sbar-dot { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--ap-chart); box-shadow: 0 0 0 2px var(--ap-card); }
+.ap-sbar-tick { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--ap-ink3); }
+.ap-sbar-ax span { position: absolute; white-space: nowrap; }
+.ap-sbar-lo { transform: translateX(0); }
+.ap-sbar-hi { transform: translateX(-100%); }
+.ap-sbar--hero .ap-sbar-u span { color: var(--ray); }
+.ap-sbar--hero .ap-sbar-ax { color: color-mix(in srgb, var(--ap-hero-ink) 80%, transparent); }
+.ap-sbar--hero .ap-sbar-trk { background: color-mix(in srgb, var(--ap-hero-ink) 13%, transparent); }
+.ap-sbar--hero .ap-sbar-band { background: color-mix(in srgb, var(--ray) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ray) 40%, transparent); }
+.ap-sbar--hero .ap-sbar-dot { background: var(--ap-hero-ink); box-shadow: 0 0 0 2px var(--ap-hero); }
+
+/* the check-in card */
+.ap-ckc { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-ckc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ap-ckc .ap-k { color: var(--ap-teal); }
+.ap-due { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--ap-ink2); }
+.ap-due .ap-pck-dot { box-shadow: 0 0 0 3px var(--ap-card2); }
+.ap-ckc h2 { font-size: 22px; font-weight: 400 !important; line-height: 1.15; letter-spacing: -.015em; }
+.ap-ckc p { font-size: 14px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ckc-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ap-ckc-day { display: flex; align-items: center; gap: 8px; min-height: 32px; padding-top: 12px; border-top: 1px solid var(--ap-line); font-size: 12.5px; color: var(--ap-ink3); text-align: left; }
+.ap-ckc-day .ic { width: 15px; height: 15px; }
+.ap-ckc-day b { margin-left: auto; font-weight: 500; color: var(--ap-ink2); }
+.ap-ckc--done { flex-direction: row; align-items: center; }
+.ap-ckc-ok { width: 34px; height: 34px; border-radius: 12px; background: var(--ap-usual-bg); color: var(--ap-usual-ink); display: grid; place-items: center; flex: none; }
+.ap-ckc-ok .ic { width: 18px; height: 18px; stroke-width: 2; }
+.ap-ckc-m { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-ckc-m b { font-size: 15px; font-weight: 500; }
+.ap-ckc-m em { font-style: normal; font-size: 12.5px; color: var(--ap-ink3); }
+
+/* today's entries, as a short timeline (History uses the same rows) */
+.ap-tlw, .ap-hd { display: flex; flex-direction: column; }
+.ap-tl { list-style: none; margin: 0; padding: 4px 16px; display: flex; flex-direction: column; }
+.ap-tl > li + li { border-top: 1px solid var(--ap-line); }
+.ap-tl-row { width: 100%; display: grid; grid-template-columns: 56px 32px minmax(0, 1fr) 16px; gap: 12px; align-items: start; padding-block: 12px; text-align: left; }
+.ap-tl-t { font-family: var(--mono); font-size: 11px; line-height: 1; color: var(--ap-ink3); padding-top: 12px; white-space: nowrap; }
+.ap-tl-ic { --gl-bg: var(--ap-card2); width: 32px; height: 32px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); display: grid; place-items: center; }
+.ap-tl-ic .ic, .ap-tl-ic .ap-gl { width: 20px; height: 20px; }
+.ap-tl-ic--meal { --gl-bg: var(--ap-info-bg); background: var(--ap-info-bg); color: var(--ap-info-ink); }
+.ap-tl-ic--nobm { color: var(--ap-ink3); }
+.ap-tl-m { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding-top: 4px; }
+.ap-tl-m b { font-size: 15px; font-weight: 500; line-height: 1.3; }
+.ap-tl-m em { font-style: normal; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-tl-m q { font-family: var(--serif); font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-tl-go { width: 14px !important; height: 14px !important; color: var(--ap-ink3); margin-top: 12px; }
+.ap-tl-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.ap-tl-empty p { font-family: var(--serif); font-size: 16px; color: var(--ap-ink2); }
+.ap-tl-empty-act { display: flex; flex-wrap: wrap; gap: 8px; }
+.ap-tl-nobm { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 12px 16px; border-radius: 16px; box-shadow: inset 0 0 0 1.5px var(--ap-line); text-align: left; }
+.ap-tl-nobm > .ic { width: 20px; height: 20px; color: var(--ap-ink2); }
+.ap-tl-nobm span { display: flex; flex-direction: column; gap: 4px; }
+.ap-tl-nobm b { font-size: 14.5px; font-weight: 500; }
+.ap-tl-nobm em { font-style: normal; font-size: 12.5px; color: var(--ap-ink3); }
+
+/* ---------- build-core: a day, as a mark (RU.dayMark), and Your last 7 days (claude/Florin data viz.md, sections 1 and 3)
+   One renderer for a day everywhere: the week card, History's day headers, the calendar, Your days and Easy. Shape says
+   what it is, colour how it read against your usual, a word says it again. Within: a Plum circle (Ray on dark). Outside:
+   a Gold circle, its 1.5px Shift Ink edge in light (light Gold is 2.37:1 on the card; the edge is 7.13:1). Logged, not
+   counted: an Ink 3 circle. Nothing logged: the date alone in Ink 3. A flagged today: a Teal ring with the info glyph.
+   Today, logged: a 2px Ink ring 2px out. A symptom: one Teal square under the day. The date inside a filled circle is
+   4.5:1 or more on its fill: Cream on Plum, Cream on the darker light Ink 3, Forest on Gold; on dark, the card colour */
+.ap-rx { --ap-day-on: var(--cream); --ap-day-on-shift: var(--forest); --ap-day-edge: var(--ap-shift-ink); --ap-day-gap: var(--ap-card); }
+.ap-rx[data-theme="dark"] { --ap-day-on: var(--ap-card); --ap-day-on-shift: var(--ap-card); --ap-day-edge: transparent; }
+/* app.css has a studio .ap-day (a day section with a top rule); this one takes none of it */
+.ap-day { --ap-day-d: 28px; display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ap-day--lg { --ap-day-d: 32px; }
+.ap-day-w { font-family: var(--mono); font-size: 10px; line-height: 1.2; letter-spacing: .02em; color: var(--ap-ink3); }
+.ap-day-c { display: grid; place-items: center; flex: none; width: var(--ap-day-d); height: var(--ap-day-d); margin-block: 4px; border-radius: 50%; font-size: 12px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ap-ink3); }
+.ap-day--lg .ap-day-c { font-size: 14px; }
+.ap-day--usual .ap-day-c { background: var(--ap-signal); color: var(--ap-day-on); }
+.ap-day--shift .ap-day-c { background: var(--ap-shift); color: var(--ap-day-on-shift); box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-day--quiet .ap-day-c { background: var(--ap-ink3); color: var(--ap-day-on); }
+.ap-day--none .ap-day-c, .ap-day--before .ap-day-c { font-weight: 400; }
+.ap-day--flag .ap-day-c { box-shadow: inset 0 0 0 2px var(--ap-teal); color: var(--ap-teal); }
+.ap-rx .ap-day--flag .ap-day-c .ic { width: 16px; height: 16px; stroke-width: 2; }
+.ap-day.is-today .ap-day-c { box-shadow: 0 0 0 2px var(--ap-day-gap), 0 0 0 4px var(--ap-ink); }
+.ap-day--shift.is-today .ap-day-c { box-shadow: inset 0 0 0 1.5px var(--ap-day-edge), 0 0 0 2px var(--ap-day-gap), 0 0 0 4px var(--ap-ink); }
+.ap-day-s { flex: none; width: 8px; height: 8px; border-radius: 2px; }
+.ap-day-s.is-on { background: var(--ap-teal); }
+.ap-day-t { font-size: 11px; font-weight: 500; line-height: 1.2; color: var(--ap-ink); }
+.ap-day--lg .ap-day-t { font-size: 13px; }
+/* the small mark a line starts with, so the lines are the legend: the same fills, 12px */
+.ap-day-k { display: inline-grid; place-items: center; flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.ap-day-k--usual { background: var(--ap-signal); }
+.ap-day-k--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-day-edge); }
+.ap-day-k--quiet { background: var(--ap-ink3); }
+.ap-day-k--flag { box-shadow: inset 0 0 0 2px var(--ap-teal); }
+.ap-day-k--sym, .ap-day-k--none { border-radius: 0; }
+.ap-day-k--sym::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
+.ap-day-k .ic { display: none; }
+/* Your last 7 days: the answer, a row of seven day marks ending on today, a line for each day not within the usual */
+.ap-wk { display: flex; flex-direction: column; gap: 16px; }
+.ap-wk-a { display: flex; align-items: center; gap: 8px; font-size: 20px; line-height: 1.25; letter-spacing: -.01em; color: var(--ap-ink); }
+.ap-wk-a b { font-weight: 500; }
+.ap-days { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: start; }
+.ap-days > li { display: flex; justify-content: center; min-width: 0; }
+.ap-wk-ls { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--ap-line); display: flex; flex-direction: column; gap: 8px; }
+.ap-wk-ls li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+.ap-wk-ls .ap-day-k { margin-top: 4px; }
+.ap-wk-ls li.is-plain { grid-template-columns: minmax(0, 1fr); }
+.ap-wk-go { align-self: flex-start; }
+.ap-learn-bar { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
+/* learning has no usual yet, so the bar is neutral ink, never the usual colour */
+.ap-learn-bar i { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-ink2); }
+
+/* one next step */
+.ap-nx { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ap-nx p { font-family: var(--serif); font-size: 16px; line-height: 1.4; color: var(--ap-ink); }
+
+/* History (basic) */
+.ap-hist-top { display: flex; flex-direction: column; gap: 4px; padding: 4px; }
+.ap-hist-f { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; padding-block: 8px; margin-block: -8px; }
+.ap-hist-f::-webkit-scrollbar { display: none; }
+.ap-hd-none { padding-inline: 4px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+/* build-core: a day's header carries its mark (RU.dayMark) and one line on how it sat against the usual (L.dayWhy) */
+.ap-hd-h { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 0 4px; margin-bottom: 8px; }
+.ap-hd-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-top: 8px; }
+.ap-hd-t h2 { font-size: 17px; font-weight: 500 !important; line-height: 1.2; letter-spacing: -.01em; }
+.ap-hd-why { font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-hd-h > .ap-k { padding-top: 12px; white-space: nowrap; }
+/* fix-viz: on Free, the first day shown only as logged says why, once (the calendar's words) */
+.ap-hist-held { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 4px 0; border-top: 1px solid var(--ap-line); }
+.ap-hist-held p { font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+
+/* ---------- Insights ---------- */
+.ap-top--ins .ap-chip { align-self: flex-end; }
+.ap-sum-top .ap-big small { font-size: 18px; white-space: nowrap; }
+.ap-dhero .ap-big small { white-space: nowrap; }
+.ap-sum-top p { font-size: 14.5px; line-height: 1.35; }
+.ap-sum-lede { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: var(--ap-ink2); margin-top: 12px; }
+.ap-sum-counts { list-style: none; margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid var(--ap-line); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ap-sum-counts li { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; line-height: 1.25; color: var(--ap-ink3); }
+.ap-sum-counts b { font-size: 24px; font-weight: 300; letter-spacing: -.02em; line-height: 1; color: var(--ap-ink); }
+.ap-sum--learn .ap-learn-bar { margin-top: 4px; }
+
+/* one card per question: the usual in words, a count, the chart, then Ask about this */
+.ap-ic { display: flex; flex-direction: column; gap: 12px; }
+.ap-ic-h { width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) 16px; gap: 12px; align-items: center; text-align: left; }
+.ap-ic-ic { --gl-bg: var(--ap-card2); width: 32px; height: 32px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); display: grid; place-items: center; }
+.ap-ic-ic .ic, .ap-ic-ic .ap-gl { width: 18px; height: 18px; }
+.ap-ic-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ap-ic-t b { font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -.01em; }
+.ap-ic-go { width: 16px !important; height: 16px !important; color: var(--ap-ink3); }
+.ap-ic-sum { font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ic-sum b { font-weight: 500; color: var(--ap-ink); }
+.ap-ic-fig { margin-top: 4px; }
+.ap-ic .ap-legend { margin-top: 0; }
+.ap-ic-f { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-ic-f > .ap-btn { order: 2; }
+.ap-ask-b { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ap-ask-b .ic { width: 15px; height: 15px; }
+.ap-ic-note { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink3); }
+.ap-ic-ck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ap-ic-ck li { display: flex; flex-direction: column; gap: 4px; }
+.ap-ckt--mini { margin-top: 0; }
+
+/* possible patterns: one row each, with a dot per time it came up */
+.ap-ipats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ap-ipat { width: 100%; display: grid; grid-template-columns: 38px minmax(0, 1fr) 16px; gap: 12px; align-items: center; padding: 12px; border-radius: 16px; background: var(--ap-card2); text-align: left; }
+.ap-ins .ap-ipat { background: color-mix(in srgb, var(--ap-card2) 70%, transparent); }
+.ap-ipat-m { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.ap-ipat-m b { font-size: 14px; font-weight: 500; line-height: 1.25; }
+.ap-ipat-m em { font-style: normal; font-size: 11.5px; color: var(--ap-ink3); }
+.ap-idt .ap-ipat { background: var(--ap-card); box-shadow: var(--ap-shadow); }
+
+/* the detail pages */
+.ap-rx.is-full .ap-nav { margin-top: -24px; padding-top: 24px; }
+.ap-idt-now { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-idt-now-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ap-idt-now-h span { display: flex; align-items: baseline; gap: 8px; }
+.ap-idt-now-h em { font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.ap-idt-now-h b { font-size: 17px; font-weight: 500; }
+.ap-idt-h { font-size: 28px; font-weight: 300 !important; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; }
+.ap-idt-lede, .ap-sect-p { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-idt-cta { margin-top: 8px; }
+.ap-idt-ask .ic { width: 16px; height: 16px; margin-right: 8px; }
+.ap-idt-next { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-idt-next span { display: flex; flex-direction: column; gap: 4px; }
+.ap-idt-next em { font-family: var(--mono); font-style: normal; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.ap-idt-next b { font-size: 15px; font-weight: 500; }
+.ap-idt-next > .ic { color: var(--ap-ink3); }
+.ap-shaped { border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-shaped summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 16px; list-style: none; cursor: pointer; font-size: 14px; font-weight: 500; }
+.ap-shaped summary::-webkit-details-marker { display: none; }
+.ap-shaped summary .ic { width: 16px; height: 16px; color: var(--ap-ink3); transition: transform .25s var(--ap-ease); }
+.ap-shaped[open] summary .ic { transform: rotate(180deg); }
+.ap-shaped-b { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px; }
+.ap-rx .ap-table summary { display: flex; align-items: center; justify-content: space-between; min-height: 32px; list-style: none; }
+.ap-rx .ap-table summary::-webkit-details-marker { display: none; }
+.ap-rx .ap-table summary::after { content: ""; width: 7px; height: 7px; margin-right: 4px; border-right: 1.5px solid var(--ap-ink3); border-bottom: 1.5px solid var(--ap-ink3); transform: translateY(-2px) rotate(45deg); /* grid-exempt: a chevron drawn in CSS */ transition: transform .25s var(--ap-ease); }
+.ap-rx .ap-table[open] summary::after { transform: translateY(2px) rotate(-135deg); /* grid-exempt: a chevron drawn in CSS */ }
+.ap-shaped-b p { font-family: var(--serif); font-size: 14.5px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-idt .ap-ckr-list { margin: 0; }
+.ap-waits { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.ap-wait { display: grid; grid-template-columns: 88px minmax(0, 1fr) 48px; gap: 8px; align-items: center; font-size: 13px; }
+.ap-wait i { height: 8px; border-radius: 999px; background: var(--ap-card2); overflow: hidden; }
+/* a food on its way to 5 logs: a count, so neutral ink, never Plum (your usual) */
+.ap-wait i b { display: block; width: var(--w); height: 100%; border-radius: 999px; background: var(--ap-ink2); }
+.ap-wait strong { font-family: var(--mono); font-size: 11px; font-weight: 400; text-align: right; color: var(--ap-ink2); }
+
+/* Ask Florin: the hand-off from a card */
+.ap-askc { display: flex; flex-direction: column; gap: 8px; }
+.ap-askc-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.ap-askc-x { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--ap-ink3); }
+.ap-askc-x .ic { width: 16px; height: 16px; }
+.ap-askc > b { font-size: 17px; font-weight: 500; line-height: 1.25; }
+.ap-askc ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-askc-note { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink3); }
+.ap-askc--intro p { margin-top: 4px; }
+.ap-asks { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ap-askq { min-height: 44px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); font-size: 14px; line-height: 1.35; text-align: left; }
+.ap-askbar { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 4px 4px 16px; border-radius: 999px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.ap-askbar-in { flex: 1; min-width: 0; font-size: 14px; color: var(--ap-ink3); }
+/* Forest, Cream in dark: Ray stays on logging */
+.ap-askbar-b { width: 40px; height: 40px; border-radius: 50%; background: var(--ap-ink); color: var(--ap-bg); display: grid; place-items: center; flex: none; }
+.ap-askbar-b .ic { width: 18px; height: 18px; stroke-width: 2; }
+
+/* chart marks, scoped to the app. build-core, Oct 28 (claude/Florin data viz.md, section 1): the reading colour within
+   your usual, Gold edged in Shift Ink (light) outside it, Ink 3 for could be either and for later BMs, a Teal ring with
+   nothing inside for a flagged today, Teal for context (symptoms, a late dinner), the newest ringed in Ink. No hatch,
+   no faint gap columns, no struck dates: nothing logged is nothing drawn */
+.ap-rx .dv-chart text { font-family: var(--sans); font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-chart .dv-ax { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink3); }
+.ap-rx .dv-chart .dv-ax.is-usual { fill: var(--ap-usual-ink); font-weight: 700; }
+.ap-rx .dv-grid { stroke: var(--ap-grid); stroke-width: 1; }
+.ap-rx .dv-base { stroke: var(--ap-line); stroke-width: 1; }
+.ap-rx .dv-tick { stroke: var(--ap-ink3); stroke-width: 1; opacity: .6; }
+.ap-rx .dv-band-edge, .ap-rx .dv-bandbox { stroke: var(--ap-band-edge); stroke-width: 1; }
+.ap-rx .dv-chart .dv-bandlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-usual-ink); }
+.ap-rx .dv-chart .dv-newlbl { font-size: 11px; font-weight: 500; fill: var(--ap-ink); }
+.ap-rx .dv-ring { fill: none; stroke: var(--ap-ink); stroke-width: 2; }
+.ap-rx .dv-line { fill: none; stroke: var(--ap-chart); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ap-rx .dv-dot { fill: var(--ap-chart); }
+.ap-rx .dv-dot--line { stroke: var(--ap-card); stroke-width: 2; }
+.ap-rx .dv-dot.is-hit { fill: transparent; stroke: none; }
+.ap-rx .dv-dot.is-dim { opacity: .45; }
+.ap-rx .dv-dot.is-maybe, .ap-rx .dv-dot.is-later { fill: var(--ap-ink3); }
+/* fix-viz: before day 14 there's no usual, so a reading is Ink 3, as the week card draws those days */
+.ap-rx :is(.dv-dot, .dv-bar).is-learn { fill: var(--ap-ink3); }
+/* a card-colour disc under each dot at 30 days, so neighbours stay apart */
+.ap-rx .dv-sp { fill: var(--ap-card); }
+/* Gold marks in a chart carry an edge in both themes: Shift Ink in light (light Gold is 2.37:1 on the card); on dark a
+   deeper Gold, so an 8px Gold dot reads apart from the Ray dots beside it (dark Gold and Ray are 15.4 apart, just over
+   the floor). The day circles on dark keep no edge; every Gold day there is named in a line */
+.ap-rx { --ap-chart-edge: var(--ap-shift-ink); }
+.ap-rx[data-theme="dark"] { --ap-chart-edge: color-mix(in oklab, var(--ap-shift) 45%, var(--ap-card)); }
+.ap-rx :is(.dv-dot, .dv-bar, .dv-wbar).is-shift { fill: var(--ap-shift); stroke: var(--ap-chart-edge); stroke-width: 1.5; }
+/* a flagged today: noted for a clinician, a Teal ring with nothing inside, read against nothing */
+.ap-rx .dv-dot.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 2; }
+.ap-rx .dv-bar { fill: var(--ap-chart); }
+/* fix-viz: a weekly bar counts days, so within is Plum (Ray on dark), the colour of a day within your usual, as the
+   summary bar and Your days are; the reading colour is for measured values (a time, a count, a form) */
+.ap-rx .dv-wbar { fill: var(--ap-signal); }
+.ap-rx .dv-wbar.is-ctx, .ap-rx .dv-sq, .ap-rx .dv-tick-ctx, .ap-rx .dv-ctx { fill: var(--ap-teal); }
+.ap-rx .dv-chart .dv-ctxlbl { font-size: 10px; fill: var(--ap-ink2); }
+.ap-rx .dv-chart .dv-val { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
+.ap-rx .dv-med { stroke: var(--ap-ink); stroke-width: 2.2; stroke-linecap: round; }
+.ap-rx .dv-chart .dv-medlbl { font-size: 10.5px; font-weight: 500; fill: var(--ap-ink); }
+.ap-rx .dv-chart .dv-glbl { font-size: 11px; fill: var(--ap-ink2); }
+.ap-rx .dv-chart .dv-rowlbl { font-size: 11.5px; fill: var(--ap-ink2); }
+.ap-rx .dv-chart .dv-rowlbl.is-gap { fill: var(--ap-ink3); }
+.ap-rx .dv-brk { fill: none; stroke: var(--ap-usual-ink); stroke-width: 1.2; }
+.ap-rx .dv-lead { stroke: var(--ap-ink3); stroke-width: 1; opacity: .7; }
+/* the studio's day rows, where a module still draws them: a late dinner is context, so Teal; a day not logged has no
+   base line. Charts never use dashed lines (DESIGN.md), so the kit's dashed average and waterfall connectors are solid
+   hairlines here */
+.ap-rx .c-row-flag { fill: var(--ap-teal); }
+.ap-rx .c-row.is-gap .c-row-base { stroke: none; }
+.ap-rx .c-avg { stroke: color-mix(in srgb, var(--ap-plum) 62%, transparent); stroke-width: 1; stroke-dasharray: none; }
+.ap-rx .c-wf-conn { stroke: var(--ap-ink3); stroke-width: 1; stroke-dasharray: none; opacity: .6; }
+/* the range bar: a Gold dot gets its Shift Ink edge in light, as every Gold mark does */
+.ap-rx .c-range.is-shift .c-range-dot { box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge), 0 0 0 2.5px var(--ap-card); }
+.ap-rx .c-seg-part.is-shift { box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
+/* a word that covers two forms: a span over both steps, Ink 3 when it could be either side of the usual */
+.ap-rx .c-range-span { position: absolute; top: -4px; bottom: -4px; border-radius: 2px; background: var(--ap-ink3); box-shadow: 0 0 0 2px var(--ap-card); }
+.ap-rx .c-range.is-usual .c-range-span { background: var(--ap-chart); }
+.ap-rx .c-range.is-shift .c-range-span { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge), 0 0 0 2px var(--ap-card); }
+/* legend swatches for those marks */
+.ap-rx .ap-legend .sw--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
+.ap-rx .ap-legend .sw--clin { background: var(--ap-card); box-shadow: inset 0 0 0 2px var(--ap-teal); }
+.ap-rx .ap-legend .sw--maybe, .ap-rx .ap-legend .sw--later, .ap-rx .ap-legend .sw--learn { background: var(--ap-ink3); box-shadow: none; opacity: 1; }
+/* a day within your usual, in a legend: Plum (Ray on dark), as the day circles and the bars that count days */
+.ap-rx .ap-legend .sw--usual { background: var(--ap-signal); }
+.ap-rx .ap-legend .sw--tick { width: 2px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
+.ap-rx .ap-legend .sw--avg { height: 1px; border-radius: 0; background: color-mix(in srgb, var(--ap-plum) 62%, transparent); }
+.ap-rx .ap-legend .sw--ctxbar { width: 10px; height: 10px; border-radius: 2px; background: var(--ap-teal); }
+/* what moved FloraScore: a bar a part from a centre line, in whole points, in the reading colour either way */
+.ap-moved { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+.ap-moved-sum { padding: 0 4px 8px; font-size: 13.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-moved-r { display: grid; grid-template-columns: 72px minmax(0, 1fr) 32px; grid-template-areas: "n t v" "w w w"; column-gap: 8px; row-gap: 4px; align-items: center; }
+.ap-moved-n { grid-area: n; font-size: 13px; font-weight: 500; }
+.ap-moved-t { grid-area: t; position: relative; height: 12px; }
+.ap-moved-t::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--ap-ink3); }
+.ap-moved-t b { position: absolute; top: 0; bottom: 0; width: var(--w); background: var(--ap-chart); }
+.ap-moved-t b.is-up { left: 50%; border-radius: 0 2px 2px 0; }
+.ap-moved-t b.is-down { right: 50%; border-radius: 2px 0 0 2px; }
+.ap-moved-r strong { grid-area: v; font-family: var(--mono); font-size: 12px; font-weight: 400; text-align: right; color: var(--ap-ink); }
+.ap-moved-r em { grid-area: w; font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-comp .ap-comp-v { margin: 0 !important; font-size: 13px; color: var(--ap-ink); }
+/* a pattern's two shares: each bar as long as its share, from none to every time, the counts written on them */
+.ap-share { display: flex; flex-direction: column; gap: 12px; padding: 0 4px 4px; }
+.ap-share-r { display: flex; flex-direction: column; gap: 4px; }
+.ap-share-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ap-share-h b { font-size: 13px; font-weight: 500; }
+.ap-share-h span { font-family: var(--mono); font-size: 11px; white-space: nowrap; color: var(--ap-ink); }
+.ap-share-t { display: block; height: 12px; border-radius: 2px; background: var(--ap-card2); overflow: hidden; }
+.ap-share-t b { display: block; height: 100%; width: var(--w); border-radius: 2px; background: var(--ap-chart); }
+.ap-share-ax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
+/* the check-in card: each question, this week's answer and one chip */
+.ap-ic-ck li { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--ap-line); }
+.ap-ic-ck-m { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ap-ic-ck-m b { font-size: 14px; font-weight: 500; }
+/* the picked pattern tier: outlined in Ink, never Plum (which means only your usual) */
+.ap-rx .ap-sure span.is-on { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+.ap-rx .ap-hbar { grid-template-columns: 70px minmax(0, 1fr) 56px; }
+.ap-rx .ap-hbar strong { font-family: var(--mono); font-size: 11px; font-weight: 400; }
+.ap-dhero--sc .ap-big { font-size: 64px; }
+.ap-dhero-day { font-size: 32px; font-weight: 300; line-height: 1.1; letter-spacing: -.02em; }
+.ap-ic-moved { padding-top: 4px; }
+/* Plum (Ray on dark) means only your usual: the "what you could try" card and the score's callout are neutral */
+.ap-rx .ap-sect--try, .ap-rx[data-theme] .ap-sect--try { background: var(--ap-card2); box-shadow: none; }
+.ap-rx[data-theme] .ap-sect--try h3 { color: var(--ap-ink); }
+.ap-rx .ap-callout { border-left-color: var(--ap-ink3); }
+/* a pattern's tier meter is how sure, not your usual: Ink, never Plum */
+.ap-rx .c-meter[data-k="1"] i:nth-child(1), .ap-rx .c-meter[data-k="2"] i:nth-child(-n+2), .ap-rx .c-meter[data-k="3"] i { background: var(--ap-ink); }
+/* a pattern's icon is context, never Plum (which means only your usual) */
+.ap-rx .ap-pat-ic, .ap-rx[data-theme] .ap-pat-ic { background: var(--ap-card2); color: var(--ap-ink); }
+
+/* dark: the scrim has to dim a dark screen, the toast inverts, sheets get a hairline (as in the studio) */
+.ap-rx[data-theme="dark"] .ap-o-scrim { background: oklch(from var(--forest) calc(l - .22) c h / .6); }
+.ap-rx[data-theme="dark"] .ap-tst { background: var(--cream); color: var(--forest); }
+.ap-rx[data-theme="dark"] .ap-tst-b { background: color-mix(in srgb, var(--forest) 10%, transparent); color: var(--forest); }
+.ap-rx[data-theme="dark"] :is(.ap-psh, .ap-fsh) { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 9%, transparent); }
+.ap-rx[data-theme="dark"] .ap-hl { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 9%, transparent); }
+
+/* ---------- the app full screen, on a phone ---------- */
+.ap-rx.is-full .apx-status, .ap-rx.is-full .apx-island, .ap-rx.is-full .apx-homebar { display: none; }
+.ap-rx.is-full .ap-scr { padding-top: 24px; }
+.ap-rx.is-full .ap-ck-h { padding-top: 16px; }
+.ap-rx.is-full .ap-o--sheet .ap-o-p, .ap-rx.is-full .ap-o--full .ap-o-p { max-height: calc(100% - 16px); }
+.ap-rx.is-full .ap-o--full .ap-o-p { height: calc(100% - 16px); }
+/* full screen, the app ends above the home indicator (the page's .rx-mount takes the safe area), so its own bottom
+   edge needs no more than a real phone's */
+.ap-rx.is-full .ap-tb { bottom: 16px; }
+.ap-rx.is-full .ap-psh, .ap-rx.is-full .ap-fsh-f { padding-bottom: 24px; }
+
+/* the safe areas, as variables, so a check can stand in for a phone's (Chromium reports none) */
+:root { --rx-sat: env(safe-area-inset-top, 0px); --rx-sab: env(safe-area-inset-bottom, 0px); --rx-sal: env(safe-area-inset-left, 0px); --rx-sar: env(safe-area-inset-right, 0px); }
+@media (max-width: 759px) {
+  .rx { padding-inline: 0; padding-block: 0; }
+  .rx-head, .rx-side, .rx-foot { display: none !important; }
+  .rx-main, .rx-center, .rx-stage, .rx-ph { display: block; }
+  /* Will, Oct 28: the page's bar sat over the app's tab bar. The page's controls are a slim bar at the top now, so the
+     app keeps its own tab bar at the bottom, as on a real phone. The app fills the screen under the bar */
+  .rx-fit { position: fixed; top: calc(48px + var(--rx-sat)); left: 0; right: 0; bottom: 0; width: auto !important; height: auto !important; }
+  .rx-dev { width: 100%; height: 100%; transform: none !important; }
+  .rx-dev .apx-phone { display: none; }
+  .rx-dev .apx-screen { inset: 0; border-radius: 0; }
+  /* the app ends above the home indicator, so everything it pins to its bottom (the tab bar, a toast, a sheet's
+     buttons) stays clear of it; the strip under it is the app's own ground, drawn by the app's shadow */
+  .rx-mount { bottom: var(--rx-sab); }
+  .rx-mount > .ap { box-shadow: 0 var(--rx-sab) 0 var(--ap-bg); }
+  /* the bar: Toggles (the decisions, the demo and the screens) and Notes, each a sheet, with what's showing between */
+  .rx-mbar { position: fixed; left: 0; right: 0; top: 0; z-index: 100; box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: calc(48px + var(--rx-sat)); padding: var(--rx-sat) max(8px, var(--rx-sar)) 0 max(8px, var(--rx-sal)); background: var(--bg); box-shadow: 0 1px 0 var(--line); }
+  .rx-mbar-t { flex: 1; min-width: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* compact buttons, 36px on screen, each with a 44px target */
+  .rx-mbar-b { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: 500 14px/1 var(--sans); cursor: pointer; }
+  .rx-mbar-b::after { content: ""; position: absolute; inset: -4px 0; }
+  .rx-sheet:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 200; }
+  .rx-sheet-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 45%, transparent); }
+  .rx-sheet-p { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 0 16px calc(24px + var(--rx-sab)); border-radius: 24px 24px 0 0; background: var(--bg); animation: apSheet .4s var(--ap-ease, ease) both; }
+  .rx-sheet-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; font-size: 15px; background: var(--bg); }
+  .rx-sheet-b { display: flex; flex-direction: column; gap: 12px; }
+  .rx-sheet-h:has(.rx-sheet-now:not([hidden])) { flex-wrap: wrap; box-shadow: 0 1px 0 var(--line); }
+  .rx-sheet-now:not([hidden]) { flex: 1 0 100%; display: flex; flex-direction: column; gap: 8px; }
+  .rx-sheet-now p { margin: 0; color: var(--ink); }
+  .rx-sheet-now-b { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rx-x { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
+  .rx-sheet :is(.rx-seg button, .rx-chips button, .rx-nav-b, .rx-btn, .rx-fold) { min-height: 44px; }
+  /* the header's links, at the top of Toggles on a phone (the header is hidden), each a 44px target */
+  .rx-sheet .rx-head-links { gap: 0 16px; font-size: 14px; }
+  .rx-sheet .rx-head-links a { display: inline-flex; align-items: center; min-height: 44px; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-rx *, .rx * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* ---------- workshop, Oct 14 ---------- */
+/* in dark, Ray means "your usual", so a picked tile or chip is Cream; Ray stays on the one Save button */
+.ap-rx[data-theme="dark"] .ap-fm-b.is-on, .ap-rx[data-theme="dark"] .ap-ch.is-on:not(.ap-ch--flag) { --gl-bg: var(--ap-ink); background: var(--ap-ink); color: var(--ap-bg); }
+.ap-hd-gap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+/* how long it lasted: four equal chips, two by two */
+.ap-chs--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ap-chs--grid > .ap-ch { justify-content: center; }
+/* seven days in one row: a grid with a narrow gap, so each day is 44px wide at phone width */
+.ap-chs--week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.ap-rx .ap-chs.ap-chs--week > .ap-ch { min-width: 0; padding-inline: 0; }
+.ap-rx .ap-chs.ap-chs--week > .ap-ch::after { inset: -4px -2px; }
+/* small controls keep their size on screen and get a finger-sized hit area (44px or more) */
+.ap-rx .ap-ch, .ap-rx .ap-gd-b, .ap-rx .ap-hi-filter, .ap-rx .ap-avatar { position: relative; }
+.ap-rx .ap-ch::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-rx .ap-gd-b::after, .ap-rx .ap-ck-later::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-rx .ap-hi-filter::after { content: ""; position: absolute; inset: -8px 0; }
+/* Insights: the range tabs, and Ask's clear and send */
+.ap-rx .ap-seg--range button, .ap-rx .ap-askc-x, .ap-rx .ap-askbar-b, .ap-rx .ap-ask-b, .ap-rx .ap-back, .ap-rx .ap-table summary, .ap-rx .ap-btn--c { position: relative; }
+.ap-rx .ap-ic-h { min-height: 44px; }
+/* the rest of the app's small controls, at 44 by 44 */
+.ap-rx .ap-ch, .ap-rx .ap-hi-filter { min-width: 44px; justify-content: center; }
+.ap-rx .ap-sy-more, .ap-rx .ap-hi-more { position: relative; }
+.ap-rx .ap-sy-more::after, .ap-rx .ap-hi-more::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-rx .ap-ask-b::after, .ap-rx .ap-table summary::before { content: ""; position: absolute; inset: -8px 0; }
+.ap-rx .ap-back::after, .ap-rx .ap-btn--c::after { content: ""; position: absolute; inset: -4px 0; }
+/* the screen scrolls under the sticky detail header and the floating tab bar: focus stops clear of both */
+.ap-rx .ap-layer { scroll-padding-top: 120px; scroll-padding-bottom: 120px; }
+.ap-rx .ap-seg--range button { min-width: 48px; }
+.ap-rx .ap-seg--range button::after { content: ""; position: absolute; inset: -8px 0; }
+.ap-rx .ap-askc-x::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
+.ap-rx .ap-askbar-b::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.ap-rx .ap-link { min-height: 44px; }
+
+/* Today: the hero is one sentence */
+.ap-hl { gap: 8px; }
+/* a secondary button: Forest on light, a Cream line on dark. Ray stays on logging */
+.ap-btn--2 { background: var(--forest); color: var(--cream); }
+.ap-rx[data-theme="dark"] .ap-btn--2 { background: transparent; color: var(--cream); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 60%, transparent); }
+/* status is neutral: the usual colours only ever mean usual */
+.ap-ckc-ok { background: var(--ap-card2); color: var(--ap-ink2); }
+.ap-ckc-m em, .ap-ckc-day, .ap-tl-nobm em { color: var(--ap-ink2); }
+.ap-rx .ap-fine { color: var(--ap-ink2); }
+/* anything a person reads is Ink 2; Ink 3 is for axis ticks, placeholders and the disabled Save */
+.ap-rx :where(.ap-f-l, .ap-tl-t, .ap-legend, .ap-k:not(.ap-k--ray), .ap-date, .ap-fsh-t p, .ap-hi-sub, .ap-tb-b) { color: var(--ap-ink2); }
+/* Insights and Ask: the same rule for their small text, with enough weight to beat the studio's own Ink 3 rules.
+   Ink 3 stays for axis ticks and the Ask bar's placeholder */
+.ap-rx :is(.ap-trow span em, .ap-ic-note, .ap-askc-note, .ap-ipat-m em, .ap-sum-counts li, .ap-idt-now-h em, .ap-idt-next em, .ap-figcap span, .ap-figcap-note, .ap-table th, .c-meter em, .ap-big small, .ap-sure em),
+.ap-rx .ap-seg--range button:not([aria-pressed="true"]) { color: var(--ap-ink2); }
+/* the pattern tiers: the one that applies has its ring; the others stay readable, not faded */
+.ap-rx .ap-sure span { opacity: 1; }
+/* on Forest (the plus card, the hero, the toast) the focus ring is Ray, so it shows */
+.ap-rx :is(.ap-pbm, .ap-hl, .ap-tst) :focus-visible { outline-color: var(--ray); }
+.ap-rx[data-theme="dark"] .ap-tst :focus-visible { outline-color: var(--forest); }
+.ap-rx .ap-ck-q h3:focus { outline: none; }
+.ap-rx .ap-ck-q h3:focus-visible, .ap-rx .ap-ckr h3:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 4px; border-radius: 4px; }
+/* the heading an Insights screen opens on takes focus, so a keyboard or screen reader lands there */
+.ap-rx :is(.ap-nav-t, .ap-h1):focus { outline: none; }
+.ap-rx :is(.ap-nav-t, .ap-h1):focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 4px; border-radius: 4px; }
+.ap-ckc-day { min-height: 44px; }
+.ap-rx .ap-tst-b { position: relative; }
+.ap-rx .ap-tst-b::after { content: ""; position: absolute; inset: -4px 0; }
+
+/* History: the report for a clinician, first */
+.ap-hist-rep { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); text-align: left; }
+.ap-hist-rep > .ic:first-child { width: 20px; height: 20px; color: var(--ap-ink2); }
+.ap-hist-rep span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-hist-rep b { font-size: 15px; font-weight: 500; }
+.ap-hist-rep em { font-style: normal; font-size: 12.5px; color: var(--ap-ink2); }
+/* the check-in result: this week's own logs above the answers */
+.ap-ckr-logs { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card2); }
+.ap-ckr-logs ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; color: var(--ap-ink2); }
+.ap-ckr-logs b { font-weight: 500; color: var(--ap-ink); }
+.ap-fl-urgent { margin-top: 4px; font-weight: 500; }
+/* dark: a picked check-in answer and the progress are Cream, not Ray ("your usual") */
+.ap-rx[data-theme="dark"] .ap-ck-opt.is-on { background: var(--ap-ink); color: var(--ap-bg); }
+/* the range tabs too: in dark, Ray means your usual, so a picked tab is Cream */
+.ap-rx[data-theme="dark"] .ap-seg button[aria-pressed="true"] { background: var(--ap-ink); color: var(--ap-bg); }
+.ap-rx[data-theme="dark"] .ap-ck-prog i.is-done { background: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-ck-prog i.is-on { background: color-mix(in srgb, var(--ap-ink) 40%, transparent); }
+/* kickers sit in DESIGN.md's 11 to 13px eyebrow range */
+.ap-rx .ap-k { font-size: 11px; }
+
+/* ---------- verification, Oct 14 ---------- */
+/* dark: the check-in trend's newest point, the History filter and field focus are Cream, not Ray ("your usual") */
+.ap-rx[data-theme="dark"] .ap-ckt-ring { stroke: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-ckt-dot.is-now { fill: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-legend .ap-ckt-sw--now { background: var(--ap-ink); box-shadow: 0 0 0 2px var(--ap-bg), 0 0 0 3px var(--ap-ink); }
+.ap-rx[data-theme="dark"] .ap-hi-filter[aria-pressed="true"] { background: var(--ap-ink); color: var(--ap-bg); }
+.ap-rx[data-theme="dark"] .ap-fld:focus-within, .ap-rx[data-theme="dark"] :is(.ap-ta, .ap-in):focus { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+/* the avatar is neutral in both themes: Plum on light screens means only "your usual" */
+.ap-rx[data-theme] .ap-avatar { width: 44px; height: 44px; background: var(--ap-card2); color: var(--ap-ink); }
+/* a five-word log seen through A or C: the steps its word covers, outlined, not picked */
+.ap-fm-b.is-maybe { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+.rx-nw { white-space: nowrap; }
+
+/* ---------- the quick meal log: one big voice button, one box for the day ---------- */
+.ap-mq-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-mq-voice { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-mq-mic { position: relative; width: 96px; height: 96px; border-radius: 50%; background: var(--ray); color: var(--forest); display: grid; place-items: center; transition: transform .25s var(--ap-ease); }
+.ap-mq-mic:active { transform: scale(.96); }
+.ap-mq-mic .ic { position: relative; width: 40px; height: 40px; stroke-width: 1.7; }
+.ap-mq-rings, .ap-mq-rings i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.ap-mq-rings i { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ray) 70%, transparent); opacity: 0; }
+.ap-mq-state { min-height: 20px; font-size: 14px; font-weight: 500; color: var(--ap-ink); text-align: center; }
+.ap-mq-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 32px; }
+.ap-mq-wave i { display: block; width: 4px; height: 4px; border-radius: 999px; background: var(--ap-line); transition: height .3s var(--ap-ease), background .3s; }
+.ap-mq-voice.is-on .ap-mq-wave i { height: var(--h); background: var(--ap-chart); }
+.ap-mq-voice.is-done .ap-mq-wave i { height: 4px; background: var(--ap-ink3); }
+.ap-mq-text { min-height: 112px; font-size: 16px; line-height: 1.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .ap-mq-voice:not(.is-on) .ap-mq-mic { animation: mqBreathe 2.8s ease-in-out infinite; }
+  .ap-mq-voice.is-on .ap-mq-rings i { animation: mqRing 1.8s var(--ap-ease) infinite; }
+  .ap-mq-voice.is-on .ap-mq-rings i:nth-child(2) { animation-delay: .6s; }
+  .ap-mq-voice.is-on .ap-mq-rings i:nth-child(3) { animation-delay: 1.2s; }
+  .ap-mq-voice.is-on .ap-mq-wave i { animation: mqWave .9s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -70ms); }
+  .ap-mq .ap-ml-counted .ap-chip { animation: cPop .35s var(--ap-ease) both; }
+}
+@keyframes mqRing { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes mqWave { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+@keyframes mqBreathe { 50% { transform: scale(1.04); box-shadow: 0 0 0 8px color-mix(in srgb, var(--ray) 22%, transparent); } }
+
+/* ---------- Insights charts draw in: bars grow, dots pop, the newest point lands last ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ap-anim :is(.dv-bar, .dv-wbar) { transform-box: fill-box; transform-origin: 50% 100%; animation: cGrowY .7s .12s var(--ap-ease) both; }
+  .ap-anim :is(.dv-dot, .dv-sq) { transform-box: fill-box; transform-origin: center; animation: cPop .45s .2s var(--ap-ease) both; }
+  .ap-anim .dv-dot:nth-child(3n) { animation-delay: .28s; } .ap-anim .dv-dot:nth-child(3n + 1) { animation-delay: .36s; }
+  .ap-anim .dv-ring { transform-box: fill-box; transform-origin: center; animation: cPop .5s .7s var(--ap-ease) both; }
+  .ap-anim :is(.dv-newlbl, .dv-bandlbl, .dv-val) { animation: apFadeOnly .5s .8s both; }
+  .ap-anim .c-band, .ap-anim .dv-bandbox { animation: apFadeOnly .6s both; }
+  .ap-anim .ap-sum-counts b, .ap-anim .ap-big { animation: apFade .5s .1s var(--ap-ease) both; }
+}
+
+/* ---------- Florin membership: the paywall and the locked states ---------- */
+.ap-rx .ap-lockp { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ap-card2); color: var(--ap-ink2); }
+.ap-rx .ap-lockp .ic, .ap-rx .ap-ask-b .ic, .ap-rx .ap-hero-go .ic, .ap-rx .ap-tease-b .ic, .ap-rx .ap-askq .ic { width: 14px; height: 14px; }
+.ap-rx .ap-seg-lock { width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
+.ap-tease { position: relative; display: grid; place-items: center; }
+.ap-tease > * { grid-area: 1 / 1; }
+.ap-tease-in { width: 100%; filter: blur(6px); opacity: .55; pointer-events: none; user-select: none; }
+.ap-tease-b { position: relative; z-index: 1; box-shadow: var(--ap-shadow); }
+.ap-askc--lock { gap: 12px; }
+.ap-askc--lock > b { font-size: 20px; }
+.ap-askq { display: inline-flex; align-items: center; gap: 8px; }
+.ap-pay { display: flex; flex-direction: column; gap: 16px; }
+.ap-pay-hero { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
+.ap-pay-hero h2 { font-size: 26px; font-weight: 300; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; max-width: 15ch; }
+.ap-pay-hero p { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
+.ap-pay-ring { position: absolute; right: 16px; top: 16px; color: var(--ray); opacity: .9; }
+.ap-pay-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ap-pay-list li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; }
+.ap-pay-list li > span:last-child { display: flex; flex-direction: column; gap: 4px; }
+.ap-pay-list b { font-size: 15px; font-weight: 500; }
+.ap-pay-list em { font-style: normal; font-size: 13px; line-height: 1.35; color: var(--ap-ink2); }
+.ap-pay-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ap-card2); color: var(--ap-ink); }
+.ap-pay-price { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); text-align: center; }
+.ap-pay-act { display: flex; flex-direction: column; gap: 8px; }
+.ap-pay h2:focus { outline: none; }
+.ap-pay h2:focus-visible { outline: 2px solid var(--ray); outline-offset: 4px; border-radius: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .ap-pay .ap-pay-list li { animation: apFade .5s calc(var(--i) * 70ms + .15s) var(--ap-ease) both; }
+  .ap-tease-b { animation: apFade .5s .3s var(--ap-ease) both; }
+}
