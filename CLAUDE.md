@@ -89,7 +89,7 @@ symptoms make everyday foods look linked to them) and the food check, with `L.ME
 screen's note is about 80 words or fewer: what the screen does and why, and at most one open question. Every note is
 plain: no badges (every option is drawn, so nothing says On the phone or Picked), no build status, no was and now, no
 research lists, no persona names or scores as evidence, and every figure from the model. A screen in the list that belongs to a
-decision sets that decision, and it stays: Home: Day first, History: Calendar, the onboarding screens and the Easy
+decision sets that decision, and it stays: Home: Day first, History: List and History: Calendar, the onboarding screens and the Easy
 version's, as the Membership screens set Plan to Free. So the phone and the left bar always agree, and a check that
 sweeps the list puts the decisions back after. Decisions are stored (`florin-refresh:<key>`); the demo controls
 aren't. The phone follows the page's theme (the system's, or the page's own) until something sets one that differs from

@@ -1168,14 +1168,15 @@
      screens (Consistency, the check-in, Data style, Version) have none */
   const SHOWN_ON = {
     home: { open: "today", here: (S, t) => !t && S.tab === "today" },
-    history: { open: "history", here: (S, t) => !t && S.tab === "history" },
+    /* the row for the option picked: History: List sets List, so Calendar opens the calendar's own row (a module's) */
+    history: { open: () => (P.history === "calendar" && EXT.opens["hist-cal"] ? "hist-cal" : "history"), here: (S, t) => !t && S.tab === "history" },
     bmUI: { open: "plus", here: (S, t) => !!t && ["plus", "bm", "earlier"].includes(t.type) },
     mealUI: { open: "meal", here: (S, t) => !!t && t.type === "meal" }
   };
   const showFor = (k) => {
     const w = SHOWN_ON[k];
     if (!w || !P.ph || shadowOf(k)) return null;
-    return w.here(P.ph.S, P.ph.top()) ? null : w.open;
+    return w.here(P.ph.S, P.ph.top()) ? null : typeof w.open === "function" ? w.open() : w.open;
   };
 
   /* ---------- the demo controls: each with a note, in the sheet's words. They change the demo person, never the app */

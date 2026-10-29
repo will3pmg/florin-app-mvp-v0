@@ -3019,7 +3019,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const sb = await cp.evaluate(() => { const x = document.querySelector('#rxNotes [data-rx="show"]'); return x ? x.dataset.v : null; });
     await cp.evaluate(() => document.querySelector('#rxNotes [data-rx="show"]').click()); await cw();
     const sa = await cp.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), h: document.querySelector("#rxNotes h2").textContent, again: !!document.querySelector('#rxNotes [data-rx="show"]') }));
-    ok(/History/.test(n1) && sb === "history" && sa.key === "hist-cal" && sa.h === n1 && !sa.again, `fix-core: History set to Calendar from Today: the note offers Show it on the phone, which opens the calendar and keeps the decision's note up (${sa.key})`);
+    ok(/History/.test(n1) && sb === "hist-cal" && sa.key === "hist-cal" && sa.h === n1 && !sa.again, `fix-core: History set to Calendar from Today: the note offers Show it on the phone, which opens the calendar and keeps the decision's note up (${sa.key})`);
     await cgo("today");
     const n2 = await cp.evaluate(() => ({ h: document.querySelector("#rxNotes h2").textContent, eyebrow: document.querySelector("#rxNotes .rx-eyebrow").textContent }));
     await cgo("today");
@@ -4023,6 +4023,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await m.evaluate(() => { document.documentElement.style.removeProperty("--rx-sat"); document.documentElement.style.removeProperty("--rx-sab"); }); await mw(250);
     ok(sa.h === 95 && sa.avatar && sa.first, `fix-notes: with a stand-in safe area of 47, the top bar is ${sa.h}px (48 plus the inset, once), and the app's first line and avatar sit under it, the avatar tappable`);
     await mclick('.rx-mbar [data-v="toggles"]');
+    /* the demo opens on Calendar (last-fix, Oct 29), so List first, then Calendar */
+    await mclick('#rxSheet-toggles [data-rx="history"][data-v="list"]');
     await mclick('#rxSheet-toggles [data-rx="history"][data-v="calendar"]');
     const ln = await m.evaluate(() => { const n = document.querySelector("[data-sheet-now]"), r = n.getBoundingClientRect(); return { on: !n.hidden, t: n.querySelector("p").textContent, b: [...n.querySelectorAll("button")].map((x) => `${x.textContent}:${x.dataset.rx}`).join("|"), inView: r.top >= 0 && r.bottom <= innerHeight }; });
     await mclick('[data-sheet-now] [data-rx="now-note"]', 450);
