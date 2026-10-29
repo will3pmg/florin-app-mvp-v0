@@ -10,8 +10,8 @@ The demo: https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. The **Decisions** p
 Two words used throughout:
 - **Usual:** each person's own pattern, learned from their own logs. Florin starts reading against it on day 14, and
   never compares a person with anyone else.
-- **FloraScore:** the day's score, made from four things a person logs: when the first BM comes, how often, consistency,
-  and comfort (the symptoms they log). It never uses meals.
+- **FloraScore:** the day's score, made from four things a person logs: when the first BM comes, how often, form, and
+  comfort (the symptoms they log). It never uses meals.
 
 > **Not a decision: Demo person's meals.** This control, under Demo, changes the demo person's past, not the app:
 > whether they wrote meals down Every day, Only with symptoms, or Never.
@@ -31,7 +31,7 @@ Two words used throughout:
 | 4 | How should History show past days? | List; Calendar | Calendar |
 | 5 | Should the app ask how the week felt? | On; Off | On: four questions a week, free for everyone |
 | 6 | How does a person log what they ate? | Quick, voice or text; One meal at a time | Quick, and a free food check |
-| 7 | How should Florin draw the numbers? | Florin charts (dots and bars), Rings (score as ring), Field journal (captioned figures), Bento (number tiles), Oura (score gauge), Easy read (big numbers) | Oura style on Today, Field journal on detail pages |
+| 7 | How should Florin draw the numbers? | Florin charts (dots and bars), Rings (score as ring), Field journal (captioned figures), Bento (number tiles), Oura (score gauge), Easy read (big numbers) | Florin charts everywhere, Easy read only in the Easy version |
 | 8 | Should the app offer larger text and simpler screens? | Standard; Easy | Easy, as a setting anyone can turn on |
 | 9 | How much do we ask a new person? | Short; Full survey | Short; ask the rest later, when the answer changes something |
 
@@ -130,9 +130,11 @@ sentence mention first?
 **What it decides:** The History tab, where people look back and fill in a day they missed.
 
 **List**
-- What it is: Every day, newest first, with its logs, and a day with nothing logged shown as a gap with Add to this day.
+- What it is: Every day, newest first, each opening with its day mark and one line on how it sat against the usual,
+  then its logs; a day with nothing logged is a gap with Add to this day.
 - Why do it: Every log is right there to read, and filling in a missed day takes one tap.
-- Why not: After a few months it's a long scroll, and gaps and days outside the usual are hard to spot.
+- Why not: After a few months it's a long scroll, so finding a month's gaps and days outside the usual takes many
+  screens.
 
 **Calendar**
 - What it is: A month on one screen: a Plum circle for a day within the person's usual, a Gold circle for a day
@@ -145,7 +147,7 @@ list.
 
 **Open question:** Keep a switch on History so a person can pick the list or the calendar?
 
-**Try it:** Decisions, History, then the History tab, and tap a day. The demo opens on List.
+**Try it:** Decisions, History, then the History tab, and tap a day. The demo opens on Calendar.
 
 ## 5. Weekly check-in
 
@@ -220,24 +222,33 @@ use one. The dinner button isn't in the demo yet.
 **What it decides:** How FloraScore, the week and the Insights cards look, with the same numbers from the same logs in
 every style.
 
-Two of the six are the real contenders: Oura and Field journal, which we recommend using together. The other four are
-there to compare.
+The real choice is Florin charts everywhere, or Oura on Today and Florin charts everywhere else. Easy read is the Easy
+version's own, and Rings, Field journal and Bento are here to compare.
 
 **Florin charts**
-- What it is: The dark green FloraScore card with the usual range as a bar, the last 7 days as one circle per day, and
-  plain bar and dot charts.
-- Why do it: Each card says the person's usual in words and gives a count before the chart, and every card works the
-  same way.
+- What it is: The dark green FloraScore card with the usual range as a bar, the week as one circle a day, and plain bar
+  and dot charts.
+- Why do it: Each card says the person's usual in words before the chart, and every card works the same way.
 - Why not: It's the most text of the six, with small charts on every card.
 
+**Oura**
+- What it is: A dark screen with FloraScore as a large round gauge and a small ring for each part of the score.
+- Why do it: Oura users already know the layout, with the score as one big gauge.
+- Why not: It breaks the chart rules in four places, starting with part rings that carry no numbers, and it reads as a
+  copy.
+
+**Easy read**
+- What it is: One big number and one plain sentence on each card, in large type.
+- Why do it: It's the easiest to read, for anyone with reading glasses.
+- Why not: It leaves out the shape of the data, so it's thin for someone who wants depth.
+
 **Rings**
-- What it is: FloraScore as a ring that fills up, with the person's usual range marked on it, and each day of the week
-  as its own small ring.
-- Why do it: Rings read at a glance, and a ring for each day makes a week easy to count.
-- Why not: Rings are hard to compare across cards, and a ring a day gets small over 30 days.
+- What it is: FloraScore as a ring that fills up, with the usual range marked on it, and a small ring for each day.
+- Why do it: Rings read at a glance, and a week of rings is easy to count.
+- Why not: A ring filling toward 100 reads as a grade, and a ring a day gets small over 30 days.
 
 **Field journal**
-- What it is: The numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption.
+- What it is: The numbers written out, with plain charts on labelled axes, each with a caption.
 - Why do it: It's the most exact, so it suits detail pages and a clinician report.
 - Why not: It's the most reading, and its small captions are hard for older eyes.
 
@@ -246,27 +257,13 @@ there to compare.
 - Why do it: Easy to take in at a glance, like phone widgets.
 - Why not: Tiles show numbers but not how they connect, and they crowd when text is large.
 
-**Oura**
-- What it is: A dark screen with FloraScore as a large round gauge, one line about today, and a small ring for each
-  part of the score: Timing, How often, Form and Comfort.
-- Why do it: It shows the score and what it's made from most clearly, in a layout Oura users already know.
-- Why not: It looks like Oura's app, so it needs Florin's own colours and shapes, or it reads as a copy.
-
-**Easy read**
-- What it is: One big number and one plain sentence on each card, in large type.
-- Why do it: The easiest to read, for anyone with reading glasses or little patience for charts.
-- Why not: It leaves out the shape of the data, so it's thin for someone who wants depth.
-
-**We recommend the Oura style on Today and FloraScore, Field journal on detail pages, and Easy read only in the Easy
-version (decision 8).** Oura shows the score and its parts most clearly, and Field journal is the most exact where
-people go for detail.
-
-**Open question:** Mix styles by screen like this, or one style everywhere?
+**We recommend one look everywhere, Florin charts, with Easy read only in the Easy version (decision 8).** A card and
+its detail page then draw the same day the same way, and Data style folds into Version.
 
 **Try it:** Decisions, Data style, then the Today and Insights tabs. Florin charts is the first option on the toggle.
 Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. The demo shows one style at a time, and
 detail pages don't change. To see every style on every card, open the style gallery:
-https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.
+https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (linked at the top of the demo, and in Toggles on a phone).
 
 ## 8. Version
 
@@ -351,9 +348,9 @@ a question.
   full clinician report. We suggest Free also gets a basic report (the last 30 days of logs, without the patterns or
   90 days that membership adds), the start of a food check and log export. We suggest membership costs under $10 a
   month. The exact price is yours.
-- **FloraScore.** We suggest approving its four parts and their weights: when the first BM comes 30, how often 25,
-  consistency 25, comfort 20. We also suggest calling it "FloraScore, from your logs", and showing each part as points
-  that add up to the score.
+- **FloraScore.** We suggest approving its four parts and their weights: timing 30, how often 25, form 25, comfort
+  20. We also suggest calling it "FloraScore, from your logs", and showing each part as points that add up to the
+  score.
 - **Integrations.** Apple Health, Oura and cycle apps, now or later? We suggest connecting them is free, and the
   patterns Florin finds from them are in membership. None of it works in the demo. Profile lists the three apps as Not
   connected.

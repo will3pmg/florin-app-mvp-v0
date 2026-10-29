@@ -228,9 +228,15 @@
     else lead = c === k ? `${named1(tops[0])} ${k === 2 ? "both days" : "each day"}` : `${named1(tops[0])} on ${plural(c, "day")}`;
     const top = Math.max(0, ...tops.flatMap((n) => by[n].map((f) => f.sym[n] || 0)));
     const strong = names.filter((n) => !tops.includes(n)).map((n) => ({ n, s: Math.max(0, ...by[n].map((f) => f.sym[n] || 0)) })).filter((x) => x.s > top).sort((a, b) => b.s - a.s)[0];
-    /* the stronger symptom's days are only the days it came up that strong: mild one day and moderate the next is
-       "moderate cramping on 1 day", never "on 2 days" */
-    return `${head}: ${lead}${strong ? `, and ${low(L.STRENGTH[strong.s - 1])} ${low(strong.n)} ${when(by[strong.n].filter((f) => f.sym[strong.n] === strong.s))}` : ""}.`;
+    /* the stronger symptom is counted on every day it came up, as the symptom strip counts it, then how many of those
+       days it was that strong: mild one day and moderate the next is "cramping on 2 days, once moderate", never
+       "moderate cramping on 2 days" (Will, Oct 28: "moderate cramping on 1 day" over a strip of 2 read as a mismatch) */
+    const strongAt = (x) => {
+      const all = by[x.n], k1 = all.filter((f) => f.sym[x.n] === x.s).length, s = low(L.STRENGTH[x.s - 1]);
+      if (k1 === all.length) return `${s} ${low(x.n)} ${when(all)}`;
+      return `${low(x.n)} ${when(all)}, ${k1 === 1 ? "once" : k1 === 2 ? "twice" : `${k1} times`} ${s}`;
+    };
+    return `${head}: ${lead}${strong ? `, and ${strongAt(strong)}` : ""}.`;
   };
   /* what moved FloraScore, in whole points: each part's change rounded by largest remainder so the four add up to the
      change shown (delta), a part that didn't move staying 0. Added to L.scoreMoved's parts as pts */

@@ -9,132 +9,141 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
-.card{height:100%;background:#FFFEFB;border-radius:32px;padding:32px;display:flex;flex-direction:column;gap:18px;box-shadow:inset 0 0 0 2px #E6E2D8}
-.top{display:flex;align-items:center;gap:16px}
-.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#3E5A52;text-transform:uppercase}
-h1{margin:0;font:500 34px/1.2 Georgia,"Times New Roman",serif}
-p{margin:0;font-size:24px;line-height:1.35;color:#3E5A52}
+.card{height:100%;background:#FFFFFD;border-radius:32px;padding:30px 32px;display:flex;flex-direction:column;gap:16px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.top{display:flex;align-items:flex-start;gap:18px}
+.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#36544C;text-transform:uppercase}
+h1{margin:4px 0 0;font:600 28px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+p{margin:0;font-size:24px;line-height:1.35;color:#36544C}
 p b{color:#00352B}
-.parts{display:grid;grid-template-columns:1fr 1fr;gap:14px 32px}
-.row{display:flex;justify-content:space-between;font-size:24px;color:#3E5A52}
-.row b{color:#00352B;font-weight:600}
-.tr{height:10px;border-radius:5px;background:#ECE8E0;margin-top:6px;overflow:hidden}
-.fl{height:100%;border-radius:5px;background:#00352B;transform-origin:left center}
-.lg{display:flex;gap:28px;font-size:24px;color:#3E5A52;align-items:center}
-.sw{display:inline-block;width:28px;height:16px;border-radius:4px;vertical-align:-1px;margin-right:8px}
-.go .fl{animation:grow 1.1s cubic-bezier(.2,.7,.2,1) both}
-.go .fl.b{animation-delay:.12s}.go .fl.c{animation-delay:.24s}.go .fl.d{animation-delay:.36s}
-.go .ln{animation:draw 1.8s .4s ease-out both}
-.go .ring{animation:sweep 1.2s ease-out both}
-.go .dot{animation:pop .4s 2.1s ease-out both}
-@keyframes grow{from{transform:scaleX(0)}}
+svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#5D766F}
+.lg{display:flex;align-items:center;font-size:24px;color:#36544C}
+.lg i{display:inline-block;width:28px;height:20px;border-radius:5px;background:#E6E1E3;box-shadow:inset 0 0 0 2px #C7BAC1;margin-right:10px}
+.go .ln{animation:draw 1.6s .3s ease-out both}.go .ln+.ln{animation-delay:1.7s;animation-duration:.4s}
+.go .bd{animation:fade .6s ease-out both}
+.go .td{animation:pop .45s 2.1s cubic-bezier(.3,1.5,.5,1) both}
+.go .tl{animation:fade .5s 2.3s ease-out both}
+.td{transform-box:fill-box;transform-origin:center}
 @keyframes draw{from{stroke-dashoffset:1}}
-@keyframes sweep{from{stroke-dasharray:0 100}}
+@keyframes fade{from{opacity:0}}
 @keyframes pop{from{opacity:0;transform:scale(.2)}}
-.dot{transform-box:fill-box;transform-origin:center}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Florin charts, the FloraScore card: 83, a little above the usual range of 74 to 82">
+<div class="card" role="img" aria-label="Florin charts, the FloraScore card: 83, a little above its usual range of 74 to 82, drawn as a line over the last 30 days on the usual band, with today ringed">
   <div class="top">
-    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect width="52" height="52" rx="14" fill="#F1EEE6"/><circle cx="26" cy="26" r="13" fill="none" stroke="#DCD7CC" stroke-width="5"/><circle class="ring" cx="26" cy="26" r="13" fill="none" stroke="#00352B" stroke-width="5" pathLength="100" stroke-dasharray="83 100" transform="rotate(-90 26 26)" stroke-linecap="round"/></svg>
-    <span class="k">FloraScore · Today</span>
+    <svg width="56" height="56" viewBox="0 0 56 56" style="flex:none" aria-hidden="true"><rect width="56" height="56" rx="16" fill="#F1EEE6"/><circle cx="28" cy="28" r="14" fill="none" stroke="#00352B" stroke-width="3"/></svg>
+    <div><div class="k">FloraScore · Today</div><h1>83, a little above its usual range</h1></div>
   </div>
-  <h1><span data-n="83">83</span>, a little above your usual range</h1>
   <p>Your usual range is <b>74 to 82</b>. 3 points above last week, on average.</p>
-  <div class="parts">
-    <div><div class="row"><span>Timing</span><b>95</b></div><div class="tr"><div class="fl" style="width:95%"></div></div></div>
-    <div><div class="row"><span>How often</span><b>97</b></div><div class="tr"><div class="fl b" style="width:97%"></div></div></div>
-    <div><div class="row"><span>Form</span><b>94</b></div><div class="tr"><div class="fl c" style="width:94%"></div></div></div>
-    <div><div class="row"><span>Comfort</span><b>93</b></div><div class="tr"><div class="fl d" style="width:93%"></div></div></div>
-  </div>
-  <svg id="ch" viewBox="0 0 472 190" width="100%" height="190" aria-hidden="true"></svg>
-  <div class="lg"><span><i class="sw" style="background:#00352B;height:4px;vertical-align:5px"></i>FloraScore</span><span><i class="sw" style="background:#E8E2E5"></i>Your usual range</span></div>
+  <svg id="ch" viewBox="0 0 472 252" width="100%" height="252" style="flex:none" aria-hidden="true"></svg>
+  <div class="lg"><i></i>Your usual range, 74 to 82</div>
+  <p>Timing moved it most this week, adding 3 points.</p>
 </div>
 <script>
-/* Sarah, last 30 days (Sep 12 to Oct 11), from L.scoreSeries in the model; null is Oct 8, a day with no logs */
+/* Sarah (C, 12 weeks, every meal), FloraScore on each of the last 30 days, Sep 12 to Oct 11, from L.score in the
+   model. null is Oct 8, a day with nothing logged, drawn as a gap. Usual range 74 to 82 (L.scoreUsual) */
 var S=[82,79,82,82,86,83,83,80,84,84,70,70,71,85,82,80,78,79,77,81,79,82,82,85,86,83,null,78,83,83],U=[74,82];
-var W=472,H=190,lo=66,hi=90,x=function(i){return 6+i*(W-12)/29},y=function(v){return 6+(hi-v)*(H-12)/(hi-lo)};
+var x=function(i){return 54+i*400/29},y=function(v){return 46+(91-v)*7.6};
 var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg';
-function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);ch.appendChild(e);return e}
-el('rect',{x:0,y:y(U[1]),width:W,height:y(U[0])-y(U[1]),fill:'#E8E2E5',rx:4});
-var d='',pen=false;S.forEach(function(v,i){if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);pen=true});
-el('path',{d:d,fill:'none',stroke:'#00352B','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'ln'});
-el('circle',{cx:x(29),cy:y(83),r:7,fill:'#00352B','class':'dot'});
+function el(t,a,txt){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;ch.appendChild(e);return e}
+function r1(v){return Math.round(v*10)/10}
+/* the app's line: a monotone curve through each run of logged days */
+function mono(P){var n=P.length,d=[],m=[],i;if(n<2)return'';for(i=0;i<n-1;i++)d[i]=(P[i+1][1]-P[i][1])/(P[i+1][0]-P[i][0]);
+ m[0]=d[0];m[n-1]=d[n-2];for(i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+ for(i=0;i<n-1;i++){if(!d[i]){m[i]=m[i+1]=0;continue}var a=m[i]/d[i],b=m[i+1]/d[i],s=a*a+b*b;if(s>9){var t=3/Math.sqrt(s);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
+ var o='M'+P[0];for(i=0;i<n-1;i++){var h=(P[i+1][0]-P[i][0])/3;o+='C'+r1(P[i][0]+h)+','+r1(P[i][1]+m[i]*h)+' '+r1(P[i+1][0]-h)+','+r1(P[i+1][1]-m[i+1]*h)+' '+P[i+1]}return o}
+[70,80,90].forEach(function(v){el('line',{x1:48,x2:462,y1:y(v),y2:y(v),stroke:'#E8EDEA','stroke-width':1.5});el('text',{x:38,y:y(v)+8,'text-anchor':'end'},v)});
+el('rect',{x:48,y:y(U[1]),width:414,height:y(U[0])-y(U[1]),fill:'#E6E1E3','class':'bd'});
+[U[0],U[1]].forEach(function(v){el('line',{x1:48,x2:462,y1:y(v),y2:y(v),stroke:'#C7BAC1','stroke-width':1.5,'class':'bd'})});
+var runs=[[]];S.forEach(function(v,i){if(v==null){runs.push([]);return}runs[runs.length-1].push([r1(x(i)),r1(y(v))])});
+runs.forEach(function(P){if(P.length>1)el('path',{d:mono(P),fill:'none',stroke:'#00352B','stroke-width':3,'stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'ln'})});
+var tx=x(29),ty=y(83);
+el('circle',{cx:tx,cy:ty,r:6,fill:'#00352B',stroke:'#FFFFFD','stroke-width':2.5,'class':'td'});
+el('circle',{cx:tx,cy:ty,r:11,fill:'none',stroke:'#00352B','stroke-width':2.5,'class':'td'});
+el('text',{x:468,y:62,'text-anchor':'end','class':'tl',style:'fill:#00352B;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif'},'Today 83');
+el('text',{x:x(0)-4,y:246},'Sep 12');el('text',{x:x(14),y:246,'text-anchor':'middle'},'Sep 26');el('text',{x:468,y:246,'text-anchor':'end'},'Today');
 var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1200);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
-function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
   <x-embed style="position:absolute; left:696px; top:256px; width:536px; height:640px;"><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Florin charts: Timing card</title>
+<html lang="en"><head><meta charset="utf-8"><title>Florin charts: the week card</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
-.card{height:100%;background:#FFFEFB;border-radius:32px;padding:32px;display:flex;flex-direction:column;gap:18px;box-shadow:inset 0 0 0 2px #E6E2D8}
-.top{display:flex;align-items:center;gap:16px}
-.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#3E5A52;text-transform:uppercase}
-h1{margin:0;font:500 34px/1.2 Georgia,"Times New Roman",serif}
-p{margin:0;font-size:24px;line-height:1.35;color:#3E5A52}
-p b{color:#00352B}
-svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#3E5A52}
-.lg{display:flex;flex-wrap:wrap;gap:10px 24px;font-size:24px;color:#3E5A52}
-.lg i{display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:8px;vertical-align:0}
-.d{transform-box:fill-box;transform-origin:center}
-.go .d{animation:drop .5s cubic-bezier(.3,1.4,.5,1) both}
-.go .win{animation:fade .6s ease-out both}
-.go .tag{animation:fade .5s 1.6s ease-out both}
-@keyframes drop{from{opacity:0;transform:translateY(-40px)}}
-@keyframes fade{from{opacity:0}}
+.card{height:100%;background:#FFFFFD;border-radius:32px;padding:28px 28px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.top b{font-size:30px;font-weight:500}
+.k{font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#36544C;text-transform:uppercase}
+.a{display:flex;align-items:center;gap:12px;margin:4px 0;font-size:29px;line-height:1.15;font-weight:500;white-space:nowrap}
+.a i{flex:none;width:20px;height:20px;border-radius:50%;background:#4F2641}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);row-gap:8px;justify-items:center}
+.w{font:24px/1 ui-monospace,Menlo,Consolas,monospace;color:#5D766F}
+.c{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:500}
+.u{background:#4F2641;color:#F9F7F2}
+.s{background:#C2A64B;box-shadow:inset 0 0 0 2px #695612;color:#00352B}
+.x{color:#5D766F;font-weight:400}
+.t{box-shadow:0 0 0 3px #FFFFFD,0 0 0 6px #00352B}
+.q{width:14px;height:14px;border-radius:2px}
+.q.on{background:#396E7C}
+.tl{font-size:24px;font-weight:500;grid-column:7;margin-top:-4px}
+hr{width:100%;margin:2px 0;border:0;border-top:2px solid #E6E2D8}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+li{display:flex;gap:14px;font-size:24px;line-height:1.25;color:#36544C}
+li i{flex:none;width:20px;height:20px;margin-top:4px}
+.kg{border-radius:50%;background:#C2A64B;box-shadow:inset 0 0 0 2px #695612}
+.ks{border-radius:2px;background:#396E7C;width:16px!important;height:16px!important;margin:6px 2px 0}
+.go .c{animation:pop .4s cubic-bezier(.3,1.5,.5,1) both}
+.go .a,.go li{animation:rise .5s ease-out both}
+@keyframes pop{from{opacity:0;transform:scale(.3)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Florin charts, the Timing card: usually 7:15 to 8:45 AM, 21 of 28 mornings in that window">
-  <div class="top">
-    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><rect width="52" height="52" rx="14" fill="#F1EEE6"/><circle cx="26" cy="26" r="13" fill="none" stroke="#00352B" stroke-width="3"/><path d="M26 18v9l6 4" fill="none" stroke="#00352B" stroke-width="3" stroke-linecap="round"/></svg>
-    <span class="k">Timing · First BM</span>
-  </div>
-  <h1>Usually 7:15 to 8:45 AM</h1>
-  <p><b><span data-n="21">21</span> of 28 mornings</b> in that window: 5 later and 2 earlier.</p>
-  <svg id="ch" viewBox="0 0 472 270" width="100%" height="270" style="flex:none" aria-hidden="true"></svg>
-  <div class="lg"><span><i style="background:#00352B"></i>In your window</span><span><i style="background:#C2A64B"></i>Outside it</span><span><i style="background:#E8E2E5;border-radius:4px"></i>Your usual window</span></div>
+<div class="card" role="img" aria-label="Florin charts, Today's week card: your last 7 days, Oct 5 to 11. 4 of 6 days within your usual, one circle a day: Plum within, Gold outside, Thursday's date alone with nothing logged, today ringed, and a Teal square on the 2 days with symptoms. A line names each day that wasn't within the usual">
+  <div class="top"><b>Your last 7 days</b><span class="k">Oct 5 to 11</span></div>
+  <p class="a" style="animation-delay:.1s"><i></i>4 of 6 days within your usual</p>
+  <div class="wk" id="wk"></div>
+  <hr>
+  <ul id="ln"></ul>
 </div>
 <script>
-/* Sarah's first BM on each of the 28 mornings with one, Sep 12 to Oct 11 (L.span, C), in hours; the last is today, 7:42 AM */
-var F=[8.017,7.384,7.628,8.162,7.754,8.914,7.577,6.998,7.919,7.669,7.911,7.999,7.155,7.348,7.556,9.08,7.83,9.33,8.08,9.17,7.75,7.67,7.58,7.83,8.92,7.5,7.67,7.7];
-var lo=7.25,hi=8.75,W=472,base=218,x=function(h){return 10+(h-6)*(W-20)/4};
-var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg';
-function el(t,a,txt){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;ch.appendChild(e);return e}
-el('rect',{x:x(lo),y:58,width:x(hi)-x(lo),height:base-52,fill:'#E8E2E5',stroke:'#C9BCC4','stroke-width':2,rx:6,'class':'win'});
-el('line',{x1:6,x2:W-6,y1:base+8,y2:base+8,stroke:'#D8D3C8','stroke-width':2});
-[[6,'6 AM','start'],[7,'7',null],[8,'8',null],[9,'9',null],[10,'10 AM','end']].forEach(function(t){el('text',{x:t[2]==='start'?6:t[2]==='end'?W-6:x(t[0]),y:base+44,'text-anchor':t[2]||'middle'},t[1])});
-/* stack the mornings in 10-minute bins, earliest first, so the dots land the way the studio's chart kit draws them */
-var bins={},order=F.map(function(h,i){return [h,i]}).sort(function(a,b){return a[0]-b[0]});
-order.forEach(function(o,j){var b=Math.floor(o[0]*6),n=bins[b]=(bins[b]||0)+1,h=o[0],inw=Math.round(h*60)/60>=lo&&Math.round(h*60)/60<=hi,today=o[1]===F.length-1;
- var c=el('circle',{cx:x((b+.5)/6),cy:base-8-(n-1)*17,r:7,fill:today?'#FFFEFB':inw?'#00352B':'#C2A64B',stroke:today?'#00352B':'none','stroke-width':today?3:0,'class':'d',style:'animation-delay:'+(0.2+j*0.04).toFixed(2)+'s'});
- if(today){var tx=x((b+.5)/6),ty=base-8-(n-1)*17;el('line',{x1:tx,x2:tx,y1:40,y2:ty-10,stroke:'#00352B','stroke-width':2,'class':'tag'});el('text',{x:tx,y:28,'text-anchor':'middle','class':'tag',style:'fill:#00352B'},'Today 7:42 AM')}});
+/* Sarah (C, 12 weeks, every meal), Today's week card as RU.weekCard draws it on Oct 11: the answer is L.tally over the
+   last 7 days (4 within of 6 read), each day its mark (u within, s outside, x nothing logged), today ringed, a Teal square
+   on each day with a symptom (Wed and Sun, mild bloating), and the lines from L.dayWhy and L.symLine */
+var D=[['Mon',5,'u',0],['Tue',6,'u',0],['Wed',7,'s',1],['Thu',8,'x',0],['Fri',9,'s',0],['Sat',10,'u',0],['Sun',11,'u t',1]];
+var L=[['kg','Wednesday: your first BM came later than usual, at 8:55 AM.'],['kg','Friday: one BM was Firm, firmer than your usual forms.'],['','Nothing logged on Thursday.'],['ks','Symptoms on 2 days: mild bloating both days.']];
+var h='';
+D.forEach(function(d){h+='<span class="w">'+d[0]+'</span>'});
+D.forEach(function(d,i){h+='<span class="c '+d[2]+'" style="animation-delay:'+(.3+i*.08).toFixed(2)+'s">'+d[1]+'</span>'});
+D.forEach(function(d){h+='<span class="q'+(d[3]?' on':'')+'"></span>'});
+h+='<span class="tl">Today</span>';
+document.getElementById('wk').innerHTML=h;
+document.getElementById('ln').innerHTML=L.map(function(l,i){return'<li style="animation-delay:'+(1+i*.12).toFixed(2)+'s"><i class="'+l[0]+'"></i><span>'+l[1]+'</span></li>'}).join('');
 var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1200);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
-function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
   <div style="position:absolute; left:1264px; top:256px; width:528px; height:640px; display:flex; flex-direction:column; gap:16px;">
-    <div style="background:#EFECE4; border-radius:28px; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
-      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> Today’s dark green FloraScore card, and Insights cards that say the person’s usual in words, give a count, then draw a plain bar or dot chart.</p>
-      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> Each card says the person’s usual in words and gives a count before the chart, and every card works the same way.</p>
-      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> It’s a lot of text and small charts, so it’s slow to take in at a glance.</p>
+    <div style="background:#EFECE4; border:3px solid #4F2641; border-radius:28px; padding:21px; display:flex; flex-direction:column; gap:20px; flex:1;">
+      <div style="background:#4F2641; border-radius:20px; padding:2px 12px; align-self:flex-start;"><p style="font-size:24px; color:#F9F7F2; white-space:nowrap;">We recommend</p></div>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> The dark green FloraScore card with the usual range as a bar, the week as one circle a day, and plain bar and dot charts.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> Each card says the person’s usual in words before the chart, and every card works the same way.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> It’s the most text of the six, with small charts on every card.</p>
     </div>
-    <p style="font-size:24px; line-height:1.25; color:#3E5A52;"><b>Here to compare.</b> We recommend Oura on Today and the FloraScore page, and Field journal on detail pages.</p>
+    <div style="background:#4F2641; border-radius:20px; padding:12px 28px;">
+      <p style="font-size:28px; line-height:1.25; color:#F9F7F2;"><b>We recommend one look everywhere, Florin charts, with Easy read only in the Easy version (decision 8).</b></p>
+    </div>
   </div>
   <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
     <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Decisions › Data style › Florin charts</p>
     <p style="font-size:24px; color:#3E5A52;">11</p>
   </div>
-  <aside>Florin charts, the first option on the Data style toggle. What it is: Today’s dark green FloraScore card, and Insights cards that say the person’s usual in words, give a count, then draw a plain bar or dot chart. Why do it: each card says the person’s usual in words and gives a count before the chart, and every card works the same way. Why not: it’s a lot of text and small charts, so it’s slow to take in at a glance.
-Here to compare. We recommend Oura on Today and the FloraScore page, and Field journal on detail pages.
-The two cards here are its FloraScore and timing cards from Insights, drawn from the same logs as every other style.
+  <aside>Florin charts, the first option on the Data style toggle, and the one we recommend. What it is: the dark green FloraScore card with the usual range as a bar, the week as one circle a day, and plain bar and dot charts. Why do it: each card says the person’s usual in words before the chart, and every card works the same way. Why not: it’s the most text of the six, with small charts on every card.
+We recommend one look everywhere, Florin charts, with Easy read only in the Easy version (decision 8). A card and its detail page then draw the same day the same way, and Data style folds into Version.
+The two cards here are its FloraScore card over the last 30 days, from Insights, and the week card you flagged, as Today now draws it: the answer first, 4 of 6 days within the usual, then one circle a day (Plum within, Gold outside, the date alone for a day with nothing logged, today ringed, a Teal square for symptoms), and a line for each day that wasn’t within the usual. Both are drawn from the same logs as every other style.
 Try it: Decisions, Data style, Florin charts, then the Today and Insights tabs. The demo shows one style at a time, and detail pages don’t change. To see every style on every card, open the style gallery: https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
 </section>

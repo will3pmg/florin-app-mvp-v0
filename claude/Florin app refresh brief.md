@@ -219,17 +219,18 @@ prototype at the same link, and in the decisions deck (https://claude.ai/artifac
 - **Quick BM or full.** BM logging: Quick tiles and form (the tiles on plus; once 5 BMs are logged a tile saves at
   once, with Add details and Undo) or Full form only (one Log a BM row, every BM through the form, no one-tap save).
 - **History and home.** Home: Score first (the Forest FloraScore card) or Day first (the date with a small FloraScore
-  ring, today's logs with the one that stood out marked, a row to log from, and one sentence on what stood out and
-  what that log did to the score). History: List, or a Calendar of the month with each day marked the way Today's week
-  card marks it (Plum within the usual, a Gold ring outside it, a gap struck through, a Teal ring for a flag, never
-  read) and a tapped day drawn as the list draws it.
+  chip, the glyph and the number, today's logs with the one that stood out marked, a row to log from, and one sentence
+  on what stood out and what that log did to the score). History: List, or a Calendar of the month, each day drawn
+  with the one day mark: a Plum circle within the usual, a Gold circle outside it, an Ink 3 circle for a day not
+  counted, the date alone for a day with nothing logged, a Teal ring for a flag (never read) and a Teal square for
+  symptoms; a tapped day is drawn as the list draws it.
 - **Check-in with and without.** Weekly check-in On or Off. Off takes it out of the whole app: Today, plus, Insights
   (six cards), History and its report, the paywall's free list, the demo time line, and its screens in the list.
   FloraScore never used it, so nothing else moves.
-- **Data style.** Six options: As built and the five library looks (Rings, Field journal, Bento, Oura, Easy read). In
-  a look, Insights is that look's cards in order, each opening its detail, and Today's FloraScore and week are its
+- **Data style.** Six options: Florin charts and the five library looks (Rings, Field journal, Bento, Oura, Easy read).
+  In a look, Insights is that look's cards in order, each opening its detail, and Today's FloraScore and week are its
   score and week cards, all drawn from the phone's live logs, so a BM logged on the phone redraws them. Detail pages
-  stay as built, with one new page, Your days.
+  draw Florin charts in every style, with one new page, Your days.
 - **An Oura-like style, from his screenshots.** The Oura look, in the library and on the phone: dark first on a
   Forest atmosphere, FloraScore as an open arc with the usual on its track and the day's one big thing in Lora, the
   parts as shortcut rings and Contributors rows, Vitals-style range tracks, trends with a 30 and 90 day switch, and a
@@ -237,9 +238,10 @@ prototype at the same link, and in the decisions deck (https://claude.ai/artifac
   Florin's rules (no state words that judge, the person's own usual on every track).
 - **An elderly-friendly version.** Version: Standard or Easy, for a 70-year-old with reading glasses, a mild tremor
   and little patience for charts. Type about a third larger, every control 56px or more with its word on it, text in
-  Ink, Today as a greeting, one sentence, FloraScore as a big number, three big buttons and this week as day circles;
-  plus as labelled buttons; a BM in four short steps; symptoms as big chips; Insights folded into Today as Your weeks,
-  in the Easy read look. History and Ask keep their content, bigger.
+  Ink, Today as a greeting, one sentence, FloraScore as a big number, three big buttons and the last 7 days as day
+  circles, with a line for each day that wasn't within the usual; plus as labelled buttons; a BM in four short steps;
+  symptoms as big chips; Insights folded into Today as Your weeks, in the Easy read look. History and Ask keep their
+  content, bigger.
 - **Profile and onboarding, from the shipping survey.** The shipping app's 14-question survey and profile are
   transcribed in `reference/shipping-app/onboarding-and-profile.md`. Onboarding: Short (8 steps, under two minutes,
   only what changes the app on day 1) or the Full survey (the shipping sections in 14 steps, reworded: no scale
@@ -253,7 +255,7 @@ prototype at the same link, and in the decisions deck (https://claude.ai/artifac
   then a check of the answer (the 22 claims rules, Ask's own rules and a numbers check). A failed check, or no
   Claude, gives the answer computed from the logs. Ask about this brings a card's numbers in, and every answer lists
   the numbers it used.
-- **A decisions deck.** 25 slides in Claude Slides: how to use the demo, every decision at a glance, one slide per
+- **A decisions deck.** 21 slides in Claude Slides: how to use the demo, every decision at a glance, one slide per
   decision, one per data style with Sarah's figures, then the business calls and the list of what we need from Will.
   Its source is `deck/`.
 
@@ -265,8 +267,8 @@ The five modules were built in parallel, each in its own files, and checked alon
   Version to Easy, as Home: Day first, History: Calendar and the onboarding screens already set theirs. Before, Easy
   turned itself back off when the list moved on, so a sweep of the list left the next check on a different version
   than the left bar showed (and the arrow keys left it on).
-- Every option of every decision is drawn now, so every note reads On the phone, and no note says anything comes in
-  the next pass.
+- Every option of every decision is drawn, so no note carries a badge, and no note says anything comes in the next
+  pass.
 - One alarm net. Ask Florin's wider net had moved into the core check; its own copy is gone, and the two phrasings
   only it heard (worried about my temperature, my temperature is high; up most nights, two nights in a row) are in the
   core, so a log's note hears them too.
@@ -297,9 +299,10 @@ Five reviewers read the third pass. What the core changed:
   and 76, so +8, where Insights said 7). Meal coverage is counted over the days logged in the 90 days, the way the data
   looks count it ("36 of the 85 days you logged", not "34 of your last 80 days"), and the 60% gate uses the same counts.
 - *The page.* Read the note sits under the toggles, never over the phone's tab bar. A row picked from Screens always
-  shows its note. The arrow keys walk every row once, in order. With Easy on, Home and Data style say "Picked; Easy
-  draws its own". A changed decision whose option shows elsewhere offers Show it on the phone. Skip to the phone is the
-  first Tab stop, and the header links the deck and the looks library.
+  shows its note. The arrow keys walk every row once, in order. With Easy on, Home and Data style each say "Easy has
+  its own Today. Turn Easy off to see this choice." (charts, for Data style). A changed decision whose option shows
+  elsewhere offers Show it on the phone. Skip to the phone is the first Tab stop, and the header links the deck and
+  the looks library.
 - *Craft.* BM tiles keep Formed on one line at 360 wide. Mild symptom squares are 3.4:1 (were 1.5:1). The detail
   charts lost their dashed lines; a day not logged is its struck date. The faintest inks, in the app and on the page,
   clear 4.5:1 in light. These two token changes, and the chart kit's dashes, are for the studio to take back.
@@ -341,7 +344,49 @@ A fresh read of the pass found a flagged today still read in places, and a few s
 - *The deck.* The Home mock shows what membership adds to the sentence; Rings and Oura use the app's blend wording;
   Profile lists Delete my account and the phone's "Set from your logs" wording; Easy's answer sizes match the note.
 
-**The calls for Will**
+*Since then,* the data visualisation pass of Oct 28 (next section) changed marks the logs above describe: the hero is a
+range bar, with no Ray ring and no count-up; there are no struck dates; a symptom is one Teal square whatever its
+strength, so there's no hollow square for strength not said; and the week card has no BM rows. The logs stay as they
+were written.
+
+## Will's notes (Oct 28) and what they changed
+
+Will, after the Oct 27 build: Today's week card was confusing (his screenshot was Marcus at 12 weeks), and the
+decisions in the deck were convoluted. "Make it simple." He asked for each decision laid out as its options, each with
+why you'd do it and why you wouldn't, then what we recommend. He asked what "rough days only" meals means, and what we
+recommend for the weekly check-in. And he asked for a pass on the app's data visualisation, to make sure it's the right
+set.
+
+- **One sheet for the decisions.** `claude/Florin decisions.md` is the one source. Each decision has the question, what
+  it decides, each option (what it is, why do it, why not), what we recommend and why, at most one open question, and
+  where to try it. The phone's decision notes, the demo controls' notes and the deck are rebuilt from it, word for
+  word where they share a line.
+- **"Rough days only" meals.** The demo control is now Demo person's meals: Every day, Only with symptoms, or Never.
+  It changes the demo person's past, not the app. It shows a trap: meals written down only on days with symptoms leave
+  no ordinary days to compare with, so everyday foods can look linked to symptoms. So Insights holds food patterns back
+  until meals are logged on at least 6 in 10 of the days logged, and offers a 14-day food check instead.
+- **The weekly check-in.** Our answer: keep it. Four one-tap questions a week, in our own words, not a licensed
+  questionnaire. Free for everyone. Its note answers that first, then says what the check-in is.
+- **The page on a phone.** The bar is at the top, so the app keeps its own tab bar at the bottom.
+- **The data visualisation.** `claude/Florin data viz.md` is the spec: one set of marks on every screen (shape says
+  what a thing is, colour how it reads against the usual, and a word says it again), the right set of charts, and the
+  new week card. The week card answers one question, how many of the last 7 days sat within the usual, counted as
+  Insights counts them, with one circle a day and a line for each day that wasn't. The FloraScore hero is a range bar
+  with the usual range labelled. A day with nothing logged is its date alone, a symptom is one Teal square with its
+  strength in words, and a ring means today. History's days open with the same day mark and a line, and Ask Florin
+  draws the card's own chart.
+- **Data style.** The pass found that the Oura style breaks the chart rules in four places, and that Field journal on
+  detail pages was never built: detail pages draw Florin charts in every style. So the sheet now recommends one look
+  everywhere, Florin charts, with Easy read only in the Easy version. The six options stay on the toggle to compare
+  until Will decides.
+- **The last read (Oct 29).** The Data style note leads with the two real options (Florin charts everywhere, or Oura on
+  Today) and has no open question repeating them. History opens on Calendar, our recommendation, and its Screens row is
+  History: List. There's no FloraScore before day 14 on any day, so the 90-day line starts there, and a short run of
+  scored days between gaps keeps its dots. A Plum legend counts days ("Days in your window"), so it never reads as the
+  Forest readings. Easy read draws FloraScore as a big number on its range bar, never a ring filling toward 100. On a
+  phone, Toggles carries the header's two links. The deck's Florin charts slide shows the new week card.
+
+## The calls for Will
 
 One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the
 line says so.
@@ -351,8 +396,9 @@ line says so.
 - On a flag day the score keeps its number but isn't read against the usual, on both options: keep it, or hide it?
 - Should a strong symptom outrank a shift in what stands out?
 - On an ordinary day a mild symptom leads the sentence: should it, or only moderate and strong ones?
-- Should the hero keep "+2 vs last week" on a rough evening?
-- Is a small ring by the date (Day first) enough to tie Florin to the score people know from Oura?
+- Is the FloraScore glyph in Day first's chip enough to tie Florin to the score people know from Oura?
+- "Without it, FloraScore would be N" is gone for a No BM log: keep it for other logs, or drop it, since it can read as
+  a cost for logging?
 - Day first puts the BM tiles on Today as well as on plus: keep both, or only Today's?
 - Does the day's sentence say enough, or too much?
 - One log moves the score by about a third of what it would alone (it blends 3 days): say so on the score's detail?
@@ -365,17 +411,18 @@ line says so.
 - Keep a List and Calendar switch on History itself?
 - Does History stay a tab, or move under Today?
 - Start the calendar on today, or on the last day with a log?
-- Mild symptoms at 65% on the week card and the calendar (3.16:1 on the picked day), or both at 70%?
-- What should a Teal dot mean across the app? Rings uses it for symptoms, the calendar for meals.
+- The week card leaves out how many BMs each day had, so it reads in five seconds: add it back (Bento's dot per BM
+  inside the day)?
 
 *Data style*
-- Mix styles by surface (ours: Oura for Today, Field journal for details, Easy read for larger text), or one style?
+- One look everywhere (ours: Florin charts, with Easy read only in the Easy version, so Data style folds into Version),
+  or a fixed Oura on Today's FloraScore and week?
 - Should picking Oura make the whole app dark first, with light as a setting, or is that only a demo convenience?
 - With Easy on, picking Oura leaves the theme alone: right, or should Easy read follow a dark preference?
 - Keep the Oura week's tags going onto that week's check-in?
 - Insights in a style shows 30 days without range tabs: enough?
-- On Free, a style's cut (the score, the week, the check-in) is less than As built's free plan: keep it, or match?
-- Your days: list every day at 30 and 90 days, or only the shifted ones?
+- On Free, a style's cut (the score, the week, the check-in) is less than Florin charts' free plan: keep it, or match?
+- Your days: list every day at 30 and 90 days, or only the days outside the usual?
 - With only a symptom or meal today, the styles say today isn't counted and Insights says nothing: should both say it?
 - Rings says "1 of 3 check-ins saved" before the first three: is that the way to put it?
 - Bento's usual days now have a Plum edge on light, so a usual month looks busier: acceptable?
@@ -431,9 +478,10 @@ line says so.
 - "It's 39 degrees" is read as weather and stays quiet: acceptable?
 
 *Logging, consistency, meals, check-in, membership, FloraScore, integrations, messaging*
-- BM logging: Quick tiles, with a When row in the saved toast (Just now, 30 min, 1 hr, Earlier)? Recommended, not built.
+- BM logging: Quick tiles, with time buttons in the "BM saved" message: Just now, 30 min ago, 1 hr ago, Earlier?
+  Recommended, not built.
 - Consistency: ship C once counsel has read it, and drop B?
-- Meals: one box and the mic, with a 14-day food check: free, or with membership?
+- Meals: one box and the mic, and a free 14-day food check?
 - Weekly check-in: on, and free?
 - Membership: the report and the food check's start free, under $10 a month?
 - FloraScore: the four parts and their weights (timing 30, how often 25, form 25, comfort 20)?
@@ -447,7 +495,8 @@ line says so.
 - Should a person's first two weeks always open the form, while Florin learns their usual, rather than the first 5 BMs?
 - A one-tap log has no details (urgency, straining, how long, the flag): enough for the people who need them most?
 - The tiles on the plus menu card, or only inside Log a BM? And the check-in in plus every week, with a dot only when due?
-- Send the Rome Foundation one request now, covering a licensed export and IBS-SSS for the NSF study arm?
+- Ask the Rome Foundation now for one licence covering the 1 to 7 numbers in clinician reports and a questionnaire for
+  the pilot study?
 - Is this the right six symptoms: Bloating, Belly pain, Cramping, Gas, Nausea and Low energy?
 
 *Meals and the weekly check-in*
@@ -470,6 +519,11 @@ line says so.
 - Name a food at Showing up often (5 or more), or wait for Consistent (8 or more)?
 - What you could try never says avoid: the right tone for a food the person enjoys?
 - A Next button through the detail pages, or swipe like Oura?
-- Symptoms over 7 days as cells, over 30 and 90 as dot rows: keep both, or dot rows everywhere?
 - A flagged today is now left out of every count, on Today, Insights, the styles and Ask, and said once on each card:
   keep that, or name it once per screen?
+
+*For the studio (from `claude/Florin data viz.md`)*
+- On dark, draw a reading in Cream, so Ray means only the usual?
+- The FloraScore hero as a range bar with the glyph by its label, in place of the ring gauge?
+- The check-in strips ring the latest week answered, last week on the evening this week's is due: or wait for this
+  week's answers?

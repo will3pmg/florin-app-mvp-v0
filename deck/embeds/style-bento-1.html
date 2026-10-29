@@ -3,23 +3,28 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B;display:flex;flex-direction:column;gap:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B;display:flex;flex-direction:column;gap:12px}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-transform:uppercase}
-.hero{height:360px;flex:none;border-radius:32px;padding:22px 26px;color:#F9F7F2;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:12px;
- background:radial-gradient(60% 55% at 12% 18%,rgba(57,110,124,.85),rgba(57,110,124,0) 70%),radial-gradient(55% 50% at 100% 100%,rgba(79,38,65,.9),rgba(79,38,65,0) 70%),#00352B}
+.hero{flex:none;border-radius:32px;padding:20px 22px;color:#F9F7F2;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;
+ background:radial-gradient(60% 50% at 0% 0%,rgba(57,110,124,.75),rgba(57,110,124,0) 74%),radial-gradient(45% 45% at 100% 100%,rgba(79,38,65,.8),rgba(79,38,65,0) 70%),linear-gradient(160deg,#114238,#001C13)}
 .top{display:flex;justify-content:space-between;font-size:24px}
-.top b{font-weight:400;color:#EEFFA3}
-.glass{border-radius:24px;padding:18px 22px;background:rgba(249,247,242,.08);border:2px solid rgba(249,247,242,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;flex-direction:column;gap:12px}
-.row{display:flex;gap:20px;align-items:center}
-.st{font:400 30px/1.2 Georgia,"Times New Roman",serif}
-.k{font-size:24px;color:#EEFFA3;margin-bottom:6px}
-.pill{align-self:flex-start;font-size:24px;padding:8px 18px;border-radius:18px;background:rgba(249,247,242,.12);border:2px solid rgba(249,247,242,.22)}
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1}
-.tile{background:#FFFEFB;border-radius:28px;padding:20px 22px;box-shadow:inset 0 0 0 2px #E6E2D8;display:flex;flex-direction:column;gap:6px}
-.tile .mono{font-size:24px;color:#3E5A52}
-.v{font-size:64px;font-weight:300;line-height:1}
-.v small{font-size:24px;color:#3E5A52;margin-left:8px}
-svg text{font:24px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#3E5A52}
+.top b{font-weight:400;color:#EEFFA3}.top span{color:#C7D0CA}
+.glass{border-radius:24px;padding:14px 18px;background:linear-gradient(160deg,rgba(249,247,242,.16),rgba(249,247,242,.06));box-shadow:inset 0 1px 0 rgba(249,247,242,.26),inset 0 0 0 2px rgba(249,247,242,.12);display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:16px;align-items:center}
+.st{font:400 28px/1.15 Georgia,"Times New Roman",serif}
+.k{font-size:24px;color:#EEFFA3}
+.sub{font-size:24px;color:#DCDDD6}
+.pill{align-self:flex-start;font-size:24px;padding:6px 16px;border-radius:14px;background:rgba(249,247,242,.14);box-shadow:inset 0 0 0 2px rgba(249,247,242,.16)}
+.hl{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:24px;color:#DCDDD6}
+.hl i{display:inline-block;width:18px;height:18px;border-radius:50%;margin-right:8px;vertical-align:-2px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+.tile{background:#FFFFFD;border-radius:28px;padding:16px 18px;box-shadow:inset 0 0 0 2px #E6E2D8;display:flex;flex-direction:column;gap:6px}
+.tile .mono{font-size:24px;color:#36544C;letter-spacing:.5px}
+.v{font-size:52px;font-weight:300;line-height:1}
+.v small{font-size:24px;color:#36544C;margin-left:6px}
+.lg{display:flex;flex-direction:column;gap:2px;font-size:24px;color:#36544C;line-height:1.2}
+.lg i{display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+svg text{font:24px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .go .glass{animation:glass .9s ease-out both}
 .go .ring{animation:sweep 1.3s .3s cubic-bezier(.3,.7,.2,1) both}
 .go .tile{animation:rise .6s ease-out both}.go .tile+.tile{animation-delay:.15s}
@@ -33,59 +38,61 @@ svg text{font:24px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="hero" role="img" aria-label="Bento look: a glass tile over a Forest, Teal and Plum glow with FloraScore 83 of 100, a little above the usual range of 74 to 82">
+<div class="hero" role="img" aria-label="Bento look: a glass tile over a Forest, Teal and Plum glow with FloraScore 83 of 100, a little above its usual range of 74 to 82, this week up 3 on last week">
   <div class="top mono"><b>FloraScore</b><span>Sunday, October 11</span></div>
   <div class="glass">
     <div class="row">
-      <svg width="150" height="150" viewBox="0 0 150 150" style="flex:none" aria-hidden="true">
-        <circle cx="75" cy="75" r="58" fill="none" stroke="#F9F7F2" stroke-opacity=".14" stroke-width="16"/>
-        <circle cx="75" cy="75" r="72" fill="none" stroke="#EEFFA3" stroke-opacity=".6" stroke-width="5" pathLength="100" stroke-dasharray="8 92" stroke-dashoffset="-74" transform="rotate(-90 75 75)" stroke-linecap="round"/>
-        <circle class="ring" cx="75" cy="75" r="58" fill="none" stroke="#EEFFA3" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="83 100" transform="rotate(-90 75 75)"/>
-        <text x="75" y="80" text-anchor="middle" style="font-size:48px;font-weight:300;fill:#F9F7F2" data-n="83">83</text>
-        <text x="75" y="108" text-anchor="middle" style="font-size:24px;fill:#BFD3CC">of 100</text>
+      <svg width="140" height="140" viewBox="0 0 140 140" style="flex:none" aria-hidden="true">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#F9F7F2" stroke-opacity=".14" stroke-width="14"/>
+        <circle cx="70" cy="70" r="67" fill="none" stroke="#EEFFA3" stroke-width="3" pathLength="100" stroke-dasharray="8 92" stroke-dashoffset="-74" transform="rotate(-90 70 70)"/>
+        <circle class="ring" cx="70" cy="70" r="54" fill="none" stroke="#EEFFA3" stroke-width="14" pathLength="100" stroke-dasharray="83 100" transform="rotate(-90 70 70)"/>
+        <circle id="kn" class="mk" r="8" fill="#DCC374" stroke="#00352B" stroke-width="3.5"/>
+        <text x="70" y="78" text-anchor="middle" style="font-size:46px;font-weight:300;fill:#F9F7F2">83</text>
+        <text x="70" y="104" text-anchor="middle" style="font-size:24px;fill:#DCDDD6">of 100</text>
       </svg>
-      <div><div class="k mono">Today</div><div class="st">A little above your usual range</div></div>
+      <div><div class="k mono">Today</div><div class="st">A little above its usual range</div></div>
     </div>
-    <div style="font-size:24px;color:#BFD3CC">Your usual range is 74 to 82.</div>
+    <div class="sub">Your usual range is 74 to 82.</div>
     <div class="pill">This week, up 3 on last week</div>
   </div>
+  <div class="hl"><span><i style="box-shadow:inset 0 0 0 4px #EEFFA3"></i>Today, 83</span><span><i style="width:22px;height:5px;border-radius:3px;background:#EEFFA3;vertical-align:5px"></i>Your usual, 74 to 82</span><span><i style="background:#DCC374"></i>Outside your usual</span></div>
 </div>
 <div class="tiles">
   <div class="tile">
-    <div class="mono">Week avg</div>
-    <div class="v"><span data-n="83">83</span><small>this week</small></div>
-    <svg viewBox="0 0 216 62" width="100%" height="62" style="flex:none" aria-hidden="true">
-      <line x1="4" x2="212" y1="18" y2="18" stroke="#D8D3C8" stroke-width="2"/>
-      <rect id="bd" y="4" height="28" rx="14" fill="#EFE7EA"/>
-      <circle id="lw" class="mk" cy="18" r="10" fill="#FFFEFB" stroke="#00352B" stroke-width="4"/>
-      <circle id="tw" class="mk" cy="18" r="9" fill="#C2A64B"/>
-      <text id="l1" y="58" text-anchor="middle">74</text><text id="l2" y="58" text-anchor="middle">82</text>
+    <div class="mono">Week average</div>
+    <div class="v">83<small>this week</small></div>
+    <svg viewBox="0 0 212 56" width="100%" height="56" style="flex:none" aria-hidden="true">
+      <line x1="2" x2="210" y1="16" y2="16" stroke="#E0E7E4" stroke-width="2"/>
+      <rect id="bd" y="4" height="24" rx="12" fill="#E6E1E3"/>
+      <circle id="lw" class="mk" cy="16" r="8" fill="#FFFFFD" stroke="#36544C" stroke-width="3"/>
+      <circle id="tw" class="mk" cy="16" r="9" fill="#C2A64B" stroke="#FFFFFD" stroke-width="2"/>
+      <text id="l1" y="54" text-anchor="middle" style="fill:#4F2641">74</text><text id="l2" y="54" text-anchor="middle" style="fill:#4F2641">82</text>
     </svg>
-    <div style="font-size:24px;color:#3E5A52">Last week, 80</div>
+    <div class="lg"><span><i style="box-shadow:inset 0 0 0 3px #36544C"></i>Last week, 80</span></div>
   </div>
   <div class="tile">
     <div class="mono">Last 7 days</div>
-    <svg id="sp" viewBox="0 0 216 130" width="100%" height="130" style="flex:none" aria-hidden="true"></svg>
-    <div style="display:flex;justify-content:space-between;font-size:24px;color:#3E5A52"><span>Mon</span><span>Today</span></div>
+    <svg id="sp" viewBox="0 0 212 80" width="100%" height="80" style="flex:none" aria-hidden="true"></svg>
+    <div style="display:flex;justify-content:space-between;font-size:24px;color:#36544C"><span>Mon</span><span>Today</span></div>
+    <div class="lg"><span><i style="border-radius:4px;background:#E6E1E3"></i>Your usual</span></div>
   </div>
 </div>
 <script>
 /* Sarah: week average 83 against last week's 80; usual range 74 to 82; the last 7 days' FloraScores, Oct 5 to 11,
-   with Oct 8 a gap (no logs). All from the model's L.score, L.scoreUsual and L.scoreMoved */
-var lo=70,hi=90,sx=function(v){return 4+(v-lo)*208/(hi-lo)};
+   with Oct 8 a gap (nothing logged). All from the model's L.score, L.scoreUsual and L.scoreMoved */
+var a=.83*2*Math.PI,kn=document.getElementById('kn');kn.setAttribute('cx',(70+54*Math.sin(a)).toFixed(1));kn.setAttribute('cy',(70-54*Math.cos(a)).toFixed(1));
+var lo=64,hi=90,sx=function(v){return 2+(v-lo)*208/(hi-lo)};
 var bd=document.getElementById('bd');bd.setAttribute('x',sx(74));bd.setAttribute('width',sx(82)-sx(74));
 document.getElementById('lw').setAttribute('cx',sx(80));document.getElementById('tw').setAttribute('cx',sx(83));
 document.getElementById('l1').setAttribute('x',sx(74));document.getElementById('l2').setAttribute('x',sx(82));
-var S=[85,86,83,null,78,83,83],sp=document.getElementById('sp'),ns='http://www.w3.org/2000/svg',y=function(v){return 10+(90-v)*110/24},x=function(i){return 10+i*196/6};
+var S=[85,86,83,null,78,83,83],sp=document.getElementById('sp'),ns='http://www.w3.org/2000/svg',y=function(v){return 8+(88-v)*64/16},x=function(i){return 8+i*196/6};
 function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);sp.appendChild(e);return e}
-el('rect',{x:0,y:y(82),width:216,height:y(74)-y(82),rx:8,fill:'#EFE7EA'});
-var d='',pen=false;S.forEach(function(v,i){if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);pen=true});
-el('path',{d:d,fill:'none',stroke:'#00352B','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'class':'sp'});
-S.forEach(function(v,i){if(v!=null)el('circle',{cx:x(i),cy:y(v),r:7,fill:v>82||v<74?'#C2A64B':'#00352B','class':'mk'})});
-el('line',{x1:x(3)-8,x2:x(3)+8,y1:y(74)+4,y2:y(74)+4,stroke:'#8A9A94','stroke-width':3,'class':'mk'});
+el('rect',{x:0,y:y(82),width:212,height:y(74)-y(82),rx:6,fill:'#E6E1E3'});
+var runs=[[]];S.forEach(function(v,i){if(v==null){runs.push([]);return}runs[runs.length-1].push(x(i).toFixed(1)+','+y(v).toFixed(1))});
+runs.forEach(function(r){if(r.length>1)el('path',{d:'M'+r.join('L'),fill:'none',stroke:'#00352B','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'class':'sp'})});
+S.forEach(function(v,i){if(v!=null&&(v>82||v<74))el('circle',{cx:x(i),cy:y(v),r:i===6?8:6,fill:'#C2A64B',stroke:'#FFFFFD','stroke-width':i===6?2:0,'class':'mk'})});
 var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.getAttribute('data-n'),t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1300);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
-function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html>

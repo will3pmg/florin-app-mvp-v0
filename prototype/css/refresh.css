@@ -841,6 +841,9 @@
   .rx-sheet-now-b { display: flex; flex-wrap: wrap; gap: 8px; }
   .rx-x { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); }
   .rx-sheet :is(.rx-seg button, .rx-chips button, .rx-nav-b, .rx-btn, .rx-fold) { min-height: 44px; }
+  /* the header's links, at the top of Toggles on a phone (the header is hidden), each a 44px target */
+  .rx-sheet .rx-head-links { gap: 0 16px; font-size: 14px; }
+  .rx-sheet .rx-head-links a { display: inline-flex; align-items: center; min-height: 44px; }
 
 }
 

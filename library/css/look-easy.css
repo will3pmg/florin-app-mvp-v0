@@ -144,26 +144,6 @@
 .lk-easy .ez-tl-l.is-mark { font-size: 20px; line-height: 1.3; font-weight: 500; color: var(--ap-ink); }
 .lk-easy .ez-tl-l.is-band { font-size: 18px; line-height: 1.3; font-weight: 500; color: var(--ap-usual-ink); }
 
-/* ---------- FloraScore: one big ring ---------- */
-.lk-easy .ez-ring { position: relative; width: 240px; max-width: 100%; margin: 0 auto; }
-.lk-easy .ez-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.lk-easy .ez-ring-trk { fill: none; stroke: var(--ez-trk); }
-.lk-easy .ez-ring-utrk { fill: none; stroke: var(--ez-trk); stroke-width: 2; }
-.lk-easy .ez-ring-uband { fill: none; stroke: var(--ez-usual); stroke-width: 10; stroke-linecap: round; }
-.lk-easy .ez-ring-uend line { stroke: var(--ez-usual); stroke-width: 3; stroke-linecap: round; }
-.lk-easy .ez-ring-arc { fill: none; stroke: var(--ez-read); stroke-linecap: round; }
-.lk-easy .ez-ring-end { fill: var(--ez-read); stroke: var(--ap-card); stroke-width: 4; }
-.lk-easy .ez-ring-end.is-shift { fill: var(--ez-shift); }
-.lk-easy .ez-ring-edge { fill: none; stroke: none; stroke-width: 2; }
-.lk-easy:not([data-theme="dark"]) .ez-ring-edge { stroke: var(--ap-shift-ink); }
-.lk-easy .ez-seg { fill: none; stroke: var(--ez-trk); }
-.lk-easy .ez-seg.is-on { stroke: var(--ez-read); }
-.lk-easy .ez-ring-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; pointer-events: none; }
-.lk-easy .ez-ring-n { font-size: 72px; line-height: 1; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.lk-easy .ez-ring-n--sm { font-size: 32px; line-height: 1.1; letter-spacing: 0; }
-.lk-easy .ez-ring-k { font-size: 20px; line-height: 1.2; color: var(--ap-ink); }
-.lk-easy .ez-ring-u { font-size: 18px; line-height: 1.25; font-weight: 500; color: var(--ap-usual-ink); }
-
 /* ---------- weekly check-in: four answers in words ---------- */
 .lk-easy .ez-cks { display: flex; flex-direction: column; }
 .lk-easy .ez-ck { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }

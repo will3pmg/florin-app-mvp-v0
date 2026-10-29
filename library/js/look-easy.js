@@ -1,27 +1,14 @@
 /* Look: Easy read. Made for a 70-year-old with reading glasses, a slight tremor and little patience for charts.
    Every card asks one question and answers it the same way: a short title, the number big, one plain sentence in large
    type, and at most one simple picture with its words written on it (a row of day circles, a few thick bars with the
-   count written on them, or one big ring). Nothing to decode: a colour always comes with its word, text is Ink, and
+   count written on them). Nothing to decode: a colour always comes with its word, text is Ink, and
    Ink 2 is kept for secondary lines at 18px or more. No small caps and no mono for anything a person has to read.
    Every number comes from D (library/js/looks-data.js); nothing is typed. Every rule in look-easy.css sits under .lk-easy.
    Colours: your usual is Plum on light and Ray on dark, a shift is Gold and always says so in words, "could be
    either" is an outline in Ink 2 and never Gold, a reading (a part, a symptom, a pattern) is --ap-chart. */
 (function () {
-  const TAU = Math.PI * 2;
   const r1 = (v) => Math.round(v * 10) / 10;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const pol = (cx, cy, r, f) => [r1(cx + r * Math.sin(f * TAU)), r1(cy - r * Math.cos(f * TAU))];
-  /* an arc, clockwise from share a to share b of a turn, starting at 12 o'clock */
-  const arc = (cx, cy, r, a, b) => {
-    const span = b - a;
-    if (span <= 0) return "";
-    if (span >= 0.9999) {
-      const [x0, y0] = pol(cx, cy, r, a), [xm, ym] = pol(cx, cy, r, a + 0.5);
-      return `M${x0},${y0}A${r},${r} 0 1 1 ${xm},${ym}A${r},${r} 0 1 1 ${x0},${y0}`;
-    }
-    const [x0, y0] = pol(cx, cy, r, a), [x1, y1] = pol(cx, cy, r, b);
-    return `M${x0},${y0}A${r},${r} 0 ${span > 0.5 ? 1 : 0} 1 ${x1},${y1}`;
-  };
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
   const cap = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
   const lower1 = (t) => (t ? t.charAt(0).toLowerCase() + t.slice(1) : t);
@@ -68,49 +55,25 @@
   /* dates as the day marks show them, the month said once: "Oct 2, 9 and 14", "Sep 29 and Oct 3" */
   const dates = (ds) => { let mon = null; return andList(ds.map((d) => { const [m, n] = d.label.split(" "); const t = m === mon ? n : d.label; mon = m; return t; })); };
 
-  /* ---------- FloraScore: one big ring, the number inside it, your usual drawn on its outer edge ---------- */
+  /* ---------- FloraScore: the number big, then its words, as the Easy version's Today draws it ----------
+     No ring filling toward 100: it reads as a grade (claude/Florin data viz.md, section 1; Will's read, Oct 29: Easy read
+     was the one place left that drew it). FloraScore is a reading, never a day's state, so it is never Gold: the words
+     say where it sits against its usual range. While Florin is learning, the big line says Day, so a count of days
+     never reads as a score */
   function score(D, x) {
-    const S = D.score, esc = x.esc;
+    const S = D.score;
     const DISC = "FloraScore compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.";
-    const C = 120, R = 90, SW = 22, RU = 114;
     if (!S.usual) {
       const L = S.learning || { day: D.learning ? D.learning.day : 0, of: D.learning ? D.learning.of : 14 };
-      /* one segment per day until Florin knows your usual */
-      const g = 6 / (TAU * R);
-      const segs = Array.from({ length: L.of }, (_, i) => `<path class="ez-seg${i < L.day ? " is-on" : ""}" stroke-width="${SW}" d="${arc(C, C, R, i / L.of + g / 2, (i + 1) / L.of - g / 2)}"/>`).join("");
       return card(x, "ez-score", `FloraScore, day ${L.day} of ${L.of}`, "FloraScore", D.todayLabel, `
-        <div class="ez-ring">
-          <svg class="ez-svg" viewBox="0 0 240 240" role="img" aria-label="${esc(`Day ${L.day} of ${L.of}. Florin is still learning your usual.`)}">${segs}</svg>
-          <div class="ez-ring-c" aria-hidden="true"><span class="ez-ring-k">Day</span><b class="ez-ring-n">${L.day}</b><span class="ez-ring-k">of ${L.of}</span></div>
-        </div>
-        ${lead(x, null, null, `Your FloraScore starts on day ${L.of}.`)}
+        ${lead(x, `Day ${L.day}`, `of ${L.of}`, `Your FloraScore starts on day ${L.of}.`)}
         ${body(x, "Florin is learning your usual first.")}
         ${note(x, DISC, true)}`);
     }
     const v = S.value, u = S.usual;
-    /* FloraScore is a reading, never a day's state: its end mark is the reading colour inside your usual range or not,
-       never Gold, and the words say where it sits (claude/Florin data viz.md, section 1) */
-    const shift = false;
-    const ends = [u[0], u[1]].map((val) => { const [a, b] = pol(C, C, RU - 9, val / 100), [c2, d2] = pol(C, C, RU + 9, val / 100); return `<line x1="${a}" y1="${b}" x2="${c2}" y2="${d2}"/>`; }).join("");
-    const [ex, ey] = v != null ? pol(C, C, R, v / 100) : [0, 0];
-    const aria = v == null ? `No FloraScore today: ${lower1(S.why)} Your usual range is ${u[0]} to ${u[1]}.` : S.flag ? `FloraScore today ${v}. ${S.relation}: a log is noted for a clinician.` : `FloraScore today ${v}. ${S.relation}, ${u[0]} to ${u[1]}.`;
-    const ring = `<div class="ez-ring">
-        <svg class="ez-svg" viewBox="0 0 240 240" role="img" aria-label="${esc(aria)}">
-          <circle class="ez-ring-trk" cx="${C}" cy="${C}" r="${R}" stroke-width="${SW}"/>
-          <circle class="ez-ring-utrk" cx="${C}" cy="${C}" r="${RU}"/>
-          <path class="ez-ring-uband" d="${arc(C, C, RU, u[0] / 100, u[1] / 100)}"/>
-          <g class="ez-ring-uend">${ends}</g>
-          ${v != null ? `<path class="ez-ring-arc" stroke-width="${SW}" d="${arc(C, C, R, 0, clamp(v, 0, 100) / 100)}"/><circle class="ez-ring-end${shift ? " is-shift" : ""}" cx="${ex}" cy="${ey}" r="14"/>${shift ? `<circle class="ez-ring-edge" cx="${ex}" cy="${ey}" r="11"/>` : ""}` : ""}
-        </svg>
-        <div class="ez-ring-c" aria-hidden="true">
-          ${v != null ? `<b class="ez-ring-n">${v}</b>` : `<b class="ez-ring-n ez-ring-n--sm">Not yet</b>`}
-          <span class="ez-ring-u">Your usual<br>${u[0]} to ${u[1]}</span>
-        </div>
-      </div>`;
-    const rel = v != null ? `${S.relation}.` : "No FloraScore today.";
+    const ans = v == null ? "No FloraScore today." : S.flag ? `${S.relation}.` : `${S.relation}, ${u[0]} to ${u[1]}.`;
     return card(x, "ez-score", `FloraScore today${v != null ? `, ${v}` : ""}`, "FloraScore", D.todayLabel, `
-      ${ring}
-      ${lead(x, null, null, rel)}
+      ${lead(x, v, null, ans)}
       ${v == null ? body(x, S.why) : ""}
       ${note(x, DISC, true)}`);
   }

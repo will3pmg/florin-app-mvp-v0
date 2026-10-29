@@ -1,7 +1,7 @@
 # Florin data viz
 
-October 28, 2026, revised the same day after a review, and again after the fix pass (fix-viz): this file now says what
-is built. The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
+October 28, 2026, revised the same day after a review, again after the fix pass (fix-viz), and after the finishing pass
+(finish-viz): this file now says what is built. The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
 chart's design (both themes, all six data styles, 390 and 1440 wide) and one of every number against the model. It sits
 under DESIGN.md's Data Visualization rules. Where it asks DESIGN.md to change, it says so and leaves the change to the
 studio.
@@ -80,7 +80,9 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
 
 - **A ring around a day or a data point means today (Ink) or a flagged today (Teal), nothing else.** Not a change, not
   No BM, not a day with nothing logged, not last week. The FloraScore glyph (a small plain circle beside the word
-  FloraScore) is a name, not a mark: it never holds a value and never fills toward 100.
+  FloraScore) is a name, not a mark: it never holds a value and never fills toward 100. One exception is built: the
+  check-in strips ring the latest week answered, which on the evening this week's is due is last week; the legend
+  names it "Latest week". Whether it should wait for this week's answers is a small call for the studio.
 - **Plum is your usual, only:** the band, a day within it, a count of days within it (the weekly bars too), the "about
   the same" chip on the check-in. Not a pattern that held, not an average line, not a picked tier, not a comparison with
   the stretch before (the Symptoms detail's trend chips are plain).
@@ -92,7 +94,10 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
 - **Teal is context and the clinician note:** shown, never read against your usual and never changing colour.
   Symptoms are compared with your usual in words only ("Symptoms on 2 of 7 days; your usual is about 1 day in 3").
 - **The reading colour is for charts.** It never sits next to Plum as a second state: the validator puts Plum and
-  Forest 13.3 apart for full colour vision and 4.5 for red-weak vision, too close to tell apart without a cue.
+  Forest 13.3 apart for full colour vision and 4.5 for red-weak vision, too close to tell apart without a cue. So the
+  words carry it: a Plum legend counts days ("<n> days within your usual", "Days in your window", "Days with a usual
+  count"), and a Forest legend names a reading ("In your usual window"), so a card that goes from dots at 30 days to
+  weekly bars at 90 says which it is drawing.
 - **One meaning for "within your usual":** a day whose first BM came in your window, with a usual count and usual
   forms. Each measure has its own words: in your usual window, a usual count, in your usual forms, and for FloraScore,
   in its usual range ("In its usual range", "A little above its usual range", "Above its usual range" from 6 points
@@ -144,7 +149,7 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 3 | Today, the last 7 days (Score first and Day first) | How many of my last 7 days sat within my usual? | One answer, a row of seven days, a line for each day not within | Change | Section 3 |
 | 4 | Today, check-in card | Is my check-in due? | Text and the calendar icon | Keep | Its due dot was the same mark as a logged BM |
 | 5 | Today, Day first's chip and marked log | How is today, and which log stood out? | The FloraScore glyph and number in a chip; a chip on the log that stood out | Change | The chip's ring was a gauge at 24px, too small to show your usual: it becomes the glyph, and the chip's word carries the reading. A symptom's edge was Ink here and Teal elsewhere: make it Teal |
-| 6 | Insights, FloraScore | Has FloraScore stayed in its usual range? | A line on the band, today ringed and labelled; one sentence on the part that moved most (every part named on a tie: "Timing and Form moved it most this week, adding 2 points each") | Change | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
+| 6 | Insights, FloraScore | Has FloraScore stayed in its usual range? | A line on the band, today ringed and labelled; one sentence on the part that moved most (every part named on a tie: "Timing and form moved it most this week, adding 2 points each") | Change | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
 | 7 | Insights, the summary | How many days sat within my usual? | The count over a segment bar of the days read (within, outside); not counted and nothing logged in words under it | Change | The bar showed 4 of 7 under "4 of 6": it added a nothing-logged segment (1.16:1, invisible) and dropped the days that could be either. Gold had no edge. Its words differed from every other card |
 | 8 | Insights, Timing | Did my first BM come in my usual window? | Dots on a straight time axis, your window as a band; today's label above the band, with a lead down to its dot | Keep | Gold under 3:1. The flag ring and the today ring differed only by hue |
 | 9 | Insights, How often | Did I go my usual number of times? | One dot per day on a count line from 0, your usual count as a band | Change | Thin bars at 1 or 2 read as a barcode. No BM was a ring. Today wasn't marked. The average counted the flagged day. A fixed 0 to 3 axis would clip the first person with 4 |
@@ -159,9 +164,9 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 18 | Timing detail, every BM by day | When in the day did each BM come? | A row of dots per day on a time axis, every row labelled, at most 14 days (the table lists all 30); first BM in the reading colour or Gold, later BMs Ink 3, the legend "First BM, in your usual window", "First BM, outside your usual window", "Later BMs"; dinners after 8 PM as Teal ticks in their own column, only when meals are logged on enough days to read | Change | Teal meant a later BM and a dinner in one chart. Fixed-length pills. Struck dates for gaps |
 | 19 | Timing detail, 90 days | Week by week, how many mornings came in my window? | A bar a week: in your window at the base in Plum (it counts days), outside it in Gold above, the bar's top at the mornings read; the latest labelled "5 of 6" | Change | A percent of 4 to 7 mornings isn't a number anyone logged |
 | 20 | How often detail | As 9 | As 9; today's range bar on the same count axis, padded half a step; at 90 days the weekly bars of 19, for a usual count. "How your days split" is cut: a fourth picture of the same counts, with no usual marked | Change | As 9. The today bar's axis was fixed at 0 to 4. A dot a week at its average put decimals on the scale |
-| 21 | Form detail | Which forms, and when was one outside my usual? | The card's bars (a line under them names a word that covers two steps), then a dot per BM by day with your usual forms as a band; today's bar draws a two-step word as an Ink 3 span; at 90 days the weekly bars of 19, for usual forms ("Every BM in your usual forms", "A BM outside your usual forms") | Change | Grey above, Gold below, same words. Three of seven forms labelled. A dot a day at 90 days ran into dashes (90 days at 8px is 720px on a 300px plot) |
+| 21 | Form detail | Which forms, and when was one outside my usual? | The card's bars (a line under them names a word that covers two steps), then a dot per BM by day with your usual forms as a band; today's bar draws a two-step word as a span over both steps, Ink 3 when it could be either side of the usual; at 90 days the weekly bars of 19, for usual forms ("Every BM in your usual forms", "A BM outside your usual forms") | Change | Grey above, Gold below, same words. Three of seven forms labelled. A dot a day at 90 days ran into dashes (90 days at 8px is 720px on a 300px plot) |
 | 22 | Symptoms detail | As 11, and has it changed? | As 11; at 90 days, Teal bars of days a week with any symptom; each symptom against the weeks before, in words, its chip plain (it compares with the stretch before, not with your usual) | Change | As 11 |
-| 23 | Check-in detail and Saved | How does each answer compare with my first weeks? | A strip per question with its steps written in the answers' own words ("Mostly settled"), the first weeks as a band, this week ringed | Keep | 6px dots: make them 8px |
+| 23 | Check-in detail and Saved | How does each answer compare with my first weeks? | A strip per question with its steps written in the answers' own words ("Mostly settled"), the first weeks as a band, the latest week answered ringed and named "Latest week" in the legend | Keep | 6px dots: made 8px. The steps are the answers' own words, with a gutter wide enough for "5 or more days" |
 | 24 | One pattern | How often did the change follow, against other days? | Two bars whose length is the share (from none to every time), "20 of 22" and "26 of 52" written on them, in the reading colour; for late dinners, the two-group strip of first BM times after each kind of dinner | Change | Plum for "held", and 52 dots to say 26 of 52. A bar as long as its count would draw 26 of 52 longer than 20 of 22. The 90-day day-by-day rows for foods couldn't fit their marks; the table lists the days instead |
 | 25 | Patterns with few meals | Why no patterns yet? | Text, no chart | Keep | The picked tier was outlined in Plum: use Ink |
 | 26 | Your days | Which days sat within my usual, and why? | As 7, then each day with its mark and its line | Change | The same bar and words as 7 |
@@ -281,8 +286,9 @@ the same thing:
 - Say "both days" or "each day" when it came up every symptom day, else "on 2 days".
 - Give its strength only when every log of it gave one: "mild", or "mild to moderate". Drop it when any was left
   unsaid.
-- When another symptom was logged stronger, add it, with only the days it came up that strong: "Symptoms on 2 days:
-  bloating both days, and strong cramping today"; mild one day and moderate another is "moderate cramping on 1 day".
+- When another symptom was logged stronger, add it, counted on every day it came up (as the symptom strip counts it),
+  then how many of those days it was that strong: "Symptoms on 2 days: bloating both days, and strong cramping today";
+  mild one day and moderate another is "cramping on 2 days, once moderate".
 - "Mostly" only for more than half. Never "most often".
 
 **Every state.**
@@ -382,7 +388,7 @@ places:
 It also turns the phone dark, and its FloraScore is a ring filling toward 100, which reads as a grade. And "Field
 journal for the detail pages" was never built: the detail pages stay As built in every style.
 
-**Option 1: one look everywhere (our new lean).**
+**Option 1: one look everywhere (what we recommend; the decision sheet says so, fix-words, Oct 28).**
 - What it is: every screen draws the base, with Field journal's answer-first sentences in it. The Easy version draws
   Easy read. Rings, Bento, Oura and Field journal leave the app and stay in the library.
 - Why do it: a card and its detail page draw the same day the same way, on every screen. Nothing on screen depends on
@@ -466,7 +472,16 @@ with no bar, until a No BM or a 3 BM day moves it.
 ## 7. The work list
 
 Each item gives the file, what to change and how to check it. The work list builds Option 1's base; the items marked
-"after Will's call" wait for it. The usual five checks run after each group: `qa.js`, `behave.js`, `audit-spacing.js`,
+"after Will's call" wait for it.
+
+**Where it stands (Oct 28, after finish-viz):** C1 to C17, K1 to K3 and M1 to M6, M8 and M9 are built, with the
+critic's and the truth recheck's findings on top (a ring only on today, Ink 3 readings before day 14, one reading of a
+day on Free, ties named, Ask drawing the card's own chart, the weekly bars in Plum, dinners not read with meals on few
+days). M7 and the parts of M2 marked "after Will's call" wait for it, so Rings, Bento and Oura still draw their own
+marks (FloraScore in Gold in places, a ring for a day with nothing logged); only their retired words are fixed. The
+module screen notes below are applied, and so are the hand-offs at the end that belong to the notes workflow (the
+`refresh-app.js` screen notes, the decision notes, the brief and CLAUDE.md, by fix-words). The deck's are the deck
+workflow's. The usual five checks run after each group: `qa.js`, `behave.js`, `audit-spacing.js`,
 `shots.js`, `sweep.js` (both themes, 12 weeks and Just joined, `--plan free` and `--width 390` too).
 
 ### Core
@@ -513,75 +528,129 @@ Each item gives the file, what to change and how to check it. The work list buil
 | M8 | `library/index.html`, `library/js/library.js` | Each look's status (in the app, folded into the base, not used) and the question on every row | Library shots |
 | M9 | `refresh-ask.js` | The computed symptom answers through `L.symLine`, and the learning form answer on the "mostly" rule, so Ask says what the week card and Insights say. Its charts: the FloraScore line (no area, today labelled) and the five others through `RU.cardChart` for the answer's range, so a chart in the chat is the card's chart; the pattern's bars as C11's, with no Gold "Held" | Behave: with strong cramping today, Ask's week answer names it, as the card does; no Gold in a pattern answer; shots of each answer |
 
-**Screen notes in the modules** (ours to change, with M1 to M3):
+**Screen notes in the modules** (ours to change, with M1 to M3; all three applied, Was then Now):
 
-- `refresh-variants.js`, the calendar (`calScreenNote`). Now: "A month on one screen. A filled dot is a day within
+- `refresh-variants.js`, the calendar (`calScreenNote`). Was: "A month on one screen. A filled dot is a day within
   the person's usual, a gold ring a day outside it, a dash a day with logs but none about BMs, and a struck date a day
-  with nothing logged. A teal ring marks a day with a log noted for a clinician. Tap a day to see its logs." New: "A
+  with nothing logged. A teal ring marks a day with a log noted for a clinician. Tap a day to see its logs." Now: "A
   month on one screen, each day marked as on Today's card: a Plum circle within the person's usual, a Gold circle
   outside it, a grey circle for a day logged but not counted, and the date alone for a day with nothing logged. A Teal
   ring marks a day noted for a clinician, and a Teal square a day with symptoms. Tap a day to see its logs." (Keep the
   Free and data style tails.)
-- `refresh-looks.js`, Your days (`i-days`). Now: "Behind the week and month cards: how many days sat within the
+- `refresh-looks.js`, Your days (`i-days`). Was: "Behind the week and month cards: how many days sat within the
   person's usual, then the days themselves. Seven days lists every day; 30 and 90 list the days that shifted, each
-  with what shifted. A day with nothing logged stays a gap." New: "How many of the days read sat within the person's
+  with what shifted. A day with nothing logged stays a gap." Now: "How many of the days read sat within the person's
   usual, then each day with its line. Seven days lists every day; 30 and 90 list the days outside the usual, each
   saying what was different. A day with nothing logged stays a gap."
-- `refresh-easy.js`, Easy's Today (`ez-today`). Now: "this week as day circles". New: "the last 7 days as day
+- `refresh-easy.js`, Easy's Today (`ez-today`). Was: "this week as day circles". Now: "the last 7 days as day
   circles, with a line for each day that wasn't within the usual".
 
 ### Hand-offs: notes and docs owned elsewhere
 
-**Screen notes in `refresh-app.js`** (`NOTES`; the other workflow applies these once the work lands). Old text, then
-new:
+**Screen notes in `refresh-app.js`** (`NOTES`; owned by the notes workflow, applied by fix-words, Oct 28, as the New
+text below, with `consistency` in `i-score` named form, as the phone names the part). The old text is quoted
+as it stands on Oct 28, after finish-viz; the new says what the screens draw now:
 
-- `today`, both branches. Old: "today's logs, the week so far, and one next step." New, with a usual: "today's logs,
-  the last 7 days with a line for each day that wasn't within the usual, and one next step." New, while learning:
-  "today's logs, the last 7 days as they're logged, and one next step."
-- `history`. Old: "Every log, newest day first. A day with nothing logged stays a gap". New: "Every log, newest day
-  first, each day opening with its mark and one line on how it sat against the usual. A day with nothing logged stays
-  a gap" (the rest as now).
+- `today`, with a usual. Old: "Then the weekly check-in when it's due, today's logs, the last 7 days, and one next
+  step." New: "Then the weekly check-in when it's due, today's logs, the last 7 days with a line for each day that
+  wasn't within the usual, and one next step."
+- `today`, while learning. Old: "Florin is still learning this person's usual, so FloraScore shows how many days are
+  left instead of a number until day 14. Then the weekly check-in when it's due, today's logs, the last 7 days, and one
+  next step." New: "Florin is still learning this person's usual, so FloraScore shows the day it's on, Day 5 of 14,
+  instead of a number until day 14. Then the weekly check-in when it's due, today's logs, the last 7 days as they're
+  logged, and one next step." (Day 5 from `L.learnDay`.)
+- `history`. Old: "Every log, newest day first. A day with nothing logged stays a gap, with Add to this day for
+  catching up." New: "Every log, newest day first, each day opening with its mark and one line on how it sat against
+  the usual. A day with nothing logged stays a gap, with Add to this day for catching up." (The rest as now. On Free,
+  a line says days before the last 7 show as logged.)
 - `i-score`. Old: "Today's score against the person's usual range, the trend, what moved it this week, and its four
-  parts:". New: "Today's score on a bar with the person's usual range, the last 30 days against that range, what moved
-  it this week in points, and its four parts:" (the rest as now).
+  parts:". New: "Today's score on a bar with the person's usual range, then each day's score against that range, what
+  moved it this week in whole points, and its four parts:" (the rest as now).
+- `i-timing`. Old: "When the first BM came each morning, on a straight time axis, with the person's usual window
+  marked." New: "When the first BM came each day, on a straight time axis, with the person's usual window marked, then
+  every BM day by day, the last 14 days at most; over 90 days, a bar a week for the mornings in the window and outside
+  it." (The rest as now.)
 - `i-often`. Old: "BMs a day, as bars from zero, over the person's usual range. A day logged as No BM counts as zero;
   a day with nothing logged stays a gap, never a zero." New: "BMs a day, one dot a day on a count line from zero, with
   the person's usual count as a band. A day logged as No BM is a dot on zero; a day with nothing logged stays a gap,
-  never a zero."
-- `i-form`. Old: "The mix of forms over the range, with the person's usual forms marked, then each BM by day." New:
-  "How many BMs came in each form, with the person's usual forms marked, then each BM by day; over 90 days, the days
-  each week in the usual forms." (The B sentence as now.)
+  never a zero. Over 90 days, a bar a week for the days with a usual count."
+- `i-form`. Old: "The mix of forms over the range, with the person's usual forms marked, then each BM by day. In B, a
+  word that covers two kinds of stool sits between them, since it could be either." New: "How many BMs came in each
+  form, counts on the bars, with the person's usual forms marked, then each BM by day; over 90 days, a bar a week for
+  the days in the usual forms. A word from B that covers two kinds of stool sits between them by day, spans both on
+  today's bar, and stays out of the bars, with a line that says so."
 - `i-sym`. Old: "A row per symptom, with a dot on each day it came up, larger when stronger. One logged without a
-  strength reads as strength not said." New: "A row per symptom, with a Teal square on each day it came up, and how
-  strong said in words. One logged without a strength reads as strength not said." (The rest as now.)
+  strength reads as strength not said." New: "A row per symptom, with a Teal square on each day it came up, and an Any
+  symptom row with the usual written at its end; how strong is said in words, and one logged without a strength reads
+  as strength not said. Over 90 days, Teal bars of the days a week with any symptom." (The rest as now.)
 - `i-pattern`. Old: "One dot for each time the food came up, filled when the symptom followed, next to the same count
   for every other day. Then the pattern over time, and a way to test it." New: "Two bars: how often the change followed
   the food, and how often it came on other days, with the counts written on. Late dinners add the first BM times after
   each kind of dinner. Then a way to test it." (The last sentence as now.)
+- `ckdone`. Old ends: "No score, and the answers are never added up into one." New adds: "Your logs this week counts
+  the days within the usual, with the symptom sentence."
 - After Will's call: the Data style options in `DECISIONS`, and, if it folds into Version, Version's note.
 
-**Decision notes in the modules** (`EXT.decisions`, owned by the other workflow):
+**Decision notes in the modules** (`EXT.decisions`, owned by the notes workflow):
 
-- `refresh-variants.js` `historyDecision`, the calendar option. Old `is`: "A month on one screen, with a filled mark
-  for a day within the person's usual, a ring for a day outside it, and a struck date for a day with nothing logged."
-  New: "A month on one screen, each day marked as on Today's card: a Plum circle within the person's usual, a Gold
-  circle outside it, and the date alone for a day with nothing logged." Old `not`: "Its marks are the week card's,
-  which you found confusing, and seeing a day's logs takes a tap." New: "Seeing a day's logs takes a tap."
-- `refresh-looks.js` `EXT.decisions.look`. Old `aside`: "The week card you flagged is being redrawn. This decision is
-  about style, not that fix. Two of the six are the real contenders, Oura and Field journal, which we recommend using
-  together; the other four are there to compare." New: "The week card you flagged is redrawn in one set of marks used on
-  every screen. With that in place, the choice is one look everywhere, or Oura on Today and the same look everywhere
-  else." Old `rec`: Oura on Today and FloraScore, Field journal on detail pages, Easy read in the Easy version. New
-  `rec`: { v: "built", text: "We recommend one look everywhere, the redrawn Florin charts, with Easy read only in the
-  Easy version.", why: "A card and its detail page then draw the same day the same way, and Oura breaks the chart
-  rules in four places." } New `open`: "Keep a fixed Oura on Today's FloraScore and week, or one look everywhere? With
-  one look, Data style folds into Version."
+- `refresh-variants.js` `historyDecision`: applied. The calendar's `is` now reads "A month on one screen: a Plum circle
+  for a day within the person's usual, a Gold circle for a day outside it, and the date alone for a day with nothing
+  logged."
+- `refresh-looks.js` `EXT.decisions.look`: applied (fix-words, Oct 28). The sheet now recommends Option 1, and the
+  note says so in the sheet's words: `rec` and `open` as proposed below, the Oura block's why and why not rewritten
+  from section 5, and the `aside` the sheet's plain lede ("The choice is one look everywhere, or Oura on Today and the
+  same look everywhere else. Rings, Field journal and Bento are here to compare."), since a note carries no was and
+  now. The proposal as it stood: `aside` "The week card you flagged is redrawn
+  in one set of marks used on every screen. With that in place, the choice is one look everywhere, or Oura on Today and
+  the same look everywhere else."; `rec` { v: "built", text: "We recommend one look everywhere, the redrawn Florin
+  charts, with Easy read only in the Easy version.", why: "A card and its detail page then draw the same day the same
+  way, and Oura breaks the chart rules in four places." }; `open` "Keep a fixed Oura on Today's FloraScore and week, or
+  one look everywhere? With one look, Data style folds into Version."
 
-**The deck** (`deck/`): the slides that show the looks and the week card, after Will's call.
+**The deck** (`deck/project/slides`, owned by the deck workflow). What the slides still say or draw, and what the phone
+draws now:
 
-**CLAUDE.md** (shared; re-read before editing), after the work lands:
+- `history.html`, the Calendar option. Old: "A month on one screen, each day marked the way the week card marks it,
+  with a struck date for a day with nothing logged." New: "A month on one screen, each day marked the way the week
+  card marks it, with the date alone for a day with nothing logged."
+- `home.html`, Day first. Old: "FloraScore as a small ring at the top". New: "FloraScore as a small chip at the top"
+  (the sheet's words; the chip carries the glyph, which holds no value).
+- `style-built.html`, the Florin charts FloraScore card. It draws the old card: a ring that sweeps full, "83, a little
+  above your usual range", four part bars (Timing 95, How often 97, Form 94, Comfort 93), a 30-day line with today's
+  dot, and a number that counts up. The card now draws "83, a little above its usual range", the line on the usual
+  band with today ringed and labelled "Today 83", and one sentence on the part that moved most ("Timing and form moved
+  it most this week, adding 2 points each"), with no part bars and no count-up.
+- The data style slides follow the sheet's Data style block, which now recommends Option 1.
+
+**The brief** (`claude/Florin app refresh brief.md`, owned by the notes workflow; applied by fix-words, Oct 28: the
+build lines and the calls changed, the dated logs left as written with one line under them saying which marks
+changed, and a section for Will's Oct 28 notes). Lines that describe the build as it
+is, now out of date (the dated logs of earlier passes stay as history):
+
+- Will's notes (Oct 27), History and home. Old: "Day first (the date with a small FloraScore ring, ...)". New: "Day
+  first (the date with the FloraScore glyph and number in a chip, ...)". Old: "a Calendar of the month with each day
+  marked the way Today's week card marks it (Plum within the usual, a Gold ring outside it, a gap struck through, a
+  Teal ring for a flag, never read)". New: "(a Plum circle within the usual, a Gold circle outside it, the date alone
+  for a gap, a Teal ring for a flag, never read, and a Teal square for symptoms)".
+- The third review, Craft. Old: "a day not logged is its struck date". New: "a day with nothing logged is its date
+  alone, with nothing drawn".
+- Closing the hand-offs, The page. Old: "Strength not said is a hollow square on the week card, as on the calendar."
+  New: "A symptom is one Teal square whatever its strength; strength is said in words, and one logged without a
+  strength reads as strength not said."
+- The calls for Will, Home. "Should the hero keep "+2 vs last week" on a rough evening?" is moot: the pill is cut (the
+  week is a neutral chip of averages on the FloraScore detail). "Is a small ring by the date (Day first) enough..."
+  becomes "Is the FloraScore glyph by the date (Day first) enough...".
+- The calls for Will, History and the week. "Mild symptoms at 65% on the week card and the calendar ..., or both at
+  70%?" is moot: no strength shading anywhere. "What should a Teal dot mean across the app? Rings uses it for symptoms,
+  the calendar for meals." becomes "A Teal square means symptoms on every screen of the app; Rings still draws Teal
+  dots for them."
+
+**CLAUDE.md** (shared; re-read before editing), after the work lands (applied by fix-words, Oct 28):
+- "Charts never use dashed lines ... a day not logged is its struck date, as on the week card": now "a day with
+  nothing logged is its date alone, with nothing drawn";
 - the week card in "A flagged today" and the `RU.week` line (the last 7 days);
-- `RU.dayMark`, `L.tally`, `L.dayWhy`, `L.symLine`, `L.FLAG_DAY` and `RU.cardChart` in the hooks;
+- `RU.dayMark`, `L.tally`, `L.dayWhy`, `L.symLine`, `L.FLAG_DAY`, `RU.scoreRel`, `RU.heldOnFree` and `RU.cardChart`
+  in the hooks;
 - the calendar's marks in the History lines, and History's day headers;
 - the looks module's list of what it wraps, and the load order if looks are dropped.
 
@@ -600,8 +669,8 @@ library is republished together with the prototype.
 
 ## Open calls
 
-1. **Data style.** Option 1: one look everywhere, the redrawn Florin charts, with Easy read in the Easy version (our
-   lean; Data style folds into Version). Option 2: a fixed Oura on Today, the same charts everywhere else. Section 5
+1. **Data style.** Option 1: one look everywhere, the redrawn Florin charts, with Easy read in the Easy version (what
+   the decision sheet recommends; Data style folds into Version). Option 2: a fixed Oura on Today, the same charts everywhere else. Section 5
    has why and why not for each.
 2. **The dark reading:** Cream (proposal) or Ray (DESIGN.md today). The studio's call.
 3. **The FloraScore hero:** a range bar with the glyph by the label (proposal), in place of the studio's ring gauge.

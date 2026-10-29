@@ -53,11 +53,13 @@
   const RANGE_NAME = { 7: "Last 7 days", 30: "Last 30 days", 90: "Last 90 days" };
   const d0Of = (M, n) => Math.max(M.start, TODAY - n + 1);
   const spanOf = (M, n) => RU.spanText(d0Of(M, n), TODAY);
-  /* three ticks: the first day, the middle and Today (seven days: every day) */
+  /* three ticks: the first day, the middle and Today (seven days: every day). "Today" sits under today alone: a chart
+     whose days stop before today names its last day by its date (finish-viz, Oct 28: the Form detail's day by day
+     called yesterday Today when nothing was logged yet) */
   const ticks = (F) => {
     const n = F.length;
     if (n <= 7) return F.map((f, i) => ({ i, label: f.today ? "Today" : Ut.DOW[f.dow], anchor: i === 0 ? "start" : i === n - 1 ? "end" : "middle" }));
-    return [0, Math.floor((n - 1) / 2), n - 1].map((i, k) => ({ i, label: i === n - 1 ? "Today" : short(F[i].d), anchor: k === 0 ? "start" : k === 2 ? "end" : "middle" }));
+    return [0, Math.floor((n - 1) / 2), n - 1].map((i, k) => ({ i, label: F[i].today || F[i].d === TODAY ? "Today" : short(F[i].d), anchor: k === 0 ? "start" : k === 2 ? "end" : "middle" }));
   };
   const rangeTabs = (n, free) => `<div class="ap-seg ap-seg--range" role="group" aria-label="Time range">${L.RANGES.map((v) => (free && v !== 7 ? `<button type="button" data-act="pay" data-pay="range" aria-pressed="false" aria-label="${v} days, with Florin membership">${icon("lock", "ap-seg-lock")}${v}D</button>` : `<button type="button" data-act="irange" data-v="${v}" aria-pressed="${n === v}">${v}D</button>`)).join("")}</div>`;
 
@@ -419,7 +421,8 @@
     ser.forEach((s, i) => { if (s.value != null) li = i; });
     ser.forEach((s, i) => {
       if (s.value == null) return;
-      const flag = s.flag, show = n <= 7 || i === li || runs.some((r) => r.length === 1 && r[0][0] === x(i));
+      /* a run of 1 or 2 scored days between gaps gets its dots, so a short stub never reads as a dashed line */
+      const flag = s.flag, show = n <= 7 || i === li || runs.some((r) => r.length <= 2 && r.some((p) => p[0] === x(i)));
       marks += `<circle class="dv-dot dv-dot--line${flag ? " is-flag" : ""}${show ? "" : " is-hit"}" cx="${n1(x(i))}" cy="${n1(y(s.value))}" r="4">${tip(`${short(s.d)} · FloraScore ${s.value}${flag ? ", noted for a clinician" : ""}`)}</circle>`;
     });
     if (li >= 0 && ser[li].today) {
@@ -677,7 +680,8 @@
       if (!u || !T7.known) return { chart: "", legend: "" };
       return {
         chart: C.seg([{ v: T7.within, label: "Within your usual", cls: "is-usual" }, { v: T7.shifted, label: "Outside your usual", cls: "is-shift" }], { aria: `${T7.within} of ${plural(T7.known, "day")} within your usual, ${T7.shifted} outside your usual` }),
-        legend: `${T7.within ? `<span><i class="sw sw--usual"></i>${T7.within} within your usual</span>` : ""}${T7.shifted ? `<span><i class="sw sw--shift"></i>${T7.shifted} outside your usual</span>` : ""}`
+        /* a day count, in Plum: the legend says days, so it never reads as the Forest readings below it (Will's read, Oct 29) */
+        legend: `${T7.within ? `<span><i class="sw sw--usual"></i>${plural(T7.within, "day")} within your usual</span>` : ""}${T7.shifted ? `<span><i class="sw sw--shift"></i>${plural(T7.shifted, "day")} outside your usual</span>` : ""}`
       };
     }
     if (key === "score") {
@@ -690,14 +694,14 @@
       const tm = timingOf(M, F);
       if (!tm.mornings.length) return { chart: "", legend: "" };
       const leg = u ? `${sw.in("In your usual window")}${tm.later.length || tm.earlier.length ? sw.out("Outside your usual window") : ""}${clinLg(tm.mornings.length > tm.read.length)}` : "";
-      if (n >= 90 && u) return { legend: barLg("In your usual window", "Outside your usual window"), chart: weekBars({ w, weeks: weekCounts(M, mode, (wk) => { const r = wk.filter((f) => f.first != null); return { within: r.filter((f) => f.inWin).length, read: r.length }; }), tip: (wk) => `Week of ${short(wk.d0)}: first BM in your window on ${wk.within} of ${plural(wk.read, "day")}`, aria: "Days a week with the first BM in your usual window" }) };
+      if (n >= 90 && u) return { legend: barLg("Days in your window", "Days outside your window"), chart: weekBars({ w, weeks: weekCounts(M, mode, (wk) => { const r = wk.filter((f) => f.first != null); return { within: r.filter((f) => f.inWin).length, read: r.length }; }), tip: (wk) => `Week of ${short(wk.d0)}: first BM in your window on ${wk.within} of ${plural(wk.read, "day")}`, aria: "Days a week with the first BM in your usual window" }) };
       return { chart: morning({ w, days: F, usual: u, domain: morningDomain(F, u), r: 4.4, gap: n >= 30 ? 1.2 : 1.6, bracket: w > 320, aria: `First BM each day, ${rn}${u ? `, against your usual window ${winText(u)}` : ""}` }), legend: leg };
     }
     if (key === "often") {
       const of = oftenOf(M, F);
       if (!live.some((f) => f.logged)) return { chart: "", legend: "" };
       const leg = u ? `${sw.in("A usual count")}${of.busy || of.fewer || of.zero ? sw.out("Outside your usual count") : ""}${clinLg(of.known.length > of.read.length)}` : "";
-      if (n >= 90 && u) return { legend: barLg("A usual count", "Outside your usual count"), chart: weekBars({ w, weeks: weekCounts(M, mode, (wk) => { const r = wk.filter((f) => f.count != null); return { within: r.filter((f) => f.inCount).length, read: r.length }; }), tip: (wk) => `Week of ${short(wk.d0)}: a usual count on ${wk.within} of ${plural(wk.read, "day")}`, aria: "Days a week with a usual count" }) };
+      if (n >= 90 && u) return { legend: barLg("Days with a usual count", "Days outside your usual count"), chart: weekBars({ w, weeks: weekCounts(M, mode, (wk) => { const r = wk.filter((f) => f.count != null); return { within: r.filter((f) => f.inCount).length, read: r.length }; }), tip: (wk) => `Week of ${short(wk.d0)}: a usual count on ${wk.within} of ${plural(wk.read, "day")}`, aria: "Days a week with a usual count" }) };
       return { chart: countLine({ w, days: F, usual: u, aria: `BMs a day, ${rn}${u ? `, against your usual ${u.nLo} to ${u.nHi}` : ""}` }), legend: leg };
     }
     if (key === "form") {
@@ -1017,14 +1021,14 @@
       const lines = [
         u && fm.out.length ? `Of the ${plural(fm.out.length, "BM")} outside your usual, ${join([fm.firmer ? `${fm.firmer} ${fm.firmer === 1 ? "was" : "were"} firmer` : "", fm.looser ? `${fm.looser} ${fm.looser === 1 ? "was" : "were"} looser` : ""].filter(Boolean))}.` : u && !fm.unsure ? "Every BM was in your usual forms." : "",
         fm.unsure ? `${plural(fm.unsure, "BM")} logged as a word that covers steps on both sides of your usual could be either, so ${fm.unsure === 1 ? "it isn't" : "they aren't"} counted as in or outside.` : "",
-        formSplit(fm),
         ...loose.map((p) => `The morning after ${lower1(foodName(p.food)[0])}, your first BM was ${looseText(mode)} ${p.hit} of ${p.n} times in the last ${L.PATTERN_DAYS} days. It's on Possible patterns.`),
         B ? "Five words, hardest to loosest: Hard covers the two hardest steps and Loose the two just before Watery." : Cw ? "Seven words, from Pellets, the hardest, to Watery, the loosest." : "Types run from 1, hardest, to 7, loosest."
       ];
-      /* each BM by day, up to 30 days; at 90, the days a week in your usual forms */
-      const days = F.filter((f) => !f.pending);
+      /* each BM by day, up to 30 days; at 90, the days a week in your usual forms. Today stays on the axis with nothing
+         logged yet (nothing drawn above it), so the axis always ends on Today, as the count line's does */
+      const days = F;
       const second = !fm.bms.length ? "" : n >= 90 && u
-        ? fig("Days a week in your usual forms", "13 weeks", weekBars({ w: W, weeks: weekCounts(M, mode, (wk) => { const r = wk.filter((f) => f.bms.length && f.formsIn != null); return { within: r.filter((f) => f.formsIn).length, read: r.length }; }), tip: (wk) => `Week of ${short(wk.d0)}: usual forms on ${wk.within} of ${plural(wk.read, "day")}`, aria: "Days a week with every BM in your usual forms" }), barLg("Every BM in your usual forms", "A BM outside your usual forms"))
+        ? fig("Days a week in your usual forms", "13 weeks", weekBars({ w: W, weeks: weekCounts(M, mode, (wk) => { const r = wk.filter((f) => f.bms.length && f.formsIn != null); return { within: r.filter((f) => f.formsIn).length, read: r.length }; }), tip: (wk) => `Week of ${short(wk.d0)}: usual forms on ${wk.within} of ${plural(wk.read, "day")}`, aria: "Days a week with every BM in your usual forms" }), barLg("Days with every BM in your usual forms", "Days with a BM outside them"))
         : fig("Each BM, day by day", B ? "Hard at the bottom" : Cw ? "Pellets at the bottom" : "Type 1 at the bottom", formDots({ w: W, days, mode, usual: u, h: 110, aria: `Each BM's form, ${rn}` }), `${lg("", u ? "In your usual forms" : "A BM")}${u && fm.out.length ? lg("sw--shift", "Outside your usual forms") : ""}${fm.unsure ? lg("sw--maybe", "Could be either") : ""}${clinLg(F.some((f) => f.flag && f.bms.length))}`);
       return page(M, V, st, "Form", `
         ${hero("Most common form", fm.bms.length ? esc(fm.top.label) : "None yet", learning ? learnChip(M) : `${chip(`Your usual ${L.usualFormsText(M, mode)}`, "plain")}${fm.bms.length ? chip(`${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")} in them`, "plain") : ""}`, now)}

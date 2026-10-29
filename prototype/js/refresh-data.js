@@ -691,6 +691,9 @@
   };
   L.score = (M, d, mode) => {
     if (!M.usual) return null;
+    /* no score before day 14, on any day: the person's first 13 days are Florin learning their usual, so the 90-day line
+       starts on day 14 too (Will's read, Oct 29: it scored the first 13 days). scoreUsual starts at day 28 */
+    if (d < M.start + L.LEARN_DAYS - 1) return { d, value: null, n: 0, learning: true };
     /* a day with no BM logged has no FloraScore of its own: it would only repeat the days around it. Today counts as far
        as it has gone */
     if (d !== TODAY && !L.dayParts(M, L.day(M, d), mode)) return { d, value: null, n: 0 };

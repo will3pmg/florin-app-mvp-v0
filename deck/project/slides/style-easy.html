@@ -9,125 +9,96 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
-p{margin:0}
-.card{height:100%;background:#FFFFFD;border-radius:32px;padding:28px;display:flex;flex-direction:column;gap:24px;box-shadow:inset 0 0 0 2px #E6E2D8}
-.h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
-.t{font-size:32px;line-height:1.2;font-weight:500}
-.side{font-size:26px;line-height:1.3;color:#36544C}
-.ring{position:relative;width:272px;height:272px;margin:0 auto;flex:none}
-.ring svg{display:block;width:100%;height:100%;overflow:visible}
-.trk{fill:none;stroke:rgba(0,55,44,.09)}
-.utrk{fill:none;stroke:rgba(0,55,44,.09);stroke-width:2}
-.ub{fill:none;stroke:#4F2641;stroke-width:10;stroke-linecap:round}
-.ue{stroke:#4F2641;stroke-width:3;stroke-linecap:round}
-.arc{fill:none;stroke:#00352B;stroke-linecap:round}
-.end{fill:#C2A64B;stroke:#FFFFFD;stroke-width:4}
-.edge{fill:none;stroke:#695612;stroke-width:2}
-.c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
-.n{font-size:88px;line-height:1;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.u{font-size:24px;line-height:1.25;font-weight:500;color:#4F2641}
-.ans{font-size:34px;line-height:1.25}
-.dot{display:inline-block;vertical-align:.06em;width:22px;height:22px;margin-right:16px;border-radius:50%;background:#C2A64B;box-shadow:inset 0 0 0 2px #695612}
-.note{font:24px/1.5 Georgia,"Times New Roman",serif;color:#36544C}
-.go .card>*{animation:rise .45s cubic-bezier(.2,.7,.1,1) both}
-.go .card>:nth-child(2){animation-delay:60ms}
-.go .card>:nth-child(3){animation-delay:120ms}
-.go .card>:nth-child(4){animation-delay:180ms}
-@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.card{height:100%;background:#FFFFFD;border-radius:32px;padding:28px 32px;display:flex;flex-direction:column;gap:16px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.top b{font-size:32px;font-weight:500}.top span{font-size:24px;color:#36544C}
+.big{margin:40px 0 0;font-size:168px;line-height:1;font-weight:400;letter-spacing:-4px;font-variant-numeric:tabular-nums}
+.ans{margin:0;font-size:40px;line-height:1.2;font-weight:400}
+.sp{flex:1}
+.how{margin:0;font:400 24px/1.3 Georgia,"Times New Roman",serif;color:#36544C}
+.go .big{animation:rise .7s .2s cubic-bezier(.2,.8,.2,1) both}
+.go .ans{animation:fade .6s .8s ease-out both}
+.go .how{animation:fade .6s 1.2s ease-out both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+@keyframes fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Easy read look: FloraScore 83 today in one big ring, your usual 74 to 82 written inside it and drawn on its outer edge, and the plain sentence A little above your usual range">
-  <div class="h"><p class="t">FloraScore</p><p class="side">Sunday, October 11</p></div>
-  <div class="ring">
-    <svg id="ch" viewBox="0 0 240 240" aria-hidden="true"></svg>
-    <div class="c" aria-hidden="true"><b class="n">83</b><span class="u">Your usual<br>74 to 82</span></div>
-  </div>
-  <p class="ans"><i class="dot" aria-hidden="true"></i>A little above your usual range.</p>
-  <p class="note">FloraScore compares you with you. It isn’t a medical score, and a lower number isn’t a diagnosis.</p>
+<div class="card" role="img" aria-label="Easy read look: FloraScore 83 as a big number, then its words: a little above its usual range, 74 to 82">
+  <div class="top"><b>FloraScore</b><span>Sunday, October 11</span></div>
+  <p class="big">83</p>
+  <p class="ans">A little above its usual range, 74 to 82.</p>
+  <div class="sp"></div>
+  <p class="how">FloraScore compares you with you. It isn’t a medical score, and a lower number isn’t a diagnosis.</p>
 </div>
 <script>
-/* Sarah today (C, 12 weeks, every meal), from FLD.build: FloraScore 83, usual range 74 to 82, "A little above your usual
-   range". The ring is look-easy's own: one track, the score from 12 o'clock, the usual as a band with end ticks outside it */
-var V=83,U=[74,82],C=120,R=90,SW=22,RU=114,ns='http://www.w3.org/2000/svg',ch=document.getElementById('ch');
-var pol=function(r,f){return[(C+r*Math.sin(f*2*Math.PI)).toFixed(1),(C-r*Math.cos(f*2*Math.PI)).toFixed(1)]};
-function arc(r,a,b){var p=pol(r,a),q=pol(r,b);return'M'+p+'A'+r+','+r+' 0 '+(b-a>.5?1:0)+' 1 '+q}
-function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);ch.appendChild(e);return e}
-el('circle',{cx:C,cy:C,r:R,'class':'trk','stroke-width':SW});
-el('circle',{cx:C,cy:C,r:RU,'class':'utrk'});
-el('path',{d:arc(RU,U[0]/100,U[1]/100),'class':'ub'});
-U.forEach(function(u){var a=pol(RU-9,u/100),b=pol(RU+9,u/100);el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],'class':'ue'})});
-el('path',{d:arc(R,0,V/100),'class':'arc','stroke-width':SW});
-var e=pol(R,V/100);el('circle',{cx:e[0],cy:e[1],r:14,'class':'end'});el('circle',{cx:e[0],cy:e[1],r:11,'class':'edge'});
-var B=document.body,Rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function play(){if(Rm)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
+/* Sarah today (C, 12 weeks, every meal): FloraScore 83, usual range 74 to 82, "A little above its usual range"
+   (L.score, L.scoreUsual, FLD's relation), drawn as the library's Easy read card and the Easy version's Today draw it:
+   the number big, then its words. No ring filling toward 100, and the number never counts up */
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
   <x-embed style="position:absolute; left:696px; top:256px; width:536px; height:640px;"><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Easy read: this week</title>
+<html lang="en"><head><meta charset="utf-8"><title>Easy read: your last 7 days</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
-p,ol,ul{margin:0;padding:0;list-style:none}
-.card{height:100%;background:#FFFFFD;border-radius:32px;padding:28px;display:flex;flex-direction:column;gap:20px;box-shadow:inset 0 0 0 2px #E6E2D8}
-.h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
-.t{font-size:32px;line-height:1.2;font-weight:500}
-.side{font-size:26px;line-height:1.3;color:#36544C}
-.lead{display:flex;flex-direction:column;gap:14px}
-.big{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
-.n{font-size:88px;line-height:1;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.unit{font-size:28px;line-height:1.3}
-.ans{font-size:34px;line-height:1.25}
-.dot{display:inline-block;vertical-align:.06em;width:22px;height:22px;margin-right:16px;border-radius:50%;background:#C2A64B;box-shadow:inset 0 0 0 2px #695612}
-.row{display:grid;grid-template-columns:repeat(7,1fr)}
-.day{display:flex;flex-direction:column;align-items:center;gap:10px}
-.k,.now{font-size:24px;line-height:1.2;font-weight:500;white-space:nowrap}
-.c{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;font-size:26px;line-height:1;font-weight:500;font-variant-numeric:tabular-nums}
-.is-usual{background:#4F2641;color:#F9F7F2}
-.is-shift{background:#C2A64B;color:#00352B;box-shadow:inset 0 0 0 2px #695612}
-.is-none{box-shadow:inset 0 0 0 2px #6A837C}
-.gr{display:flex;flex-direction:column;gap:12px}
-.gr li{display:flex;align-items:flex-start;gap:14px;font-size:24px;line-height:1.35}
-.gr .c{width:30px;height:30px;margin-top:1px}
-.gr b{font-weight:500}
-.go .card>*{animation:rise .45s cubic-bezier(.2,.7,.1,1) both}
-.go .card>:nth-child(2){animation-delay:60ms}
-.go .card>:nth-child(3){animation-delay:120ms}
-.go .card>:nth-child(4){animation-delay:180ms}
+.card{height:100%;background:#FFFFFD;border-radius:32px;padding:26px 28px;display:flex;flex-direction:column;gap:10px;box-shadow:inset 0 0 0 2px #E6E2D8}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.top b{font-size:32px;font-weight:500}.top span{font-size:24px;color:#36544C}
+.big{display:flex;align-items:baseline;gap:14px;font-size:26px}
+.big b{font-size:84px;font-weight:300;line-height:.95}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);row-gap:6px;justify-items:center;margin:4px 0 0}
+.w{font-size:24px;font-weight:500}
+.c{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:500}
+.u{background:#4F2641;color:#F9F7F2}
+.s{background:#C2A64B;box-shadow:inset 0 0 0 2px #695612;color:#00352B}
+.x{color:#36544C;font-weight:400}
+.t{box-shadow:0 0 0 3px #FFFFFD,0 0 0 6px #00352B}
+.q{width:16px;height:16px;border-radius:2px}
+.q.on{background:#396E7C}
+.tl{font-size:24px;font-weight:500;grid-column:7}
+ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+li{display:flex;gap:14px;font-size:24px;line-height:1.25}
+li i{flex:none;width:20px;height:20px;margin-top:5px}
+.kg{border-radius:50%;background:#C2A64B;box-shadow:inset 0 0 0 2px #695612}
+.ks{border-radius:2px;background:#396E7C;width:18px!important;height:18px!important}
+.go .c{animation:pop .4s cubic-bezier(.3,1.5,.5,1) both}
+.go li{animation:rise .5s ease-out both}
+@keyframes pop{from{opacity:0;transform:scale(.3)}}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Easy read look, this week: 4 of 6 days within your usual. Seven day circles, Monday 5 to today the 11th: within your usual on Monday, Tuesday, Saturday and today, outside your usual on Wednesday and Friday, Thursday not logged">
-  <div class="h"><p class="t">This week</p><p class="side">Oct 5 to today</p></div>
-  <div class="lead">
-    <p class="big"><b class="n">4</b><span class="unit">of 6 days within your usual</span></p>
-    <p class="ans"><i class="dot" aria-hidden="true"></i>Outside your usual on Wednesday and Friday.</p>
-  </div>
-  <ol class="row" id="row" aria-hidden="true"></ol>
-  <ul class="gr" aria-hidden="true">
-    <li><i class="c is-usual"></i><span><b>Within your usual:</b> Mon, Tue, Sat and today</span></li>
-    <li><i class="c is-shift"></i><span><b>Outside your usual:</b> Wed and Fri</span></li>
-    <li><i class="c is-none"></i><span><b>Not logged:</b> Thu</span></li>
-  </ul>
+<div class="card" role="img" aria-label="Easy read look: your last 7 days, Oct 5 to 11. 4 of 6 days within your usual. Wednesday and Friday were outside it, nothing was logged on Thursday, and symptoms came up on 2 days">
+  <div class="top"><b>Your last 7 days</b><span>Oct 5 to 11</span></div>
+  <div class="big"><b>4</b><span>of 6 days within your usual</span></div>
+  <div class="wk" id="wk"></div>
+  <ul id="ln"></ul>
 </div>
 <script>
-/* Sarah's week (C, 12 weeks, every meal), from FLD.build, days[7]: Oct 5 to 11. Wednesday's first BM came at 8:55 AM,
-   after her usual 7:15 to 8:45 AM; on Friday one BM was firmer than her usual forms; Thursday has no logs */
-var W=[['Mon',5,'usual'],['Tue',6,'usual'],['Wed',7,'shift'],['Thu',8,'none'],['Fri',9,'shift'],['Sat',10,'usual'],['Sun',11,'usual',1]],h='';
-W.forEach(function(d){h+='<li class="day"><span class="k">'+d[0]+'</span><span class="c is-'+d[2]+'">'+d[1]+'</span>'+(d[3]?'<span class="now">Today</span>':'')+'</li>'});
-document.getElementById('row').innerHTML=h;
-var B=document.body,Rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function play(){if(Rm)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
+/* Sarah's last 7 days (C, 12 weeks, every meal) from L.span(7), L.tally, L.dayWhy and L.symLine: each day's mark,
+   symptoms on Wednesday and today, and the lines the Easy version writes under the days */
+var D=[['Mon',5,'u',0],['Tue',6,'u',0],['Wed',7,'s',1],['Thu',8,'x',0],['Fri',9,'s',0],['Sat',10,'u',0],['Sun',11,'u',1]],h='';
+D.forEach(function(d){h+='<span class="w">'+d[0]+'</span>'});
+D.forEach(function(d,i){h+='<span class="c '+d[2]+(i===6?' t':'')+'" style="animation-delay:'+(i*.08).toFixed(2)+'s">'+d[1]+'</span>'});
+D.forEach(function(d){h+='<span class="q'+(d[3]?' on':'')+'"></span>'});
+h+='<span class="tl">Today</span>';
+document.getElementById('wk').innerHTML=h;
+var L=[['kg','Wednesday: your first BM came later than usual, at 8:55 AM.'],['kg','Friday: one BM was Firm, firmer than your usual forms.'],['','Nothing logged on Thursday.'],['ks','Symptoms on 2 days: mild bloating both days.']];
+document.getElementById('ln').innerHTML=L.map(function(l,i){return'<li style="animation-delay:'+(.7+i*.12).toFixed(2)+'s"><i class="'+l[0]+'"></i><span>'+l[1]+'</span></li>'}).join('');
+var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
   <div style="position:absolute; left:1264px; top:256px; width:528px; height:640px; display:flex; flex-direction:column; gap:16px;">
     <div style="background:#EFECE4; border-radius:28px; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
       <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> One big number and one plain sentence on each card, in large type.</p>
-      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> The easiest to read, for anyone with reading glasses or little patience for charts.</p>
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> It’s the easiest to read, for anyone with reading glasses.</p>
       <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> It leaves out the shape of the data, so it’s thin for someone who wants depth.</p>
     </div>
     <div style="background:#4F2641; border-radius:20px; padding:12px 28px;">
@@ -138,8 +109,8 @@ var on=false;if('IntersectionObserver'in window){new IntersectionObserver(functi
     <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Decisions › Data style › Easy read</p>
     <p style="font-size:24px; color:#3E5A52;">16</p>
   </div>
-  <aside>Easy read. What it is: one big number and one plain sentence on each card, in large type. Why do it: the easiest to read, for anyone with reading glasses or little patience for charts. Why not: it leaves out the shape of the data, so it’s thin for someone who wants depth.
-We recommend Easy read only in the Easy version, decision 8. With Easy on, Data style doesn’t apply, because Easy has its own Today and charts.
-The two cards here are its FloraScore card and the week as seven day circles, drawn from the same logs as every other style.
+  <aside>Easy read. What it is: one big number and one plain sentence on each card, in large type. Why do it: it’s the easiest to read, for anyone with reading glasses. Why not: it leaves out the shape of the data, so it’s thin for someone who wants depth.
+We recommend Florin charts everywhere, with Easy read only in the Easy version, decision 8. With Easy on, Data style doesn’t apply, because Easy has its own Today and charts.
+The two cards here are its FloraScore card, the number big and then its words, as the Easy version’s Today draws it (no ring filling toward 100), and the last 7 days as day circles, with a line for each day that wasn’t within the usual, drawn from the same logs as every other style.
 Try it: Decisions, Data style, Easy read, then the Today and Insights tabs, or Decisions, Version, Easy. The demo shows one style at a time, and detail pages don’t change. To see every style on every card, open the style gallery: https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
 </section>

@@ -626,20 +626,22 @@
 
   /* ---------- the notes for Will. Oct 28: the decision in the decision sheet's shape (refresh-app.js, THE
      DECISIONS, has the fields; the page gives the question and what it decides), and plain screen notes ---------- */
+  /* Will's read, Oct 29: the note was the longest of the nine. It leads with the two real options (Florin charts
+     everywhere, or Oura on Today), then Easy read (the Easy version's), then the three here to compare, each block one
+     short sentence a line, and no Still open (it asked the aside's question again) */
   const STYLES = {
-    built: { is: "The dark green FloraScore card with the usual range as a bar, the last 7 days as one circle per day, and plain bar and dot charts.", why: "Each card says the person's usual in words and gives a count before the chart, and every card works the same way.", not: "It's the most text of the six, with small charts on every card." },
-    rings: { is: "FloraScore as a ring that fills up, with the person's usual range marked on it, and each day of the week as its own small ring.", why: "Rings read at a glance, and a ring for each day makes a week easy to count.", not: "Rings are hard to compare across cards, and a ring a day gets small over 30 days." },
-    journal: { is: "The numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption.", why: "It's the most exact, so it suits detail pages and a clinician report.", not: "It's the most reading, and its small captions are hard for older eyes." },
-    bento: { is: "Tiles of different sizes, one number each.", why: "Easy to take in at a glance, like phone widgets.", not: "Tiles show numbers but not how they connect, and they crowd when text is large." },
-    oura: { is: "A dark screen with FloraScore as a large round gauge, one line about today, and a small ring for each part of the score: Timing, How often, Form and Comfort.", why: "It shows the score and what it's made from most clearly, in a layout Oura users already know.", not: "It looks like Oura's app, so it needs Florin's own colours and shapes, or it reads as a copy." },
-    easy: { is: "One big number and one plain sentence on each card, in large type.", why: "The easiest to read, for anyone with reading glasses or little patience for charts.", not: "It leaves out the shape of the data, so it's thin for someone who wants depth." }
+    built: { is: "The dark green FloraScore card with the usual range as a bar, the week as one circle a day, and plain bar and dot charts.", why: "Each card says the person's usual in words before the chart, and every card works the same way.", not: "It's the most text of the six, with small charts on every card." },
+    oura: { is: "A dark screen with FloraScore as a large round gauge and a small ring for each part of the score.", why: "Oura users already know the layout, with the score as one big gauge.", not: "It breaks the chart rules in four places, starting with part rings that carry no numbers, and it reads as a copy." },
+    easy: { is: "One big number and one plain sentence on each card, in large type.", why: "It's the easiest to read, for anyone with reading glasses.", not: "It leaves out the shape of the data, so it's thin for someone who wants depth." },
+    rings: { is: "FloraScore as a ring that fills up, with the usual range marked on it, and a small ring for each day.", why: "Rings read at a glance, and a week of rings is easy to count.", not: "A ring filling toward 100 reads as a grade, and a ring a day gets small over 30 days." },
+    journal: { is: "The numbers written out, with plain charts on labelled axes, each with a caption.", why: "It's the most exact, so it suits detail pages and a clinician report.", not: "It's the most reading, and its small captions are hard for older eyes." },
+    bento: { is: "Tiles of different sizes, one number each.", why: "Easy to take in at a glance, like phone widgets.", not: "Tiles show numbers but not how they connect, and they crowd when text is large." }
   };
   EXT.decisions.look = () => ({
-    aside: "Two of the six are the real contenders: Oura and Field journal, which we recommend using together. The other four are there to compare.",
-    opts: ["built", "rings", "journal", "bento", "oura", "easy"].map((v) => Object.assign({ v, name: nameOf(v) }, STYLES[v])),
-    rec: { v: ["oura", "journal"], text: "We recommend the Oura style on Today and FloraScore, Field journal on detail pages, and Easy read only in the Easy version.", why: "Oura shows the score and its parts most clearly, and Field journal is the most exact where people go for detail." },
-    open: "Mix styles by screen like this, or one style everywhere?",
-    try: "Switch it, then look at the Today and Insights tabs. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. To see every style on every card, use the link at the top of the page: Every data style, side by side."
+    aside: "The real choice is Florin charts everywhere, or Oura on Today. Easy read is the Easy version's own, and Rings, Field journal and Bento are here to compare.",
+    opts: ["built", "oura", "easy", "rings", "journal", "bento"].map((v) => Object.assign({ v, name: nameOf(v) }, STYLES[v])),
+    rec: { v: "built", text: "We recommend one look everywhere, Florin charts, with Easy read only in the Easy version.", why: "A card and its detail page then draw the same day the same way, and Data style folds into Version." },
+    try: "Switch it, then look at Today and Insights. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
   });
   /* the screens' own notes, while a style is drawn */
   const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn in the ${nameOf(lookIdOf(P) || "built")} style.`);

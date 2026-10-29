@@ -754,7 +754,8 @@
         case "ck-last": go("today"); push("ck", { step: 4, answers: [1, 0, 1, 1], tags: [], note: "", preview: true }, now); break;
         case "ckdone": go("today"); push("ck", { step: L.CHECKIN.length + 1, answers: [1, 0, 1, 1], tags: ["Eating out"], note: "", preview: true }, now); break;
         case "ckday": go("today"); push("ckday", Object.assign({}, S.M.ckDay), now); break;
-        case "history": go("history"); break;
+        /* History: List sets the History decision, as History: Calendar does (the demo opens on Calendar, Will's pick) */
+        case "history": if (S.history !== "list") set("history", "list"); go("history"); break;
         case "insights": ins(null); break;
         case "pay": go("insights"); push("pay", { from: "" }, now); break;
         case "free-insights": if (cfg.onPlan && S.plan !== "free") { cfg.onPlan("free", "free-insights"); return; } S.ins.k = null; go("insights"); break;
@@ -870,8 +871,8 @@
     today: (M) => ({
       t: "Today",
       lede: M.usual
-        ? `Today opens on FloraScore, read against the person's own usual range, with one sentence on what stood out today. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days, and one next step.`
-        : `Florin is still learning this person's usual, so FloraScore shows how many days are left instead of a number until day ${L.LEARN_DAYS}. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days, and one next step.`
+        ? `Today opens on FloraScore, read against the person's own usual range, with one sentence on what stood out today. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days with a line for each day that wasn't within the usual, and one next step.`
+        : `Florin is still learning this person's usual, so FloraScore shows the day it's on, Day ${L.learnDay(M)} of ${L.LEARN_DAYS}, instead of a number until day ${L.LEARN_DAYS}. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days as they're logged, and one next step.`
     }),
     plus: () => P.bmUI === "full" ? ({
       t: "The plus menu, full form only",
@@ -928,15 +929,15 @@
     }),
     ckdone: () => ({
       t: "Check-in saved",
-      lede: `Each answer sits next to the person's first ${num(L.BASE_WEEKS)} weeks and reads as about the same, more, or less than at first. No score, and the answers are never added up into one.`
+      lede: `Each answer sits next to the person's first ${num(L.BASE_WEEKS)} weeks and reads as about the same, more, or less than at first. No score, and the answers are never added up into one. Your logs this week counts the days within the usual, with the symptom sentence.`
     }),
     ckday: (M) => ({
       t: "When it's due",
       lede: `${AD.util.DOWL[M.ckDay.dow]} ${M.ckDay.when} to start. The person picks the day and morning or evening, and gets one reminder. The questions cover the 7 days up to that day.`
     }),
-    history: () => ({
+    history: (M) => ({
       t: "History",
-      lede: "Every log, newest day first. A day with nothing logged stays a gap, with Add to this day for catching up. Filters show BMs, symptoms, meals or notes, and the report for a clinician sits at the top."
+      lede: `Every log, newest day first, each day opening with its mark and one line on how it sat against the usual. A day with nothing logged stays a gap, with Add to this day for catching up. Filters show BMs, symptoms, meals or notes, and the report for a clinician sits at the top.${P.plan === "free" && M.usual ? ` On Free, days before the last ${RU.FREE_DAYS} show as logged, not read against the usual.` : ""}`
     }),
     insights: (M, f) => {
       const PR = L.patterns(M, f);
@@ -956,23 +957,23 @@
     }),
     "i-score": () => ({
       t: "FloraScore, the detail",
-      lede: "Today's score against the person's usual range, the trend, what moved it this week, and its four parts: when the first BM came, how often, consistency and comfort. A day with no BM logged is left out, never scored as zero. It never uses meals."
+      lede: "Today's score on a bar with the person's usual range, then each day's score against that range, what moved it this week in whole points, and its four parts: when the first BM came, how often, form and comfort. A day with no BM logged is left out, never scored as zero. It never uses meals."
     }),
     "i-timing": () => ({
       t: "Timing, the detail",
-      lede: `When the first BM came each morning, on a straight time axis, with the person's usual window marked. Tabs switch between ${listOf(L.RANGES.map(String))} days. What shaped this is folded away, and Next moves to the next card.`
+      lede: `When the first BM came each day, on a straight time axis, with the person's usual window marked, then every BM day by day, the last 14 days at most; over 90 days, a bar a week for the mornings in the window and outside it. Tabs switch between ${listOf(L.RANGES.map(String))} days. What shaped this is folded away, and Next moves to the next card.`
     }),
     "i-often": () => ({
       t: "How often, the detail",
-      lede: "BMs a day, as bars from zero, over the person's usual range. A day logged as No BM counts as zero; a day with nothing logged stays a gap, never a zero."
+      lede: "BMs a day, one dot a day on a count line from zero, with the person's usual count as a band. A day logged as No BM is a dot on zero; a day with nothing logged stays a gap, never a zero. Over 90 days, a bar a week for the days with a usual count."
     }),
     "i-form": () => ({
       t: "Form, the detail",
-      lede: "The mix of forms over the range, with the person's usual forms marked, then each BM by day. In B, a word that covers two kinds of stool sits between them, since it could be either."
+      lede: "How many BMs came in each form, counts on the bars, with the person's usual forms marked, then each BM by day; over 90 days, a bar a week for the days in the usual forms. A word from B that covers two kinds of stool sits between them by day, spans both on today's bar, and stays out of the bars, with a line that says so."
     }),
     "i-sym": () => ({
       t: "Symptoms, the detail",
-      lede: "A row per symptom, with a dot on each day it came up, larger when stronger. One logged without a strength reads as strength not said. Then each symptom against the weeks before, and when to see a clinician."
+      lede: "A row per symptom, with a Teal square on each day it came up, and an Any symptom row with the usual written at its end; how strong is said in words, and one logged without a strength reads as strength not said. Over 90 days, Teal bars of the days a week with any symptom. Then each symptom against the weeks before, and when to see a clinician."
     }),
     "i-ck": (M) => ({
       t: "Weekly check-in, the detail",
@@ -986,7 +987,7 @@
     }),
     "i-pattern": () => ({
       t: "One possible pattern",
-      lede: "One dot for each time the food came up, filled when the symptom followed, next to the same count for every other day. Then the pattern over time, and a way to test it. What you could try never says avoid."
+      lede: "Two bars: how often the change followed the food, and how often it came on other days, with the counts written on. Late dinners add the first BM times after each kind of dinner. Then a way to test it. What you could try never says avoid."
     }),
     ask: () => P.plan === "free" ? ({
       t: "Ask Florin, free plan",
@@ -1008,7 +1009,7 @@
     ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
     ["Insights", [["insights", "Insights"], ["i-score", "FloraScore"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
     ["Membership", [["pay", "The paywall"], ["free-insights", "Insights, free"], ["free-ask", "Ask Florin, free"]]],
-    ["Tabs", [["today", "Today"], ["history", "History, basic"], ["ask", "Ask Florin"]]]
+    ["Tabs", [["today", "Today"], ["history", "History: List"], ["ask", "Ask Florin"]]]
   ];
   /* the core list with every module's groups merged in: items join a group of the same name, or a new group goes
      before the one it names (or last) */
@@ -1093,7 +1094,7 @@
       what: "The top of the Today tab, the screen the app opens on."
     },
     {
-      k: "history", label: "History", def: "list", opts: [["list", "List"], ["calendar", "Calendar"]],
+      k: "history", label: "History", def: "calendar", opts: [["list", "List"], ["calendar", "Calendar"]],
       q: "How should History show past days?",
       what: "The History tab, where people look back and fill in a day they missed."
     },
@@ -1219,10 +1220,11 @@
         lede: "How often the demo person wrote meals down. It changes their history, not the app.",
         items: L.MEAL_LOGS.map(([v, l]) => [l, v === "all" ? "Meals written down every day." : v === "rough" ? "Meals written down only on days they also logged a symptom." : "No meals written down."]),
         why: [
-          "It shows a trap. If someone writes meals down only on days with symptoms, every meal they log sits next to a symptom. There are no ordinary days to compare with, so everyday foods can look linked to symptoms.",
-          `So Insights holds food patterns back until meals are logged on at least ${coverText()} of the days a person logs anything, and offers a ${L.FOOD_CHECK_DAYS}-day food check instead: log what you ate every day for ${foodSpan()}, ordinary days included. FloraScore never uses meals, so it doesn't change.`
+          "It shows a trap. If someone writes meals down only on days with symptoms, every meal they log is on a day with symptoms. There are no ordinary days to compare with, so everyday foods can look linked to symptoms.",
+          `So Insights holds food patterns back until meals are logged on at least ${coverText()} of the days a person logs anything, and offers a ${L.FOOD_CHECK_DAYS}-day food check instead: log what you ate every day for ${foodSpan()}, ordinary days included. FloraScore never uses meals, so it doesn't change.`,
+          `What this means for the app: the meal sheet (decision ${DECISIONS.findIndex((D) => D.k === "mealUI") + 1}) and the food check are our answer to this habit.`
         ],
-        try: `Pick ${(L.MEAL_LOGS.find(([v]) => v === "rough") || [, ""])[1]}, then open the Insights tab. The patterns card holds food patterns back and offers the food check.`
+        try: `Pick ${(L.MEAL_LOGS.find(([v]) => v === "rough") || [, ""])[1]}, then open the Insights tab. The patterns card holds food patterns back and offers the food check. In the demo, Start only describes the check, and on Free it opens membership.`
       })
     },
     plan: {
@@ -1389,10 +1391,14 @@
     sizeSides();
   }
   /* wide: the toggles on the left, the notes on the right. Phone: both in sheets, from the bar at the top */
+  /* the header's two links (the deck, every data style side by side) move to the top of the Toggles sheet on a phone,
+     where the header is hidden, and back under the header's lede when it's wide: moved, never doubled */
+  const links = $(".rx-head-links"), linksHome = links ? links.parentNode : null;
   function place() {
     const m = isM();
     const tSlot = m ? sheets.toggles.querySelector("[data-slot]") : left;
     [decPanel, demoPanel, navPanel].forEach((el) => tSlot.appendChild(el));
+    if (links) { if (m) tSlot.insertBefore(links, decPanel); else if (links.parentNode !== linksHome) linksHome.appendChild(links); }
     const nSlot = m ? sheets.notes.querySelector("[data-slot]") : right;
     nSlot.appendChild(notesPanel);
     mount.classList.toggle("rx--m", m);

@@ -524,14 +524,16 @@
     open: "When a strong symptom and a BM outside the person's usual land on the same day, which should the top sentence mention first?",
     try: "Switch it, then look at the Today tab. The demo opens on Score first."
   });
-  const historyDecision = () => ({
+  /* "your usual" is Plum, and Ray on dark (DESIGN.md): the notes name the colour the calendar draws in the phone's theme */
+  const usualC = (P) => (P && P.theme === "dark" ? "Ray" : "Plum");
+  const historyDecision = (M, P) => ({
     opts: [
-      { v: "list", is: "Every day, newest first, with its logs, and a day with nothing logged shown as a gap with Add to this day.", why: "Every log is right there to read, and filling in a missed day takes one tap.", not: "After a few months it's a long scroll, and gaps and days outside the usual are hard to spot." },
-      { v: "calendar", is: "A month on one screen: a Plum circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone for a day with nothing logged.", why: "A whole month fits on one screen, so gaps and days outside the usual show at a glance.", not: "Seeing a day's logs takes a tap, and a month of circles says less than the list about what each day held." }
+      { v: "list", is: "Every day, newest first, each opening with its day mark and one line on how it sat against the usual, then its logs; a day with nothing logged is a gap with Add to this day.", why: "Every log is right there to read, and filling in a missed day takes one tap.", not: "After a few months it's a long scroll, so finding a month's gaps and days outside the usual takes many screens." },
+      { v: "calendar", is: `A month on one screen: a ${usualC(P)} circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone for a day with nothing logged.`, why: "A whole month fits on one screen, so gaps and days outside the usual show at a glance.", not: "Seeing a day's logs takes a tap, and a month of circles says less than the list about what each day held." }
     ],
     rec: { v: "calendar", text: "We recommend Calendar.", why: "One screen a month replaces a long scroll, and a tapped day reads just as it does in the list." },
     open: "Keep a switch on History so a person can pick the list or the calendar?",
-    try: "Switch it, then open the History tab and tap a day. The demo opens on List."
+    try: "Switch it, then open the History tab and tap a day. The demo opens on Calendar."
   });
   const homeScreenNote = (M, P) => {
     const look = lookName(P);
@@ -544,7 +546,7 @@
     const look = lookName(P);
     return {
       t: "History: Calendar",
-      lede: `A month on one screen, each day marked as on Today's card: a Plum circle within the person's usual, a Gold circle outside it, a grey circle for a day logged but not counted, and the date alone for a day with nothing logged. A Teal ring marks a day noted for a clinician, and a Teal square a day with symptoms. Tap a day to see its logs.${P.plan === "free" ? ` On Free, only the last ${FREE_DAYS} days are read against the usual.` : ""}${look ? ` Today's week is in the ${look} style, so its marks differ.` : ""}`
+      lede: `A month on one screen, each day marked as on Today's card: a ${usualC(P)} circle within the person's usual, a Gold circle outside it, a grey circle for a day logged but not counted, and the date alone for a day with nothing logged. A Teal ring marks a day noted for a clinician, and a Teal square a day with symptoms. Tap a day to see its logs.${P.plan === "free" ? ` On Free, only the last ${FREE_DAYS} days are read against the usual.` : ""}${look ? ` Today's week is in the ${look} style, so its marks differ.` : ""}`
     };
   };
   EXT.decisions.home = homeDecision;

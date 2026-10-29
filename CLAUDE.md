@@ -9,6 +9,10 @@ Read these first, in order:
 1. `claude/Florin app refresh brief.md`: the goals, Will's notes, what's decided, what was built, open questions.
 2. `claude/Florin app refresh research.md`: Oura, Function Health, GI logging apps, weekly check-ins, licensing.
 3. `claude/Florin DESIGN.md`: the design system (v1.1). Spacing and radius scales, app colours, components, data vis, copy.
+4. `claude/Florin decisions.md`: the nine decisions, Ask Florin on Free and the demo controls, each in one shape. It is
+   the one source for every decision note and demo-control note on the page, and for the deck.
+5. `claude/Florin data viz.md`: the marks (one set for every screen), the right set of charts, the week card and the
+   FloraScore hero. A module that draws a day or a chart follows it.
 
 The brand studio (`florin-brand-studio.zip`, published at https://claude.ai/artifact/AnK85Y5MHPX9MiDiUiY3Sj) is the
 source of truth for tokens and rules. Its `CLAUDE.md` carries the research-backed rules summarized below.
@@ -27,9 +31,9 @@ prototype/js/refresh-insights.js  the Insights tab, its detail pages and the Ask
 prototype/js/app-charts.js    the studio's small SVG chart kit (window.FLC), used by Insights
 prototype/js/refresh-looks.js     the Data style decision: Insights as a library look's cards, Today's FloraScore and week
                               as its score and week cards, and one detail page of its own, Your days (i-days)
-prototype/js/refresh-variants.js  Home Day first (the date with a small score ring, today's logs with the one that stood
-                              out marked, a row to log from) and History Calendar (a month of marked days; a tapped day
-                              is drawn as the list draws it)
+prototype/js/refresh-variants.js  Home Day first (the date with a small FloraScore chip, the glyph and the number, today's
+                              logs with the one that stood out marked, a row to log from) and History Calendar (a month
+                              of day marks, RU.dayMark; a tapped day is drawn as the list draws it)
 prototype/js/refresh-profile.js   Profile, from the Today avatar, and onboarding, Short or the Full survey (the shipping
                               survey reworded), with the primary care note on a sign
 prototype/js/refresh-ask.js       Ask Florin as a chat: alarm words first (L.alarmsIn), a fixed redirect for diagnose,
@@ -141,8 +145,8 @@ and there's no score before day 14. It doesn't depend on meals. The blend is `L.
 `L.NO_SCORE` is the rule in words, the one wording every screen uses when there's no score today: "it needs a BM, or No
 BM, logged on 2 of your last 3 days" (Score first's hero, Day first, Easy, Ask and every data look, `D.score.why`).
 `L.scoreMoved` gives this week's and last week's
-averages raw (`wk`, `lw`, for the waterfall's geometry) and as shown (`wkR`, `lwR`); `delta` is `wkR - lwR`, so "+8"
-always sits beside 76 and 84.
+averages raw (`wk`, `lw`) and as shown (`wkR`, `lwR`); `delta` is `wkR - lwR`, so "+8" always sits beside 76 and 84,
+and each part's `pts` is in whole points (largest remainder) that add up to `delta`.
 
 Meals are occasional (Will, Oct 14). `L.build(persona, data, { meals })` takes "all", "rough" (only days with a
 symptom) or "none". `L.MEAL_LOGS` labels them Every day, Only with symptoms and Never: the demo control (Demo person's
@@ -212,7 +216,19 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   (Day first, Easy). The `top` part holds the 44px avatar, `data-act="profile"`; with no module's `profile` act it
   toasts that the profile comes in this pass; the profile module's act opens Profile.
 - **History** is `RU.history(M, V, st)` over `RU.historyDay(M, V, d, entries)`, `RU.entryRow(e, M, V)` and
-  `RU.historyNext(M, V)`, so a calendar shows a day the same way.
+  `RU.historyNext(M, V)`, so a calendar shows a day the same way. Each day's header carries its day mark
+  (`RU.dayMark`) and its `L.dayWhy` line (a flagged today, `RU.FLAG_DAY`); on Free, a day before the last
+  `RU.FREE_DAYS` is only logged, never read (`RU.heldOnFree`), as the calendar holds it.
+- **A day** is drawn one way everywhere (claude/Florin data viz.md, section 1): `RU.dayMark(f, o)` draws one day's
+  circle, ring, date, symptom square and screen-reader words for Today's week card, the calendar, History's day headers,
+  Your days and Easy, from one of `L.span(M, n, mode, end?)`'s facts. Never draw a day another way. `L.tally(F, named)`
+  counts a stretch the one way (within out of the days read; `left` says what was counted neither way);
+  `L.dayWhy(M, f, mode, o)` is a day's reasons and its line; `L.symLine(F, o)` is the one symptom sentence (the week
+  card, Insights' Symptoms card and Ask Florin); `L.FLAG_DAY` (also `RU.FLAG_DAY`) is the flagged today's line.
+  `RU.weekCard(M, mode, o)` is Today's last 7 days, over `L.span(M, 7)`, `L.tally`, `L.dayWhy` and `L.symLine`.
+  `RU.scoreRel(v, range)` says where a FloraScore sits ("In its usual range", "A little above its usual range") for
+  every screen, and `RU.cardChart(M, V, key, n)` gives an Insights card's chart for a range, so Ask Florin draws the
+  card's own.
 - **What stood out today** is `RU.standouts(M, mode)`, ranked one way for Score first and Day first: a BM flag or an
   alarm feature (`RU.alarmOf(e)`, a BM's note read with the BM net) first, then a shift from the person's own usual (a
   form outside the usual forms, a first BM outside the window, more BMs than the usual count, No BM), then symptoms by
@@ -222,8 +238,9 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   mode it reads with the phone's). Score first draws an alarm as the Teal note on the Forest card, and the score's line
   then reads "Not read against your usual today", as Day first's chip does. With membership the hero's sentence goes on
   to say what the log that stood out did to FloraScore, `RU.scoreEffect(M, mode, N)` ("Without it, FloraScore would be
-  <n>." or "It didn't change FloraScore."), worked out by `RU.scoreWithout(M, e, mode)`, today scored without that entry;
-  Day first uses the same. Never for an alarm, never on Free.
+  <n>.", or "Without the <time> BM, FloraScore would be <n>." when more BMs than usual stood out, or "It didn't change
+  FloraScore."), worked out by `RU.scoreWithout(M, e, mode)`, today scored without that entry; Day first uses the same.
+  Never for an alarm, never for a No BM log, never on Free.
 - **A flagged today** (`L.flagToday(M)`, also `RU.flagToday`: a flag or an alarm feature in today's logs, by
   `L.alarmOf(e)`, which `RU.alarmOf` is) is read against nothing anywhere. The model does it: `L.facts` gives a flagged
   today (once there's a usual) `state: "flag"`, `flag: true` and `inWin`, `inCount`, `formsIn` all null, with the
@@ -232,8 +249,9 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   it out and says `RU.FLAG_DAY` ("Today has a log noted for a clinician, so it isn't read against your usual."); a
   chart draws it as a Teal ring (`.is-flag`, legend `sw--clin`). The hero, Day first's chip, Easy's FloraScore,
   Insights' score card and FloraScore's detail keep the number and say "Not read against your usual today"; Easy's
-  sentence and the detail lead with the sign as the Teal note. `RU.week` gives the read counts over the other days
-  (`rbms`, `rmornings`, `flagged`) and puts the line under the two BM rows. In the data looks `D.flagToday`,
+  sentence and the detail lead with the sign as the Teal note. `RU.week` gives the read counts over the last 7 days,
+  the flagged today left out (`rbms`, `rmornings`, `flagged`); the week card (`RU.weekCard`) draws the flagged today as
+  a Teal ring with the info glyph and says `RU.FLAG_DAY` in its lines. In the data looks `D.flagToday`,
   `D.score.flag`, a series point's `flag` and `D.flagLine` say the same; their 30-day counts (`D.timing.mornings30`,
   `D.often.avg30`, `D.form`) are over the other days. Past days stay read (whether every surface should mark a flagged
   day, as History's calendar does, is a call for Will).
@@ -286,7 +304,9 @@ refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idet
   the app, no red, no green. Derive colours from the six brand tokens; never hardcode a hex.
 - **Spacing:** every padding, margin, gap, inset and radius on the DESIGN.md scale. Fixed control heights.
 - **Charts never use dashed lines** (DESIGN.md). The studio's kit dashes the average and the waterfall's connectors;
-  refresh.css draws them as solid hairlines on the phone, and a day not logged is its struck date, as on the week card.
+  the phone draws neither now (no average line, and What moved it is four bars from a centre line). A day with nothing
+  logged is drawn as nothing: the date alone in Ink 3, never a hatch, a strike-through or a zero (data viz.md
+  section 1).
   Light `--ap-ink3` is overridden in refresh.css (4.89:1 on the card; the studio's token is 4.07:1), and the page's
   light `--ink-3` is darker in both shells. Both changes are for the studio to take back.
 - **Alarm features** (blood, black or tar-like stools, fever, vomiting that won't stop, weight loss, waking at night

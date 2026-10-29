@@ -4,148 +4,141 @@
     <h2 style="font-family:Lora, serif; font-size:64px; font-weight:500; line-height:1.1; color:#00352B;">Field journal</h2>
   </div>
   <x-embed style="position:absolute; left:128px; top:256px; width:536px; height:640px;"><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore</title>
+<html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore card</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
-.card{height:100%;background:#FDFCF8;border-radius:28px;padding:30px 32px;display:flex;flex-direction:column;gap:12px;box-shadow:inset 0 0 0 2px #E3DFD4}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-.top{display:flex;justify-content:space-between;font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;padding-bottom:12px;border-bottom:2px solid #00352B}
-.top b{font-weight:700}
-h1{margin:0;font:400 30px/1.3 Georgia,"Times New Roman",serif}
-.hl{background:linear-gradient(#EDE3C4,#EDE3C4) left 62%/100% 58% no-repeat}
-.big{display:flex;align-items:center;justify-content:space-between}
-.num{font-size:128px;line-height:1;font-weight:300;letter-spacing:-4px}
-.sub{font:24px ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;color:#3E5A52;margin-top:6px}
-svg text{font-family:ui-monospace,Menlo,Consolas,monospace}
-.fig{font:24px ui-monospace,Menlo,Consolas,monospace;color:#3E5A52;padding-top:12px;border-top:2px solid #E3DFD4}
-.fig b{color:#00352B}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
-.two>div{border-top:2px solid #00352B;padding-top:10px}
-.two .k{font:24px ui-monospace,Menlo,Consolas,monospace;letter-spacing:0;color:#3E5A52}
-.two .v{font-size:52px;font-weight:300;line-height:1.1}
-.note{font:italic 24px/1.35 Georgia,"Times New Roman",serif;color:#3E5A52}
-.go .hl{animation:mark .8s 1.2s ease-out both}
-.go .arc{animation:draw 1.5s .2s cubic-bezier(.3,.7,.2,1) both}
-.go .band,.go .two,.go .fig{animation:fade .6s .9s ease-out both}
-.go .dot{animation:fade .3s 1.6s ease-out both}
-@keyframes mark{from{background-size:0% 58%}}
+.card{height:100%;background:#FEFCF6;border-radius:32px;padding:22px 28px;display:flex;flex-direction:column;gap:8px;box-shadow:inset 0 0 0 2px #E0E4DE}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;text-transform:uppercase}
+.head{display:flex;justify-content:space-between;gap:10px;padding:0 0 8px;border-bottom:2px solid #00352B;white-space:nowrap}
+.head b{font-weight:700}.head span{color:#36544C}
+.lede{margin:0;font:400 28px/1.25 Georgia,"Times New Roman",serif}
+.mk{background:linear-gradient(to top,#E9DFBF 0,#E9DFBF 40%,transparent 40%)}
+svg text{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px}
+.cap{display:flex;gap:14px;padding:8px 0 0;border-top:2px solid #E0E4DE;font-size:24px;line-height:1.2;color:#36544C}
+.cap b{color:#00352B;white-space:nowrap;font-family:ui-monospace,Menlo,Consolas,monospace}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.stat{border-top:2px solid #00352B;padding:6px 0 0;display:flex;flex-direction:column;gap:2px;color:#36544C;white-space:nowrap}
+.stat b{font-weight:300;font-size:46px;line-height:1.05;color:#00352B}
+.note{margin:0;font:italic 24px/1.25 Georgia,"Times New Roman",serif;color:#36544C}
+.go .arc{animation:draw 1.1s .1s ease-out both}
+.go .vd{animation:pop .4s 1.1s cubic-bezier(.3,1.5,.5,1) both}
+.go .band{animation:fade .6s .4s ease-out both}
+.go .stat{animation:rise .5s 1.2s ease-out both}.go .stat+.stat{animation-delay:1.35s}
+.vd{transform-box:fill-box;transform-origin:center}
 @keyframes draw{from{stroke-dashoffset:1}}
 @keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Field journal look: FloraScore 83 out of 100, a little above the usual range of 74 to 82; this week 83, last week 80">
-  <div class="top"><b>FloraScore</b><span>Sunday, October 11</span></div>
-  <h1>Today sits <span class="hl">a little above your usual range</span> of 74 to 82.</h1>
-  <div class="big">
-    <div><div class="num" data-n="83">83</div><div class="sub">OUT OF 100</div></div>
-    <svg viewBox="0 0 220 220" width="176" height="176" aria-hidden="true">
-      <circle cx="110" cy="110" r="92" fill="none" stroke="#E3DFD4" stroke-width="4"/>
-      <g id="tk" stroke="#8A9A94" stroke-width="2"></g>
-      <path id="bd" class="band" fill="none" stroke="#C9B7C2" stroke-width="16"/>
-      <path id="ac" class="arc" fill="none" stroke="#00352B" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="0"/>
-      <circle id="dt" class="dot" r="8" fill="#00352B"/>
-    </svg>
+<div class="card" role="img" aria-label="Field journal look: FloraScore 83 out of 100, a little above its usual range of 74 to 82, drawn on a dial with the range marked; this week 83, up 3 on last week's 80">
+  <div class="head mono"><b>FloraScore</b><span>Sunday, October 11</span></div>
+  <p class="lede">Today sits <span class="mk">a little above its usual range</span> of 74 to 82.</p>
+  <svg id="ch" viewBox="0 0 476 154" width="100%" height="154" style="flex:none" aria-hidden="true">
+    <text x="-6" y="100" style="font:300 112px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;fill:#00352B">83</text>
+    <text x="0" y="140" style="fill:#36544C">OUT OF 100</text>
+  </svg>
+  <div class="cap"><b>Fig. 1</b><span>FloraScore today, out of 100</span></div>
+  <div class="stats">
+    <div class="stat"><span class="mono">This week</span><b>83</b><span class="mono">+3 on last week</span></div>
+    <div class="stat"><span class="mono">Last week</span><b>80</b><span class="mono">Average</span></div>
   </div>
-  <div class="fig"><b>Fig. 1</b>&nbsp; Today, out of 100</div>
-  <div class="two">
-    <div><div class="k">THIS WEEK</div><div class="v" data-n="83">83</div><div class="k">+3 ON LAST WEEK</div></div>
-    <div><div class="k">LAST WEEK</div><div class="v" data-n="80">80</div><div class="k">AVERAGE</div></div>
-  </div>
-  <div class="note">FloraScore compares you with you. It isn’t a medical score.</div>
+  <p class="note">FloraScore blends the days among your last 3 that have a BM, or No BM, logged, and compares you with you. It isn’t a medical score, and a lower number isn’t a diagnosis.</p>
 </div>
 <script>
-/* Sarah today: 83, usual range 74 to 82; this week's average 83, last week's 80 (L.score, L.scoreUsual, L.scoreMoved) */
-var P=function(f,r){var a=f*2*Math.PI;return[(110+r*Math.sin(a)).toFixed(1),(110-r*Math.cos(a)).toFixed(1)]};
-function arc(a,b,r){var p=P(a,r),q=P(b,r);return'M'+p+'A'+r+','+r+' 0 '+(b-a>.5?1:0)+' 1 '+q}
-document.getElementById('ac').setAttribute('d',arc(0,.83,92));
-document.getElementById('bd').setAttribute('d',arc(.74,.82,84));
-var d=P(.83,92),dt=document.getElementById('dt');dt.setAttribute('cx',d[0]);dt.setAttribute('cy',d[1]);
-var tk=document.getElementById('tk'),h='';for(var i=0;i<20;i++){var o=P(i/20,104),n=P(i/20,i%5?98:94);h+='<line x1="'+o[0]+'" y1="'+o[1]+'" x2="'+n[0]+'" y2="'+n[1]+'"/>'}tk.innerHTML=h;
+/* Sarah today (C, 12 weeks, every meal): FloraScore 83, usual range 74 to 82 (L.score, L.scoreUsual); this week's
+   average 83 and last week's 80 (L.scoreMoved). The dial is the library's Field journal figure */
+var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg',cx=388,cy=77,r=60;
+function el(t,a,txt){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;ch.appendChild(e);return e}
+function pt(f,q){var a=f*2*Math.PI;return[(cx+q*Math.sin(a)).toFixed(1),(cy-q*Math.cos(a)).toFixed(1)]}
+for(var i=0;i<20;i++){var f=i/20,mj=i%5===0,p=pt(f,r+5),q=pt(f,r+(mj?15:10));el('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:mj?'#5D766F':'#E0E4DE','stroke-width':2})}
+el('circle',{cx:cx,cy:cy,r:r,fill:'none',stroke:'#E0E4DE','stroke-width':2});
+el('path',{d:'M'+pt(.74,r)+'A'+r+','+r+' 0 0 1 '+pt(.82,r),fill:'none',stroke:'#D8CDCE','stroke-width':14,'class':'band'});
+[[.74,'74',16],[.82,'82',0]].forEach(function(b){var p=pt(b[0],r-10),q=pt(b[0],r+12),s=pt(b[0],r+18);el('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#C6B8BC','stroke-width':2,'class':'band'});el('text',{x:+s[0]-4,y:+s[1]+b[2],'text-anchor':'end',style:'fill:#4F2641','class':'band'},b[1])});
+['YOUR','USUAL','RANGE'].forEach(function(w,i){el('text',{x:cx,y:cy-17+i*26,'text-anchor':'middle',style:'fill:#4F2641'},w)});
+el('path',{d:'M'+pt(0,r)+'A'+r+','+r+' 0 1 1 '+pt(.83,r),fill:'none',stroke:'#00352B','stroke-width':4,'stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'arc'});
+var v=pt(.83,r);el('circle',{cx:v[0],cy:v[1],r:7,fill:'#00352B',stroke:'#FEFCF6','stroke-width':2.5,'class':'vd'});
 var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1300);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
-function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
   <x-embed style="position:absolute; left:696px; top:256px; width:536px; height:640px;"><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore over time</title>
+<html lang="en"><head><meta charset="utf-8"><title>Field journal: FloraScore over 30 days</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#00352B}
-.card{height:100%;background:#FDFCF8;border-radius:28px;padding:30px 32px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 0 0 2px #E3DFD4}
-.top{display:flex;justify-content:space-between;font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;padding-bottom:12px;border-bottom:2px solid #00352B}
-.top b{font-weight:700}
-h1{margin:0;font:400 30px/1.3 Georgia,"Times New Roman",serif}
-.ul{border-bottom:3px solid #8E6E82}
-svg text{font:24px ui-monospace,Menlo,Consolas,monospace;fill:#3E5A52}
-.fig{font:24px ui-monospace,Menlo,Consolas,monospace;color:#3E5A52;padding-top:12px;border-top:2px solid #E3DFD4}
-.fig b{color:#00352B}
-.p{transform-box:fill-box;transform-origin:center}
-.go .ln{animation:draw 2s .3s linear both}
-.go .p{animation:pop .3s ease-out both}
-.go .an{animation:fade .6s 2.4s ease-out both}
-.go .bd{animation:fade .6s ease-out both}
+.card{height:100%;background:#FEFCF6;border-radius:32px;padding:24px 28px;display:flex;flex-direction:column;gap:10px;box-shadow:inset 0 0 0 2px #E0E4DE}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;text-transform:uppercase}
+.head{display:flex;justify-content:space-between;gap:10px;padding:0 0 8px;border-bottom:2px solid #00352B;white-space:nowrap}
+.head b{font-weight:700}.head span{color:#36544C}
+.lede{margin:0;font:400 28px/1.25 Georgia,"Times New Roman",serif}
+.mk{text-decoration:underline;text-decoration-color:#846677;text-decoration-thickness:2px;text-underline-offset:5px}
+svg text{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;fill:#36544C}
+.cap{display:flex;gap:14px;padding:8px 0 0;border-top:2px solid #E0E4DE;font:24px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#36544C}
+.cap b{color:#00352B}
+.d{transform-box:fill-box;transform-origin:center}
+.go .ln{animation:draw 1.6s .3s ease-out both}.go .ln+.ln{animation-delay:1.7s;animation-duration:.3s}
+.go .d{animation:pop .3s cubic-bezier(.3,1.5,.5,1) both}
+.go .tag{animation:fade .5s 2.1s ease-out both}
 @keyframes draw{from{stroke-dashoffset:1}}
 @keyframes pop{from{opacity:0;transform:scale(.2)}}
 @keyframes fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.go *{animation:none!important}}
 </style></head>
 <body>
-<div class="card" role="img" aria-label="Field journal look: FloraScore over the last 30 days, within the usual range of 74 to 82 on 15 of 29 days, above on 11 and below on 3">
-  <div class="top"><b>FloraScore over time</b><span>30 days</span></div>
-  <h1>Your FloraScore sat <span class="ul">within your usual range</span> on <span data-n="15">15</span> of 29 days.</h1>
-  <svg id="ch" viewBox="0 0 472 340" width="100%" height="340" style="flex:none" aria-hidden="true"></svg>
-  <div class="fig"><b>Fig. 2</b>&nbsp; FloraScore, last 30 days</div>
+<div class="card" role="img" aria-label="Field journal look: FloraScore over the last 30 days sat in its usual range of 74 to 82 on 15 of 29 days, above it on 11 and below it on 3. Lowest 70 on Sep 22. Today 83">
+  <div class="head mono"><b>FloraScore over time</b><span>Last 30 days</span></div>
+  <p class="lede">Your FloraScore sat <span class="mk">in its usual range</span> on 15 of 29 days.</p>
+  <svg id="ch" viewBox="0 0 472 336" width="100%" height="336" style="flex:none" aria-hidden="true"></svg>
+  <div class="cap"><b>Fig. 3</b><span>FloraScore, last 30 days</span></div>
 </div>
 <script>
-/* Sarah, Sep 12 to Oct 11 (L.scoreSeries, C). null is Oct 8, no logs: a gap, never a zero. Usual range 74 to 82 */
-var S=[82,79,82,82,86,83,83,80,84,84,70,70,71,85,82,80,78,79,77,81,79,82,82,85,86,83,null,78,83,83],U=[74,82];
-var x0=46,x1=340,yt=48,bot=262,lo=66,hi=90,x=function(i){return x0+i*(x1-x0)/29},y=function(v){return yt+(hi-v)*(bot-yt)/(hi-lo)};
+/* Sarah (C, 12 weeks, every meal), FloraScore on each day, Sep 12 to Oct 11 (L.score). null is Oct 8, nothing logged.
+   In its usual range (74 to 82) on 15 of the 29 scored days, above on 11, below on 3; lowest 70 on Sep 22 */
+var S=[82,79,82,82,86,83,83,80,84,84,70,70,71,85,82,80,78,79,77,81,79,82,82,85,86,83,null,78,83,83];
+var x0=40,x=function(i){return x0+i*282/29},y=function(v){return 70+(91-v)*9};
 var ch=document.getElementById('ch'),ns='http://www.w3.org/2000/svg';
 function el(t,a,txt){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;ch.appendChild(e);return e}
-[70,80,90].forEach(function(v){el('line',{x1:x0-6,x2:x1+6,y1:y(v),y2:y(v),stroke:'#E3DFD4','stroke-width':2});el('text',{x:0,y:y(v)+8},v)});
-el('rect',{x:x0-6,y:y(U[1]),width:x1-x0+12,height:y(U[0])-y(U[1]),fill:'#EFE7EA','class':'bd'});
-el('line',{x1:x0-6,x2:x0-6,y1:12,y2:y(U[0]),stroke:'#4F2641','stroke-width':3,'class':'bd'});
-el('text',{x:x0+2,y:24,style:'fill:#4F2641','class':'bd'},'YOUR USUAL, 74 TO 82');
-var d='',pen=false;S.forEach(function(v,i){if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);pen=true});
-el('path',{d:d,fill:'none',stroke:'#93A69F','stroke-width':3,'stroke-linejoin':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'ln'});
-var above=0,below=0;S.forEach(function(v,i){if(v==null)return;var inn=v>=U[0]&&v<=U[1];if(v>U[1])above++;if(v<U[0])below++;
- el('circle',{cx:x(i),cy:y(v),r:6,fill:inn?'#00352B':'#C2A64B','class':'p',style:'animation-delay:'+(.3+i*2/29).toFixed(2)+'s'})});
-el('circle',{cx:x(29),cy:y(83),r:12,fill:'none',stroke:'#00352B','stroke-width':3,'class':'an'});
-el('line',{x1:x(29),x2:x(29),y1:y(83)-14,y2:62,stroke:'#00352B','stroke-width':2,'class':'an'});
-el('text',{x:x(29)+6,y:54,'text-anchor':'end',style:'fill:#00352B','class':'an'},'TODAY, 83');
-el('text',{x:x(10)-4,y:y(70)+34,'class':'an'},'LOWEST, 70 ON SEP 22');
-el('text',{x:472,y:y(U[1])-10,'text-anchor':'end',style:'fill:#695612','class':'an'},'ABOVE '+above);
-el('text',{x:472,y:y(U[0])+30,'text-anchor':'end',style:'fill:#695612','class':'an'},'BELOW '+below);
-for(var i=0;i<30;i++)el('line',{x1:x(i),x2:x(i),y1:bot+44,y2:bot+(i%7===0?56:50),stroke:'#B8C2BD','stroke-width':2});
-el('text',{x:x(0)-8,y:bot+76},'SEP 12');el('text',{x:x(14),y:bot+76,'text-anchor':'middle'},'SEP 26');el('text',{x:x(29)+8,y:bot+76,'text-anchor':'end',style:'fill:#00352B'},'TODAY');
+[70,80,90].forEach(function(v){el('line',{x1:x0,x2:326,y1:y(v),y2:y(v),stroke:'#E7EAE4','stroke-width':1.5});el('text',{x:30,y:y(v)+8,'text-anchor':'end',style:'fill:#5D766F'},v)});
+el('rect',{x:x0,y:y(82),width:286,height:y(74)-y(82),fill:'#E6DEDD'});
+[82,74].forEach(function(v){el('line',{x1:x0,x2:472,y1:y(v),y2:y(v),stroke:'#C6B8BC','stroke-width':1.5})});
+el('text',{x:x0,y:22,style:'fill:#4F2641'},'YOUR USUAL RANGE, 74 TO 82');
+el('line',{x1:x0,x2:x0,y1:30,y2:y(82),stroke:'#4F2641','stroke-width':2});el('circle',{cx:x0,cy:y(82),r:3.5,fill:'#4F2641'});
+el('text',{x:472,y:y(82)-10,'text-anchor':'end'},'ABOVE, 11');el('text',{x:472,y:y(74)+30,'text-anchor':'end'},'BELOW, 3');
+for(var i=0;i<30;i++){var mj=(i-2)%7===0;el('line',{x1:x(i),x2:x(i),y1:300,y2:mj?310:305,stroke:'#E0E4DE','stroke-width':1.5})}
+el('text',{x:x0-4,y:334,style:'fill:#5D766F'},'SEP 12');el('text',{x:x(14),y:334,'text-anchor':'middle',style:'fill:#5D766F'},'SEP 26');el('text',{x:x(29),y:334,'text-anchor':'middle',style:'fill:#00352B'},'TODAY');
+var runs=[[]];S.forEach(function(v,i){if(v==null){runs.push([]);return}runs[runs.length-1].push(x(i).toFixed(1)+','+y(v))});
+runs.forEach(function(r){el('path',{d:'M'+r.join('L'),fill:'none',stroke:'#8CA29B','stroke-width':2.5,'stroke-linejoin':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':0,'class':'ln'})});
+S.forEach(function(v,i){if(v!=null)el('circle',{cx:x(i).toFixed(1),cy:y(v),r:4.5,fill:'#00352B','class':'d',style:'animation-delay:'+(.3+i*.05).toFixed(2)+'s'})});
+el('text',{x:x(10)-6,y:290,style:'fill:#00352B;paint-order:stroke;stroke:#FEFCF6;stroke-width:6px'},'LOWEST, 70 ON SEP 22');
+var tx=x(29),ty=y(83);
+el('circle',{cx:tx,cy:ty,r:9,fill:'none',stroke:'#00352B','stroke-width':2.5,'class':'tag'});
+el('text',{x:tx,y:56,'text-anchor':'middle',style:'fill:#00352B','class':'tag'},'TODAY, 83');
+el('line',{x1:tx,x2:tx,y1:64,y2:ty-10,stroke:'#5D766F','stroke-width':1.5,'class':'tag'});
 var B=document.body,R=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function count(){document.querySelectorAll('[data-n]').forEach(function(e){var n=+e.dataset.n,t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/2000);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
-function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go');count()}
+function play(){if(R)return;B.classList.remove('go');void B.offsetWidth;B.classList.add('go')}
 var on=false;if('IntersectionObserver'in window){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!on){on=true;play()}else if(!e.isIntersecting)on=false})},{threshold:.3}).observe(B)}else play();
 </script>
 </body></html></x-embed>
   <div style="position:absolute; left:1264px; top:256px; width:528px; height:640px; display:flex; flex-direction:column; gap:16px;">
-    <div style="background:#EFECE4; border:3px solid #4F2641; border-radius:28px; padding:21px; display:flex; flex-direction:column; gap:20px; flex:1;">
-      <div style="background:#4F2641; border-radius:20px; padding:2px 12px; align-self:flex-start;"><p style="font-size:24px; color:#F9F7F2; white-space:nowrap;">We recommend</p></div>
-      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> The numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption.</p>
+    <div style="background:#EFECE4; border-radius:28px; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
+      <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">What it is:</span></b> The numbers written out, with plain charts on labelled axes, each with a caption.</p>
       <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why do it:</span></b> It’s the most exact, so it suits detail pages and a clinician report.</p>
       <p style="font-size:24px; line-height:1.3;"><b><span style="color:#396E7C;">Why not:</span></b> It’s the most reading, and its small captions are hard for older eyes.</p>
     </div>
-    <div style="background:#4F2641; border-radius:20px; padding:12px 28px;">
-      <p style="font-size:28px; line-height:1.25; color:#F9F7F2;"><b>We recommend Field journal on detail pages.</b></p>
-    </div>
+    <p style="font-size:24px; line-height:1.25; color:#3E5A52;"><b>Here to compare.</b> We recommend Florin charts everywhere, Easy read only in the Easy version.</p>
   </div>
   <div style="position:absolute; left:128px; bottom:64px; width:1664px; display:flex; justify-content:space-between;">
     <p style="font-size:24px; color:#3E5A52;">Try it in the demo: Decisions › Data style › Field journal</p>
     <p style="font-size:24px; color:#3E5A52;">13</p>
   </div>
-  <aside>Field journal. What it is: the numbers written out, with plain line and bar charts with labelled axes, each with a one-line caption. Why do it: it’s the most exact, so it suits detail pages and a clinician report. Why not: it’s the most reading, and its small captions are hard for older eyes.
-We recommend Field journal on detail pages, next to the Oura style on Today and the FloraScore page.
+  <aside>Field journal. What it is: the numbers written out, with plain charts on labelled axes, each with a caption. Why do it: it’s the most exact, so it suits detail pages and a clinician report. Why not: it’s the most reading, and its small captions are hard for older eyes.
+Here to compare. We recommend Florin charts everywhere, Easy read only in the Easy version.
 The two cards here are its FloraScore card and FloraScore over the last 30 days, drawn from the same logs as every other style.
 Try it: Decisions, Data style, Field journal, then the Today and Insights tabs. The demo shows one style at a time, and detail pages don’t change. To see every style on every card, open the style gallery: https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL.</aside>
 </section>

@@ -360,7 +360,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   ok(copy.nocount, "a day with only a symptom logged is a gap on How often and counted on neither side");
   ok(copy.unrated, "the symptoms card gives no strength word when the top symptom was logged without one");
   ok(copy.top, "the most common form counts every BM, words logged in B included");
-  ok(copy.plain, "before a usual exists, No BM is a plain ring, not a Gold shift");
+  ok(copy.plain, "before a usual exists, No BM is an Ink 3 dot on the No BM line, as every reading before day 14 is, not a Gold shift");
   ok(copy.wk && copy.care, "90-day weekly cells start with the span, and the Symptoms clinician line matches the app's alarm list");
   await open("today");
   ok(await p.evaluate(() => !/in the last 30 days|in 30 days/.test(document.querySelector(".rx-stage .ap-rx .ap-layer").textContent)), "Today counts foods over the same 90 days Insights checks");
@@ -832,10 +832,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const ORDER = ["score", "parts", "trend", "week", "month", "timing", "often", "form", "symptoms", "checkin", "pattern"];
     const DK = { score: "score", parts: "score", trend: "score", week: "days", month: "days", timing: "timing", often: "often", form: "form", symptoms: "sym", checkin: "ck", pattern: "pat" };
     const LOOKS = ["rings", "journal", "bento", "oura", "easy"];
-    /* the note: a block per style, Oura and Field journal marked, and the recommendation in the sheet's words */
+    /* the note: a block per style, Florin charts marked, and the recommendation in the sheet's words (fix-words, Oct 28:
+       one look everywhere, Florin charts, as data viz.md's Option 1) */
     await lpick("look", "oura");
     const dn = await q.evaluate(() => ({ rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", opts: [...document.querySelectorAll("#rxNotes .rx-opts .rx-opt .rx-opt-h b")].map((x) => x.textContent).join(","), marked: [...document.querySelectorAll("#rxNotes .rx-opt.is-rec .rx-opt-h b")].map((x) => x.textContent).join(",") }));
-    ok(dn.opts === "Florin charts,Rings,Field journal,Bento,Oura,Easy read" && dn.marked === "Field journal,Oura" && /^We recommend the Oura style on Today and FloraScore, Field journal on detail pages, and Easy read only in the Easy version\./.test(dn.rec), `data style: a block per style, Oura and Field journal marked, and the sheet's recommendation (${dn.marked})`);
+    ok(dn.opts === "Florin charts,Oura,Easy read,Rings,Field journal,Bento" && dn.marked === "Florin charts" && /^We recommend one look everywhere, Florin charts, with Easy read only in the Easy version\. A card and its detail page then draw the same day the same way/.test(dn.rec), `data style: a block per style, the two real options first, Florin charts marked, and the sheet's recommendation (${dn.opts})`);
     for (const id of LOOKS) {
       await lpick("look", id);
       for (const theme of ["light", "dark"]) {
@@ -3011,7 +3012,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await cset("look", "built"); await cset("home", "score");
     ok(ez.look.on === ez.look.line && ez.home.on === ez.home.line && /^Easy has its own charts/.test(ez.look.line) && /^Easy has its own Today/.test(ez.home.line) && !ez.look.badge && !ez.home.badge && ez0, `notes-page: with Easy on, Data style and Home each get one plain line, under the row and in the note, and no badge; Easy off takes the lines away (${ez.home.line} / ${ez.look.line})`);
     /* 11. a row picked from the list shows that screen's note, even when the phone is already on it */
-    await cgo("today"); await cset("history", "calendar");
+    /* the demo opens on Calendar (last-fix, Oct 29: its recommendation), so List first, then Calendar */
+    await cgo("today"); await cset("history", "list"); await cgo("today"); await cset("history", "calendar");
     const n1 = await cp.evaluate(() => document.querySelector("#rxNotes h2").textContent);
     /* the option shows on another screen: the note offers to show it, and keeps itself up when it does */
     const sb = await cp.evaluate(() => { const x = document.querySelector('#rxNotes [data-rx="show"]'); return x ? x.dataset.v : null; });
@@ -3775,7 +3777,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       out.nobm = !/Without the/.test(txt(RU.today(M, V({ home: "day" }))));
       return out;
     });
-    ok(!/(moderate|strong) cramping on [2-9] days/.test(r.sym30) && /strong cramping today/.test(r.sym7) && /strong cramping on 1 day/.test(r.sym30b), `fix-viz: the stronger symptom names only the days it came up that strong (${r.sym30} | ${r.sym7} | ${r.sym30b})`);
+    ok(!/(moderate|strong) cramping on [2-9] days/.test(r.sym30) && /cramping on 2 days, once moderate/.test(r.sym30) && /strong cramping today/.test(r.sym7) && /cramping on [2-9] days, once strong/.test(r.sym30b), `last-fix: the stronger symptom is counted on all its days, as the strip counts it, then how many were that strong (${r.sym30} | ${r.sym7} | ${r.sym30b})`);
     ok(r.learnSym && r.learnFlag && r.learnSpan === "Oct 7 to 11", `fix-viz: before day 14 a day with only symptoms is logged and a flagged today is flagged, on the week card, History and the calendar alike; the card's dates start on the day the person did (${r.learnSpan})`);
     ok(!r.free.length && r.freeSay, `fix-viz: on Free, History's list reads the same days the calendar reads and holds the rest as logged, and says why${r.free.length ? ": " + r.free.join("; ") : ""}`);
     ok(!r.rings.length && !r.lbls.length && r.axisToday, `fix-viz: with nothing logged today no chart rings or labels another day, and the count line still ends on Today (${r.rings.length} rings, ${r.lbls.join(" ")})`);
@@ -3806,6 +3808,97 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   }
   /* ===== end fix-viz ===== */
 
+  /* ===== finish-viz: the rest of the critic's and the truth recheck's findings, kept as checks (claude/Florin data
+     viz.md, after the finishing pass). A chart's x axis ends on Today and its Today tick sits under today alone, at 30
+     days too; dots apart at 30 days; Timing's day by day capped at 14 rows with its legend words; dark Gold chart marks
+     edged; no decoration ring on the hero; one typical first BM; Easy's dates and its What moved; the check-in strips'
+     own words; meals said as all; Ask's labels; a flagged today before day 14 on the calendar ===== */
+  {
+    const zc = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const z = await zc.newPage();
+    const ze = [];
+    z.on("pageerror", (e) => ze.push(e.message));
+    z.on("console", (m) => { if (m.type() === "error") ze.push(m.text()); });
+    await z.goto(PAGE); await z.waitForSelector(".ap-rx"); await z.waitForTimeout(500);
+    const r = await z.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, AK = window.FLORIN_ASK, VR = window.FLORIN_VARIANTS, out = {};
+      const V = (o = {}) => Object.assign({ form: "C", uid: 1, plan: "member", mealUI: "quick", bmUI: "quick", home: "score", history: "list", checkin: true, look: "built", easy: false, onboard: "short", persona: "marcus", data: "est", meals: "all" }, o);
+      const txt = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent.replace(/\s+/g, " "); };
+      const dom = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d; };
+      const bm = (d, t, o = {}) => Object.assign({ kind: "bm", d, t, form: 4, how: {}, dur: null, flags: {}, note: "" }, o);
+      /* 1. nothing logged today: at 7 and 30 days, How often's and Form's day charts end on a Today tick with nothing
+         drawn above it, and no tick says Today under another day */
+      let M = L.build("marcus", "est"); L.day(M, L.TODAY).entries = [];
+      out.axis = [];
+      for (const k of ["often", "form"]) for (const n of [7, 30]) {
+        const svgs = [...dom(RU.idetail(M, V(), { k, range: n })).querySelectorAll("svg")].filter((s) => [...s.querySelectorAll("text.dv-ax")].some((t) => t.textContent === "Today"));
+        if (!svgs.length) { out.axis.push(`${k} ${n}: no chart ends on Today`); continue; }
+        svgs.forEach((s) => {
+          const tk = [...s.querySelectorAll("text.dv-ax")].filter((t) => t.textContent === "Today");
+          const tx = +tk[tk.length - 1].getAttribute("x");
+          const above = [...s.querySelectorAll("circle.dv-dot:not(.is-hit)")].filter((c) => Math.abs(+c.getAttribute("cx") - tx) < 3);
+          if (tk.length !== 1 || above.length) out.axis.push(`${k} ${n}: ${tk.length} Today ticks, ${above.length} marks above it`);
+        });
+      }
+      /* 2. past 7 days each dot sits on a card-colour disc; at 7 days none */
+      M = L.build("marcus", "est");
+      out.sp = /dv-sp/.test(RU.cardChart(M, V(), "often", 30).chart) && !/dv-sp/.test(RU.cardChart(M, V(), "often", 7).chart);
+      /* 3. Timing's day by day: 14 rows at most past a week, each labelled, with its legend's words */
+      const td = RU.idetail(M, V(), { k: "timing", range: 30 }), tt = txt(td);
+      out.rows = /Last 14 days, newest at the top/.test(tt) && /First BM, in your usual window/.test(tt) && !/Inside your usual window/.test(tt);
+      /* 4. one typical first BM: with a flagged today, the Timing detail's equals Ask Florin's (both over the days read) */
+      M = L.build("marcus", "est"); L.add(M, bm(L.TODAY, 16.5, { flags: { blood: true } }));
+      const tm = (txt(RU.idetail(M, V(), { k: "timing", range: 7 })).match(/Typical first BM\s*(\d+:\d\d [AP]M)/) || [])[1];
+      const ak = AK ? (AK.read(M, V(), { k: "timing", range: 7 }).text.match(/Typical first BM[^\d]*(\d+:\d\d [AP]M)/) || [])[1] : tm;
+      out.med = tm && tm === ak ? true : `${tm} against ${ak}`;
+      /* 5. Easy: the dates as every other card says them, and What moved leads with the week's change */
+      M = L.build("marcus", "est");
+      const ez = txt(RU.today(M, V({ easy: true })));
+      out.ezSpan = /Your last 7 days\s*Oct 5 to 11/.test(ez) && !/to today/.test(ez);
+      const mv = L.scoreMoved(M, "C");
+      const ew = txt(RU.insights(M, V({ easy: true }), { range: 30 }));
+      out.ezMoved = !mv || !mv.delta ? true : new RegExp(`${Math.abs(mv.delta)}\\s*points? ${mv.delta > 0 ? "up" : "down"} on average this week`).test(ew);
+      /* 6. the check-in strips name each step in the answer's own words */
+      const ck = RU.ckTrend(M, 3, null);
+      out.ck = /Mostly settled/.test(ck) && !/>Mostly</.test(ck);
+      /* 7. meals logged only with symptoms: "all of them days with symptoms" when every meal day had one */
+      M = L.build("sarah", "est", { meals: "rough" });
+      const PR = L.patterns(M, "C");
+      out.rough = PR.roughShare < 1 || /all of them days with symptoms/.test(txt(RU.insights(M, V({ persona: "sarah", meals: "rough" }), { range: 30 })));
+      /* 8. Ask's From your logs: a stretch said once, and no average of nothing */
+      M = L.build("marcus", "est");
+      const fx = AK ? AK.read(M, V(), null).text : "";
+      M = L.build("sarah", "fresh"); L.add(M, { kind: "nobm", d: L.TODAY, t: 19.5 });
+      const fy = AK ? AK.read(M, V({ persona: "sarah", data: "fresh" }), null).text : "";
+      out.askLbl = !/(last 30 days), \1/.test(fx) && !/\b0\.0\b/.test(fy);
+      /* 9. a flagged today before day 14 is the Teal ring on the calendar as on the week card */
+      M = L.build("sarah", "new"); L.add(M, bm(L.TODAY, 16.5, { flags: { blood: true } }));
+      out.calFlag = !VR || VR.cellOf(M, V({ persona: "sarah", data: "new" }), L.TODAY, VR.firstLog(M), "all").shown === "flag";
+      return out;
+    });
+    ok(!r.axis.length, `finish-viz: with nothing logged today, How often's and Form's charts end on one Today tick with nothing above it, at 7 and 30 days${r.axis.length ? ": " + r.axis.join("; ") : ""}`);
+    ok(r.sp && r.rows, "finish-viz: past 7 days each dot sits on a card-colour disc, and Timing's day by day shows the last 14 days with its legend's words");
+    ok(r.med === true, `finish-viz: with a flagged today, the typical first BM is over the days read on the Timing detail and in Ask Florin alike${r.med === true ? "" : ` (${r.med})`}`);
+    ok(r.ezSpan && r.ezMoved, "finish-viz: Easy's week says Oct 5 to 11, as every card does, and What moved leads with the week's change");
+    ok(r.ck && r.rough && r.askLbl && r.calFlag, `finish-viz: the check-in strips use the answers' own words; meals all on symptom days say "all of them"; Ask's labels say a stretch once and no average of nothing; a flagged today before day 14 is flagged on the calendar (${JSON.stringify({ ck: r.ck, rough: r.rough, askLbl: r.askLbl, calFlag: r.calFlag })})`);
+    /* the live phone: dark Gold chart marks carry their deeper Gold edge, and the hero has no decoration ring */
+    const lv = await z.evaluate(async () => {
+      const api = window.FLORIN_EXT.api, wait = (ms) => new Promise((res) => setTimeout(res, ms));
+      api.set("persona", "marcus"); api.set("theme", "dark"); api.reset(); await wait(300);
+      const ph = document.querySelector(".rx-stage .ap-rx") || document.querySelector(".ap-rx"), hero = ph.querySelector(".ap-hero");
+      const deco = hero ? getComputedStyle(hero, "::after").display : "no hero drawn";
+      api.open("i-timing"); await wait(400);
+      const bs = [...ph.querySelectorAll('[data-act="irange"][data-v="30"]')]; if (bs.length) bs[bs.length - 1].click(); await wait(400);
+      const g = [...ph.querySelectorAll(".dv-dot.is-shift")].map((n) => { const s = getComputedStyle(n); return { w: s.strokeWidth, st: s.stroke, f: s.fill }; });
+      api.set("theme", "light"); api.set("persona", "sarah"); api.reset();
+      return { deco, n: g.length, edged: g.every((x) => x.w === "1.5px" && x.st !== x.f && x.st !== "none") };
+    });
+    ok(lv.deco === "none" && lv.n > 0 && lv.edged, `finish-viz: on dark every Gold chart mark (${lv.n}) carries its deeper Gold edge, and the hero draws no decoration ring (${lv.deco})`);
+    ok(!ze.length, `finish-viz: no console or page errors${ze.length ? ": " + ze.slice(0, 3).join(" | ") : ""}`);
+    await zc.close();
+  }
+  /* ===== end finish-viz ===== */
+
   /* ===== fix-notes: the notes critic's findings, kept as checks (Will, Oct 28: "Make it simple"). Every decision's
      top label numbers it and says what we recommend; the check-in note answers first; a new note opens at its top; the
      claims line shows only on a fail; no was and now or research section can come back; the Person and Logs notes
@@ -3823,7 +3916,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const info = async (k) => { await f.evaluate((k) => { const x = document.querySelector(`[data-rx="dinfo"][data-v="${k}"]`); if (x.getAttribute("aria-pressed") !== "true") x.click(); }, k); await fw(250); };
     const KEYS = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"];
     const LABEL = { form: "Consistency", bmUI: "BM logging", home: "Home", history: "History", checkin: "Weekly check-in", mealUI: "Meal sheet", look: "Data style", easy: "Version", onboard: "Onboarding" };
-    const WANT = { form: "C", bmUI: "Quick tiles and form", home: "Score first", history: "Calendar", checkin: "On", mealUI: "Quick, voice or text", look: "Oura and Field journal", easy: "Easy, as a setting", onboard: "Short" };
+    const WANT = { form: "C", bmUI: "Quick tiles and form", home: "Score first", history: "Calendar", checkin: "On", mealUI: "Quick, voice or text", look: "Florin charts", easy: "Easy, as a setting", onboard: "Short" };
     /* 12. the top label: Decision n of 9, the decision, and what we recommend, in view at 1000 tall */
     const eb = [];
     for (let i = 0; i < KEYS.length; i++) {
@@ -3888,7 +3981,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(pg.foot === "Prototype only. Not for patients." && pg.lede === "Each one changes the app on the phone." && pg.link === "Every data style, side by side" && pg.bm === "Quick tiles|Full form" && /the last 7 days/.test(pg.today), `fix-notes: the footer, the Decisions line, the header link, the BM logging toggle and Today's note in plain words (${pg.bm})`);
     const words = {};
     for (const k of KEYS) { await info(k); words[k] = await f.evaluate(() => document.querySelector("#rxNotes .rx-note").textContent); }
-    ok(/FloraScore as a small chip at the top/.test(words.home) && /a Plum circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone/.test(words.history) && !/week card/.test(words.history + words.look) && /a small ring for each part of the score: Timing, How often, Form and Comfort/.test(words.look) && /the usual range as a bar, the last 7 days as one circle per day/.test(words.look) && !/being redrawn|; the other four/.test(words.look) && /The app as the rest of this demo shows it/.test(words.easy) && /Every data style, side by side/.test(words.look), "fix-notes: Home, History, Data style and Version describe what the phone draws, with no build status");
+    ok(/FloraScore as a small chip at the top/.test(words.home) && /a Plum circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone/.test(words.history) && !/week card/.test(words.history + words.look) && /a small ring for each part of the score/.test(words.look) && /the usual range as a bar, the week as one circle a day/.test(words.look) && !/being redrawn|; the other four/.test(words.look) && /The app as the rest of this demo shows it/.test(words.easy) && /Every data style, side by side/.test(words.look), "fix-notes: Home, History, Data style and Version describe what the phone draws, with no build status");
     await fclick('[data-rx="dclose"]');
     await f.evaluate(() => window.FLORIN_EXT.api.set("easy", true)); await fw(400);
     const sh = await f.evaluate(() => [...document.querySelectorAll("[data-shadow]")].map((x) => x.textContent).join("|"));
