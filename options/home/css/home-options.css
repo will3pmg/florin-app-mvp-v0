@@ -1,0 +1,202 @@
+/* Home week options (options/home): the page around the drawings (.ho-), and each week drawn in the app's own tokens
+   (.ap.ap-rx, --ap-*). The page's tokens are the prototype page's, on :root in the HTML.
+   Layout: the header with the card Will flagged, the demo controls (sticky, one line), then two questions. Question 1
+   draws the four weeks alone, side by side at one size (four columns from 1280, two from 820, one on a phone). Question
+   2 draws Today on a phone in three places (three phones from 1280; on a phone, the texts first and the phones behind a
+   button). Each column's label stays in view under the controls while its drawing scrolls past.
+   Spacing and radii on the DESIGN.md scales; colours derived from the six brand tokens. */
+
+.ho { max-width: 1440px; margin: 0 auto; box-sizing: border-box; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; }
+.ho :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.ho-err { margin: 0; padding: 16px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.ho-k { margin: 0; font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+
+/* ---------- the head: the question, the recommendation in one line, and the card Will flagged ---------- */
+.ho-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.ho-head-t { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.ho-eyebrow { margin: 0; font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ho-head h1 { margin: 0; font-weight: 300; font-size: clamp(32px, 4.4vw, 48px); line-height: 1.06; letter-spacing: -.03em; text-wrap: balance; }
+.ho-lede { margin: 0; font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+.ho-lede b { font-family: var(--sans); font-weight: 500; color: var(--ink); }
+.ho-was { margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; align-items: start; }
+.ho-was img { display: block; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); }
+.ho-was figcaption { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ho-was ul { margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.ho-was li { font-size: 14px; line-height: 1.45; color: var(--ink); text-wrap: pretty; }
+@media (min-width: 1024px) {
+  .ho-head { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 48px; align-items: start; }
+  .ho-was { grid-template-columns: 132px minmax(0, 1fr); }
+}
+
+/* ---------- the demo controls: one line, in view while the drawings scroll ---------- */
+.ho-ctls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 8; margin-inline: -16px; padding: 8px 16px; background: var(--bg); box-shadow: 0 1px 0 var(--line); }
+.ho-ctls-sum { display: none; }
+.ho-ctls-body { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+.ho-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.ho-ctl-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ho-ctl-note { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); max-width: 64ch; }
+.ho-ctl-note:empty { display: none; }
+.ho-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 24px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.ho-seg button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: none; font: 500 13px/1 var(--sans); color: var(--ink-2); cursor: pointer; }
+.ho-seg button:hover:not(:disabled) { color: var(--ink); }
+.ho-seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.ho-seg button:disabled { cursor: default; color: var(--ink-3); opacity: .7; }
+/* the clinician note: a switch, its words beside it */
+.ho-sw { display: inline-flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px 0 8px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); font: 500 13px/1.3 var(--sans); color: var(--ink); cursor: pointer; text-align: left; }
+.ho-sw i { position: relative; flex: none; width: 40px; height: 24px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 22%, transparent); transition: background .2s; }
+.ho-sw i::after { content: ""; position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel); transition: transform .2s; }
+.ho-sw[aria-checked="true"] i { background: var(--teal); }
+.ho-sw[aria-checked="true"] i::after { transform: translateX(16px); }
+@media (prefers-reduced-motion: reduce) { .ho-sw i, .ho-sw i::after { transition: none; } }
+.ho-ctls-b, .ho-show { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--line); font: 500 13px/1 var(--sans); color: var(--ink); cursor: pointer; }
+.ho-ctls-b:hover, .ho-show:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+
+/* ---------- a question: its head, the options as columns, then what we recommend ---------- */
+.ho-q { display: flex; flex-direction: column; gap: 24px; padding-top: 24px; }
+.ho-q + .ho-q { padding-top: 48px; border-top: 1px solid var(--line); }
+.ho-q-h { display: flex; flex-direction: column; gap: 12px; }
+.ho-q-h h2 { margin: 0; font-weight: 400; font-size: clamp(26px, 3vw, 34px); line-height: 1.1; letter-spacing: -.02em; }
+.ho-q-lede { margin: 0; font-family: var(--serif); font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; text-wrap: pretty; }
+.ho-q-ctls { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.ho-show { align-self: flex-start; }
+@media (min-width: 1024px) {
+  .ho-q-h { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 48px; align-items: end; }
+  .ho-q-h > .ho-k, .ho-q-h > h2, .ho-q-h > .ho-q-lede { grid-column: 1; }
+  .ho-q-h > .ho-ctl, .ho-q-h > .ho-q-ctls { grid-column: 2; grid-row: 1 / span 3; max-width: 640px; justify-self: end; }
+  .ho-q-h > .ho-ctl { flex-direction: column; align-items: flex-start; }
+  .ho-q-ctls { flex-direction: column; }
+  .ho-q-ctls .ho-ctl { flex-direction: column; align-items: flex-start; }
+}
+
+/* the columns: a label that stays in view, the drawing, then the words in the decision sheet's shape */
+.ho-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px 24px; align-items: start; }
+.ho-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ho-col-k { position: sticky; top: var(--ho-stick, 0px); z-index: 6; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; margin: 0; padding-block: 8px; background: var(--bg); font-size: 17px; font-weight: 500; line-height: 1.3; color: var(--ink); }
+.ho-col-n { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 8%, transparent); font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.ho-col[data-rec] .ho-col-n { background: var(--ink); color: var(--bg); }
+.ho-col-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ho-col-k .ho-tag { justify-self: start; }
+.ho-col-name em { font-style: normal; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.ho-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.ho-col-fig { min-width: 0; }
+@media (min-width: 820px) {
+  .ho-cols--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ho-cols--3 { grid-template-columns: repeat(auto-fill, 390px); }
+  .ho-cols--3.is-text { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1280px) {
+  .ho-cols--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* the words under each drawing */
+.ho-txt { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ho-txt dl { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.ho-txt dl > div { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+.ho-txt dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ho-txt dd { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+
+/* what we recommend, after the options */
+.ho-rec { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); }
+.ho-rec-say { margin: 0; font-size: 20px; line-height: 1.4; letter-spacing: -.01em; max-width: 64ch; text-wrap: pretty; }
+.ho-rec-say b { font-weight: 500; }
+.ho-rec-open { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+.ho-rec-open p:not(.ho-k) { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink-2); max-width: 72ch; }
+
+.ho-foot { display: flex; flex-direction: column; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.ho-foot p { margin: 0; max-width: 80ch; }
+
+/* ---------- question 1: the week alone, on Today's ground, at its width on a 390 phone ---------- */
+.ho-wk { box-sizing: border-box; width: 390px; border-radius: 24px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+.ho-col[data-rec] .ho-wk { box-shadow: 0 0 0 2px var(--ink); }
+.ap-scr.ho-wk-scr { padding: 20px; }
+.ho-wk-none { padding: 24px 4px; font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+
+/* ---------- question 2: Today on a phone, drawn to its end ---------- */
+.ho-phone { position: relative; box-sizing: border-box; width: 390px; min-height: 844px; border-radius: 32px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 24px 48px -32px color-mix(in srgb, var(--forest) 45%, transparent); }
+.ho-col[data-rec] .ho-phone { box-shadow: 0 0 0 2px var(--ink), 0 24px 48px -32px color-mix(in srgb, var(--forest) 45%, transparent); }
+.ho-phone .ap-scr { padding-bottom: 32px; }
+/* the first screen: the app's tab bar floats at its foot, and two ticks at the edges mark the top of the bar */
+.ho-scr1 { position: absolute; left: 0; right: 0; top: 0; height: 844px; /* grid-exempt: the first screen of a 390 by 844 phone, a device size */ pointer-events: none; z-index: 6; }
+.ho-tick { position: absolute; top: var(--ho-fold, 768px); /* grid-exempt: the top of the tab bar, measured, a device position */ width: 12px; height: 2px; margin-top: -1px; /* grid-exempt: centres the 2px tick on the line */ background: var(--ap-ink); }
+.ho-tick--l { left: 0; }
+.ho-tick--r { right: 0; }
+.ho-phone .ho-inert, .ho-wk .ho-inert { pointer-events: none; cursor: default; }
+/* the phones the texts measure: drawn off screen at 390 by 844 */
+.ho-measure { position: absolute; left: -10000px; /* grid-exempt: off screen, only measured */ top: 0; width: 390px; visibility: hidden; pointer-events: none; }
+.ho-measure .ho-phone { width: 390px; margin: 0; }
+
+/* ---------- a phone width: one column, each drawing the full width, as the app is ---------- */
+@media (max-width: 819px) {
+  .ho-ctls-sum { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); }
+  .ho-ctls-body { flex-direction: column; align-items: stretch; gap: 12px; padding-top: 12px; }
+  .ho-ctls-body .ho-ctl { flex-direction: column; align-items: flex-start; }
+  .ho-ctls-body[data-closed] { display: none; }
+  .ho-ctls-body { max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; }
+  .ho-lede { font-size: 16px; }
+  .ho-rec { padding: 16px; }
+  .ho-rec-say { font-size: 18px; }
+  .ho-wk, .ho-phone { width: auto; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); border-radius: 0; box-shadow: 0 -1px 0 var(--line), 0 1px 0 var(--line); }
+  .ho-col[data-rec] :is(.ho-wk, .ho-phone) { box-shadow: 0 -2px 0 var(--ink), 0 2px 0 var(--ink); }
+  .ho-measure .ho-phone { width: 390px; margin: 0; }
+}
+@media (min-width: 820px) { .ho-show { display: none; } }
+@media (max-width: 420px) {
+  .ho-seg button { padding: 0 12px; }
+  .ho-was { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+}
+
+/* ---------- the day a strip day opens: a sheet over the page ---------- */
+.ho-dlg { box-sizing: border-box; width: calc(100% - 32px); max-width: 390px; max-height: min(720px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 32px; background: none; overflow: hidden; }
+.ho-dlg::backdrop { background: color-mix(in srgb, var(--forest) 45%, transparent); }
+.ho-dlg-ap { box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; max-height: min(720px, calc(100dvh - 32px)); overflow-y: auto; overscroll-behavior: contain; padding: 12px 20px 32px; }
+.ho-sheet-h { display: flex; align-items: center; gap: 8px; }
+.ho-sb { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ap-ink); box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.ho-sb .ic { width: 16px; height: 16px; }
+.ho-sb:disabled { color: var(--ap-ink3); box-shadow: none; cursor: default; }
+.ho-sb--x { margin-left: auto; width: 44px; padding: 0; justify-content: center; }
+@media (max-width: 819px) {
+  .ho-dlg { width: 100%; max-width: none; margin: auto 0 0; border-radius: 32px 32px 0 0; }
+  .ho-dlg-ap { padding-bottom: max(32px, env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ================= inside the drawings: each option's week, in the app's tokens ================= */
+
+/* 2 Week strip: no card, on Today's ground; the count above the row, its days buttons with 44px hit areas */
+.ho-strip { display: flex; flex-direction: column; gap: 8px; padding: 0 4px; --ap-day-gap: var(--ap-bg); }
+.ho-strip-k { display: flex; justify-content: space-between; gap: 8px; }
+.ho-strip .ap-days { margin-top: 4px; }
+.ho-strip .ap-days > li { justify-content: center; }
+.ho-strip .ho-d { display: flex; justify-content: center; min-width: 44px; min-height: 44px; padding: 0; border-radius: 12px; }
+.ho-strip .ho-d[data-live]:hover, .ho-strip .ho-d[aria-expanded="true"] { background: var(--ap-card2); }
+.ho-sa { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0; text-align: left; color: var(--ap-ink); }
+.ho-sa > span { display: flex; align-items: center; gap: 8px; font-size: 18px; line-height: 24px; letter-spacing: -.01em; }
+.ho-sa > span > span { display: inline; }
+.ho-sa b { font-weight: 500; }
+.ho-sa .ic { flex: none; width: 16px; height: 16px; color: var(--ap-ink3); }
+.ho-sl { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ho-sl li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+.ho-sl li.is-plain { grid-template-columns: minmax(0, 1fr); }
+.ho-sl .ap-day-k { margin-top: 4px; }
+
+/* 3 Words only */
+.ho-note { display: flex; flex-direction: column; gap: 12px; }
+.ho-note .ap-card-h { margin-bottom: 0; }
+.ho-note-lead { font-size: 20px; line-height: 1.25; letter-spacing: -.01em; font-weight: 500; color: var(--ap-ink); }
+.ho-note-body { font-family: var(--serif); font-size: 16px; line-height: 1.45; color: var(--ap-ink); }
+.ho-note-ctx { padding-top: 12px; border-top: 1px solid var(--ap-line); font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+.ho-note-flag { display: flex; gap: 8px; align-items: flex-start; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); font-size: 14px; line-height: 20px; color: var(--ap-ink); }
+.ho-note-flag .ic { flex: none; width: 16px; height: 16px; transform: translateY(2px); color: var(--ap-teal); }
+
+/* 4 Morning times chart */
+.ho-mo-chart { display: flex; flex-direction: column; gap: 8px; }
+.ho-mo-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ap-rx .dv-chart .ho-mo-dow { font-family: var(--mono); font-size: 10px; fill: var(--ap-ink2); }
+.ap-rx .dv-chart .ho-mo-dow.is-today { fill: var(--ap-ink); font-weight: 700; }
+.ap-rx .dv-chart .ho-mo-date { fill: var(--ap-ink2); }
+.ap-rx .dv-chart .is-quiet { fill: var(--ap-ink3); }
+.ap-rx .dv-chart .ho-mo-dl { font-family: var(--mono); font-size: 10px; font-weight: 700; fill: var(--ap-shift-ink); }
+.ap-rx[data-theme="dark"] .dv-chart .ho-mo-dl { fill: var(--ap-shift); }
+.ap-rx .dv-chart .ho-mo-nobm { font-size: 10px; font-weight: 500; fill: var(--ap-shift-ink); }
+.ap-rx .dv-chart .ho-mo-flag { fill: var(--ap-teal); }
+.ho-mo-band { font-size: 13px; line-height: 16px; font-weight: 500; color: var(--ap-usual-ink); }
+.ho-mo-band.is-learn { font-weight: 400; color: var(--ap-ink3); }

@@ -1,0 +1,45 @@
+/* Florin focus group test: the app on its own page (focus/app.html), full screen, with none of the demo page's chrome.
+   The demo page (refresh-app.js) is loaded unchanged; this hides its left bar, notes, header, footer and the phone's top
+   bar, and runs the phone at the full size of the page at every width. A frame of the flow passes in the safe areas
+   (--rx-sat, --rx-sab), since a frame gets none of its own. Spacing and radii on the DESIGN.md scales. */
+
+/* the page around the phone: gone */
+.rx-head, .rx-side, .rx-foot, .rx-mbar, .rx-jump, .rx-sheet, .rx-skip { display: none !important; }
+.rx { max-width: none !important; padding: 0 !important; }
+.rx-main, .rx-center, .rx-stage, .rx-ph { display: block !important; }
+/* the phone: the whole page, no frame, no fake status bar or island */
+.rx-fit { position: fixed !important; inset: 0 !important; width: auto !important; height: auto !important; }
+.rx-dev { width: 100% !important; height: 100% !important; transform: none !important; }
+.rx-dev .apx-phone { display: none !important; }
+.rx-dev .apx-screen { inset: 0 !important; border-radius: 0 !important; }
+.rx-mount { top: var(--rx-sat, 0px); bottom: var(--rx-sab, 0px); }
+.rx-mount > .ap { box-shadow: 0 var(--rx-sab, 0px) 0 var(--ap-bg); }
+.ap-rx .apx-status, .ap-rx .apx-island, .ap-rx .apx-homebar { display: none !important; }
+
+/* a double tap never zooms the page on iPhone, and nothing pulls the page down to reload it */
+html, body { touch-action: manipulation; overscroll-behavior-y: contain; }
+html.fx-app-on, html.fx-app-on body { height: 100%; overflow: hidden; }
+.ap-rx, .ap-rx * { touch-action: manipulation; }
+.ap-rx .ap-layer { overscroll-behavior-y: contain; }
+
+/* where a double tap landed, while its comment box is open */
+.fx-mark { position: fixed; z-index: 400; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%; box-shadow: 0 0 0 3px var(--teal), 0 0 0 6px color-mix(in srgb, var(--cream) 80%, transparent); pointer-events: none; animation: fxMark .3s both; }
+@keyframes fxMark { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* a hint points at what to tap */
+.ap-rx .fx-pulse { outline: 3px solid var(--ap-teal) !important; outline-offset: 4px; animation: fxPulse 1.4s ease-in-out 3; border-radius: 16px; }
+@keyframes fxPulse { 50% { outline-offset: 8px; } }
+
+/* app.html on its own (?demo=1): a slim bar at the top with Comment and Your comments. The bar takes the top safe
+   area, so the app under it takes none */
+html.fx-has-demobar { --rx-sat: 0px; }
+.fx-has-demobar .rx-fit { top: calc(56px + env(safe-area-inset-top, 0px)) !important; }
+.fx-demobar { position: fixed; left: 0; right: 0; top: 0; z-index: 300; box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: calc(56px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); background: var(--bg); box-shadow: 0 1px 0 var(--line); font-family: var(--sans); color: var(--ink); }
+.fx-demobar-t { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fx-demo-list { position: fixed; left: 0; right: 0; bottom: 0; z-index: 320; max-height: 80%; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; box-shadow: 0 -12px 32px -16px color-mix(in srgb, var(--forest) 50%, transparent); display: flex; flex-direction: column; gap: 12px; }
+.fx-demo-list-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fx-demo-list-h h2 { font-size: 20px; font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-mark, .ap-rx .fx-pulse { animation: none !important; }
+}

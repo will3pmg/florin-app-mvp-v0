@@ -1,0 +1,62 @@
+/* Florin focus group test: the study's shared components, on both pages: buttons, chips, a box for words, the primary
+   care note, a toast, and the comment box with its review list. In the app's tokens (--ap-*, from prototype/css/app.css),
+   so they follow light and dark with the app. Spacing 4 8 12 16 20 24 32 40 48 56 64 80 96 120; radius 2 4 8 12 16 24
+   32 full (DESIGN.md v1.1). Colours derive from the six brand tokens. */
+
+.fx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 24px; border: 0; border-radius: 999px; background: var(--ray); color: var(--forest); font: 500 17px/1.2 var(--sans); text-align: center; cursor: pointer; text-decoration: none; transition: transform .2s var(--ap-ease, ease), background .2s; -webkit-tap-highlight-color: transparent; }
+.fx-btn:active { transform: scale(.98); }
+.fx-btn--2 { background: var(--ap-ink); color: var(--ap-bg); }
+.fx-btn--line { background: transparent; color: var(--ap-ink); box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.fx-btn--s { min-height: 44px; padding: 0 16px; font-size: 15px; }
+.fx-btn--block { width: 100%; }
+.fx-btn[aria-disabled="true"], .fx-btn:disabled { background: var(--ap-card2); color: var(--ap-ink3); box-shadow: none; cursor: default; }
+.fx-btn--line[aria-disabled="true"] { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-line); }
+.fx-btn .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ap[data-theme="dark"] .fx-btn--2 { background: var(--cream); color: var(--forest); }
+:where(.ap) .fx-btn:focus-visible, :where(.ap) .fx-ch:focus-visible, :where(.ap) .fx-ta:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: 2px; }
+
+.fx-ch { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); font: 500 15px/1.2 var(--sans); cursor: pointer; text-align: left; -webkit-tap-highlight-color: transparent; }
+.fx-ch.is-on { background: var(--ap-ink); color: var(--ap-bg); box-shadow: none; }
+
+.fx-ta { display: block; width: 100%; min-height: 96px; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); font: 400 16px/1.45 var(--sans); resize: vertical; }
+.fx-ta::placeholder { color: var(--ap-ink3); }
+.fx-leave { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ap-ink2); }
+/* the primary care note: Teal, never red */
+.fx-alarm { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); font-size: 15px; line-height: 1.45; color: var(--ap-ink); }
+.fx-p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ap-ink); }
+.fx-muted { color: var(--ap-ink2); }
+
+.fx-toast { position: fixed; left: 16px; right: 16px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 900; max-width: 420px; margin: 0 auto; padding: 12px 16px; border-radius: 16px; background: var(--forest); color: var(--cream); font: 500 15px/1.35 var(--sans); text-align: center; box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--forest) 45%, transparent); opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .3s; pointer-events: none; }
+.fx-toast.is-on { opacity: 1; transform: none; }
+
+/* ---------- the comment box: a sheet from the bottom, over everything ---------- */
+.ap.fx-cm-root { position: fixed; inset: 0; z-index: 800; background: none; font-size: 16px; }
+.fx-cm-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--forest) 40%, transparent); animation: fxFade .2s both; }
+.fx-cm { position: absolute; left: 0; right: 0; bottom: 0; max-width: 560px; margin: 0 auto; max-height: calc(100% - 24px); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: var(--ap-bg); color: var(--ap-ink); box-shadow: 0 -16px 40px -20px color-mix(in srgb, var(--forest) 60%, transparent); animation: fxUp .3s var(--ap-ease, ease) both; }
+.ap[data-theme="dark"] .fx-cm { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 10%, transparent); }
+.fx-cm-h { display: flex; flex-direction: column; gap: 4px; }
+.fx-cm-h h2 { font-size: 22px; line-height: 1.2; font-weight: 500; letter-spacing: -.01em; outline: none; }
+.fx-cm-where { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.fx-cm-pick { font-size: 14px; color: var(--ap-ink2); }
+.fx-cm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fx-cm-l { font-size: 15px; font-weight: 500; }
+.fx-cm-act { display: flex; gap: 12px; }
+.fx-cm-act .fx-btn { flex: 1; }
+.fx-cm-need { font-size: 14px; color: var(--ap-ink2); }
+@keyframes fxUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fxFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* the review list */
+.fx-cm-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.fx-cm-list > li { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.fx-cm-li-h { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.fx-cm-li-h b { font-weight: 500; }
+.fx-cm-li-h span { font-family: var(--mono); font-size: 12px; color: var(--ap-ink2); }
+.fx-cm-li-k { font-size: 14px; color: var(--ap-ink2); }
+.fx-cm-li-w { font-family: var(--serif); font-size: 16px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fx-cm-li-a { display: flex; flex-wrap: wrap; gap: 8px; }
+.fx-cm-confirm { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ap-line); font-size: 15px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-cm, .fx-cm-scrim, .fx-toast { animation: none !important; transition: none !important; }
+}
