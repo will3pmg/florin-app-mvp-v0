@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Florin, for the home screen: the FloraScore ring in Ray on Forest. The two brand tokens' own values
+       (--forest #00352B, --ray #EEFFA3), since an icon file can't read the page's tokens -->
+  <rect width="512" height="512" fill="#00352B"/>
+  <circle cx="256" cy="256" r="118" fill="none" stroke="#EEFFA3" stroke-width="44"/>
+</svg>
