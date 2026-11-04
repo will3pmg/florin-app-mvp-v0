@@ -1,0 +1,264 @@
+/* Florin data, module by module (modules/): the page around the cards (.dm-). Each card sits inside .ap.ap-rx and uses
+   the app's tokens (--ap-*), as on the phone; the page uses the prototype page's tokens on :root, in the HTML.
+   Layout: the head and our answer, the demo person (in view while the page scrolls, on a wide screen), the summary
+   table, then a section per module: its question, We recommend, then its styles. From 1280px every style is in view at
+   once, each card drawn smaller to fit its column (--dm-z, set by the page); Full size, and 820 to 1279, keep the cards
+   at a phone card's width in a row that scrolls sideways; under 820 the styles are tabs, one at a time. Then Your pick.
+   After The month, Insights' first card as we recommend it; then the order of Insights and a note for the whole page.
+   Spacing and radii on the DESIGN.md scales; colours derived from the six brand tokens. */
+
+.dm { max-width: 1440px; margin: 0 auto; box-sizing: border-box; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 48px; }
+.dm :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.dm-loading, .dm-err { margin: 0; padding: 16px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.dm-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.dm-eyebrow, .dm-k { margin: 0; font-family: var(--mono); font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+html:has(.dm-ctls) { scroll-padding-top: 120px; }
+
+/* ---------- the head and our answer ---------- */
+.dm-head { display: flex; flex-direction: column; gap: 12px; max-width: 820px; }
+.dm-head h1 { margin: 0; font-weight: 300; font-size: clamp(36px, 5vw, 56px); line-height: 1.04; letter-spacing: -.03em; text-wrap: balance; }
+.dm-lede { margin: 0; font-size: 20px; line-height: 1.4; letter-spacing: -.01em; color: var(--ink-2); max-width: 64ch; text-wrap: pretty; }
+.dm-answer { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); max-width: 980px; }
+.dm-answer-say { margin: 0; font-size: 22px; line-height: 1.35; letter-spacing: -.01em; text-wrap: pretty; }
+.dm-answer-more { margin: 0; font-family: var(--serif); font-size: 16px; line-height: 1.55; color: var(--ink-2); max-width: 72ch; }
+
+/* ---------- the demo person: in view while the page scrolls, on a wide screen ---------- */
+.dm-ctls { display: flex; flex-direction: column; gap: 12px; margin-block: -24px; padding: 16px 0; background: var(--bg); box-shadow: 0 1px 0 var(--line); }
+@media (min-width: 820px) {
+  .dm-ctls { position: sticky; top: 0; z-index: 20; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding: 12px 0; }
+}
+.dm-demo { margin: 0; flex: 1 1 280px; font-size: 14px; line-height: 1.45; color: var(--ink-2); max-width: 64ch; }
+.dm-ctls-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.dm-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.dm-ctl-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.dm-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.dm-seg button { min-height: 44px; min-width: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: none; font: 500 13px/1.2 var(--sans); color: var(--ink-2); cursor: pointer; }
+.dm-seg button:hover:not(:disabled) { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.dm-seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.dm-seg button:disabled { cursor: default; opacity: .6; }
+.dm-seg--wrap { border-radius: 24px; }
+/* Cards: All in view or Full size, only where all six fit */
+.dm-ctl--fit { display: none; }
+@media (min-width: 1280px) { .dm-ctl--fit { display: flex; } }
+
+/* the buttons of the page */
+.dm-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--ink); color: var(--bg); font: 500 14px/1.2 var(--sans); cursor: pointer; text-align: center; }
+.dm-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 86%, var(--bg)); }
+.dm-btn--line { background: none; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.dm-btn--line:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.dm-btn:disabled { cursor: default; opacity: .5; }
+
+/* a section's head */
+.dm-sec-h { display: flex; flex-direction: column; gap: 8px; max-width: 820px; }
+.dm-sec-h h2 { margin: 0; font-weight: 400; font-size: clamp(26px, 3vw, 34px); line-height: 1.1; letter-spacing: -.02em; }
+.dm-sec-h p:not(.dm-eyebrow) { margin: 0; font-family: var(--serif); font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; }
+
+/* ---------- the summary ---------- */
+.dm-sum { display: flex; flex-direction: column; gap: 24px; }
+.dm-status { display: flex; flex-direction: column; gap: 12px; }
+.dm-status-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.dm-status-say { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink); }
+.dm-status-note { margin: 0; flex-basis: 100%; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.dm-status-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.dm-copybox { display: flex; flex-direction: column; gap: 8px; max-width: 720px; }
+.dm-copybox[hidden] { display: none; }
+.dm-copybox label, .dm-copy-ok { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.dm-copybox textarea { box-sizing: border-box; width: 100%; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); font: 400 13px/1.5 var(--mono); color: var(--ink); resize: vertical; }
+
+.dm-t { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.45; }
+.dm-t th { padding: 8px 12px 8px 0; text-align: left; vertical-align: bottom; font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); border-bottom: 1px solid var(--line); }
+.dm-t td { padding: 12px 12px 12px 0; vertical-align: top; border-bottom: 1px solid var(--line-2); color: var(--ink); }
+.dm-t td.is-none { color: var(--ink-2); }
+.dm-t-mod { width: 32%; }
+.dm-t-mod a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-block: -8px 0; color: var(--ink); font-size: 16px; font-weight: 500; text-decoration: none; }
+.dm-t-mod a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.dm-t-n { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 8%, transparent); font-family: var(--mono); font-size: 11px; font-weight: 700; }
+.dm-t-n.is-blank { background: none; box-shadow: inset 0 0 0 1.5px var(--line); }
+.dm-t tr[data-key="_order"] td { border-top: 1px solid var(--line); }
+.dm-t-q { display: block; padding-left: 32px; font-family: var(--serif); font-size: 14px; color: var(--ink-2); }
+.dm-not { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ink-2); max-width: 96ch; }
+
+/* ---------- a module ---------- */
+.dm-mod { display: flex; flex-direction: column; gap: 24px; padding-top: 48px; border-top: 1px solid var(--line); scroll-margin-top: 96px; }
+.dm-mod-h { display: flex; flex-direction: column; gap: 8px; max-width: 900px; }
+.dm-mod-h h2 { margin: 0; font-weight: 400; font-size: clamp(26px, 3vw, 34px); line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; }
+.dm-now { margin: 0; font-family: var(--serif); font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; }
+.dm-now--span { font-family: var(--sans); font-size: 14px; }
+/* day 5: the cards show the learning state, the words describe the cards once Florin knows the usual */
+.dm-learn { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; line-height: 1.5; color: var(--ink); max-width: 72ch; }
+
+/* the tabs, under 820: one style at a time */
+.dm-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 24px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.dm-tabs[hidden] { display: none; }
+.dm-tabs button { min-height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font: 500 13px/1.2 var(--sans); color: var(--ink-2); cursor: pointer; }
+.dm-tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.dm-opt[hidden] { display: none; }
+
+/* Previous and Next, while the row is wider than the window */
+.dm-rowctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.dm-rowctl[hidden] { display: none; }
+.dm-arrows { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.dm-arrows button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: none; font: 400 24px/1 var(--sans); color: var(--ink); cursor: pointer; }
+.dm-arrows button:disabled { color: var(--ink-3); cursor: default; }
+.dm-arrows button:not(:disabled):hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.dm-rowctl-note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+
+/* the styles, one column a style, each a phone card's width; the row scrolls sideways inside itself */
+.dm-opts { display: grid; grid-auto-flow: column; grid-auto-columns: 390px; gap: 24px; align-items: start; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 16px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; border-radius: 4px; }
+.dm-opt { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* from 820, each style's name, card and words sit on the row's three shared lines, so the cards across a row start
+   together and the words under them too */
+@media (min-width: 820px) {
+  .dm-opts { grid-template-rows: auto auto auto; }
+  .dm-opts > .dm-opt { display: grid; grid-row: span 3; grid-template-rows: subgrid; align-content: start; row-gap: 16px; }
+}
+/* the style's name, the same height in every column, so the cards across a row start on one line */
+.dm-opt-h { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; gap: 12px; }
+.dm-opt-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 8%, transparent); font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.dm-opt[data-rec] .dm-opt-n { background: var(--ink); color: var(--bg); }
+.dm-opt-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-top: 4px; }
+.dm-opt-h h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; min-width: 0; font-size: 18px; font-weight: 500; line-height: 1.25; }
+.dm-opt-sub { margin: 0; font-size: 13px; line-height: 1.35; color: var(--ink-2); }
+.dm-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
+.dm-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+/* In the app now: an outline, so it never reads as our pick */
+.dm-tag--app { background: none; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+/* the stretch the card counts, over it */
+.dm-span { margin: 0; font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: .04em; color: var(--ink-2); }
+.dm-cap { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+/* the card: a picture, so nothing in it takes a press */
+.dm-fig { display: flex; flex-direction: column; gap: 16px; min-width: 0; pointer-events: none; }
+.dm-ap { box-sizing: border-box; width: 100%; max-width: 390px; padding: 16px; border-radius: 32px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+.dm-opt[data-rec] .dm-ap { box-shadow: 0 0 0 2px var(--ink); }
+.dm-ap-in { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 358px; margin: 0 auto; }
+.dm-ap * { animation: none !important; transition: none !important; }
+.dm-ap .ap-ico:disabled { opacity: 1; }
+.dm-subfig { display: flex; flex-direction: column; gap: 8px; }
+.dm-subfig-k { margin: 0; padding-left: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.dm-missing { margin: 0; padding: 16px; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+/* the week's ring in Florin charts' calendar and History's day headers: the ring the Rings look draws for that day, in
+   place of the filled circle. Its card styles are taken off, its tokens kept */
+.dm-ringc { display: grid; place-items: center; flex: none; }
+.dm-ringc .rg.dm-rg0 { display: block; padding: 0; gap: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; }
+.dm-ringc .rg-md { display: block; }
+.dm-ringcal .ap-day-k--usual { background: none; box-shadow: inset 0 0 0 2px var(--ap-signal); }
+.dm-ringcal .ap-day-k--shift { background: var(--ap-shift-bg); box-shadow: inset 0 0 0 2px var(--ap-shift), 0 0 0 1px var(--ap-shift-ink); }
+.ap[data-theme="dark"] .dm-ringcal .ap-day-k--shift { background: var(--ap-shift); box-shadow: none; }
+.dm-ringcal .ap-day-k--quiet { background: none; box-shadow: inset 0 0 0 2px var(--ap-ink3); }
+/* Your days, as we recommend it: what was different, under the rings */
+.dm-why { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--ap-line); display: flex; flex-direction: column; gap: 8px; }
+.dm-why li { font-size: 14px; line-height: 20px; color: var(--ap-ink2); }
+
+/* the words under each card, in the decision sheet's shape */
+.dm-txt { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.dm-txt > div { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+.dm-txt dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.dm-txt dd { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+
+/* what we recommend, after the styles */
+.dm-rec { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); }
+.dm-rec-say { margin: 0; font-size: 20px; line-height: 1.4; letter-spacing: -.01em; max-width: 72ch; text-wrap: pretty; }
+.dm-rec-say b { font-weight: 500; }
+.dm-rec-differs { margin: 0; padding-top: 12px; border-top: 1px solid var(--line-2); font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink-2); max-width: 80ch; }
+
+/* ---------- Insights' first card, as we recommend it, beside the one there now ---------- */
+.dm-days { display: flex; flex-direction: column; gap: 24px; padding-top: 48px; border-top: 1px solid var(--line); scroll-margin-top: 96px; }
+.dm-days-row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.dm-days-row > .dm-opt { flex: 0 1 390px; }
+.dm-inl { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--sans); font-size: 15px; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- all in view, from 1280: a column a style, each card drawn smaller to fit it ---------- */
+@media (min-width: 1280px) {
+  .dm[data-size="fit"] .dm-opts { grid-auto-flow: row; grid-template-columns: repeat(var(--dm-n, 6), minmax(0, 390px)); grid-auto-columns: auto; gap: 16px; overflow: visible; padding-bottom: 0; }
+  .dm[data-size="fit"] .dm-opts .dm-ap { width: 390px; max-width: none; zoom: var(--dm-z, 1); }
+  .dm[data-size="fit"] .dm-opts .dm-opt-h { gap: 8px; grid-template-columns: 24px minmax(0, 1fr); }
+  .dm[data-size="fit"] .dm-opts .dm-opt-n { width: 24px; height: 24px; font-size: 11px; }
+  .dm[data-size="fit"] .dm-opts .dm-opt-h h3 { font-size: 16px; }
+  .dm[data-size="fit"] .dm-opts .dm-txt dd { font-size: 14px; line-height: 1.5; }
+  .dm[data-size="fit"] .dm-opts .dm-subfig-k, .dm[data-size="fit"] .dm-opts .dm-cap { padding-left: 0; }
+}
+
+/* ---------- Your pick ---------- */
+.dm-pick { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 24px; border-radius: 24px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.dm-pick-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.dm-pick-h h3 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.01em; }
+.dm-pick-state { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.dm-pick-ctl { display: flex; flex-direction: column; gap: 16px; }
+.dm-ctl--pick { flex-direction: column; align-items: flex-start; }
+.dm-pick-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.dm-pick-ours { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.dm-pick-note { display: flex; flex-direction: column; gap: 8px; }
+.dm-pick-note label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.dm textarea[data-note] { box-sizing: border-box; width: 100%; min-height: 64px; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); font: 400 15px/1.5 var(--sans); color: var(--ink); resize: vertical; }
+.dm textarea[data-note]::placeholder { color: var(--ink-3); }
+.dm textarea[data-note]:disabled { opacity: .6; }
+.dm-count { margin: 0; align-self: flex-end; font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+@media (min-width: 1024px) {
+  .dm-pick { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px 32px; }
+  .dm-pick-h { grid-column: 1 / -1; }
+}
+
+/* ---------- the order of Insights ---------- */
+.dm-order { display: flex; flex-direction: column; gap: 24px; padding-top: 48px; border-top: 1px solid var(--line); scroll-margin-top: 96px; }
+.dm-order-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
+@media (min-width: 1024px) { .dm-order-grid { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 48px; } }
+.dm-order-main { display: flex; flex-direction: column; gap: 16px; }
+.dm-olist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); }
+.dm-olist li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 12px 8px 16px; border-top: 1px solid var(--line-2); }
+.dm-olist li:first-child { border-top: 0; }
+.dm-o-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 8%, transparent); font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.dm-o-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-block: 4px; }
+.dm-o-t b { font-size: 16px; font-weight: 500; }
+.dm-o-t em { font-style: normal; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.dm-o-b { display: inline-flex; gap: 4px; }
+.dm-ico { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); cursor: pointer; }
+.dm-ico svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.dm-ico:hover:not(:disabled):not([aria-disabled="true"]) { background: color-mix(in srgb, var(--ink) 12%, transparent); }
+.dm-ico[aria-disabled="true"], .dm-ico:disabled { color: var(--ink-3); background: none; box-shadow: inset 0 0 0 1px var(--line-2); cursor: default; }
+.dm-o-off, .dm-order-now { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.dm-order-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.dm-order-state { margin: 0; font-size: 14px; color: var(--ink-2); }
+.dm-order-why { display: flex; flex-direction: column; gap: 12px; }
+.dm-order-why h3, .dm-mark h3 { margin: 0; font-size: 18px; font-weight: 500; }
+.dm-order-why h3 + ul, .dm-order-why h3 + ol { margin-top: -4px; }
+.dm-order-why ul, .dm-order-why ol, .dm-mark ul { margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; }
+.dm-order-why li, .dm-mark li, .dm-order-why p, .dm-mark p { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink); max-width: 72ch; }
+.dm-order-why ul + h3 { margin-top: 12px; }
+.dm-mark { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 24px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); }
+
+/* ---------- a note for the whole page ---------- */
+.dm-pnote { display: flex; flex-direction: column; gap: 16px; padding-top: 48px; border-top: 1px solid var(--line); max-width: 820px; }
+.dm-pnote textarea[data-note] { min-height: 120px; }
+
+.dm-foot { display: flex; flex-direction: column; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.dm-foot p { margin: 0; max-width: 80ch; }
+
+/* ---------- a phone: the styles stack, each card the full width, as the app is ---------- */
+@media (max-width: 819px) {
+  .dm { gap: 40px; padding-top: 32px; }
+  .dm-lede { font-size: 18px; }
+  .dm-answer, .dm-rec, .dm-pick, .dm-mark { padding: 16px; }
+  .dm-answer-say { font-size: 19px; }
+  .dm-rec-say { font-size: 18px; }
+  .dm-ctls-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .dm-ctls-row .dm-ctl { flex-direction: column; align-items: flex-start; }
+  .dm-opts { display: flex; flex-direction: column; gap: 40px; overflow: visible; padding-bottom: 0; }
+  .dm-opt-h { min-height: 0; }
+  .dm-days-row > .dm-opt { flex: 1 1 100%; }
+  .dm-ap { max-width: none; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); width: auto; border-radius: 0; box-shadow: 0 -1px 0 var(--line), 0 1px 0 var(--line); }
+  .dm-opt[data-rec] .dm-ap { box-shadow: 0 -2px 0 var(--ink), 0 2px 0 var(--ink); }
+  .dm-ap-in { max-width: 390px; }
+  /* the summary: each row a block, each cell with its column's name */
+  .dm-t, .dm-t tbody, .dm-t tr, .dm-t td { display: block; }
+  .dm-t thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .dm-t tr { padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .dm-t td { padding: 4px 0; border: 0; }
+  .dm-t-mod { width: auto; }
+  .dm-t td[data-l] { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; }
+  .dm-t td[data-l]::before { content: attr(data-l); font-family: var(--mono); font-size: 10.5px; line-height: 1.9; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+  .dm-t-q { padding-left: 32px; }
+}
+@media (max-width: 420px) {
+  .dm-seg button { padding: 0 12px; }
+  .dm-seg { border-radius: 24px; }
+}

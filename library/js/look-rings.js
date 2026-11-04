@@ -80,35 +80,42 @@
   };
   const learnNote = (x, D, what) => `<p class="rg-note">${x.esc(`${what} Day ${D.learning.day} of ${D.learning.of}.`)}</p>`;
 
-  /* the state of one day, in words and as a class */
+  /* the state of one day, in words and as a class. The words are the app's shared ones (claude/Florin data viz.md,
+     section 1): a day that could be either and a day with nothing about BMs are both Not counted */
   const STATE = {
     usual: ["is-usual", "Within your usual"],
     shifted: ["is-shift", "Outside your usual"],
-    unsure: ["is-unsure", "Could be either"],
+    unsure: ["is-unsure", "Not counted"],
     logged: ["is-logged", "Logged"],
-    nocount: ["is-nocount", "Logged, no BMs said"],
+    nocount: ["is-nocount", "Not counted"],
     /* today with a flag or an alarm feature logged: noted for a clinician, never read (a Teal ring) */
     flag: ["is-flag", "Noted for a clinician"],
     none: ["is-none", "Nothing logged"]
   };
   const stateOf = (d) => (d.pending ? ["is-pending", "Nothing logged yet"] : STATE[d.state] || STATE.none);
-  /* a small day ring. Its colour is the day's state and nothing else: a closed ring for a day read against your usual,
-     an empty ring for a day logged with no BMs said, a 1px hairline for a day not logged (a gap, never a zero) */
+  /* nothing logged on the day (a gap, or today before anything is logged): the week card offers to add to it */
+  const isOpen = (d) => !!d && !d.logged;
+  /* a small day ring. Its colour is the day's state and nothing else: a closed ring for a logged day (Plum or Ray
+     within your usual, Gold outside it, Ink 3 not counted or logged before day 14, Teal noted for a clinician), and a
+     thin Ink 3 ring with nothing in it for a day with nothing logged (a gap, never a zero). A day outside your usual is
+     filled as well as Gold, so it reads apart from a day within by more than its hue: a Gold tint and a Shift Ink edge
+     in light (light Gold alone is under 3:1 on the card), a solid Gold disc on dark, where Ray and Gold are close. The
+     fill runs under the ring, so no hairline shows between them */
   const dayRing = (x, d, size, swd) => {
     const c = size / 2, r = r1(c - swd / 2 - 1);
     const [cls] = stateOf(d);
-    const closed = d.logged && d.state !== "nocount" && d.state !== "none";
-    const mark = closed ? `<path class="rg-day-ring rg-draw" d="${arc(c, c, r, 0, 1)}" stroke-width="${swd}" pathLength="1"/>`
-      : cls === "is-nocount" ? `<circle class="rg-day-empty" cx="${c}" cy="${c}" r="${r}" stroke-width="${swd}"/>`
+    /* a closed path, so the ring has no seam at 12 o'clock once it's drawn */
+    const mark = d.logged ? `<path class="rg-day-ring rg-draw" d="${arc(c, c, r, 0, 1)}Z" stroke-width="${swd}" pathLength="1"/>`
       : `<circle class="rg-day-gap" cx="${c}" cy="${c}" r="${r}"/>`;
+    const shift = cls === "is-shift";
     return `<svg class="rg-day ${cls}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
-      ${cls === "is-shift" ? `<circle class="rg-day-fill" cx="${c}" cy="${c}" r="${r1(r - swd / 2)}"/>` : ""}${mark}
+      ${shift ? `<circle class="rg-day-fill" cx="${c}" cy="${c}" r="${r}"/>` : ""}${mark}${shift ? `<circle class="rg-day-edge" cx="${c}" cy="${c}" r="${r1(r + swd / 2 + 0.25)}"/>` : ""}
     </svg>`;
   };
   /* the legend items for day rings, only for the states on show */
   const dayLegend = (has) => [
-    has("is-usual") && ["usual", "Within your usual"], has("is-shift") && ["shiftring", "Outside your usual"], has("is-unsure") && ["unsure", "Could be either"], has("is-flag") && ["flag", "Noted for a clinician"],
-    has("is-logged") && ["logged", "Logged"], has("is-nocount") && ["empty", "Logged, no BMs said"], (has("is-none") || has("is-pending")) && ["gap", "Nothing logged"]
+    has("is-usual") && ["usual", "Within your usual"], has("is-shift") && ["shiftring", "Outside your usual"], (has("is-unsure") || has("is-nocount")) && ["unsure", "Not counted"], has("is-flag") && ["flag", "Noted for a clinician"],
+    has("is-logged") && ["logged", "Logged"], (has("is-none") || has("is-pending")) && ["gap", "Nothing logged"]
   ];
 
   /* ---------- FloraScore ---------- */
@@ -277,7 +284,13 @@
       ${legend(x, [["line", "FloraScore"], ["band", `Your usual, ${u[0]} to ${u[1]}`], (above || below) && ["shift", "Outside your usual"], noScore && [null, "A break in the line: no FloraScore that day"], [lOut ? "now-shift" : "now", last.today ? "Today" : "Latest"]])}`);
   }
 
-  /* ---------- this week: seven day rings, the score as a number under each ---------- */
+  /* ---------- this week: seven day rings, the score as a number under each ----------
+     Will, Nov 4: no dates over the card (they're in the rings), no legend line naming the numbers (they stand alone; the
+     screen reader still hears FloraScore), and a day with nothing logged obvious at a glance: an empty ring with its
+     date in Ink 2 and "+ Add" in place of the score. In the app (x.live) that day is a button that opens the plus
+     sheet for it (data-act plus-day, as History's Add to this day does); the library draws the same picture, not wired.
+     The number under a ring is that day's FloraScore (L.score through D), shown wherever the day has one: a day with
+     only symptoms today keeps today's number. Each day is a list item with its own words for a screen reader */
   function week(D, x) {
     const esc = x.esc, days = D.days[7];
     const slots = Array(Math.max(0, 7 - days.length)).fill(null).concat(days);
@@ -285,33 +298,41 @@
     /* within your usual out of the days read either way; a day that could be either, or with nothing about BMs, is
        named instead (D.tally), never counted as not within */
     const T = D.tally[7];
-    const shifted = T.shifted, unsure = T.unsure;
+    const shifted = T.shifted;
     const learning = !!D.learning;
-    const showScore = (d) => !learning && d.logged && d.state !== "nocount" && d.score != null;
+    const showScore = (d) => !learning && d.logged && d.score != null;
+    const nameOf = (d) => `${d.today ? "Today, " : ""}${DOWL[d.dow] || d.dow}, ${d.label}`;
+    /* what a screen reader hears for the day: its reading in the app's words (L.dayWhy), its FloraScore, its symptoms */
+    const said = (d) => {
+      const w = d.why && d.why.sr ? d.why.sr : stateOf(d)[1].toLowerCase();
+      const sym = d.sym.length ? ` Symptoms: ${d.sym.map((s) => `${s.name.toLowerCase()}, ${s.word.toLowerCase()}`).join("; ")}.` : "";
+      return `${nameOf(d)}: ${w}.${showScore(d) ? ` FloraScore ${d.score}.` : ""}${sym}${isOpen(d) ? ` Add to ${d.today ? "today" : "this day"}.` : ""}`;
+    };
+    const ADD = `<span class="rg-wd-add"><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M4 1v6M1 4h6"/></svg>Add</span>`;
     const cols = slots.map((d, i) => {
-      if (!d) return `<li class="rg-wd is-before" aria-hidden="true"><span class="rg-wd-k">&nbsp;</span><span class="rg-wd-ring"></span><span class="rg-wd-s">&nbsp;</span><span class="rg-wd-sym"></span></li>`;
-      const [, word] = stateOf(d);
-      const tip = `${d.dow} ${d.label}: ${word}${showScore(d) ? `, FloraScore ${d.score}` : ""}${d.firstText ? `, first BM ${d.firstText}` : ""}${d.sym.length ? `, ${d.sym.map((s) => s.name.toLowerCase()).join(", ")}` : ""}`;
-      return `<li class="rg-wd${d.today ? " is-today" : ""}" style="--i:${i}" title="${esc(tip)}">
-        <span class="rg-wd-k">${d.today ? "Today" : esc(d.dow)}</span>
-        <span class="rg-wd-ring">${dayRing(x, d, 40, 4.5)}<b>${d.date}</b></span>
-        <span class="rg-wd-s">${showScore(d) ? d.score : d.pending ? "Not yet" : "&nbsp;"}</span>
-        <span class="rg-wd-sym">${d.sym.length ? `<i title="${esc("Symptoms logged")}"></i>` : ""}</span>
-      </li>`;
+      if (!d) return `<li class="rg-wd is-before" aria-hidden="true"><span class="rg-wd-b"><span class="rg-wd-k">&nbsp;</span><span class="rg-wd-ring"></span><span class="rg-wd-s">&nbsp;</span><span class="rg-wd-sym"></span></span></li>`;
+      const open = isOpen(d);
+      const inner = `<span class="rg-wd-k" aria-hidden="true">${d.today ? "Today" : esc(d.dow)}</span>
+        <span class="rg-wd-ring" aria-hidden="true">${dayRing(x, d, 40, 4.5)}<b>${d.date}</b></span>
+        <span class="rg-wd-s" aria-hidden="true">${showScore(d) ? d.score : open ? ADD : "&nbsp;"}</span>
+        <span class="rg-wd-sym" aria-hidden="true">${d.sym.length ? "<i></i>" : ""}</span>
+        <span class="rg-vh">${esc(said(d))}</span>`;
+      const box = open && x.live ? `<button type="button" class="rg-wd-b" data-act="plus-day" data-v="${d.d}">${inner}</button>` : `<span class="rg-wd-b">${inner}</span>`;
+      return `<li class="rg-wd${d.today ? " is-today" : ""}${open ? " is-open" : ""}" style="--i:${i}" data-day="${d.d}">${box}</li>`;
     }).join("");
     const which = (st) => andList(days.filter((d) => d.logged && d.state === st).map((d) => (d.today ? "today" : DOWL[d.dow] || d.dow)));
-    const ans = learning ? `${logged.length ? "" : "Nothing logged yet. "}Days show as logged while Florin learns your usual.`
+    /* T.left names what was counted neither way, a flagged today included (L.FLAG_DAY), before day 14 as after it */
+    /* with nothing logged at all the card counts days, "No days logged yet": Day first and Easy say "Nothing logged yet"
+       for today on the same screen (claude/Florin data viz.md, section 3) */
+    const ans = learning ? `${logged.length ? "" : "No days logged yet. "}Days show as logged while Florin learns your usual.${T.left ? ` ${T.left}` : ""}`
       : !T.logged ? "Nothing logged this week yet."
       : `${shifted ? `Outside your usual on ${which("shifted")}.` : !T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged was outside your usual." : "Every day you logged sat within your usual."}${T.left ? ` ${T.left}` : ""}`;
-    const gaps = days.filter((d) => !d.logged && !d.pending);
-    const symDays = days.filter((d) => d.sym.length).length;
-    const aria = `This week. ${ans}${gaps.length ? ` Nothing logged on ${andList(gaps.map((d) => DOWL[d.dow] || d.dow))}.` : ""}${symDays ? ` Symptoms on ${plural(symDays, "day")}.` : ""} ${days.map((d) => `${d.dow}: ${stateOf(d)[1]}${showScore(d) ? `, FloraScore ${d.score}` : ""}`).join(". ")}.`;
     const has = (c) => days.some((d) => stateOf(d)[0] === c);
     return card(x, "rg-week", "This week at a glance", `
-      ${head(x, "This week", dateK(x, spanOf(days)))}
+      ${head(x, "This week")}
       ${learning ? (logged.length ? lead(x, num(logged.length), `of ${plural(days.length, "day")} logged`, ans) : lead(x, "Not yet", "", ans)) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, ans) : lead(x, "Not yet", "", ans)}
-      <ol class="rg-weekrow" role="img" aria-label="${esc(aria)}">${cols}</ol>
-      ${legend(x, [...dayLegend(has), days.some((d) => d.sym.length) && ["sym", "Symptoms"], days.some(showScore) && [null, "Number under a ring: that day's FloraScore"]])}`);
+      <ol class="rg-weekrow" aria-label="${esc(`This week, day by day, ${spanOf(days)}`)}">${cols}</ol>
+      ${legend(x, [...dayLegend(has), days.some((d) => d.sym.length) && ["sym", "Symptoms"]])}`);
   }
 
   /* ---------- the last 30 days: a calendar of day rings ---------- */

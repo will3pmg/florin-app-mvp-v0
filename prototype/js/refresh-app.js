@@ -871,7 +871,7 @@
     today: (M) => ({
       t: "Today",
       lede: M.usual
-        ? `Today opens on FloraScore, read against the person's own usual range, with one sentence on what stood out today. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days with a line for each day that wasn't within the usual, and one next step.`
+        ? `Today opens on FloraScore, read against the person's own usual range, with one sentence on what stood out today. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days as a ring a day with its FloraScore under it (a day with nothing logged offers Add), and one next step.`
         : `Florin is still learning this person's usual, so FloraScore shows the day it's on, Day ${L.learnDay(M)} of ${L.LEARN_DAYS}, instead of a number until day ${L.LEARN_DAYS}. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days as they're logged, and one next step.`
     }),
     plus: () => P.bmUI === "full" ? ({

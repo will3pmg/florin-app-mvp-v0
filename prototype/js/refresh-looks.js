@@ -5,6 +5,8 @@
    Registers into window.FLORIN_EXT and wraps RU functions; it never edits a core file (CLAUDE.md, Extension hooks).
    Every wrapper falls back to the renderer it wraps when it throws, with a console warning that names this module.
    What it adds:
+   - RU.weekCard, wrapped (Nov 4): Today's week card is the Rings look's week in Florin charts and Rings alike, with
+     the core's card kept as RU.core.weekCard (for a week drawn to another day, or if the look can't draw)
    - RU.insights, RU.todayParts.hero and .week, wrapped; RU.idetail, wrapped for one detail page of its own ("days",
      the days behind the week and month cards), and RU.askContext, for that page's Ask about this
    - RU.lookOf(V), RU.lookCards(M, V, keys, o) and RU.lookAfter(el), so another module (the Easy version) can draw
@@ -58,7 +60,9 @@
   /* the phone's theme: the looks style themselves from data-theme on their own wrapper, as the library page does */
   const themeOf = () => { const r = EXT.api && EXT.api.root; return (r && r.dataset.theme) || "light"; };
   let UID = 0;
-  const ctxOf = (look) => ({ uid: `rlk${++UID}${look.id}`, theme: themeOf(), esc, T, n1, lin, C, motion: !reduced() });
+  /* live: the app wires a look's own buttons (a data-act a look draws, such as the Rings week's "+ Add" on a day with
+     nothing logged); the library page draws the same picture without them */
+  const ctxOf = (look) => ({ uid: `rlk${++UID}${look.id}`, theme: themeOf(), esc, T, n1, lin, C, motion: !reduced(), live: true });
 
   /* ---------- the numbers: FLD.build over the phone's live model, once per draw ----------
      Today asks for two cards in one draw, so the build is kept until the draw ends (a microtask), never longer: the
@@ -430,6 +434,23 @@
   RU.idetail = (M, V, st) => {
     if (!st || st.k !== "days") return baseIdetail(M, V, st);
     try { return daysPage(M, V, st); } catch (e) { warn("the days page failed, drawing Insights instead", e); return (RU.core && RU.core.insights ? RU.core.insights : baseInsights)(M, V, st); }
+  };
+  /* Today's week card is the Rings look's week (Will, Nov 4: "much better on the week card, i like this"), in every
+     data style that doesn't draw its own: Florin charts (Score first and Day first, through RU.todayParts.week) and
+     Rings. Oura, Field journal and Bento keep theirs (the part below), and the Easy version draws Easy read's. It
+     counts the days as Insights' 7 days do (D.tally[7], L.tally) and puts each day's FloraScore (L.score) under its
+     ring. RU.weekCard is wrapped, so every caller gets it; the core's card (claude/Florin data viz.md, section 3) stays
+     as RU.core.weekCard, drawn when a caller asks for the week to another day (o.end) or when the look can't draw */
+  const coreWeekCard = RU.weekCard;
+  RU.core = Object.assign(RU.core || {}, { weekCard: coreWeekCard });
+  const ringsWeek = (M, V) => { const look = lookById("rings"); return look && window.FLD ? todayPart(look, "week", M, V) : null; };
+  if (coreWeekCard) RU.weekCard = (M, mode, o = {}) => {
+    if (o && o.end != null && o.end !== L.TODAY) return coreWeekCard(M, mode, o);
+    try {
+      const V = Object.assign({}, EXT.api && EXT.api.S ? EXT.api.V() : {}, { form: mode || "C" });
+      const h = ringsWeek(M, V);
+      return h == null ? coreWeekCard(M, mode, o) : h;
+    } catch (e) { warn("the Rings week card failed, drawing the core's", e); return coreWeekCard(M, mode, o); }
   };
   const parts = RU.todayParts || {};
   const baseHero = parts.hero, baseWeek = parts.week;
