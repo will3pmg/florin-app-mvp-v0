@@ -14,6 +14,10 @@ How it fits together: a participant opens the link on their phone. The site send
 script's web address. The script checks it and adds a row to the Sheet. Thank-you codes go to a second, separate
 spreadsheet for the recruiter, so they can never be matched to anyone's answers.
 
+A preview to click through before any of this: https://claude.ai/artifact/Sv2W1qjmVqDRosvbhPoDDj (private to Will;
+share it from its Share menu). It is focus/site with the flow as the artifact's page and nothing connected, so answers
+stay on the device and nothing is sent. Adding it to a home screen adds the claude.ai page, not the full-screen app.
+
 Prototype only. Not for patients.
 
 ---
