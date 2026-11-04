@@ -1,6 +1,9 @@
-/* Florin app refresh: the Home decision's Day first (V.home "day") and the History decision's Calendar
-   (V.history "calendar"). A feature module: it registers into window.FLORIN_EXT and wraps RU.today and RU.history
-   (CLAUDE.md, Extension hooks), and never edits a core file.
+/* Florin app refresh: the Home decision's Day first (V.home "day") and Compact (V.home "compact"), and the History
+   decision's Calendar (V.history "calendar"). A feature module: it registers into window.FLORIN_EXT and wraps RU.today
+   and RU.history (CLAUDE.md, Extension hooks), and never edits a core file.
+   - Compact (Will, Nov 4): a short FloraScore strip, this week as a row of day buttons (the Rings week card's marks,
+     smaller) with arrows for earlier weeks, then the day picked as History draws it, and the check-in when it's due.
+     The section COMPACT below has the detail.
    - Day first: the date with a small FloraScore chip (the glyph and the number) that opens its detail; today's logs in time order, with the one
      that stood out most marked; a row to log from that follows the BM logging decision; one sentence that leads with
      what stood out, gives FloraScore against yesterday and (with membership) what that log did to it, scored with and
@@ -262,9 +265,190 @@
       ${[topPart(M, V, list), timelinePart(M, V, list[0]), logPart(M, V), highlightPart(M, V, list), part("week", M, V), part("checkin", M, V), part("next", M, V), part("fine", M, V)].join("\n")}
     </div>`;
   };
+  /* ============================== COMPACT ==============================
+     Will, Nov 4, with the shipping app's home beside it: "a more compressed data view, then the calendar (tighter too)
+     then Today. That way you can really navigate when you land on home ... Little less analysis and more navigation."
+     Home's third option (V.home "compact"), drawn as:
+     1. the greeting with the profile button, no date line (the week row under it shows the date)
+     2. a short FloraScore strip: the word FloraScore small, Insights at its end; the number (a button to FloraScore's
+        page, the paywall's way on Free as Day first's chip goes) with where it sits (RU.scoreRel) and the week's
+        average against last week's in words (L.scoreMoved, as shown, in whole points: "Week average 5 above last
+        week"), never beside today's number as if today had moved, and never with no score today; then a thin bar of
+        the usual range. Before day 14, the day it's on over 14 steps, as the hero says it. With no score today,
+        L.NO_SCORE. A flag or an alarm feature today: the number read against nothing (no dot on the bar) and the Teal
+        primary-care note right under the strip, in Score first's words (RU.highlightOf)
+     3. one week, Monday to Sunday, as a row of seven day tabs drawn with the Rings week card's own marks (its renderer,
+        FLOOKS rings .marks, at 32px, so Home's two week rows can't drift apart): a Plum ring within the usual (Ray on
+        dark), a Gold one outside it (tinted and edged in light, a solid disc on dark), an Ink 3 ring not counted, a
+        thin empty ring with "+ Add" under it for a day with nothing logged (a tap picks it and opens plus for it, as
+        the week card's Add does), a Teal ring for a day noted for a clinician; Today over today, a Teal square under a
+        day with symptoms; then the legend of the marks on show, in the shared words. The month and year over it, with
+        arrows a week back and forward, never before the first day and never past today, and "This week" when the row
+        is on another week. What a day's mark says is the calendar's (cellOf): a day with a sign is noted for a
+        clinician, and on Free a day before the last 7 is only logged
+     4. the day picked (today by default), drawn by RU.historyDay as History draws it (its mark left to the row above),
+        as the tabs' panel, with Add; then the check-in card when it's due, and the fine print. No week card and no
+        sentence on what stood out: the strip and the marks carry the reading
+     The day picked lives on the phone's state (S.vrCp), with the model it was picked on, so a new person or new logs
+     start again on today, as the Today tab does. A log saved to another day while a day is picked (the plus button,
+     Log for an earlier day) moves the pick to that day, so the new log is on screen (S.vrCpSeen keeps each entry's day
+     from the last draw) */
+  const cpOf = (M) => { const S = EXT.api && EXT.api.S, c = S && S.vrCp; return c && c.M === M ? c : null; };
+  const cpSel = (M) => { const c = cpOf(M), d = c ? c.sel : null; return d != null && L.day(M, d) ? d : L.TODAY; };
+  /* a log saved since the last draw on a day other than the one picked: the pick follows it */
+  const cpFollow = (M) => {
+    const S = EXT.api && EXT.api.S;
+    if (!S) return;
+    const now = new Map();
+    M.days.forEach((x) => x.entries.forEach((e) => { if (e.id != null) now.set(e.id, x.d); }));
+    const was = S.vrCpSeen && S.vrCpSeen.M === M ? S.vrCpSeen.map : null;
+    S.vrCpSeen = { M, map: now };
+    if (!was) return;
+    let to = null;
+    now.forEach((d, id) => { if (was.get(id) !== d) to = d; });
+    if (to != null && to !== cpSel(M) && L.day(M, to)) S.vrCp = { M, sel: to };
+  };
+  /* the Monday of a day's week (the model's days run Monday to Sunday: day 0 is a Monday) */
+  const mon0 = (d) => d - ((dateOf(d).getDay() + 6) % 7);
+  const n1 = (v) => Math.round(v * 10) / 10;
+  const upper1 = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  /* the week's change, as Score first's detail counts it: the two averages as shown, so "5 above" is the difference of
+     the numbers Insights shows. Said as the week's average, so it never reads as today's move beside today's number.
+     Never Gold, never "up" or "down": a change, not a reading */
+  const weekMove = (mv) => (!mv ? null : mv.delta === 0
+    ? ["Week average same as last week", "This week's average is the same as last week's."]
+    : [`Week average ${Math.abs(mv.delta)} ${mv.delta > 0 ? "above" : "below"} last week`, `This week's average is ${plural(Math.abs(mv.delta), "point")} ${mv.delta > 0 ? "above" : "below"} last week's.`]);
+  /* the bar's ends: the last 90 days' scores and 10 points past each end of the usual range, rounded out to 5, as the
+     hero's bar takes them */
+  const cpAxis = (M, mode, su) => {
+    const all = L.scoreSeries(M, 90, mode).map((s) => s.value).filter((v) => v != null);
+    return { lo: Math.max(0, Math.floor(Math.min(...all, su[0] - 10) / 5) * 5), hi: Math.min(100, Math.ceil(Math.max(...all, su[1] + 10) / 5) * 5) };
+  };
+  const cpStrip = (M, V) => {
+    const mode = V.form, id = `vr-cp-h${V.uid}`, free = V.plan === "free";
+    const svg = C && C.ring ? C.ring({ glyph: true, size: 16 }) : "";
+    const go = `<button type="button" class="vr-cp-go" data-act="vr-cp-ins">Insights${ic("chev")}</button>`;
+    const head = `<div class="vr-cp-k"><span class="vr-sc-ring" aria-hidden="true">${svg}</span><h2 class="ap-k ap-k--ray" id="${id}">FloraScore</h2></div>`;
+    /* before day 14: the day it's on, over 14 steps, as the hero says it */
+    if (!M.usual) {
+      const d = L.learnDay(M);
+      return `<section class="vr-cp-sc is-learn" data-a aria-labelledby="${id}">
+          ${head}
+          <p class="vr-cp-n">Day ${d}<small> of ${L.LEARN_DAYS}</small></p>
+          ${go}
+          <div class="vr-cp-steps" role="img" aria-label="${esc(`Day ${d} of ${L.LEARN_DAYS}`)}">${Array.from({ length: L.LEARN_DAYS }, (_, i) => `<i${i < d ? ' class="is-on"' : ""}></i>`).join("")}</div>
+          <p class="vr-cp-why">FloraScore starts on day ${L.LEARN_DAYS}, once Florin knows your usual.</p>
+        </section>`;
+    }
+    const s = L.score(M, L.TODAY, mode), su = L.scoreUsual(M, mode), v = s ? s.value : null;
+    const flag = v != null && !!RU.flagToday && RU.flagToday(M);
+    const rel = v == null ? null : flag ? "Not read against your usual today" : relOf(v, su);
+    /* the week's average only beside a score today: "No score" beside a week's change reads as if today had one */
+    const mv = v == null ? null : weekMove(L.scoreMoved(M, mode));
+    let bar = "";
+    if (su) {
+      const a = cpAxis(M, mode, su), p = (x) => Math.max(0, Math.min(100, ((x - a.lo) / (a.hi - a.lo)) * 100));
+      const b0 = p(su[0]), b1 = p(su[1]), mid = (b0 + b1) / 2;
+      const dot = v != null && !flag;
+      bar = `<div class="vr-cp-bar" role="img" aria-label="${esc(`Your usual range, ${su[0]} to ${su[1]}${dot ? `, with today's ${v} on it` : ""}`)}">
+          <div class="vr-cp-trk"><i class="vr-cp-band" style="left:${n1(b0)}%;width:${n1(b1 - b0)}%"></i>${dot ? `<i class="vr-cp-dot" style="left:${n1(p(v))}%"></i>` : ""}</div>
+          <p class="vr-cp-u" aria-hidden="true"><span style="--mid:${n1(mid)}%">Your usual ${su[0]} to ${su[1]}</span></p>
+        </div>`;
+    }
+    /* the number opens FloraScore's page, one tap from Home as on Score first and Day first; on Free, what membership
+       adds, as Day first's chip does */
+    const said = [v == null ? `FloraScore not scored today: ${L.NO_SCORE}` : `FloraScore ${v}`, v != null && rel ? (flag ? rel : `${rel}, ${su[0]} to ${su[1]}`) : "", free ? "With Florin membership, see what moves it" : "Open its page"].filter(Boolean).join(". ");
+    const num = `<button type="button" class="vr-cp-n${v == null ? " is-none" : ""}" ${free ? 'data-act="pay" data-pay="score"' : 'data-act="idetail" data-k="score"'} aria-label="${esc(said)}"><span>${v == null ? "No score" : v}</span>${ic(free ? "lock" : "chev")}</button>`;
+    const words = [rel ? `<span aria-hidden="true">${esc(rel)}</span>` : "", mv ? `<span class="vr-cp-mv" aria-hidden="true">${esc(mv[0])}</span><span class="sr">${esc(mv[1])}</span>` : ""].join("");
+    return `<section class="vr-cp-sc" data-a aria-labelledby="${id}">
+        ${head}
+        ${num}
+        ${words ? `<p class="vr-cp-w">${words}</p>` : ""}
+        ${go}
+        ${bar}
+        ${v == null ? `<p class="vr-cp-why">${esc(`${upper1(L.NO_SCORE)}.`)}</p>` : ""}
+      </section>`;
+  };
+  /* a flag or an alarm feature today: Score first's Teal note, the sign and primary care, right under the strip */
+  const cpFlag = (M, V) => {
+    const H = RU.highlightOf ? RU.highlightOf(M, V.form) : null;
+    if (!H || !H.alarm) return "";
+    return `<p class="vr-cp-flag" role="note" data-a>${ic("info")}<span>${esc(H.text)}</span></p>`;
+  };
+  /* a week's days, with what each mark shows, from the calendar's cellOf (the label is its words too). ring is the
+     button's class (for the checks and the CSS), mk the day as the Rings week card's renderer takes it */
+  const RING = { usual: "is-usual", shifted: "is-shift", unsure: "is-quiet", nocount: "is-quiet", logged: "is-quiet", flag: "is-flag", gap: "is-open", pending: "is-open", plain: "is-before", out: "is-before" };
+  const MK = { usual: { logged: true, state: "usual" }, shifted: { logged: true, state: "shifted" }, unsure: { logged: true, state: "unsure" }, nocount: { logged: true, state: "nocount" }, logged: { logged: true, state: "logged" }, flag: { logged: true, state: "flag" }, gap: { logged: false, state: "none" }, pending: { logged: false, pending: true } };
+  const cpWeek = (M, V, ws, sel) => {
+    const first = firstLog(M);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = ws + i, c = cellOf(M, V, d, first, "all");
+      return Object.assign(c, { ring: RING[c.out ? "out" : c.shown] || "is-quiet", mk: c.out ? null : MK[c.shown] || null, pick: !c.out && d === sel });
+    });
+  };
+  const monthsOf = (ws) => {
+    const a = dateOf(ws), b = dateOf(ws + 6), A = Ut.MONL[a.getMonth()], B = Ut.MONL[b.getMonth()];
+    if (a.getMonth() === b.getMonth()) return `${A} ${a.getFullYear()}`;
+    return a.getFullYear() === b.getFullYear() ? `${A} to ${B} ${b.getFullYear()}` : `${A} ${a.getFullYear()} to ${B} ${b.getFullYear()}`;
+  };
+  /* the arrows: a week back while the week before has a day from the first day on, a week on while it has a day up to
+     today. Off, an arrow says so (aria-disabled), and a tap on it does nothing */
+  const cpCanStep = (M, ws, dir) => (dir < 0 ? ws - 1 >= M.start : ws + 7 <= L.TODAY);
+  /* the Rings week card's marks (library/js/look-rings.js), and the phone's theme for their dark rules */
+  const ringMarks = () => { const l = (window.FLOOKS || []).find((x) => x && x.id === "rings"); return l && l.marks ? l.marks : null; };
+  const themeNow = () => { const r = EXT.api && EXT.api.root; return (r && r.dataset.theme) === "dark" ? "dark" : "light"; };
+  const cpIds = (V) => ({ panel: `vr-cp-p${V.uid}`, tab: (d) => `vr-cpw-${V.uid}-${d}` });
+  const cpCalendar = (M, V, sel) => {
+    const ws = mon0(sel), days = cpWeek(M, V, ws, sel), tid = `vr-cpw-t${V.uid}`, ids = cpIds(V), RM = ringMarks();
+    if (!RM) throw new Error("the Rings look's marks are missing");
+    const nav = (dir) => {
+      const ok = cpCanStep(M, ws, dir), w = ws + dir * 7;
+      return `<button type="button" class="vr-cpw-nav" data-act="vr-cp-wk" data-v="${dir}" aria-label="${esc(`${dir < 0 ? "Previous" : "Next"} week${ok ? `, ${RU.spanText(w, w + 6)}` : ""}`)}"${ok ? "" : ' aria-disabled="true"'}>${ic(dir < 0 ? "back" : "chev")}</button>`;
+    };
+    /* "This week": back to today in one tap, whenever the row is on another week */
+    const now = ws !== mon0(L.TODAY) ? `<button type="button" class="vr-cpw-now" data-act="vr-cp-now" aria-label="${esc(`This week, ${RU.spanText(mon0(L.TODAY), mon0(L.TODAY) + 6)}`)}">This week</button>` : "";
+    const cell = (c) => {
+      const dt = dateOf(c.d), k = c.today ? "Today" : Ut.DOW[dt.getDay()], open = c.ring === "is-open";
+      const ring = c.mk ? `${RM.ring(c.mk, 32, 3.6)}<b>${c.dd}</b>` : `<b>${c.dd}</b>`;
+      const under = open ? RM.add : c.sym && c.logged && c.ring !== "is-before" ? "<i></i>" : "";
+      const inner = `<span class="vr-cpw-k" aria-hidden="true">${esc(k)}</span><span class="vr-cpw-r" aria-hidden="true">${ring}</span><span class="vr-cpw-s" aria-hidden="true">${under}</span>`;
+      const cls = ["vr-cpw-d", c.ring, c.today && "is-today", c.out && c.d > L.TODAY && "is-later"].filter(Boolean).join(" ");
+      if (c.out) return `<span class="${cls}" role="presentation" aria-hidden="true">${inner}</span>`;
+      const label = open ? `${c.label}. Add to ${c.today ? "today" : "this day"}` : c.label;
+      return `<button type="button" class="${cls}" role="tab" id="${ids.tab(c.d)}" aria-controls="${ids.panel}" data-act="vr-cp-day" data-v="${c.d}" data-shown="${c.shown}" aria-label="${esc(label)}" aria-selected="${c.pick}"${c.today ? ' aria-current="date"' : ""} tabindex="${c.pick ? 0 : -1}">${inner}</button>`;
+    };
+    /* the legend: only the marks on show, in the shared words, as the week card's */
+    const has = (k) => days.some((c) => c.mk && RM.cls(c.mk) === k);
+    const legend = RM.legend(esc, has, days.some((c) => c.sym && c.logged && c.ring !== "is-before"));
+    return `<section class="ap-card vr-cpw" data-a aria-labelledby="${tid}">
+        <div class="vr-cpw-h">${nav(-1)}<div class="vr-cpw-tw"><h2 class="vr-cpw-t" id="${tid}">${esc(monthsOf(ws))}</h2>${now}</div>${nav(1)}</div>
+        <div class="rlk-look lk-rings vr-cpw-lk" data-theme="${themeNow()}"><div class="rg-marks">
+          <div class="vr-cpw-g" role="tablist" aria-label="${esc(`Week of ${RU.spanText(ws, ws + 6)}, one tab a day. The arrow keys move between days`)}">${days.map(cell).join("")}</div>
+          ${/<li/.test(legend) ? legend : ""}
+        </div></div>
+      </section>`;
+  };
+  /* the day picked, as History draws it, as the tabs' panel, then Add: a day with nothing logged already offers it */
+  const cpDay = (M, V, sel) => {
+    const x = L.day(M, sel), ids = cpIds(V);
+    if (!x) return "";
+    const add = x.logged ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c vr-cp-add" data-act="plus-day" data-v="${sel}">${ic("plus")}${sel === L.TODAY ? "Add to today" : "Add to this day"}</button>` : "";
+    return `<div class="vr-cp-day" id="${ids.panel}" role="tabpanel" aria-labelledby="${ids.tab(sel)}" data-vr-day="${sel}">${RU.historyDay(M, V, x)}${add}</div>`;
+  };
+  /* the greeting and the profile button, without the date line: the week row shows the date */
+  const cpTop = (M, V) => part("top", M, V).replace(/<p class="ap-date">[\s\S]*?<\/p>/, "");
+  const compact = (M, V) => {
+    cpFollow(M);
+    const sel = cpSel(M);
+    return `<div class="ap-scr ap-today vr-cp">
+      ${[cpTop(M, V), cpStrip(M, V), cpFlag(M, V), cpCalendar(M, V, sel), cpDay(M, V, sel), part("checkin", M, V), part("fine", M, V)].join("\n")}
+    </div>`;
+  };
+
   const baseToday = RU.today;
   RU.today = (M, V) => {
-    if (!V || V.home !== "day" || V.easy) return baseToday(M, V);
+    if (!V || V.easy || (V.home !== "day" && V.home !== "compact")) return baseToday(M, V);
+    if (V.home === "compact") { try { return compact(M, V); } catch (e) { warn("Compact", e); return baseToday(M, V); } }
     try { return dayFirst(M, V); } catch (e) { warn("Day first", e); return baseToday(M, V); }
   };
 
@@ -318,7 +502,7 @@
     if (f.logged) {
       /* the BM count once: a reason that already says it ("3 BMs, more than usual") isn't followed by it again */
       if (f.bms.length && !new RegExp(`\\b${plural(f.bms.length, "BM")}\\b`).test(what)) bits.push(plural(f.bms.length, "BM"));
-      else if (f.nobm) bits.push("no BM");
+      else if (f.nobm && !/\bno BM\b/i.test(what)) bits.push("no BM");
       /* each symptom with its strongest strength; one logged without a strength says so, never mild */
       if (syms.length) bits.push(andList(syms.map((k) => (f.sym[k] ? `${L.STRENGTH[f.sym[k] - 1].toLowerCase()} ${k.toLowerCase()}` : `${k.toLowerCase()} with no strength said`))));
       if (f.meals.length) bits.push(plural(f.meals.length, "meal"));
@@ -329,10 +513,11 @@
   };
   /* a day's button holds the one day mark (RU.dayMark): the date in its circle, the Today ring and word, the Teal
      symptom square. A day before the person's first log, or outside the logs, is its date alone, never named */
-  const cellHTML = (c, sel, lg) => {
+  /* the days are tabs with manual activation (the arrow keys move, Enter or Space picks), the day picked their panel */
+  const cellHTML = (c, sel, lg, ids) => {
     const cls = ["vr-cal-d", c.out && "is-out", c.out && c.d > L.TODAY && "is-later", c.plain && "is-plain", c.gap && "is-gap", c.pending && "is-pending", c.today && "is-today", c.dim && "is-dim"].filter(Boolean).join(" ");
     const mark = RU.dayMark(c.mf, { before: c.out || c.plain, today: c.today, lg, name: c.label });
-    return `<button type="button" class="${cls}" data-act="vr-cal-day" data-v="${c.d}" data-state="${c.state}" data-shown="${c.shown}" aria-label="${esc(c.label)}" aria-pressed="${c.d === sel}"${c.today ? ' aria-current="date"' : ""}${c.out ? ' aria-disabled="true"' : ""} tabindex="${c.d === sel ? 0 : -1}">${mark}</button>`;
+    return `<button type="button" class="${cls}" role="tab" id="${ids.tab(c.d)}" aria-controls="${ids.panel}" data-act="vr-cal-day" data-v="${c.d}" data-state="${c.state}" data-shown="${c.shown}" aria-label="${esc(c.label)}" aria-selected="${c.d === sel}"${c.today ? ' aria-current="date"' : ""}${c.out ? ' aria-disabled="true"' : ""} tabindex="${c.d === sel ? 0 : -1}">${mark}</button>`;
   };
   /* the month in words, from the same marks, in the app's shared words */
   const monthSum = (M, m, hi, cells, first) => {
@@ -371,7 +556,8 @@
     const lead = (new Date(y, mm, 1).getDay() + 6) % 7;
     const cells = monthDays(m).map((d) => cellOf(M, V, d, first, F));
     /* the Easy version draws its marks at 32px, as its week does */
-    const grid = Array.from({ length: lead }, () => '<span class="vr-cal-x" aria-hidden="true"></span>').join("") + cells.map((c) => cellHTML(c, sel, !!V.easy)).join("");
+    const ids = { panel: `vr-cal-p${V.uid}`, tab: (d) => `vr-cal-${V.uid}-${d}` };
+    const grid = Array.from({ length: lead }, () => '<span class="vr-cal-x" role="presentation" aria-hidden="true"></span>').join("") + cells.map((c) => cellHTML(c, sel, !!V.easy, ids)).join("");
     const total = M.days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0);
     const since = total ? `${plural(total, "entry", "entries")} since ${shortDate(M.start)}` : `Started ${M.start === L.TODAY ? "today" : `on ${shortDate(M.start)}`}. Nothing logged yet.`;
     const report = `A report of your logs to bring to a clinician: dates, BMs, symptoms${RU.ckOn(V) ? ", meals and check-ins" : " and meals"}. That comes in the next pass.`;
@@ -396,11 +582,11 @@
         <div class="vr-cal-h">${nav(-1)}<h2 class="vr-cal-t" id="${tid}">${esc(monthName(m))}</h2>${nav(1)}</div>
         <p class="vr-cal-sum">${esc(monthSum(M, m, hi, cells, first))}</p>
         <div class="vr-cal-w" aria-hidden="true">${["M", "T", "W", "T", "F", "S", "S"].map((d) => `<span>${d}</span>`).join("")}</div>
-        <div class="vr-cal-g" role="group" aria-label="${esc(`${monthName(m)}, one button a day. The arrow keys move between days`)}">${grid}</div>
+        <div class="vr-cal-g" role="tablist" aria-label="${esc(`${monthName(m)}, one tab a day. The arrow keys move between days`)}">${grid}</div>
         ${legend ? `<div class="ap-legend vr-cal-lg">${legend}</div>` : ""}
         ${pay}
       </section>
-      <div class="vr-cal-day">${dayHTML}${add}</div>
+      <div class="vr-cal-day" id="${ids.panel}" role="tabpanel"${x ? ` aria-labelledby="${ids.tab(sel)}"` : ""}>${dayHTML}${add}</div>
       ${RU.historyNext(M, V)}
       <p class="ap-fine">${esc(`${DISC} If a symptom is new for you or keeps showing up, talk to a clinician.`)}</p>
     </div>`;
@@ -419,6 +605,47 @@
     api.core("quick-bm", b);
     const e = todayOf(api.M()).find((x) => !before.has(x.id));
     if (e && !api.top()) api.focusSel(`[data-act="edit"][data-id="${CSS.escape(e.id)}"]`);
+  };
+  /* Compact: a day picked (drawn under the week, focus kept on it, and said), a week stepped (the day picked moves with
+     it, to the same weekday, kept between the first day and today), Insights, and the Today tab back on today */
+  const cpSet = (api, sel) => { api.S.vrCp = { M: api.M(), sel }; };
+  const cpSay = (M, d) => { const x = L.day(M, d), n = x && x.logged ? x.entries.length : 0; return `${RU.dayName(d)}: ${x && x.logged ? (n ? plural(n, "entry", "entries") : "nothing logged yet") : "nothing logged"}, shown under the week.`; };
+  const cpPick = (api, d, focus) => {
+    const M = api.M();
+    if (!L.day(M, d)) return false;
+    const ws0 = mon0(cpSel(M));
+    cpSet(api, d);
+    api.renderTab(true);
+    if (focus) api.focusSel(focus === true ? `.vr-cpw-d[data-v="${d}"]` : focus);
+    api.say(mon0(d) === ws0 ? cpSay(M, d) : `${monthsOf(mon0(d))}, week of ${RU.spanText(mon0(d), mon0(d) + 6)}. ${cpSay(M, d)}`);
+    return true;
+  };
+  /* a day with nothing logged (its "+ Add") is picked and opens plus for that day, as the week card's Add does */
+  EXT.acts["vr-cp-day"] = (b, api) => {
+    const d = +b.dataset.v;
+    if (!cpPick(api, d, true)) return;
+    const x = L.day(api.M(), d), f = x ? L.facts(api.M(), x, api.V().form) : null;
+    if (f && !f.logged) api.act("plus-day", { dataset: { v: String(d) } });
+  };
+  /* "This week": back to today, focus on it */
+  EXT.acts["vr-cp-now"] = (b, api) => { cpPick(api, L.TODAY, true); };
+  EXT.acts["vr-cp-wk"] = (b, api) => {
+    const M = api.M(), dir = +b.dataset.v || 0, sel = cpSel(M), ws = mon0(sel);
+    if (!dir || !cpCanStep(M, ws, dir)) return;
+    const w = ws + dir * 7, to = Math.max(Math.max(w, M.start), Math.min(w + 6, L.TODAY, sel + dir * 7));
+    /* focus stays on the arrow while it can go on, else lands on the day picked */
+    const arrow = `[data-act="vr-cp-wk"][data-v="${dir}"]`;
+    cpPick(api, to, cpCanStep(M, w, dir) ? arrow : true);
+  };
+  EXT.acts["vr-cp-ins"] = (b, api) => { api.go("insights"); };
+  const prevTab = EXT.acts.tab;
+  EXT.acts.tab = (b, api, e) => {
+    if (b && b.dataset && b.dataset.tab === "today" && api.S.vrCp) {
+      const was = api.S.tab === "today" && cpSel(api.M()) !== L.TODAY;
+      api.S.vrCp = null; api.S.vrCpSeen = null;
+      if (was) api.renderTab(true);
+    }
+    return prevTab ? prevTab(b, api, e) : api.core("tab", b, e);
   };
   /* a day: picked, drawn under the month, focus kept on it, and said */
   EXT.acts["vr-cal-day"] = (b, api) => {
@@ -455,6 +682,30 @@
      month. Inside a month focus moves and Enter or Space picks; a key that crosses into another month picks the day it
      lands on. Keys stay between the first day and today, so focus never lands on a day that can't be picked. Only one
      day is in the tab order at a time */
+  /* Compact's week: Left and Right move between days, Home and End to the week's ends, Page Up and Page Down a week back
+     and on. Inside the week focus moves and Enter or Space picks; a key that crosses into another week picks the day it
+     lands on. Keys stay between the first day and today. Only one day is in the tab order at a time */
+  document.addEventListener("keydown", (e) => {
+    const b = e.target && e.target.closest && e.target.closest(".vr-cpw-d");
+    const api = EXT.api;
+    if (!b || !api || !api.root || !api.root.contains(b) || e.altKey || e.metaKey || e.ctrlKey) return;
+    const d = +b.dataset.v, dow = (dateOf(d).getDay() + 6) % 7;
+    const step = { ArrowLeft: -1, ArrowRight: 1, Home: -dow, End: 6 - dow, PageUp: -7, PageDown: 7 }[e.key];
+    if (step == null) return;
+    e.preventDefault();
+    try {
+      const M = api.M(), to = Math.max(M.start, Math.min(L.TODAY, d + step));
+      if (to === d) return;
+      const row = b.closest(".vr-cpw-g"), there = row && row.querySelector(`.vr-cpw-d[data-v="${to}"]`);
+      if (there) {
+        row.querySelectorAll('.vr-cpw-d[tabindex="0"]').forEach((x) => x.setAttribute("tabindex", "-1"));
+        there.setAttribute("tabindex", "0");
+        there.focus({ preventScroll: true });
+        return;
+      }
+      cpPick(api, to, true);
+    } catch (err) { warn("a key in Compact's week", err); }
+  });
   document.addEventListener("keydown", (e) => {
     const b = e.target && e.target.closest && e.target.closest(".vr-cal-d");
     const api = EXT.api;
@@ -485,7 +736,7 @@
   });
 
   /* ============================== THE PAGE: screens, keys, notes ============================== */
-  EXT.screens.push(["Tabs", [["home-day", "Home: Day first"], ["hist-cal", "History: Calendar"]]]);
+  EXT.screens.push(["Tabs", [["home-day", "Home: Day first"], ["home-compact", "Home: Compact"], ["hist-cal", "History: Calendar"]]]);
   /* the screens set their own decision (the page's toggles follow) and no other. The Easy version has its own Today,
      so with Easy on, Day first is picked but Easy stays, and a toast says why Today looks as it does */
   EXT.opens["home-day"] = (api) => {
@@ -493,6 +744,24 @@
     if (api.V().easy) api.toast("The Easy version is on, and it has its own Today. Turn Easy off on the left to see Day first.");
     api.layer.scrollTop = 0;
   };
+  /* Compact opens on today, whatever day was picked last */
+  EXT.opens["home-compact"] = (api) => {
+    const had = !!api.S.vrCp;
+    api.S.vrCp = null; api.S.vrCpSeen = null;
+    if (api.V().home !== "compact") api.set("home", "compact");
+    else if (had) api.renderTab(true);
+    if (api.V().easy) api.toast("The Easy version is on, and it has its own Today. Turn Easy off on the left to see Compact.");
+    api.layer.scrollTop = 0;
+  };
+  /* a new Home starts on today */
+  EXT.onSet.push((k, v, api) => {
+    if (k !== "home" || !api || !api.S) return;
+    api.S.vrCpSeen = null;
+    if (!api.S.vrCp) return;
+    const was = cpSel(api.M()) !== L.TODAY;
+    api.S.vrCp = null;
+    if (was && v === "compact" && api.S.tab === "today" && !api.V().easy) api.renderTab(true);
+  });
   /* the calendar opens on this month and today, whatever month was looked at last */
   EXT.opens["hist-cal"] = (api) => {
     if (api.V().history !== "calendar") api.set("history", "calendar");
@@ -501,7 +770,7 @@
     api.S.tab = "history"; api.renderTab(true); api.layer.scrollTop = 0;
   };
   const prevKeyToday = EXT.keys["tab:today"], prevKeyHist = EXT.keys["tab:history"];
-  EXT.keys["tab:today"] = (o) => { const S = o && o.st; if (S && S.home === "day" && !S.easy) return "home-day"; return prevKeyToday ? prevKeyToday(o) : null; };
+  EXT.keys["tab:today"] = (o) => { const S = o && o.st; if (S && S.home === "day" && !S.easy) return "home-day"; if (S && S.home === "compact" && !S.easy) return "home-compact"; return prevKeyToday ? prevKeyToday(o) : null; };
   EXT.keys["tab:history"] = (o) => { const S = o && o.st; if (S && S.history === "calendar") return "hist-cal"; return prevKeyHist ? prevKeyHist(o) : null; };
 
   /* ---------- notes for Will. Oct 28: plain, and each decision in the decision sheet's shape (refresh-app.js,
@@ -518,11 +787,12 @@
   const homeDecision = () => ({
     opts: [
       { v: "score", is: "Today opens on the FloraScore card, with the person's usual range and one sentence on what stood out today, then today's logs and the last 7 days.", why: "One number for the day, read against the person's own usual, is the quickest thing to check.", not: `There's no score before day ${L.LEARN_DAYS}, and on a rough evening a score inside the usual range can read as if nothing happened.` },
-      { v: "day", is: "Today opens on the date and today's logs in time order, with the one that stood out marked, and FloraScore as a small chip at the top.", why: "It suits people who open the app to log, and it looks the same from day 1, before Florin has a score.", not: "FloraScore, the number at the centre of Florin, is easy to miss." }
+      { v: "day", is: "Today opens on the date and today's logs in time order, with the one that stood out marked, and FloraScore as a small chip at the top.", why: "It suits people who open the app to log, and it looks the same from day 1, before Florin has a score.", not: "FloraScore, the number at the centre of Florin, is easy to miss." },
+      { v: "compact", is: "Today opens on a short FloraScore strip, then this week as a row of days with arrows for earlier weeks, then the logs of the day picked, today's first.", why: "It's built for getting around, as the current app's home is: the week is in view, and any day, with its logs and a way to add to it, is one tap away.", not: "No sentence says what stood out today or how the week went, so a day outside the usual shows only as a Gold ring until the person taps it." }
     ],
-    rec: { v: "score", text: "We recommend Score first.", why: "FloraScore is the centre of Florin, so it should come first, and its sentence already says what stood out today." },
-    open: "When a strong symptom and a BM outside the person's usual land on the same day, which should the top sentence mention first?",
-    try: "Switch it, then look at the Today tab. The demo opens on Score first."
+    rec: { v: "score", text: "We recommend Score first.", why: "FloraScore is the centre of Florin, so it should come first, and its sentence says what stood out today, which Compact leaves out." },
+    open: "Should Compact replace Score first as the default? The focus test puts the two side by side.",
+    try: "Switch it, then look at the Today tab. The demo opens on Score first. On Compact, tap a day in the week to see its logs, or an arrow for an earlier week."
   });
   /* "your usual" is Plum, and Ray on dark (DESIGN.md): the notes name the colour the calendar draws in the phone's theme */
   const usualC = (P) => (P && P.theme === "dark" ? "Ray" : "Plum");
@@ -542,6 +812,13 @@
       lede: `Today leads with the day: the date with a small FloraScore chip, today's logs in time order with the one that stood out marked, a row to log from, then one sentence on what stood out and the last 7 days.${look ? ` In the ${look} data style, only the week takes the style.` : ""}`
     };
   };
+  const compactScreenNote = (M, P) => {
+    const look = lookName(P);
+    return {
+      t: "Home: Compact",
+      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days with arrows for earlier weeks: ${usualC(P)} within the person's usual, Gold outside it, an empty ring with Add for a day with nothing logged. Tap a day for its logs, or the score for its page. A past day noted for a clinician is Teal here, as on the calendar; Score first's week card still reads it.${look ? ` The ${look} data style shows on Insights.` : ""}`
+    };
+  };
   const calScreenNote = (M, P) => {
     const look = lookName(P);
     return {
@@ -552,12 +829,13 @@
   EXT.decisions.home = homeDecision;
   EXT.decisions.history = historyDecision;
   EXT.notes["home-day"] = homeScreenNote;
+  EXT.notes["home-compact"] = compactScreenNote;
   EXT.notes["hist-cal"] = calScreenNote;
   /* if a later module takes over a tab's key without handing on to this one, the notes still follow the decision */
   const prevNoteToday = EXT.notes.today, prevNoteHist = EXT.notes.history;
-  EXT.notes.today = (M, P) => (P && P.home === "day" && !P.easy ? homeScreenNote(M, P) : prevNoteToday ? prevNoteToday(M, P) : undefined);
+  EXT.notes.today = (M, P) => (P && P.home === "day" && !P.easy ? homeScreenNote(M, P) : P && P.home === "compact" && !P.easy ? compactScreenNote(M, P) : prevNoteToday ? prevNoteToday(M, P) : undefined);
   EXT.notes.history = (M, P) => (P && P.history === "calendar" ? calScreenNote(M, P) : prevNoteHist ? prevNoteHist(M, P) : undefined);
 
   /* for the checks (work/behave.js): the ranking, the sentence and the month, as the screens use them */
-  window.FLORIN_VARIANTS = { standouts, dayLine, calView, cellOf, monthOf, monthDays, firstLog };
+  window.FLORIN_VARIANTS = { standouts, dayLine, calView, cellOf, monthOf, monthDays, firstLog, cpSel, mon0, cpCanStep, weekMove };
 })();

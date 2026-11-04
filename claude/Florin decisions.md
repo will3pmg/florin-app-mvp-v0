@@ -27,7 +27,7 @@ Two words used throughout:
 |---|---|---|---|
 | 1 | How does a person describe a BM's consistency? | A: numbers 1 to 7; B: five words; C: seven words | C, once counsel has read it |
 | 2 | Should one tap on a tile save a BM? | Quick tiles and form; Full form only | Quick tiles and form, plus buttons to fix the time |
-| 3 | What does Today show first? | Score first; Day first | Score first |
+| 3 | What does Today show first? | Score first; Day first; Compact | Score first; whether Compact should replace it is open |
 | 4 | How should History show past days? | List; Calendar | Calendar |
 | 5 | Should the app ask how the week felt? | On; Off | On: four questions a week, free for everyone |
 | 6 | How does a person log what they ate? | Quick, voice or text; One meal at a time | Quick, and a free food check |
@@ -115,13 +115,24 @@ demo, only the first 5 do.
 - Why do it: It suits people who open the app to log, and it looks the same from day 1, before Florin has a score.
 - Why not: FloraScore, the number at the centre of Florin, is easy to miss.
 
-**We recommend Score first.** FloraScore is the centre of Florin, so it should come first, and its sentence already
-says what stood out today.
+**Compact**
+- What it is: Today opens on a short FloraScore strip, then this week as a row of days with arrows for earlier weeks,
+  then the logs of the day picked, today's first.
+- Why do it: It's built for getting around, as the current app's home is: the week is in view, and any day, with its
+  logs and a way to add to it, is one tap away.
+- Why not: No sentence says what stood out today or how the week went, so a day outside the usual shows only as a Gold
+  ring until the person taps it.
 
-**Open question:** When a strong symptom and a BM outside the person's usual land on the same day, which should the top
-sentence mention first?
+**We recommend Score first.** FloraScore is the centre of Florin, so it should come first, and its sentence says what
+stood out today, which Compact leaves out.
 
-**Try it:** Decisions, Home, then the Today tab. The demo opens on Score first.
+Compact doesn't change our recommendation yet. It keeps FloraScore at the top, so the case against Day first doesn't
+apply to it, but it trades the day's sentence for getting around, and that trade is your call.
+
+**Open question:** Should Compact replace Score first as the default? The focus test puts the two side by side.
+
+**Try it:** Decisions, Home, then the Today tab. The demo opens on Score first. On Compact, tap a day in the week to see
+its logs, or an arrow for an earlier week.
 
 ## 4. History
 
@@ -226,8 +237,8 @@ The real choice is Florin charts everywhere, or Oura on Today and Florin charts 
 version's own, and Rings, Field journal and Bento are here to compare.
 
 **Florin charts**
-- What it is: The dark green FloraScore card with the usual range as a bar, the week as one circle a day, and plain bar
-  and dot charts.
+- What it is: The dark green FloraScore card with the usual range as a bar, the week as a ring a day with its FloraScore
+  under it, and plain bar and dot charts.
 - Why do it: Each card says the person's usual in words before the chart, and every card works the same way.
 - Why not: It's the most text of the six, with small charts on every card.
 

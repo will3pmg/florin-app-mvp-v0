@@ -2,11 +2,12 @@
    One calm ring up front on the one dark hero card, and every other card read as rings, segments and dots that draw
    themselves in. Colours are the app tokens (--ap-*) or derived from the six brand colours; nothing is a literal.
    Spacing and radii are on the DESIGN.md scales. Charts use solid lines only (DESIGN.md: no dashed lines), so a day
-   not logged is a 1px hairline, never a dash. All motion sits inside prefers-reduced-motion: no-preference, and only
-   animates *from* a state, so the still page is the final page. */
+   with nothing logged is a clear empty ring in solid Ink 3, never a dash. All motion sits inside
+   prefers-reduced-motion: no-preference, and only animates *from* a state, so the still page is the final page. */
 
 /* ---------- the card ---------- */
-.lk-rings .rg {
+/* the card's colours; .rg-marks takes them too, for day rings drawn outside a card (Compact's week row in the app) */
+.lk-rings :is(.rg, .rg-marks) {
   --rg-read: var(--ap-chart);
   --rg-trk: color-mix(in srgb, var(--ap-ink) 9%, transparent);
   --rg-empty: color-mix(in srgb, var(--ap-ink) 24%, transparent);
@@ -18,6 +19,8 @@
   --rg-ink3: var(--ap-ink3);
   --rg-ground: var(--ap-card);
   --rg-st: 70ms;
+}
+.lk-rings .rg {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column; gap: 20px;
   padding: 16px; border-radius: 24px;
@@ -27,6 +30,7 @@
 .lk-rings .rg > * { position: relative; }
 .lk-rings .rg :where(p, h3, ul, ol, dl, dd, figure) { margin: 0; }
 .lk-rings .rg :where(ul, ol) { list-style: none; padding: 0; }
+.lk-rings .rg-marks :where(ul, ol) { margin: 0; list-style: none; padding: 0; }
 .lk-rings .rg-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* the hero: Forest on light, Card 2 on dark. Ray is the reading and Ray at half strength is your usual */
@@ -65,16 +69,16 @@
 .lk-rings .rg-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 11.5px; line-height: 1.3; color: var(--rg-ink2); }
 .lk-rings .rg-legend li { display: inline-flex; align-items: center; gap: 8px; }
 .lk-rings .rg-sw { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--rg-read); }
-.lk-rings .rg-sw--usual { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-usual-ink); }
-.lk-rings .rg-sw--logged { background: transparent; box-shadow: inset 0 0 0 2.5px var(--rg-read); }
+.lk-rings .rg-sw--usual { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-signal); }
+.lk-rings .rg-sw--logged { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-ink3); }
 .lk-rings .rg-sw--shift { background: var(--rg-shift); }
-.lk-rings .rg-sw--shiftring { background: var(--ap-shift-bg); box-shadow: inset 0 0 0 2.5px var(--rg-shift); }
+.lk-rings .rg-sw--shiftring { background: var(--ap-shift-bg); box-shadow: inset 0 0 0 2.5px var(--rg-shift), 0 0 0 1px var(--ap-shift-ink); }
+.lk-rings[data-theme="dark"] .rg-sw--shiftring { background: var(--ap-shift); box-shadow: none; }
 .lk-rings .rg-sw--unsure { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-ink3); }
 .lk-rings .rg-sw--flag { background: transparent; box-shadow: inset 0 0 0 2.5px var(--ap-teal); }
-.lk-rings .rg-sw--empty { background: transparent; box-shadow: inset 0 0 0 2.5px var(--rg-empty); }
-.lk-rings .rg-sw--gap { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
+.lk-rings .rg-sw--gap { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .lk-rings .rg-sw--gapline { width: 16px; height: 1px; border-radius: 0; background: var(--ap-ink3); }
-.lk-rings .rg-sw--sym { width: 6px; height: 6px; background: var(--ap-teal); }
+.lk-rings .rg-sw--sym { width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
 .lk-rings .rg-sw--line { width: 16px; height: 2.5px; border-radius: 2px; }
 .lk-rings .rg-sw--band { width: 16px; height: 10px; border-radius: 2px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
 .lk-rings .rg-sw--uband-l { width: 16px; height: 4px; border-radius: 2px; background: var(--rg-uband); }
@@ -188,30 +192,52 @@
 .lk-rings .rg-empty-plot span { display: block; border-top: 1px solid var(--ap-grid); }
 
 /* ---------- this week and the month ---------- */
-.lk-rings .rg-weekrow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-.lk-rings .rg-wd { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0; border-radius: 16px; min-width: 0; }
-.lk-rings .rg-wd.is-today { background: var(--ap-card2); }
+/* the row runs 12px into the card's 16px padding, so each column is 44px or more at 360 wide */
+.lk-rings .rg-weekrow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-inline: -12px; }
+/* a day's column. With nothing logged on the day it's a button in the app (the whole column, so the tap target is the
+   column's width, which reaches 44px at 360 wide because the row runs into the card's padding) */
+.lk-rings .rg-wd { position: relative; isolation: isolate; display: flex; min-width: 0; border-radius: 16px; }
+/* today's shaded column stops 4px short of its column on the card's side, so it keeps 8px from the card's edge while
+   the column (the tap target on a day with nothing logged) keeps its full width */
+.lk-rings .rg-wd.is-today::before { content: ""; position: absolute; inset: 0 4px 0 0; z-index: -1; border-radius: 16px; background: var(--ap-card2); }
+.lk-rings .rg-wd-b { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 0; border: 0; border-radius: 16px; background: none; color: inherit; font: inherit; }
+.lk-rings button.rg-wd-b { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.lk-rings button.rg-wd-b:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: -2px; }
 .lk-rings .rg-wd-k { font-family: var(--mono); font-size: 10.5px; letter-spacing: .02em; color: var(--rg-ink2); white-space: nowrap; }
 .lk-rings .rg-wd.is-today .rg-wd-k { color: var(--rg-ink); font-weight: 700; }
 .lk-rings .rg-wd-ring { position: relative; width: 40px; height: 40px; }
 .lk-rings .rg-wd-ring b, .lk-rings .rg-md b, .lk-rings .rg-fc-ring b, .lk-rings .rg-sym-ring b { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 500; font-variant-numeric: tabular-nums; }
 .lk-rings .rg-wd-ring b { font-size: 13px; }
-.lk-rings .rg-wd-s { font-family: var(--mono); font-size: 10.5px; line-height: 1.2; color: var(--rg-ink2); white-space: nowrap; min-height: 12px; }
-.lk-rings .rg-wd-sym { display: flex; height: 6px; }
-.lk-rings .rg-wd-sym i { width: 6px; height: 6px; border-radius: 50%; background: var(--ap-teal); }
+.lk-rings .rg-wd-s { display: flex; align-items: center; min-height: 16px; font-family: var(--mono); font-size: 10.5px; line-height: 1.2; color: var(--rg-ink2); white-space: nowrap; }
+/* "+ Add" where a day with nothing logged would show its score: a small outlined pill, so it reads as something to tap */
+.lk-rings .rg-wd-add { display: inline-flex; align-items: center; gap: 4px; height: 16px; padding: 0 4px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ap-ink3); color: var(--rg-ink); font-weight: 700; letter-spacing: .02em; }
+.lk-rings .rg-wd-add svg { width: 8px; height: 8px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.lk-rings button.rg-wd-b:hover .rg-wd-add { background: var(--rg-ground); }
+/* a symptom that day: one Teal square, whatever its strength, as on every screen of the app */
+.lk-rings .rg-wd-sym { display: flex; height: 8px; }
+.lk-rings .rg-wd-sym i { width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
 .lk-rings .rg-day { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
 .lk-rings .rg-day-trk { fill: none; stroke: var(--rg-trk); }
 .lk-rings .rg-day-ring { fill: none; stroke: var(--rg-read); }
-.lk-rings .rg-day-empty { fill: none; stroke: var(--rg-empty); }
-.lk-rings .rg-day-gap { fill: none; stroke: var(--ap-ink3); stroke-width: 1; }
+/* nothing logged: a clear empty ring, solid Ink 3 (never a dash or a hatch) */
+.lk-rings .rg-day-gap { fill: none; stroke: var(--ap-ink3); stroke-width: 1.5; }
 .lk-rings .rg-day-arc { fill: none; stroke: var(--rg-read); stroke-linecap: round; }
+/* outside your usual: Gold, filled, so it reads apart from a day within by more than its hue. In light a Gold tint
+   inside the ring, edged in Shift Ink (light Gold is 2.37:1 on the card, the edge 7.13:1); on dark, where Ray and Gold
+   are close in lightness (1.6:1), a solid Gold disc against Ray's open ring, the date in the card colour (8.2:1), as
+   the app's day mark draws it on dark */
 .lk-rings .rg-day-fill { fill: var(--ap-shift-bg); }
-.lk-rings .rg-day.is-usual .rg-day-ring { stroke: var(--ap-usual-ink); }
+.lk-rings .rg-day-edge { fill: none; stroke: var(--ap-shift-ink); stroke-width: 1.5; }
+.lk-rings[data-theme="dark"] .rg-day-fill { fill: var(--ap-shift); }
+.lk-rings[data-theme="dark"] .rg-day-edge { stroke: none; }
+.lk-rings[data-theme="dark"] :is(.rg-wd, .rg-md):has(.rg-day.is-shift) b { color: var(--ap-card); }
+.lk-rings .rg-day.is-usual .rg-day-ring { stroke: var(--ap-signal); }
 .lk-rings .rg-day.is-shift .rg-day-ring { stroke: var(--rg-shift); }
-.lk-rings .rg-day.is-unsure .rg-day-ring { stroke: var(--ap-ink3); }
+/* not counted (could be either, or nothing about BMs), and logged before Florin knows the usual: Ink 3 */
+.lk-rings .rg-day:is(.is-unsure, .is-nocount, .is-logged) .rg-day-ring { stroke: var(--ap-ink3); }
 /* today with a flag: noted for a clinician, never read. Teal, the colour of the primary care note */
 .lk-rings .rg-day.is-flag .rg-day-ring { stroke: var(--ap-teal); }
-.lk-rings .rg-wd:has(.is-none, .is-pending, .is-nocount) b, .lk-rings .rg-md:has(.is-none, .is-pending, .is-nocount) b { color: var(--rg-ink2); font-weight: 400; }
+.lk-rings .rg-wd:has(.is-none, .is-pending) b, .lk-rings .rg-md:has(.is-none, .is-pending) b { color: var(--rg-ink2); font-weight: 400; }
 
 .lk-rings .rg-cal { display: flex; flex-direction: column; gap: 8px; }
 .lk-rings .rg-cal-h, .lk-rings .rg-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px 4px; justify-items: center; }
@@ -339,7 +365,8 @@
 /* ---------- motion: rings draw, bars grow, dots pop, numerals count (in JS) ---------- */
 @media (prefers-reduced-motion: no-preference) {
   .lk-rings .rg { animation: rgIn .6s var(--ap-ease) both; }
-  .lk-rings .rg-draw { stroke-dasharray: 1; animation: rgDraw 1s calc(150ms + var(--i, 0) * var(--rg-st)) var(--ap-ease) both; }
+  /* the dash is only there while a line draws in (rgDraw), so a closed ring has no seam once it is drawn */
+  .lk-rings .rg-draw { animation: rgDraw 1s calc(150ms + var(--i, 0) * var(--rg-st)) var(--ap-ease) both; }
   .lk-rings .rg-draw--slow { animation-duration: 1.3s; }
   .lk-rings .rg-draw--fast { animation-duration: .7s; animation-delay: 60ms; }
   .lk-rings .rg-day .rg-day-ring, .lk-rings .rg-day .rg-day-arc { animation-duration: .8s; }
@@ -368,7 +395,7 @@
   .lk-rings .rg-btn:active { transform: scale(.98); }
 }
 @keyframes rgIn { from { opacity: 0; transform: translateY(12px); } }
-@keyframes rgDraw { 0% { stroke-dashoffset: 1; opacity: 0; } 6% { opacity: 1; } 100% { stroke-dashoffset: 0; } }
+@keyframes rgDraw { 0% { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; } 6% { opacity: 1; } 99% { stroke-dasharray: 1; stroke-dashoffset: 0; } 100% { stroke-dasharray: none; stroke-dashoffset: 0; } }
 @keyframes rgPop { from { opacity: 0; transform: scale(.3); } }
 @keyframes rgFade { from { opacity: 0; } }
 @keyframes rgGrowX { from { transform: scaleX(0); } }

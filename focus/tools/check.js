@@ -1,5 +1,5 @@
 /* Florin focus group test: the whole flow, end to end, on an emulated phone, against the local back end.
-     NODE_PATH=$(npm root -g) node focus/tools/check.js [--device iphone|android|laptop] [--easy] [--home score|day]
+     NODE_PATH=$(npm root -g) node focus/tools/check.js [--device iphone|android|laptop] [--easy] [--home score|day|compact]
        [--history calendar|list] [--week built|card|strip|note|chart] [--theme light|dark] [--out <folder>] [--keep]
    It builds the site into <out>/site with the local endpoint stamped in (focus/build.js --endpoint), starts the
    back end (focus/mock-endpoint.js, which runs Code.gs itself) and a static server that applies the site's _headers
@@ -22,7 +22,7 @@ const FOCUS = path.resolve(__dirname, ".."), REPO = path.dirname(FOCUS);
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i < 0 ? d : args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : true; };
 const PATH_ = opt("path", "here");
-const DEVICE = opt("device", "iphone"), EASY = args.includes("--easy"), HOME = opt("home", "score"), HIST = opt("history", "calendar"), WEEK = opt("week", "card"), THEME = opt("theme", "light");
+const DEVICE = opt("device", "iphone"), EASY = args.includes("--easy"), HOME = opt("home", "score"), HIST = opt("history", "calendar"), WEEK = opt("week", "built"), THEME = opt("theme", "light");
 const OUT = path.resolve(opt("out", path.join(os.tmpdir(), "florin-focus-check")));
 const TAG = `${DEVICE}-${EASY ? "easy" : "std"}-${HOME}-${HIST}-${WEEK}-${THEME}${PATH_ === "installed" ? "-installed" : ""}`;
 const PE = 9300 + Math.floor(Math.random() * 200), PS = PE + 400;
@@ -237,10 +237,12 @@ const getJSON = (u) => new Promise((ok, no) => http.get(u, (r) => { let b = ""; 
         }
         break;
       }
-      case "week": await lay(easy ? ".ez-week" : "[data-week], .ap-wk"); await wait(2600); break;
+      case "week": await lay(easy ? ".ez-week" : home === "compact" ? ".vr-cpw" : '[data-rlk-k="week"] .rg-weekrow, [data-week], .ap-wk'); await wait(2600); break;
       case "score":
         if (easy) { await lay('.ap-layer [data-act="tab"][data-tab="insights"]'); await fclick('.ap-layer [data-act="tab"][data-tab="insights"]'); await wait(2400); }
         else if (home === "day") await fclick(".ap-layer .vr-sc");
+        /* Compact: the strip's number opens FloraScore's page */
+        else if (home === "compact") await fclick('.ap-layer .vr-cp-n[data-act="idetail"]');
         else await fclick('.ap-layer .ap-hero');
         break;
       case "patterns":

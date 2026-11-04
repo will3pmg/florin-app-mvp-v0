@@ -27,7 +27,7 @@ window.FOCUS_CONFIG = {
   decisions: {
     form: "C",               /* Consistency: C, seven of our own words */
     bmUI: "quick",           /* BM logging: Quick tiles and form */
-    home: ["score", "day"],  /* Home: half Score first, half Day first */
+    home: ["score", "compact"], /* Home: half Score first, half Compact (Will, Nov 4; Day first is out of this round) */
     history: ["calendar", "list"], /* History: half Calendar, half List */
     checkin: true,           /* Weekly check-in: On */
     mealUI: "quick",         /* Meal sheet: Quick, voice or text */
@@ -35,10 +35,11 @@ window.FOCUS_CONFIG = {
     onboard: "short"         /* Onboarding: Short (not shown this round) */
   },
 
-  /* the week on Today, from options/home: "card" (Days and reasons), "strip" (Week strip), "note" (Words only),
-     "chart" (Morning times chart), or "built" (the prototype's own card as it is today). Two ids test them half and
-     half. Will's pick: Before launch, step 0 */
-  weekCard: ["card"],
+  /* the week on Today: "built" (the prototype's own card: since Nov 4 the Rings week card, Will's pick), or one of
+     the options page's (options/home, the October 29 record): "card" (Days and reasons), "strip" (Week strip), "note"
+     (Words only), "chart" (Morning times chart). Two ids test them half and half. It shows on Score first; Compact
+     has no week card, its week is the row of days under FloraScore */
+  weekCard: ["built"],
   /* where the week sits on Today: "top" (under the greeting), "under" (under FloraScore and the check-in), "after"
      (after today's logs, where the app has it now), or "" for the design's own place (the strip at the top, the words
      under FloraScore, the others after today's logs) */

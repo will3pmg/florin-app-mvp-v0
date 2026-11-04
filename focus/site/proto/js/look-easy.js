@@ -199,7 +199,9 @@
       : learning ? (x.answerLine ? ansLine("quiet", plural(logged.length, "day"), "logged") : lead(x, logged.length, `of ${plural(days.length, "day")} logged`, null))
       : T.known ? (x.answerLine ? ansLine("usual", `${T.within} of ${plural(T.known, "day")}`, "within your usual") : lead(x, T.within, `of ${plural(T.known, "day")} within your usual`, null))
       : lead(x, null, null, "None of the last 7 days can be read against your usual.");
-    return card(x, "ez-week", "Your last 7 days at a glance", "Your last 7 days", spanOf(days), `
+    /* no dates beside the title: the marks carry them (Will, Nov 4, of the week card: "we see 5 to 11 already"); a
+       screen reader still hears the span on the row */
+    return card(x, "ez-week", "Your last 7 days at a glance", "Your last 7 days", "", `
       ${big}
       ${logged.length ? `<div class="ez-fit">${row}</div>` : body(x, "Your days show here as you log them.")}
       ${dayLines(D, x, days, 7)}`);

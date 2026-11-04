@@ -74,17 +74,17 @@
   };
 
   /* ---------- screen keys, acts and titles, in the contract's lists (CONTRACT.md, section 7) ---------- */
-  const SCREENS = ["today", "home-day", "ez-today", "plus", "earlier", "bm", "ez-bm", "sym", "meal", "ck", "ckdone", "ckday", "insights", "ez-weeks", "i-score", "i-timing", "i-often", "i-form", "i-sym", "i-ck", "i-pat", "i-pattern", "i-days", "history", "hist-cal", "ask", "ask-about", "pay", "pf", "profile"];
+  const SCREENS = ["today", "home-day", "home-compact", "ez-today", "plus", "earlier", "bm", "ez-bm", "sym", "meal", "ck", "ckdone", "ckday", "insights", "ez-weeks", "i-score", "i-timing", "i-often", "i-form", "i-sym", "i-ck", "i-pat", "i-pattern", "i-days", "history", "hist-cal", "ask", "ask-about", "pay", "pf", "profile"];
   const SHEETS = ["flag", "nobm", "guide", "fx-day", "a sheet", "pf-rem", "pf-info", "pf-del", "onb"];
   const mapKey = (k) => (SCREENS.includes(k) ? k : k === "ask-alarm" || k === "ask-chat" ? "ask" : SHEETS.includes(k) || /^pf-/.test(k || "") ? "a sheet" : "other");
-  const ACTS = ["tab", "plus", "profile", "idetail", "iback", "edit", "undo", "quick-bm", "vr-quick", "open-bm", "save-bm", "open-sym", "open-meal", "ck-start", "ck-finish", "ck-skip", "vr-cal-day", "vr-cal-m", "ask-about", "askx-ask", "askx-send", "pay", "pay-start", "hmore", "hfilter", "irange", "close", "fx-wkday"];
+  const ACTS = ["tab", "plus", "profile", "idetail", "iback", "edit", "undo", "quick-bm", "vr-quick", "open-bm", "save-bm", "open-sym", "open-meal", "ck-start", "ck-finish", "ck-skip", "vr-cal-day", "vr-cal-m", "ask-about", "askx-ask", "askx-send", "pay", "pay-start", "hmore", "hfilter", "irange", "close", "fx-wkday", "vr-cp-day", "vr-cp-wk", "vr-cp-ins"];
   const actName = (n) => (ACTS.includes(n) ? n : n === "flag-report" || n === "flag-undo" ? "a sheet" : n === "nobm" ? "a log" : "other");
   /* an act's detail: only values from fixed lists (a tab, a card's key, a range, a filter), never what a log says */
   const actDetail = (b) => {
     const n = b.dataset.act, d = b.dataset;
     if (n === "tab") return d.tab || "";
     if (n === "idetail" || n === "ask-about" || n === "pay") return /^pattern:/.test(d.k || "") ? "pattern" : /^[a-z]{1,12}$/.test(d.k || d.pay || "") ? d.k || d.pay : "";
-    if (n === "irange" || n === "vr-cal-m") return /^-?\d{1,3}$/.test(d.v || "") ? d.v : "";
+    if (n === "irange" || n === "vr-cal-m" || n === "vr-cp-wk") return /^-?\d{1,3}$/.test(d.v || "") ? d.v : "";
     if (n === "hfilter") return /^[a-z]{1,8}$/.test(d.v || "") ? d.v : "";
     return "";
   };
@@ -92,7 +92,8 @@
   function titleOf(el) {
     if (!el || !el.matches) return "";
     const txt = (s) => { const x = el.querySelector(s); return x ? x.textContent.replace(/\s+/g, " ").trim() : ""; };
-    if (el.matches(".ap-hero, .vr-sc-row")) return "FloraScore";
+    if (el.matches(".ap-hero, .vr-sc-row, .vr-cp-sc")) return "FloraScore";
+    if (el.matches('[data-rlk-k="week"], .vr-cpw')) return "This week";
     if (el.matches("[data-week], .ap-wk, .ho-strip")) return "Your last 7 days";
     if (el.matches(".ap-ic")) { const k = txt(".ap-ic-t .ap-k"); return k.split(" · ")[0] || ""; }
     if (el.matches(".ez")) return txt(".ez-t");
@@ -103,7 +104,7 @@
     if (el.matches(".ap-hd")) return "A day in History";
     return "";
   }
-  const CARD_SEL = ".ap-hero, .vr-sc-row, [data-week], .ap-wk, .ho-strip, .ap-ic, .ez, .ap-ckc, .ap-tlw, .vr-hl, .vr-log, .ap-nx, .vr-cal, .ap-ez-sec";
+  const CARD_SEL = '.ap-hero, .vr-sc-row, .vr-cp-sc, [data-rlk-k="week"], .vr-cpw, [data-week], .ap-wk, .ho-strip, .ap-ic, .ez, .ap-ckc, .ap-tlw, .vr-hl, .vr-log, .ap-nx, .vr-cal, .ap-ez-sec';
   const SAFE_TITLE = /^[A-Za-z0-9 ,.'’:()/&+-]{1,60}$/;
   const cleanTitle = (t) => (SAFE_TITLE.test(t || "") ? t : "");
   const ACT_LABEL = {
@@ -113,12 +114,12 @@
     "quick-bm": "A BM tile", "vr-quick": "A BM tile", form: "A BM tile", pay: "Membership", "pay-start": "Start membership", "ask-about": "Ask about this",
     iback: "Back", close: "Close", irange: "Range tabs", hmore: "Show more days", hfilter: "History filters", "vr-cal-day": "A day on the calendar",
     "vr-cal-m": "Month buttons", nobm: "No BM today", edit: "a log entry", undo: "Undo", "askx-ask": "A suggested question", "askx-send": "Send",
-    "fx-wkday": "A day on the week strip", guide: "How to pick", "mq-mic": "Microphone", "plus-earlier": "An earlier day", "ask-clear": "Clear",
+    "fx-wkday": "A day on the week strip", "vr-cp-day": "A day on the week", "vr-cp-wk": "Week arrows", "vr-cp-ins": "Insights", "plus-day": "Add to a day", guide: "How to pick", "mq-mic": "Microphone", "plus-earlier": "An earlier day", "ask-clear": "Clear",
     /* a card's own title, or for a control that opens a detail, the detail's name (Day first's FloraScore chip) */
     idetail: (b) => { const c = b.closest(".ap-ic"); if (c) return cleanTitle(titleOf(c)) || "A card"; if (b.closest(".ap-hero, .vr-sc, .vr-sc-row") || b.dataset.k === "score") return "FloraScore"; return IDETAIL_NAME[b.dataset.k] || "A card"; }
   };
   const IDETAIL_NAME = { timing: "Timing", often: "How often", form: "Form", sym: "Symptoms", ck: "Weekly check-in", pat: "Possible patterns", days: "Your days" };
-  const SCREEN_NAME = { today: "Today", "home-day": "Today", "ez-today": "Today", insights: "Insights", "ez-weeks": "Your weeks", history: "History", "hist-cal": "History", ask: "Ask Florin", "ask-about": "Ask Florin", "i-score": "FloraScore page", "i-timing": "Timing page", "i-often": "How often page", "i-form": "Form page", "i-sym": "Symptoms page", "i-ck": "Check-in page", "i-pat": "Possible patterns page", "i-pattern": "A pattern's page", "i-days": "Your days page", plus: "Plus menu", pay: "Membership page", pf: "Profile", ck: "Weekly check-in", ckdone: "Check-in saved", ckday: "When it's due", bm: "a log sheet", "ez-bm": "a log sheet", sym: "a log sheet", meal: "a log sheet", earlier: "An earlier day" };
+  const SCREEN_NAME = { today: "Today", "home-day": "Today", "home-compact": "Today", "ez-today": "Today", insights: "Insights", "ez-weeks": "Your weeks", history: "History", "hist-cal": "History", ask: "Ask Florin", "ask-about": "Ask Florin", "i-score": "FloraScore page", "i-timing": "Timing page", "i-often": "How often page", "i-form": "Form page", "i-sym": "Symptoms page", "i-ck": "Check-in page", "i-pat": "Possible patterns page", "i-pattern": "A pattern's page", "i-days": "Your days page", plus: "Plus menu", pay: "Membership page", pf: "Profile", ck: "Weekly check-in", ckdone: "Check-in saved", ckday: "When it's due", bm: "a log sheet", "ez-bm": "a log sheet", sym: "a log sheet", meal: "a log sheet", earlier: "An earlier day" };
   /* what a tap landed on: a named control, a card, else a neutral name. Never the words of a log, a note or a chat */
   function labelFor(t, api) {
     if (!t || !t.closest) return { label: "the screen", el: null };

@@ -17,7 +17,7 @@
      version, the three people, 12 weeks and day 5, Today, History, Insights and every detail page at 7, 30 and 90 days,
      and every answer Ask Florin computes, asked from each card (--k1 runs that pass alone)
    NODE_PATH=$(npm root -g) node work/sweep.js [out.json] [--workers 4] [--only form,look] [--limit 20] [--plan free] [--width 390] [--k1]
-   Pairs that set the same decisions are run once (95 settings, 380 runs with the themes and logs). */
+   Pairs that set the same decisions are run once (109 settings, 436 runs with the themes and logs). */
 const { chromium } = require("playwright");
 const path = require("path");
 const fs = require("fs");
@@ -41,7 +41,7 @@ const K1_ITEM = /^\s*(no bms logged|shifted)\s*$/i;
 
 /* the decisions on the left bar, default first, as the toggles carry them (data-v) */
 const DECS = {
-  form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["score", "day"], history: ["list", "calendar"], checkin: ["true", "false"],
+  form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["score", "day", "compact"], history: ["list", "calendar"], checkin: ["true", "false"],
   mealUI: ["quick", "detailed"], look: ["built", "rings", "journal", "bento", "oura", "easy"], easy: ["false", "true"], onboard: ["short", "full"]
 };
 const KEYS = Object.keys(DECS);

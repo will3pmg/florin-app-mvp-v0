@@ -33,9 +33,11 @@ const TOGGLES = [
   /* the module decisions: Day first and Calendar, each data style, the full survey and the Easy version */
   { home: "day", history: "calendar", persona: "marcus", theme: "dark" }, { look: "rings", data: "fresh" }, { look: "journal", form: "B", checkin: "false" },
   { look: "bento", persona: "alex", theme: "dark" }, { look: "oura", home: "day" }, { look: "easy", onboard: "full", persona: "marcus" },
-  { easy: "true", persona: "alex", theme: "dark" }, { easy: "true", data: "fresh", checkin: "false", bmUI: "full" }
+  { easy: "true", persona: "alex", theme: "dark" }, { easy: "true", data: "fresh", checkin: "false", bmUI: "full" },
+  /* Home: Compact (Nov 4) across the people, the options and the logs */
+  { home: "compact", persona: "marcus", form: "A", theme: "dark" }, { home: "compact", persona: "alex", form: "B", data: "new" }, { home: "compact", data: "fresh", checkin: "false", bmUI: "full" }
 ];
-const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }, { easy: "true", history: "calendar" }, { home: "day", look: "oura", theme: "dark" }];
+const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }, { easy: "true", history: "calendar" }, { home: "day", look: "oura", theme: "dark" }, { home: "compact", persona: "marcus", theme: "dark" }];
 
 (async () => {
   const browser = await chromium.launch();

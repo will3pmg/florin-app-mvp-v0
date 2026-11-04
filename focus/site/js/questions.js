@@ -44,13 +44,15 @@
     week: {
       title: (c) => `Find ${c.name}'s last 7 days on Today and read them. Tap Done when you have.`,
       hint: (c) => (c.easy ? "On Today, scroll down to Your last 7 days."
+        : c.home === "compact" ? "It's the row of days under FloraScore, at the top of Today."
         : c.place === "top" ? "It's at the top of Today."
         : c.place === "under" && c.home !== "day" ? "It's under FloraScore."
+        : c.week === "built" ? "On Today, scroll down past today's logs to This week."
         : "On Today, scroll down past today's logs to Your last 7 days.")
     },
     score: {
       title: (c) => (c.easy ? `Find where the app explains ${c.name}'s FloraScore.` : `Open the page that explains ${c.name}'s FloraScore.`),
-      hint: (c) => (c.easy ? "Tap More about your weeks on Today." : c.home === "day" ? "Tap FloraScore at the top of Today." : "Tap Details on the FloraScore card.")
+      hint: (c) => (c.easy ? "Tap More about your weeks on Today." : c.home === "day" ? "Tap FloraScore at the top of Today." : c.home === "compact" ? "Tap the FloraScore number at the top of Today." : "Tap Details on the FloraScore card.")
     },
     patterns: {
       title: (c) => `Find a food that tends to come before a change for ${c.name}.`,
@@ -98,7 +100,7 @@
   const compare = {
     home: {
       id: "CP1", text: () => "Here's another way Today could open. Find today's FloraScore on it, then tap Next.",
-      q: { id: "CP1", q: "Which would you rather see first when you open the app?", type: "one", shuffle: true, last: ["none"], opts: [["score", "The FloraScore card"], ["day", "The day and its logs"], ["none", "No preference"]] }
+      q: { id: "CP1", q: "Which would you rather see first when you open the app?", type: "one", shuffle: true, last: ["none"], opts: [["score", "The FloraScore card"], ["day", "The day and its logs"], ["compact", "The week, with a day's logs under it"], ["none", "No preference"]] }
     },
     history: {
       id: "CP2", text: (c) => `Here's another way History could look. Find what ${c.name} logged ${c.cpDay}, then tap Next.`,

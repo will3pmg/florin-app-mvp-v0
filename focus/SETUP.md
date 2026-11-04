@@ -120,8 +120,9 @@ config.js and rebuild the site." Claude puts it in, rebuilds `focus/site`, and c
    `endpoint: "https://script.google.com/macros/s/AKfy.../exec",`
 2. While you're there, fill in `team`, `contact`, `recruiter`, `thanksHow` and `keepMonths` (the consent shows them),
    `tokenHow` (how a participant sends their thank-you code to the recruiter, as a clause after "To get your
-   thank-you,"; left empty, the thanks screen says to reply to the message the study link came in), and `weekCard`,
-   the week design you picked.
+   thank-you,"; left empty, the thanks screen says to reply to the message the study link came in). `weekCard` is
+   already `built`, the Rings week you picked on Nov 4, and `decisions.home` splits Home between Score first and
+   Compact; change either there if you want another arm.
 3. Run `node focus/build.js`, which copies everything into `focus/site`, then commit and push. The build ends with a
    line listing any of `endpoint`, `team`, `contact`, `recruiter` and `thanksHow` still empty: fill them before the
    link goes out.

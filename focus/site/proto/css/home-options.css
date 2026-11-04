@@ -14,6 +14,9 @@
 /* ---------- the head: the question, the recommendation in one line, and the card Will flagged ---------- */
 .ho-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .ho-head-t { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+/* Nov 4: what happened since, in one line over the record */
+.ho-now { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--panel); box-shadow: inset 3px 0 0 var(--teal); font-size: 15px; line-height: 1.45; color: var(--ink); text-wrap: pretty; }
+.ho-now b { font-weight: 500; }
 .ho-eyebrow { margin: 0; font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 .ho-head h1 { margin: 0; font-weight: 300; font-size: clamp(32px, 4.4vw, 48px); line-height: 1.06; letter-spacing: -.03em; text-wrap: balance; }
 .ho-lede { margin: 0; font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }

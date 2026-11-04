@@ -1,7 +1,8 @@
 # Florin data viz
 
 October 28, 2026, revised the same day after a review, again after the fix pass (fix-viz), and after the finishing pass
-(finish-viz): this file now says what is built. The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
+(finish-viz): this file now says what is built. November 4: Will picked the Rings week card for Today, and Home gained
+Compact; section 3 says what both draw and where they depart from section 1. The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
 chart's design (both themes, all six data styles, 390 and 1440 wide) and one of every number against the model. It sits
 under DESIGN.md's Data Visualization rules. Where it asks DESIGN.md to change, it says so and leaves the change to the
 studio.
@@ -26,8 +27,10 @@ studio.
 One set of marks for every screen. **Shape says what a thing is. Colour says how it reads against your usual. A word
 says it again**, so colour is never the only cue.
 
-**A day** (Today's week, History's calendar and day headers, Easy's week and month, Your days). One renderer draws it
-everywhere, so the same day always looks the same.
+**A day** (History's calendar and day headers, Easy's week and month, Your days). One renderer draws it everywhere, so
+the same day always looks the same. Since Nov 4 two places draw a ring instead: Today's week card (Will's pick, the
+Rings week) and Compact's week row. Section 3 has both and where they depart from this table; the module-by-module
+review settles which mark the app keeps.
 
 | A day that was | Mark | Its word |
 |---|---|---|
@@ -117,9 +120,11 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
 - **Every chart has a table twin**, open under it: the week row and the calendar are lists for screen readers ("Wednesday,
   October 7: outside your usual, first BM later than usual"); the count line is Day, BMs, Within your usual count;
   the symptom rows are Day, Symptom, Strength; the part bars are Part, Last week, This week, Moved.
-- **Taps:** the week card's circles are not buttons (the card's link opens Insights). The calendar's days are buttons
-  with 44px hit areas.
-- **Sizes:** day circles 28px (32px in Easy, 40px with the today ring, which fits Easy's 43px columns at 390); chart
+- **Taps:** on the week card, a day with nothing logged is a button that opens plus for that day (Add); its other days
+  are not buttons, and the card's link opens Insights. The calendar's days and Compact's days are buttons with 44px hit
+  areas.
+- **Sizes:** day circles 28px (32px in Easy, 40px with the today ring, which fits Easy's 43px columns at 390); the week
+  card's rings 40px and Compact's 32px (section 3); chart
   marks 8px at least; Gold edge 1.5px; rings 2px; marks round at 2px (radius xs). Spacing on the DESIGN.md scale.
 - **Crowding:** past 7 days, each dot on the count line and the form plot sits on a card-colour disc 1.5px wider, so
   neighbours stay apart instead of running into bars. A label sits above the band and every stack, never on an edge.
@@ -146,7 +151,8 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 |---|---|---|---|---|---|
 | 1 | Today, FloraScore (Score first) | How is FloraScore today against its usual range? | The big number; a range bar with your usual range labelled with its two numbers and today's dot, no numbers at the bar's ends; one sentence (section 4) | Change | A ring filling toward 100 reads as a grade. At 124px Marcus's 76 to 82 is a 22-degree arc, so a score one point above it sits on the label. Your usual was drawn twice, once unlabelled. The "+1 vs last week" pill compared averages beside today's number. The 30-day line was the fourth copy of the trend, so it moves to Insights |
 | 2 | Today, FloraScore while learning | When does my FloraScore start? | "Day 5 of 14" in words over 14 small steps | Change | The day number sat where the score sits, so 5 read as a score. Learning was drawn three times on Today and Insights |
-| 3 | Today, the last 7 days (Score first and Day first) | How many of my last 7 days sat within my usual? | One answer, a row of seven days, a line for each day not within | Change | Section 3 |
+| 3 | Today, the last 7 days (Score first and Day first) | How many of my last 7 days sat within my usual? | Will's pick (Nov 4), the Rings week: one answer and one sentence naming the days outside the usual, a ring a day with its FloraScore under it, Add on a day with nothing logged | Built | Section 3 |
+| 3a | Today, Compact's week | Which day do I want to look at? | A row of seven day buttons, Monday to Sunday, in the week card's rings at 32px, with arrows for other weeks; the day picked under it | Add (Will, Nov 4) | Section 3, Compact's week row |
 | 4 | Today, check-in card | Is my check-in due? | Text and the calendar icon | Keep | Its due dot was the same mark as a logged BM |
 | 5 | Today, Day first's chip and marked log | How is today, and which log stood out? | The FloraScore glyph and number in a chip; a chip on the log that stood out | Change | The chip's ring was a gauge at 24px, too small to show your usual: it becomes the glyph, and the chip's word carries the reading. A symptom's edge was Ink here and Teal elsewhere: make it Teal |
 | 6 | Insights, FloraScore | Has FloraScore stayed in its usual range? | A line on the band, today ringed and labelled; one sentence on the part that moved most (every part named on a tie: "Timing and form moved it most this week, adding 2 points each") | Change | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
@@ -186,7 +192,7 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 40 | Data style: As built | All of the above | Repaired into these marks | Change | It is what every style's detail pages draw, and it disagreed with itself. It becomes the base, not an option |
 | 41 | Data style: Field journal | | | Fold into the base | Its answer-first sentence moves into the base's cards. Kept in the library |
 | 42 | Data style: Easy read | | | Keep, with the Easy version | Section 5 |
-| 43 | Data style: Rings | | | Cut | One mark, the ring, means eight things |
+| 43 | Data style: Rings | | | Cut, but its week card | One mark, the ring, means eight things. Its week card stays: it is Today's week card in every style that doesn't draw its own (Will, Nov 4) |
 | 44 | Data style: Bento | | | Cut | Donuts repeat the chart beside them |
 | 45 | Data style: Oura | | | Cut, Will's call | Section 5 |
 | 46 | Data looks library page | Which look draws each answer best? | Each look with its status in the app, and the question on every row | Change | It shows five looks as peers though three fail the same rules, and never says which one the app draws |
@@ -212,6 +218,142 @@ for each role; and a sweep check for the retired words.
 ---
 
 ## 3. Today's week card
+
+**Will's pick (Nov 4).** Shown the Rings style's week card on Today, Will said "much better on the week card, i like
+this", and asked for three changes: no dates over the card ("we see 5 to 11 already"), a day with nothing logged made
+more obvious, and no words naming FloraScore. So Today's week card is now the Rings week (`week()` in
+`library/js/look-rings.js`, through `RU.weekCard`, which refresh-looks wraps), with those three changes, in Florin
+charts (Score first and Day first) and in Rings alike. Oura, Field journal and Bento keep their own week, and the Easy
+version keeps its own. The card this section described until then stays as `RU.core.weekCard`, drawn only for a week
+that ends on another day or if the Rings card can't draw; its spec is kept below as the record.
+
+```
+This week
+
+4  of 6 days within your usual
+Outside your usual on Wednesday and Friday.
+
+ Mon    Tue    Wed    Thu    Fri    Sat    Today
+ (5)    (6)    (7)    ( 8)   (9)    (10)   (11)
+ Plum   Plum   Gold   empty  Gold   Plum   Plum
+ 85     86     83     + Add  78     83     83
+               ■                           ■
+
+o Within your usual      o Outside your usual
+o Nothing logged         ■ Symptoms
+
+See these days on Insights  >
+```
+
+Sarah, 12 weeks, Consistency C: the state in Will's screenshot. Every figure comes from the model: the count is
+`D.tally[7]`, as Insights' 7 days and `L.tally` count it; each number is that day's `L.score`; Wednesday is outside
+her usual (her first BM came later than usual) and so is Friday (firmer than her usual forms); Thursday has nothing
+logged; mild bloating came up on Wednesday and today.
+
+**What it draws, top to bottom.**
+
+1. **"This week"**, with no dates: the rings carry them. A screen reader hears the span ("This week, day by day, Oct
+   5 to Oct 11").
+2. **The answer:** within your usual out of the days read, as a big number ("4 of 6 days within your usual"), then one
+   sentence naming the days outside it, then what was counted neither way (`T.left`), the flag line included. Before
+   day 14 it counts the days logged, with "Days show as logged while Florin learns your usual." With nothing logged at
+   all: "No days logged yet." (Day first and Easy say "Nothing logged yet" for today on the same screen.)
+3. **Seven columns, ending on today:** the weekday (Today on today's, in bold, the column on Card 2), a 40px ring with
+   the date inside, that day's FloraScore under it, and an 8px Teal square for a day with symptoms. Days before the
+   person started are blank columns at the left. The row is a list, each day with its own words for a screen reader.
+4. **A day with nothing logged:** a thin empty Ink 3 ring, the date in Ink 2, and a "+ Add" pill where the number
+   would be. In the app the whole column is a button (49px wide at 390, 45px at 360) that opens plus for that day, as
+   History's Add to this day does; so is today before anything is logged. The library draws the same picture, not
+   wired.
+5. **The legend:** only the marks drawn, in the shared words (Within your usual, Outside your usual, Not counted,
+   Logged, Noted for a clinician, Nothing logged, Symptoms). No line naming the numbers.
+6. **See these days on Insights**, which opens Insights on 7 days. Free keeps it.
+
+**The ring for each day.**
+
+| A day that was | Its ring | Its word |
+|---|---|---|
+| Within your usual | A 4.5px Plum ring (Ray on dark), the date inside | Within your usual |
+| Outside your usual | A Gold ring over a Gold tint with a Shift Ink edge in light (Gold alone is 2.37:1 on the card); on dark a solid Gold disc with the date in the card colour (8.2:1), since Ray and Gold are only 1.6:1 against each other | Outside your usual |
+| Logged but not counted, or logged before day 14 | An Ink 3 ring | Not counted (before day 14: Logged) |
+| Nothing logged | A thin Ink 3 ring with nothing in it, the date in Ink 2, + Add under it | Nothing logged |
+| Today, flagged for a clinician | A Teal ring, before day 14 as after it, in no count, and the flag line in the answer | Noted for a clinician |
+| Today | Its column on Card 2 and the word Today; no second ring | Today |
+| A symptom that day | One 8px Teal square under the number | Symptoms |
+
+**The number under a ring** is that day's FloraScore (`L.score`), wherever a logged day has one, a day with only
+symptoms included (section 6, row 19), never before day 14. The card doesn't name it (Will: "FloraScore shouldn't need
+a name"); a screen reader hears "FloraScore 85" for the day. FloraScore blends the last 3 logged days, so a day outside
+the usual can carry a number inside the score's usual range (Sarah's Friday: 78, in her 74 to 82).
+
+**Contrast, measured on the phone:** the faintest mark is 4.23:1 in light (the Add outline and today's empty ring, on
+the Today column) and 4.9:1 in dark; the faintest number 7.16:1 in light and 8.15:1 in dark.
+
+**Where it departs from section 1.** Each is for the module-by-module review, which settles the day mark for the whole
+app:
+
+- **The day mark is a ring here, a filled circle elsewhere.** Section 1 says a ring around a day means today or a
+  flagged today. On this card every logged day is a ring, and today is marked by its column and its word. The calendar,
+  History's day headers, Your days and Easy still draw section 1's filled circles (`RU.dayMark`), so the app draws a
+  day two ways until the review picks one.
+- **A day with nothing logged is drawn.** Section 1 draws it as nothing, the date alone. Will asked for it to be
+  obvious, so here it is an empty ring with Add. It is still never a hatch, a strike-through or a zero.
+- **A number under every day, with no name.** Section 1 keeps a number to the point of the chart. Here each day's
+  FloraScore stands alone; the focus test's SC1 asks whether people read FloraScore as a grade.
+- **One sentence, not a line per day.** The card names the days outside the usual, not what was different (the record
+  below says "your first BM came later than usual, at 8:55 AM"). The reason is in the day's screen reader words and on
+  Insights' Your days.
+- **Empty days are buttons.** Section 1 says the week card's days aren't; here a day with nothing logged is, and only
+  that day.
+
+### Compact's week row
+
+Compact (Home's third option, Will, Nov 4) has no week card. Its week is a row of day buttons under a short FloraScore
+strip, for getting around more than for reading:
+
+```
+ (<)          October 2026          >
+ Mon   Tue   Wed   Thu   Fri   Sat   Today
+ (5)   (6)   (7)   ( 8)  (9)   (10)  (11)
+             ■    + Add               ■
+ o Within your usual   o Outside your usual
+ o Nothing logged      ■ Symptoms
+ Today                           4 ENTRIES
+ Within your usual timing, BM count and forms.
+ (today's logs, as History draws the day)
+```
+
+- **One week, Monday to Sunday**, with the month and year between two arrows ("September to October 2026" when the
+  week spans two). The arrows step a week, from the week of the first day to this week, and stop at both ends. On a
+  Sunday, as in the demo, the row is the same seven days as the week card; on any other day, the days after today show
+  as faded dates and aren't buttons, and days before the person started as dates in Ink 3.
+- **Each day:** its short weekday (Today on today's) and the week card's ring at 32px with the date inside, drawn by the
+  week card's own renderer (`FLOOKS` rings `.marks.ring`, styled by look-rings.css), so the two rows can't drift apart:
+  Plum within (Ray on dark), Gold outside (tint and Shift Ink edge in light, a solid disc on dark), Ink 3 not counted
+  or logged, a thin empty ring with the week card's "+ Add" under it for a day with nothing logged (a tap picks the day
+  and opens plus for it, as the week card's Add does), and a Teal ring for a day noted for a clinician. A Teal square
+  under a day with symptoms. The day picked sits on Card 2. Under the row, the week card's legend, only the marks on
+  show.
+- **What a mark says comes from History's calendar** (`cellOf`), not from Today's card: a past day with a sign is
+  noted for a clinician, as the calendar marks it, and on Free a day before the last 7 is only Logged.
+- **No count, no sentence and no numbers.** A day's words are its legend and its button's name ("Wednesday, October 7:
+  outside your usual, ..."), and the day picked opens under the row with its `L.dayWhy` line. A day within the usual
+  says what that means, "Within your usual timing, BM count and forms.", so it never reads as FloraScore's usual
+  range in the strip above it.
+- **Taps:** every day from the first day to today is a 44px tab (manual activation, the day picked its panel); Left and
+  Right, Home and End, and Page Up and Page Down move through it. "This week" under the month brings an earlier week
+  back to today in one tap. A log saved to another day (the plus button, Log for an earlier day) moves the pick there.
+- **A past day with an alarm feature** (Sarah's Wednesday note "some red in it") is Teal here, noted for a clinician,
+  as on the calendar; Score first's week card still reads and counts it (L.facts flags only today). Open call 8.
+
+**Compact's FloraScore strip** follows section 4's range bar, thinner: the usual range labelled ("Your usual 76 to
+82") with today's dot, no dot on a flagged today, Day 5 of 14 over 14 steps while learning, and `L.NO_SCORE` with no
+score. The number is a button to FloraScore's page (one tap, as on Score first and Day first). Beside it, the week's
+change as an average, "Week average 5 above last week" (`L.scoreMoved`'s `delta`: this week's average against last
+week's, as shown), in plain text, never Gold, and never on a day with no score. Saying "average" keeps it from reading
+as today's move, which is why section 2 took the "+1 vs last week" pill off the hero (row 1, and section 6, row 6).
+
+### The card before Nov 4 (the record: `RU.core.weekCard`)
 
 The card answers one question in five seconds: how many of my last 7 days sat within my usual, and which didn't.
 
@@ -372,7 +514,7 @@ built, repaired into these marks) has to be right first, because every detail pa
 | As built | The base | Repaired into section 1's marks, it is what the app draws, not an option |
 | Field journal | Fold into the base | Its best idea, the answer in a sentence above each chart, moves into the base's cards. Kept in the library |
 | Easy read | Keep, with the Easy version | One number, one sentence, one labelled picture. Already the Easy version's |
-| Rings | Cut | The ring means eight things card to card; radial bars and a curved time axis are hard to read on a phone; the part rings carry no labels; a number under every day ring needs a legend |
+| Rings | Cut, but its week card | The ring means eight things card to card; radial bars and a curved time axis are hard to read on a phone; the part rings carry no labels. Its week card is now Today's (Will's pick, Nov 4, section 3), and Will dropped the legend line naming the numbers |
 | Bento | Cut | Donuts repeat the chart beside them; a hollow ring means "last week" in one tile and "today" in another; the symptom heat strips are mostly empty cells; a glass surface outside the app's tokens. Its week pills (a dot per BM) are worth keeping as an idea if Will wants the BM count per day seen |
 | Oura | Cut, Will's call | Below |
 
@@ -390,7 +532,8 @@ journal for the detail pages" was never built: the detail pages stay As built in
 
 **Option 1: one look everywhere (what we recommend; the decision sheet says so, fix-words, Oct 28).**
 - What it is: every screen draws the base, with Field journal's answer-first sentences in it. The Easy version draws
-  Easy read. Rings, Bento, Oura and Field journal leave the app and stay in the library.
+  Easy read. Rings, Bento, Oura and Field journal leave the app and stay in the library, all but the Rings week card,
+  which is Today's (section 3).
 - Why do it: a card and its detail page draw the same day the same way, on every screen. Nothing on screen depends on
   a theme. With nothing left to pick, Data style folds into Version (Standard draws the base, Easy draws Easy read),
   which takes a decision off the list.
@@ -424,8 +567,8 @@ journal for the detail pages" was never built: the detail pages stay As built in
 fall back safely: the page already drops a stored value that isn't one of the options.
 
 **If Will keeps a cut style anyway:**
-- Rings: today's score under today's ring (it is missing on a symptoms-only day while Journal shows 83), labels on the
-  part rings, a straight time axis.
+- Rings: labels on the part rings, a straight time axis. (Today's score under today's ring on a symptoms-only day is
+  done, with the week card, Nov 4.)
 - Bento: drop the donuts and the glass.
 - Oura: Option 2's fixes.
 
@@ -455,7 +598,7 @@ Where a screen says something the model doesn't, and the fix. Worst first. The w
 | 16 | Week card, Insights, Ask: ties and single logs | "Most often" on a tie; "1 BM, mostly Watery"; "most often" and "mostly" for the same 2 of 4 | A tie is a tie; one of one is all | The one helper names both on a tie, says "all" or the count, and "mostly" only over half [C1, C9, M9] |
 | 17 | Week card, Just joined with No BM | "BMs: none logged yet" | Today is logged, with a count of 0 | "No BM logged today." [C2] |
 | 18 | Ask, suggested questions on Form and How often | "Why were some BMs looser?", "What made my busier days different?" for Sarah | 0 looser, 0 busier days | Offer a question only when its count is above 0, else a neutral one ("What do the forms mean?") [C13] |
-| 19 | Rings week card, symptoms-only today | No number under today | Today is 83 (Journal shows it) | Cut with Rings, or show it [M7] |
+| 19 | Rings week card, symptoms-only today | No number under today | Today is 83 (Journal shows it) | Fixed (Nov 4): the number under a ring is the day's `L.score` wherever a logged day has one |
 | 20 | Legends on the week card and Symptoms | Two shades, or all three strengths, when one is drawn | Only mild this week | Legends from the marks drawn; strength in words [C2, C10] |
 | 21 | "Without it, FloraScore would be 83" on a No BM day | An honest log priced at 15 points | True arithmetic, wrong lesson | No counterfactual for a No BM log. Whether to keep it for any log is an open call [C3] |
 | 22 | Today and Easy, the big score counting up | 72 for a moment beside "a little above your usual range, 74 to 82" | 83 | No count-up on a number that sits beside its reading [C4, M3] |
@@ -501,7 +644,7 @@ workflow's. The usual five checks run after each group: `qa.js`, `behave.js`, `a
 | C11 | `refresh-insights.js` check-in, patterns | Check-in card: each answer with its chip (section 2), no strips. Detail dots 8px. Patterns card: no count dots. Pattern detail: two bars whose length is the share, the counts written on them, in the reading colour (replacing `countDots`); late dinners keep the two-group strip of first BM times; foods drop the 90-day day-by-day rows, and the table twin lists each day. Picked tier outlined in Ink | Shots with the check-in on; patterns at 90 days and sparse; behave: "20 of 22" draws longer than "26 of 52" |
 | C12 | `refresh-insights.js` FloraScore detail | The hero's block in place of the ring: the number, the sentence, the range bar ("Where today sits", with Lowest and Highest named), no Gold; a neutral week chip worded as averages; the 30-day line without area or average line, the y axis from the data, today ringed, the answer "In its usual range on N of 30 days"; What moved it as four rows of bars from a centre line in whole points (C1), each with words, and a part that didn't move as words with no bar; the parts list says "out of 100"; the table twin for the part bars | Shots at 390 (no label on the line); behave: the four rows add up to the chip's change |
 | C13 | `refresh-insights.js` `RU.askContext` | Questions from the counts (looser only when looser > 0, busier only when busy > 0); "moved most" in whole points; the learning Form fact follows the "mostly" rule | Behave: Sarah at 30 days has no looser or busier question |
-| C14 | `refresh-ui.js` `RU.historyDay` | Each day's header carries `RU.dayMark` and its `L.dayWhy` line (a flagged today: `RU.FLAG_DAY`); a gap reads "Nothing logged this day. It stays a gap, never a zero." No chip on BM rows: `RU.entryRow` stays as it is, so Today, Day first and Easy don't change | Shot of History with Friday's Firm BM; behave: no chip inside an entry row; a flagged today's header reads `RU.FLAG_DAY` |
+| C14 | `refresh-ui.js` `RU.historyDay` | Each day's header carries `RU.dayMark` and its `L.dayWhy` line (a flagged today: `RU.FLAG_DAY`); a gap reads "Nothing logged this day." (until Nov 4 it went on "It stays a gap, never a zero.", a design rule in a patient's words) No chip on BM rows: `RU.entryRow` stays as it is, so Today, Day first and Easy don't change | Shot of History with Friday's Firm BM; behave: no chip inside an entry row; a flagged today's header reads `RU.FLAG_DAY` |
 | C15 | `refresh-insights.js` | Export `RU.cardChart(M, V, key, n)`, a card's chart and legend for a range, so Ask draws the card's own; the membership page's ring becomes the glyph | Shots of the membership page; behave: Ask's chart markup for each key matches the card's |
 | C16 | `app-charts.js` (the studio's kit; the changes are for the studio to take back) | `C.range` draws no dot when the value is null; `C.seg`'s tooltip gives counts, no percents; `C.ring({ glyph: true })` draws a plain circle with no arc and no value. Callers drop `area: true`: the Insights FloraScore card, the FloraScore detail's line and Ask's `scoreChart` (the hero's goes with C4) | The shots above |
 | C17 | `refresh.css` (.ap- chart rules only) | `.ap-day` rules for `RU.dayMark`; the hero's range bar (Ray band at 16%, Cream dot with a 2px hero ring); remove the `.ap-wk` strip, hatch, square and dash rules; `.dv-bar.is-out` and `sw--out` to Gold with the edge; `.dv-sym` and `.dv-cell` to one Teal square; drop the `.c-row.is-gap .c-row-lbl` strike; one rule giving every light Gold mark the Shift Ink edge. The calendar borrows `.ap-wk-dot` and `.ap-wk-sq` (refresh-variants.css says so), so it moves to `.ap-day` in M1 at the same time | `audit-spacing.js` on the scale; behave: a computed edge on every Gold mark in light; the calendar still draws a mark for every day |
@@ -679,6 +822,14 @@ library is republished together with the prototype.
    logging.
 5. **The BM count per day on the week card:** left out for five-second reading. Bento's week pills (a dot per BM
    inside the day) can add it back if Will wants it seen.
+6. **One day mark (Nov 4).** Today's week card and Compact draw a day as a ring, from one renderer; the calendar,
+   History, Your days and Easy draw section 1's filled circle, with a day with nothing logged as the date alone. The
+   module-by-module page puts the calendar with the week's ring to Will; `RU.dayMark` stays as it is until he picks,
+   since that page draws Florin charts' filled circles from it.
+7. **Compact's "+5 this week"** (settled Nov 4): it reads "Week average 5 above last week", and says nothing with no
+   score today.
+8. **A past day with an alarm feature:** Teal on the calendar and Compact, read and counted on Today's week card and
+   Insights. Mark it everywhere (and leave it out of every count), or only today?
 
 **Settled in this pass:** the week card counts the last 7 days, as Insights does; the check-in's chip stays Gold for
 a move either way, with words saying which way.

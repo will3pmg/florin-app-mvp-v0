@@ -570,7 +570,7 @@
       else { assigned = "phone"; code = FX.code.make(); arms = { home: pick(homes), history: pick(hists), week: pick(weeks), order: 1 + Math.floor(Math.random() * 5) }; }
       if (version === "easy") { arms.home = arms.home || homes[0]; arms.week = arms.week || weeks[0]; }
       /* Will's own runs (?test=1) can pick the arms: &home=day&history=list&week=strip */
-      if (FX.TEST) { const q = new URLSearchParams(location.search); [["home", ["score", "day"]], ["history", ["calendar", "list"]], ["week", ["built", "card", "strip", "note", "chart"]]].forEach(([k, ok]) => { if (ok.includes(q.get(k))) arms[k] = q.get(k); }); }
+      if (FX.TEST) { const q = new URLSearchParams(location.search); [["home", ["score", "day", "compact"]], ["history", ["calendar", "list"]], ["week", ["built", "card", "strip", "note", "chart"]]].forEach(([k, ok]) => { if (ok.includes(q.get(k))) arms[k] = q.get(k); }); }
     }
     save({ arms, code, assigned, version, version_picked: picked, segment, person, age65 });
     putCode(code);
@@ -725,7 +725,9 @@
         if (a.name === "edit") T.edited = true;
         if (a.name === "undo") T.undid = true;
       }
-      if (T.id === "score" && a.name === "idetail" && a.k === "score") P.add(a.el && a.el.classList && a.el.classList.contains("vr-sc") ? "chip" : "details");
+      /* Day first's chip; Compact's strip, its number (FloraScore's page in one tap) or its Insights, then the card */
+      if (T.id === "score" && a.name === "idetail" && a.k === "score") P.add(a.el && a.el.classList && a.el.classList.contains("vr-sc") ? "chip" : a.el && a.el.classList && a.el.classList.contains("vr-cp-n") ? "strip" : "details");
+      if (T.id === "score" && a.name === "vr-cp-ins") P.add("strip");
       if (T.id === "checkin" && a.name === "ck-start") P.add(a.overlay === "plus" ? "plus" : "today card");
       if (T.id === "history") {
         if (a.name === "vr-cal-m") T.months++;
@@ -744,6 +746,10 @@
     const d = frame.contentDocument;
     if (!d) return null;
     if (fa.V().easy) return [".ap-ez-today .ez-week .ez-ans", ".ap-ez-today .ez-week .ez-days"];
+    /* Compact: no week card; its week is the row of days under FloraScore */
+    if (fa.V().home === "compact") return [".vr-cpw .vr-cpw-h", ".vr-cpw .vr-cpw-g"];
+    /* the prototype's own card, since Nov 4 the Rings week: its answer, then its row of days */
+    if (d.querySelector('.ap-layer [data-rlk-k="week"] .rg-weekrow')) return ['[data-rlk-k="week"] .rg-lead', '[data-rlk-k="week"] .rg-weekrow'];
     const w = d.querySelector(".ap-layer [data-week]");
     if (w) return ["[data-week] [data-answer]"].concat(w.querySelector(".ap-days") ? ["[data-week] .ap-days"] : w.querySelector("svg") ? ["[data-week] svg"] : []);
     return [".ap-wk .ap-wk-a", ".ap-wk .ap-days"];
@@ -770,7 +776,7 @@
           ok = todayBms(fa).some((e) => { if (!mine(e)) return false; const dt = T.ref - e.t; return dt >= lo - 1e-6 && dt <= hi + 1e-6; });
           break;
         }
-        case "week": ok = held(T, !top && ["today", "home-day", "ez-today"].includes(k) && fa.inView(weekSels(fa) || [])); break;
+        case "week": ok = held(T, !top && ["today", "home-day", "home-compact", "ez-today"].includes(k) && fa.inView(weekSels(fa) || [])); break;
         case "score": ok = easy ? held(T, k === "ez-weeks" && fa.inView([".ap-ez-weeks .ez-score"], { share: 0.6 })) : k === "i-score"; break;
         /* the pattern's own line in view (the food and its count), not the whole card: a tall card never fits a short
            screen under the strip */
@@ -879,6 +885,8 @@
       case "WK1": case "WK2": case "WK3": {
         const F = L.span(M, 7, mode), T7 = L.tally(F, true), flag = F.some((f) => f.state === "flag");
         if (qid === "WK1") {
+          /* Compact's week shows no count of days, so there's no count to ask about */
+          if (!c.easy && c.home === "compact") return null;
           const gaps = F.filter((f) => !f.logged && !f.pending).length;
           if (T7.known >= 7 || flag || !gaps || gaps !== 7 - T7.known) return null;
           return mk(Q.own.WK1(Object.assign({}, c, { known: T7.known, gapWord: gaps === 1 ? "One day" : gaps === 2 ? "Two days" : `${cap(NUMW[gaps] || String(gaps))} days` })), { right: ["gap"] });
@@ -947,7 +955,9 @@
     showApp();
     fa.closeAll();
     const was = k === "home" ? V.home : k === "history" ? V.history : V.look;
-    const other = k === "home" ? (was === "score" ? "day" : "score") : k === "history" ? (was === "calendar" ? "list" : "calendar") : "oura";
+    /* the other option of the arm, as config.js pairs them (Score first against Compact, Nov 4) */
+    const D = CFG.decisions || {}, pair = (v, all, dflt) => { const a = [].concat(all || []); return a.find((x) => x !== v) || dflt; };
+    const other = k === "home" ? pair(was, D.home, was === "score" ? "day" : "score") : k === "history" ? pair(was, D.history, was === "calendar" ? "list" : "calendar") : "oura";
     curCmp = { k, i: step.i, was, other };
     fa.set(k === "oura" ? "look" : k, other);
     fa.go(k === "history" ? "history" : "today");
@@ -968,7 +978,9 @@
     const fa = await app();
     fa.comments(false);
     const def = Q.compare[C.k];
-    const qs = [() => Object.assign({}, def.q, { qText: def.q.q })];
+    /* CP1 names the two Homes the person saw, and No preference */
+    const q0 = C.k === "home" ? Object.assign({}, def.q, { opts: def.q.opts.filter(([v]) => v === C.was || v === C.other || v === "none") }) : def.q;
+    const qs = [() => Object.assign({}, q0, { qText: q0.q })];
     if (def.more) qs.push(() => Object.assign({}, def.more, { qText: def.more.q }));
     openSheet({ label: "A question" });
     drawStrip({ kick: "Another way", text: "One quick question.", buttons: [], comment: false });
@@ -1465,12 +1477,12 @@
   async function pulseHint() {
     const T = curTask, fa = await app();
     if (!T) return;
-    const easy = !!fa.V().easy, day = fa.V().home === "day" && !easy;
+    const easy = !!fa.V().easy, day = fa.V().home === "day" && !easy, cp = fa.V().home === "compact" && !easy;
     const sel = {
       bm: easy ? [".ap-ez-big--bm"] : day ? [".vr-log", ".ap-tb-plus"] : [".ap-tb-plus"],
       time: [S().t1 ? `[data-act="edit"][data-id="${S().t1.id}"]` : ".ap-tl", ".ap-tl"],
-      week: ["[data-week]", ".ap-wk", ".ez-week"],
-      score: easy ? ['.ap-layer [data-act="tab"][data-tab="insights"]'] : day ? [".vr-sc"] : [".ap-hero"],
+      week: cp ? [".vr-cpw"] : ['[data-rlk-k="week"]', "[data-week]", ".ap-wk", ".ez-week"],
+      score: easy ? ['.ap-layer [data-act="tab"][data-tab="insights"]'] : day ? [".vr-sc"] : cp ? [".vr-cp-n"] : [".ap-hero"],
       patterns: easy ? ['.ap-layer [data-act="tab"][data-tab="insights"]'] : ['.ap-tb [data-tab="insights"]'],
       checkin: ['[data-act="ck-start"]'],
       history: ['.ap-tb [data-tab="history"]'],

@@ -159,7 +159,9 @@
     if (state === "pending") return Object.assign(out, { word: "Nothing logged yet", say: "Nothing logged yet today.", sr: "nothing logged yet" });
     if (state === "none") return Object.assign(out, { word: "Nothing logged", line: `Nothing logged on ${name}.`, say: "Nothing logged.", sr: "nothing logged" });
     if (state === "flag") return Object.assign(out, { word: "Noted for a clinician", line: L.FLAG_DAY, say: L.FLAG_DAY, sr: "noted for a clinician, not read against your usual" });
-    if (state === "usual") return Object.assign(out, { word: "Within your usual", line: `${name}: within your usual.`, say: "Within your usual.", sr: "within your usual" });
+    /* say, under a day's name, names what "your usual" means for a day (its timing, count and forms), so it never reads
+       as FloraScore's usual range on a screen that shows both (critic, Nov 4) */
+    if (state === "usual") return Object.assign(out, { word: "Within your usual", line: `${name}: within your usual.`, say: "Within your usual timing, BM count and forms.", sr: "within your usual" });
     if (state === "logged") {
       const n = f.count;
       const what = n == null ? "symptoms or meals" : n === 0 ? "No BM" : plural(n, "BM");
@@ -1015,7 +1017,7 @@
     const say = f.state === "none" || f.pending || f.state === "logged" ? "" : why.say;
     return `<section class="ap-hd" data-a>
         <div class="ap-hd-h">${RU.dayMark(f, { M, mode: V.form, why, todayWord: false })}<div class="ap-hd-t"><h2>${esc(dayName(x.d))}</h2>${say ? `<p class="ap-hd-why">${esc(say)}</p>` : ""}</div><span class="ap-k">${x.logged ? (es.length ? plural(es.length, "entry", "entries") : isToday ? "Nothing yet" : "Nothing logged") : "Nothing logged"}</span></div>
-        ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">Nothing logged this day. It stays a gap, never a zero.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
+        ${x.logged ? (es.length ? `<ol class="ap-card ap-tl">${es.map((e) => RU.entryRow(e, M, V)).join("")}</ol>` : `<p class="ap-hd-none">Nothing logged yet.</p>`) : `<div class="ap-hd-gap"><p class="ap-hd-none">Nothing logged this day.</p><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="plus-day" data-v="${x.d}">${ic("plus")}Add to this day</button></div>`}
       </section>`;
   };
   /* the one rule for a day on Free: read against the usual for the last 7 days (Insights' 7 days), only logged before

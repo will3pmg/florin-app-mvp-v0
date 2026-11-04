@@ -18,7 +18,7 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 | Where | Their own iPhone or Android phone, from a link. No account. The tasks run in the phone's browser; the last task puts the app on the home screen, and the rest runs from there |
 | How | Self-guided: the flow walks each person through alone. Nobody watches or records them |
 | What they do | Consent, nine intake questions, eight tasks with a rating and a few questions each, two short comparisons (three for Oura users), putting the app on the phone, two minutes of free use with comments, an exit survey |
-| What they see | The Florin app as the prototype draws it, with our recommended decisions, the week card Will picks, and Sarah's 12 weeks of logs. Home and History are each shown half one way, half the other |
+| What they see | The Florin app as the prototype draws it, with our recommended decisions, the week card Will picked (the Rings week, Nov 4), and Sarah's 12 weeks of logs. Home (Score first or Compact) and History are each shown half one way, half the other |
 | Where it lands | One Google Sheet, five tabs (sessions, answers, tasks, comments, events), through a Google Apps Script web app. Thank-you codes go to a separate sheet for the recruiter. We summarise it when Will asks |
 | The app | A static web app in `focus/`, hosted on Netlify (publish directory `focus/site`), loading the prototype's files and one focus module. Settings in `focus/config.js` |
 | Why not a Claude artifact | An artifact can't take writes from people outside Florin Health's organisation, and its content security policy blocks posts to other hosts, so answers couldn't reach the Sheet |
@@ -27,8 +27,10 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 
 ## Before launch
 
-0. **Will picks the week card** from the options page (`options/home/`: the week card tightened, the week strip, the
-   week in a note, Mornings). One design, or two to test half and half (section 2.4). Set `weekCard` in config.js.
+0. **Will picked the week card** (Nov 4): the Rings week, with no dates over it, an empty ring with Add on a day with
+   nothing logged, and each day's FloraScore under its ring. The prototype now draws it as Today's own card, so
+   config.js has `weekCard: ["built"]`. The options page (`options/home/`) stays as the October 29 record; its four
+   designs can still be set for a second arm (section 2.4).
 1. **Counsel reads** the consent (3.3), the screener (2.2), every word in section 4 and the three messaging lines
    (MG1), and checks the state consumer health data laws, such as Washington's My Health My Data Act, for S6, IN2, IN3
    and the free text.
@@ -54,7 +56,12 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 
 ## Calls for Will
 
-- **The week card** to test (Before launch 0).
+- **Home's arms: Score first against Compact** (Nov 4). config.js now splits Home between Score first, our
+  recommendation, and Compact, the option Will asked for after the current app's home; Day first is out of this round.
+  Confirm, or put Day first back as the second arm (`decisions.home` in config.js). Compact has no week card: its week
+  is the row of days under FloraScore, so WK1 (which asks about the card's count) isn't asked on it, and the week card
+  results come from the Score first arm alone.
+- **The week card:** picked (Before launch 0).
 - **Recruitment:** who finds the 32, including five people 65 or over and six who use the Florin app now, and the
   budget for recruiting and the thank-you. If current users come from Florin's own user list, the person who contacts
   them is kept apart from the people reading the answers.
@@ -184,9 +191,9 @@ by demo person.
 
 | Arm | Options | Who |
 |---|---|---|
-| Home (`home`) | Score first · Day first | Standard version only (Easy has its own Today) |
+| Home (`home`) | Score first · Compact (Nov 4; Day first is out of this round, a call for Will) | Standard version only (Easy has its own Today) |
 | History (`history`) | Calendar · List | Everyone |
-| Week card (`weekCard`) | Will's two, when he picks two | Standard version only (Easy draws its own week) |
+| Week card (`weekCard`) | The Rings week Will picked (`built`, the prototype's own card since Nov 4); a second design only if Will wants one | Standard version on Score first (Compact has no week card, and Easy draws its own week) |
 | Task order | Five rows of a Latin square over the five rotated tasks (3.5) | Everyone |
 
 The script keeps a balanced list per platform (iPhone, Android): every 4 sessions on a platform see each Home, History
@@ -372,7 +379,7 @@ when its question shows, from the phone's live logs.
 
 **T1 Log a BM** (`bm`, fixed, about 2 minutes)
 - Task: "Log a BM for {name}, as if it happened just now. Pick any word that fits."
-- Hint: "Tap the plus button at the bottom of the screen." Day first, which has a row of words on Today: "Tap a word
+- Hint: "Tap the plus button at the bottom of the screen." (Compact too.) Day first, which has a row of words on Today: "Tap a word
   under today's logs, or the plus button at the bottom of the screen." Easy: "Tap I had a BM on Today."
 - Goal: `RU.bmCount(M)` goes up.
 - Path: a tile in plus, a word in Day first's row (`vr-quick`), or the form; details added or not; Undo straight after
@@ -394,19 +401,24 @@ when its question shows, from the phone's live logs.
 
 **T3 Read the week** (`week`, fixed, about 1.75 minutes)
 - Task: "Find {name}'s last 7 days on Today and read them. Tap Done when you have."
-- Hint, by week card: the card or Mornings, "On Today, scroll down past today's logs to Your last 7 days."; the strip,
-  "It's at the top of Today."; the note, "It's under FloraScore." Easy: "On Today, scroll down to Your last 7 days."
+- Hint, by week card: the Rings week (`built`), "On Today, scroll down past today's logs to This week."; the card or
+  Mornings, "On Today, scroll down past today's logs to Your last 7 days."; the strip, "It's at the top of Today."; the
+  note, "It's under FloraScore." Compact: "It's the row of days under FloraScore, at the top of Today." Easy: "On
+  Today, scroll down to Your last 7 days."
 - Goal: the week's answer line and its row of days in view together for 2 seconds (a design with no row of days, its
-  answer line alone); then Done. Each week card marks its own goal elements.
-- Then: WK1, WK2, WK3 (designs that draw a mark per day), TE, TR (eight chips). While they show, the week's row of
+  answer line alone); then Done. Each week card marks its own goal elements. Compact: its month heading and its row of
+  days in view together for 2 seconds.
+- Then: WK1 (not on Compact, which shows no count of days), WK2, WK3 (designs that draw a mark per day), TE, TR (eight
+  chips). While they show, the week's row of
   days (not the card's top) is scrolled into the part of the screen the sheet leaves showing, and WK2's days sit in two
   columns, so Today and the last two answers show without scrolling the sheet.
 
 **T4 FloraScore** (`score`, rotated, about 1.5 minutes)
 - Task: "Open the page that explains {name}'s FloraScore." Easy: "Find where the app explains {name}'s FloraScore."
   (Easy has no FloraScore page, and its FloraScore card on Today isn't a button.)
-- Hint: Score first, "Tap Details on the FloraScore card."; Day first, "Tap FloraScore at the top of Today." Easy: "Tap
-  More about your weeks on Today."
+- Hint: Score first, "Tap Details on the FloraScore card."; Day first, "Tap FloraScore at the top of Today."; Compact,
+  "Tap the FloraScore number at the top of Today." (its number opens FloraScore's page, one tap as on the other two
+  arms, Nov 4). Easy: "Tap More about your weeks on Today."
 - Goal: the screen key is `i-score`. Easy has no FloraScore page: the screen key is `ez-weeks` with its FloraScore card
   in view for 2 seconds.
 - Then: SC1, SC2, TE, TR (eight chips). Easy's Today already prints "FloraScore compares you with you", so SC1 is
@@ -451,8 +463,9 @@ After the last task, the phone shows the option the person didn't use, with a sm
 then asks which they'd rather have (4.3). Half the sessions saw each option first. The two run in the order of the
 session's row.
 
-- **CP1, Home** (Standard only): the phone switches Home to the other option and opens Today. "Here's another way Today
-  could open. Find today's FloraScore on it, then tap Next." Then Home goes back.
+- **CP1, Home** (Standard only): the phone switches Home to the other option of the pair in config.js (Score first or
+  Compact) and opens Today. "Here's another way Today could open. Find today's FloraScore on it, then tap Next." Then
+  Home goes back.
 - **CP2, History**: the phone switches History to the other option and opens History. "Here's another way History could
   look. Find what {name} logged {day}, then tap Next." {day} is the latest day in the last 7 with a BM logged:
   "yesterday, Saturday, October 10" when it's yesterday (the list labels it Yesterday), else "on Thursday, October 8".
@@ -733,7 +746,7 @@ draws her today.
 
 | ID | Question, word for word | Answers | Why it's asked |
 |---|---|---|---|
-| CP1 | Which would you rather see first when you open the app? | The FloraScore card · The day and its logs · No preference | Decision 3, after using one Home for every task and the other for one small task; half saw each first |
+| CP1 | Which would you rather see first when you open the app? | The two Homes the person saw, from: The FloraScore card (Score first) · The day and its logs (Day first) · The week, with a day's logs under it (Compact); then No preference | Decision 3 and its open question (Compact in place of Score first), after using one Home for every task and the other for one small task; half saw each first |
 | CP2 | Which would you rather use to look back at past days? | A month at a glance · A list of days · No preference | Decision 4 and its open question (keep a switch on History), the same way |
 | CP3 | Which way of showing FloraScore would you rather have on Today? | The one you used first · This one · No preference | Data style's open call 1 (a fixed Oura on Today), from the people who know Oura |
 | CP3b | What makes you say that? (optional) | A box for words | CP3 is read as words: a few people |
@@ -839,7 +852,8 @@ drawn by the module in the app's tokens and components, light and dark.
 false }` that `refresh-app.js` reads to mount the phone alone, so the focus page stops relying on CSS to hide the demo
 chrome. The study doesn't need it to run.
 
-**The week cards.** Each design Will picks from `options/home/` becomes a focus module that replaces
+**The week cards.** Since Nov 4 the prototype's own card (`built`) is the Rings week Will picked, so it needs no focus
+module. Each design from `options/home/`, if one is set for a second arm, becomes a focus module that replaces
 `RU.todayParts.week` (and, for a design that moves the week, such as the strip or the note, wraps `RU.todayLayout`), as
 `refresh-looks.js` already does for the data style. They're built from the options page's own drawing functions
 (`window.FLORIN_HOME.draw`), copied at build. No core hook is needed. Easy keeps its own week.
@@ -863,14 +877,14 @@ rebuilds the model and goes to Today, so they're set before a task starts, never
 |---|---|---|---|
 | Consistency | `form` | C | Our recommendation; BM1 and BM2 test its words |
 | BM logging | `bmUI` | Quick tiles and form | Our recommendation. Sarah has far more than 5 BMs, so a tile saves at once (`RU.QUICK_AFTER`) |
-| Home | `home` | Half Score first, half Day first (2.4) | Our recommendation against the other, counterbalanced; CP1 shows the other |
+| Home | `home` | Half Score first, half Compact (2.4) | Our recommendation against the option Will asked for (Nov 4), counterbalanced; CP1 shows the other |
 | History | `history` | Half Calendar, half List (2.4) | The same; CP2 shows the other |
 | Weekly check-in | `checkin` | On | Our recommendation; T6 |
 | Meal sheet | `mealUI` | Quick, voice or text | Our recommendation. Reached in free use; the microphone plays a sample (`L.mealSay`), as in the prototype |
 | Data style | `look` | Florin charts (`built`) | Our recommendation. CP3 sets Oura for one look, then puts the look and the theme back |
 | Version | `easy` | Easy for 65 or over; otherwise from IN9 (2.4) | Decision 8's person tests it |
 | Onboarding | `onboard` | Short | Not shown this round |
-| Home's week card | `weekCard` | Will's pick from `options/home/` (`card`, `strip`, `note` or `chart`), or two, half and half; `built` is today's card | The session row records it, so results read by design |
+| Home's week card | `weekCard` | `built`: the prototype's own card, the Rings week Will picked (Nov 4). `card`, `strip`, `note` and `chart` (the October 29 options) stay for a second arm | The session row records it, so results read by design |
 | Plan | `plan` | Member | Every task is open to everyone. The membership page is shown before the value questions instead |
 | Logs | `data` | 12 weeks (`est`) | Every screen has a usual, a FloraScore and possible patterns |
 | Demo person's meals | `meals` | Every day (`all`) | Possible patterns show (T5). "Only with symptoms" would hold them back and show the food check; a later round could try it |
@@ -986,7 +1000,7 @@ own, never a window's part of them.
 | `home`, `history`, `week` | The session's arms |
 | `order` | The Latin square row (1 to 5) |
 | `assigned` | script, or phone when it was offline at the end of intake |
-| `decisions` | The config on the phone, one line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built onboard=short weekCard=card plan=member data=est meals=all` |
+| `decisions` | The config on the phone, one line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built onboard=short weekCard=built plan=member data=est meals=all` |
 | `install` | seen, said, browser, or couldn't (3.7) |
 | `installed` | yes once any piece comes from the installed app |
 | `install_at` | When the install steps first showed |
@@ -1025,7 +1039,7 @@ own, never a window's part of them.
 | `started_at`, `seconds`, `active_seconds` | When it started, how long until Done, Skip or the goal, and how much of that the page was visible |
 | `outcome` | seen (the app saw the goal), said (Done without the goal), stuck (skipped: couldn't find it), declined (skipped: didn't want to), broken (skipped: something didn't work). For install, as 3.7 |
 | `hint` | yes or no |
-| `path` | How it was done. bm: plus tile, Today's row or form, details yes or no, undo yes or no. time: edit, undo and log again, or gave up. score: details or chip (Standard) or Your weeks (Easy). checkin: today card or plus. history: calendar or list, and months moved. ask: suggested, typed, or ask about this. install: added, code from the address or typed |
+| `path` | How it was done. bm: plus tile, Today's row or form, details yes or no, undo yes or no. time: edit, undo and log again, or gave up. score: details, chip (Day first) or strip (Compact's number or its Insights) in Standard, or Your weeks (Easy). checkin: today card or plus. history: calendar or list, and months moved. ask: suggested, typed, or ask about this. install: added, code from the address or typed |
 | `screens` | How many screens the phone moved through |
 | `backs` | How many times they went back or closed something |
 | `ease` | TE (IS1 for install), 1 to 7 |
@@ -1038,7 +1052,7 @@ own, never a window's part of them.
 |---|---|
 | 6.2's columns | |
 | `phase` | The task id, cp1, cp2, cp3, install, free or exit |
-| `screen` | The app's screen key, from an allow-list (today, home-day, ez-today, plus, bm, ez-bm, i-score, ez-weeks, history, hist-cal, ask). Keys that carry health content map to neutral ones: `ask-alarm` reads ask; the flag, No BM and "When to see a clinician" sheets read "a sheet" |
+| `screen` | The app's screen key, from an allow-list (today, home-day, home-compact, ez-today, plus, bm, ez-bm, i-score, ez-weeks, history, hist-cal, ask). Keys that carry health content map to neutral ones: `ask-alarm` reads ask; the flag, No BM and "When to see a clinician" sheets read "a sheet" |
 | `state` | The decisions on the phone, one line |
 | `target` | What was tapped, from an allow-list in the app's interface words: a card's title ("Your last 7 days", "FloraScore", "Possible patterns"), a tab, a named control ("Save BM", "Start", "Details"), or the screen's title. Anything else reads "a log entry", "a log sheet", "the chat", "a text box" or "a sheet", never what it says |
 | `tx`, `ty` | Where inside the target, as a share of its width and height, 0 to 1, two decimals |
@@ -1057,7 +1071,7 @@ own, never a window's part of them.
 | `phase` | As in comments, or consent, intake |
 | `type` | flow, screen, act, set, view, depth, vis, install, net or error |
 | `screen` | The app's screen key at the time, from the allow-list above |
-| `name` | flow: consent, intake_done, tour_start, task_start, task_goal, task_end, cp_shown, install_shown, free_start, free_end, exit_start, pay_start, submit, stopped, cleared. screen: the key moved to. act: the app's action name from an allow-list (tab, plus, profile, idetail, iback, edit, undo, vr-quick, ck-start, vr-cal-day, vr-cal-m, ask-about, pay-start); `flag-report`, `flag-undo` and `nobm` read "a sheet" or "a log", anything else "other". set: the decision key. view: a card's title, once half the card has been in view for a second. depth: the deepest point reached on a screen, as a share of its height, sent on leaving it. vis: hidden or visible. install: prompt_shown, prompt_accepted, prompt_dismissed, appinstalled, standalone, code_ok, code_bad, code_unknown. net: flushed, failed. error: error |
+| `name` | flow: consent, intake_done, tour_start, task_start, task_goal, task_end, cp_shown, install_shown, free_start, free_end, exit_start, pay_start, submit, stopped, cleared. screen: the key moved to. act: the app's action name from an allow-list (tab, plus, profile, idetail, iback, edit, undo, vr-quick, ck-start, vr-cal-day, vr-cal-m, vr-cp-day, vr-cp-wk, vr-cp-ins, ask-about, pay-start); `flag-report`, `flag-undo` and `nobm` read "a sheet" or "a log", anything else "other". set: the decision key. view: a card's title, once half the card has been in view for a second. depth: the deepest point reached on a screen, as a share of its height, sent on leaving it. vis: hidden or visible. install: prompt_shown, prompt_accepted, prompt_dismissed, appinstalled, standalone, code_ok, code_bad, code_unknown. net: flushed, failed. error: error |
 | `detail` | A short value from a fixed list: a tab's name, a decision's value, a count, a share, an error's file and line (never its message, which can hold typed text). Never a log's content, a picked form, a symptom, a food, a note or anything typed |
 
 **The recruiter's sheet** is a separate spreadsheet the recruiter can open, and the research team doesn't need. Its
@@ -1153,12 +1167,12 @@ subgroup on at least 3. Each pair of bars meets, so every result falls on one si
 |---|---|---|---|
 | 1 Consistency: C | BM1 and BM2, by IN5 | Every word is marked unclear, and every pair hard to tell apart, by fewer than 1 in 5 | A word or a pair reaches 1 in 5 (5 of 24): reword it before counsel reads C. If at least 3 of today's users mark Pellets or Soft, at twice the others' rate: a one-time note for them where the tiles first show |
 | 2 BM logging: Quick tiles | The bm and time tasks' outcomes, seconds and paths; Undo straight after a one-tap save | 4 in 5 save a BM without a hint, and 4 in 5 change the time within 60 seconds | Fewer than 4 in 5 save without a hint: look at plus and the tiles. Fewer than 4 in 5 change the time within 60 seconds: build the time buttons before any pilot. 1 in 4 or more undo a one-tap save: open the form for the first two weeks (the decision's open question) |
-| 3 Home: Score first | The week and score tasks by Home arm; CP1 on its own | Of those with a preference, fewer than 6 in 10 prefer the day and its logs, and the Day first arm doesn't reach those goals more often by 3 people or more | 6 in 10 or more of those with a preference prefer the day and its logs, or the Day first arm reaches them more often by 3 people or more: put Day first back to Will |
+| 3 Home: Score first, or Compact | The week and score tasks by Home arm; WK2 and WK3 by arm (does a Gold ring with no word read as outside the usual on Compact?); CP1 on its own | Of those with a preference, fewer than 6 in 10 prefer the week with a day's logs, and the Compact arm doesn't reach those goals more often by 3 people or more | 6 in 10 or more of those with a preference prefer Compact, or the Compact arm reaches them more often by 3 people or more: Compact as the default goes to Will (the decision's open question). WK2 or WK3 right for fewer than 4 in 5 on Compact: its week needs words before it can be the default |
 | 4 History: Calendar | The history task by arm, HI1, CP2 | 4 in 5 in the Calendar arm find the day in {month} | Fewer than 4 in 5: the gap needs its own mark or word on the calendar. 6 in 10 or more of those with a preference prefer the list: keep a List switch on History (the open question) |
 | 5 Weekly check-in: On | CK1, the check-in task's ease | Half or more would answer every week or most weeks, and the median ease is 6 or more | Under half would answer most weeks: keep it, and let people turn it off in Profile (the open question). Median ease under 6: look at the check-in's screens |
 | 7 Data style: Florin charts, and the hero's words | SC1 and SC2 by version, the score task's chips, comments on the hero and the cards; CP3's words | SC1 right for 4 in 5 in Standard | Fewer than 4 in 5 in Standard: the hero says "compares you with you" on Today, as Easy does. Oura users' CP3 words go to Will with open call 1, as words, not a count |
 | 8 Version: Easy as a setting | The Easy group's task outcomes and words; IN9 against TX2; TX1 | No bar: read as problems found, since the Easy group is about five people | A task stuck or broken for 2 or more of the Easy group: fix that screen first |
-| The week card | WK1, WK2, WK3, the week task's outcome, seconds and chips, comments on it; by `week` when two are tested | WK1 and WK2 right for 4 in 5 | Fewer than 4 in 5: the design goes back before it ships. With two designs, a difference under 3 people reads as no difference |
+| The week card | WK1, WK2, WK3, the week task's outcome, seconds and chips, comments on it, from the Score first arm; by `week` when two are tested | WK1 and WK2 right for 4 in 5 | Fewer than 4 in 5: the design goes back before it ships. With two designs, a difference under 3 people reads as no difference |
 | Delivery for a pilot | `install` by platform and age, IS1, IS2 | 3 in 4 of those who try add it and open it from the home screen | Fewer: two options to Will, an app store build, or a plain link with no install. "I'd rather not add it" is counted apart, as a choice |
 | Words and trust | TR2, TR2b, TR5, TR5b, TR4, TR4b, comments marked confusing | Fewer than 1 in 5 answer Yes to TR2, to TR5 and to TR4 | 1 in 5 or more: the screens they name go to counsel with the claims rules. Any screen named in TR2b or TR5b goes to counsel, whatever the count |
 | Membership and price | VA2, VA3, Start membership taps | No bar: direction only. What people tap counts beside what they say, and VA3 isn't anchored to a price | |
@@ -1235,5 +1249,6 @@ changed the study as follows. The sections above say what it does now.
    would fix it.
 5. Ask's chart label "Today 73" overlaps the line.
 6. For the week card redesign: in dark mode, days within the usual (pale) and outside it (Gold) both read as yellow; a
-   walkthrough answered WK3 wrong for it.
+   walkthrough answered WK3 wrong for it. The Rings week (Nov 4) draws a Gold day on dark as a solid disc against
+   Ray's open rings; a walkthrough should check WK3 again.
 7. The core hook proposed in 5.1 (`window.FLORIN_PAGE = { chrome: false }`) still stands; the study runs without it.

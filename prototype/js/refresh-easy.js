@@ -205,8 +205,8 @@
 
   /* the library's Easy read week card: the last 7 days in the app's one day mark (RU.dayMark) at 32px, with a line for
      each day that wasn't within the usual (claude/Florin data viz.md, section 3). On Today, under FloraScore's big
-     number, its answer is a line, so Today carries one big number (o.answerLine). On a person's first day it covers
-     one day, so its side says Today rather than "Oct 11 to today" */
+     number, its answer is a line, so Today carries one big number (o.answerLine). Since Nov 4 it has no dates beside
+     its title (the marks carry them); a card that still has them over one day says Today rather than "Oct 11 to today" */
   const weekDays = (D) => (D && D.days && D.days[7] ? D.days[7] : []);
   const weekCard = (D, V, o) => card(D, V, "week", (h) => {
     const ds = weekDays(D);

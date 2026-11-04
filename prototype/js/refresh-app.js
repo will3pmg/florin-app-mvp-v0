@@ -1089,7 +1089,7 @@
       })
     },
     {
-      k: "home", label: "Home", def: "score", opts: [["score", "Score first"], ["day", "Day first"]],
+      k: "home", label: "Home", def: "score", wide: true, opts: [["score", "Score first"], ["day", "Day first"], ["compact", "Compact"]],
       q: "What does Today show first?",
       what: "The top of the Today tab, the screen the app opens on."
     },

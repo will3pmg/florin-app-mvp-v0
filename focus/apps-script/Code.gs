@@ -72,26 +72,27 @@ var TASK_IDS = ["bm", "time", "week", "score", "patterns", "checkin", "history",
 var PHASES = ["consent", "intake", "bm", "time", "week", "score", "patterns", "checkin", "history", "ask", "tour",
   "cp1", "cp2", "cp3", "install", "free", "exit", "done"];
 var STAGES = ["consent", "intake", "tour", "compare", "install", "free", "exit", "done"];
-var SCREENS = ["today", "home-day", "ez-today", "plus", "earlier", "bm", "ez-bm", "sym", "meal", "ck", "ckdone",
+var SCREENS = ["today", "home-day", "home-compact", "ez-today", "plus", "earlier", "bm", "ez-bm", "sym", "meal", "ck", "ckdone",
   "ckday", "insights", "ez-weeks", "i-score", "i-timing", "i-often", "i-form", "i-sym", "i-ck", "i-pat", "i-pattern",
   "i-days", "history", "hist-cal", "ask", "ask-about", "pay", "pf", "profile", "a sheet", "other"];
 var ACTS = ["tab", "plus", "profile", "idetail", "iback", "edit", "undo", "quick-bm", "vr-quick", "open-bm", "save-bm",
   "open-sym", "open-meal", "ck-start", "ck-finish", "ck-skip", "vr-cal-day", "vr-cal-m", "ask-about", "askx-ask",
-  "askx-send", "pay", "pay-start", "hmore", "hfilter", "irange", "close", "fx-wkday", "a sheet", "a log", "other"];
+  "askx-send", "pay", "pay-start", "hmore", "hfilter", "irange", "close", "fx-wkday", "vr-cp-day", "vr-cp-wk",
+  "vr-cp-ins", "a sheet", "a log", "other"];
 var FLOWS = ["consent", "intake_done", "tour_start", "task_start", "task_goal", "task_end", "cp_shown", "install_shown",
   "free_start", "free_end", "exit_start", "pay_shown", "pay_start", "submit", "stopped", "cleared", "restart", "resume"];
 var INSTALLS = ["prompt_shown", "prompt_accepted", "prompt_dismissed", "appinstalled", "standalone", "code_ok",
   "code_bad", "code_unknown", "manifest_swapped"];
 var NETS = ["flushed", "failed", "offline", "online"];
 var PATHS = ["plus tile", "today row", "form", "easy steps", "details yes", "details no", "undo yes", "undo no", "edit",
-  "undo and log again", "gave up", "details", "chip", "your weeks", "today card", "plus", "calendar", "list",
+  "undo and log again", "gave up", "details", "chip", "strip", "your weeks", "today card", "plus", "calendar", "list",
   "months moved 0", "months moved 1", "months moved 2", "months moved 3", "months moved 4", "months moved 5",
   "months moved 6", "suggested", "typed", "ask about this", "added", "code from the address", "code typed",
   "no code needed"];
 var CHIPS = ["Clear", "Confusing", "Useful", "Not useful", "Too much on screen", "Want more detail", "Reassuring",
   "Worrying"];
 var CM_KINDS = ["I like it", "It's confusing", "Something's missing", "Something didn't work", "I have an idea"];
-var ARMS = { home: ["score", "day"], history: ["calendar", "list"], week: ["built", "card", "strip", "note", "chart"] };
+var ARMS = { home: ["score", "day", "compact"], history: ["calendar", "list"], week: ["built", "card", "strip", "note", "chart"] };
 
 /* The alphabet of the study code and the thank-you code, in this order: the check character depends on it. */
 var CODE_ALPHABET = "ACDEFHJKMNPRTWXY34679";

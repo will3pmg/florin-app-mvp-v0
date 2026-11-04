@@ -5,6 +5,8 @@
    Registers into window.FLORIN_EXT and wraps RU functions; it never edits a core file (CLAUDE.md, Extension hooks).
    Every wrapper falls back to the renderer it wraps when it throws, with a console warning that names this module.
    What it adds:
+   - RU.weekCard, wrapped (Nov 4): Today's week card is the Rings look's week in Florin charts and Rings alike, with
+     the core's card kept as RU.core.weekCard (for a week drawn to another day, or if the look can't draw)
    - RU.insights, RU.todayParts.hero and .week, wrapped; RU.idetail, wrapped for one detail page of its own ("days",
      the days behind the week and month cards), and RU.askContext, for that page's Ask about this
    - RU.lookOf(V), RU.lookCards(M, V, keys, o) and RU.lookAfter(el), so another module (the Easy version) can draw
@@ -58,7 +60,9 @@
   /* the phone's theme: the looks style themselves from data-theme on their own wrapper, as the library page does */
   const themeOf = () => { const r = EXT.api && EXT.api.root; return (r && r.dataset.theme) || "light"; };
   let UID = 0;
-  const ctxOf = (look) => ({ uid: `rlk${++UID}${look.id}`, theme: themeOf(), esc, T, n1, lin, C, motion: !reduced() });
+  /* live: the app wires a look's own buttons (a data-act a look draws, such as the Rings week's "+ Add" on a day with
+     nothing logged); the library page draws the same picture without them */
+  const ctxOf = (look) => ({ uid: `rlk${++UID}${look.id}`, theme: themeOf(), esc, T, n1, lin, C, motion: !reduced(), live: true });
 
   /* ---------- the numbers: FLD.build over the phone's live model, once per draw ----------
      Today asks for two cards in one draw, so the build is kept until the draw ends (a microtask), never longer: the
@@ -196,13 +200,18 @@
       els.forEach((el) => afterEl(el));
     });
   }
+  /* Today's cards that have drawn in once this session (look and card): the ring's draw-in starts from a gap at 12
+     o'clock, so replaying it on every return to Today shows that gap each time (critic, Nov 4) */
+  const DRAWN = new Set();
   function afterEl(el) {
     if (!el || el.__rlkDone) return;
     el.__rlkDone = true;
     /* a soft redraw (a log saved, a toggle) shows the cards as they are, without drawing them in again, as the core's
-       screens do; a screen that draws in counts its numerals up */
+       screens do; a screen that draws in counts its numerals up. A card on Today draws in once a session */
     const layer = el.closest(".ap-layer");
-    const fresh = !!layer && layer.classList.contains("ap-anim");
+    const seen = el.matches(".rlk-today") ? `${el.dataset.rlkLook}:${el.dataset.rlkK}` : null;
+    const fresh = !!layer && layer.classList.contains("ap-anim") && !(seen && DRAWN.has(seen));
+    if (seen && layer) DRAWN.add(seen);
     if (layer && !fresh) el.setAttribute("data-still", "");
     if (fresh) countUp(el);
     const ids = [...new Set([...el.querySelectorAll(".rlk-look")].map((n) => (n.className.match(/\blk-([\w-]+)/) || [])[1]).filter(Boolean))];
@@ -343,12 +352,12 @@
      screen reader hears the row's own words, not the mark's again */
   const markOf = (f, W, name) => { try { return RU.dayMark ? RU.dayMark(f, { why: W, name, sym: false, todayWord: false }) : ""; } catch (e) { warn("a day mark failed to draw", e); return ""; } };
   /* one day: its mark, its name, its word, and its line. A day within your usual says what it held; a day with nothing
-     logged says it stays a gap */
+     logged says it isn't counted (never "a gap, never a zero", a design rule in a patient's words) */
   function dayRow(M, f, mode) {
     const W = L.dayWhy(M, f, mode, { name: dayLabel(f.d) });
     let line = W.say;
     if (W.state === "usual") line = `First BM at ${T(f.first)}, ${plural(f.count, "BM")}, in your usual forms.`;
-    else if (W.state === "none") line = "It stays a gap, never a zero.";
+    else if (W.state === "none") line = "It isn't counted either way.";
     else if (W.state === "pending") line = "Today isn't over yet.";
     else if (W.state === "logged") line = f.count == null ? "Symptoms or meals logged, nothing about BMs." : !f.count ? "No BM, logged." : `${plural(f.count, "BM")}${f.count === 1 ? `, at ${T(f.first)}` : `, the first at ${T(f.first)}`}.`;
     return `<li class="rlk-day" data-state="${esc(W.state)}"><div class="rlk-day-h"><span class="rlk-day-mk" aria-hidden="true">${markOf(f, W, dayLabel(f.d))}</span><b>${esc(dayLabel(f.d))}</b><span class="rlk-day-w">${esc(W.word)}</span></div><p>${esc(line)}</p></li>`;
@@ -430,6 +439,23 @@
   RU.idetail = (M, V, st) => {
     if (!st || st.k !== "days") return baseIdetail(M, V, st);
     try { return daysPage(M, V, st); } catch (e) { warn("the days page failed, drawing Insights instead", e); return (RU.core && RU.core.insights ? RU.core.insights : baseInsights)(M, V, st); }
+  };
+  /* Today's week card is the Rings look's week (Will, Nov 4: "much better on the week card, i like this"), in every
+     data style that doesn't draw its own: Florin charts (Score first and Day first, through RU.todayParts.week) and
+     Rings. Oura, Field journal and Bento keep theirs (the part below), and the Easy version draws Easy read's. It
+     counts the days as Insights' 7 days do (D.tally[7], L.tally) and puts each day's FloraScore (L.score) under its
+     ring. RU.weekCard is wrapped, so every caller gets it; the core's card (claude/Florin data viz.md, section 3) stays
+     as RU.core.weekCard, drawn when a caller asks for the week to another day (o.end) or when the look can't draw */
+  const coreWeekCard = RU.weekCard;
+  RU.core = Object.assign(RU.core || {}, { weekCard: coreWeekCard });
+  const ringsWeek = (M, V) => { const look = lookById("rings"); return look && window.FLD ? todayPart(look, "week", M, V) : null; };
+  if (coreWeekCard) RU.weekCard = (M, mode, o = {}) => {
+    if (o && o.end != null && o.end !== L.TODAY) return coreWeekCard(M, mode, o);
+    try {
+      const V = Object.assign({}, EXT.api && EXT.api.S ? EXT.api.V() : {}, { form: mode || "C" });
+      const h = ringsWeek(M, V);
+      return h == null ? coreWeekCard(M, mode, o) : h;
+    } catch (e) { warn("the Rings week card failed, drawing the core's", e); return coreWeekCard(M, mode, o); }
   };
   const parts = RU.todayParts || {};
   const baseHero = parts.hero, baseWeek = parts.week;
@@ -630,7 +656,7 @@
      everywhere, or Oura on Today), then Easy read (the Easy version's), then the three here to compare, each block one
      short sentence a line, and no Still open (it asked the aside's question again) */
   const STYLES = {
-    built: { is: "The dark green FloraScore card with the usual range as a bar, the week as one circle a day, and plain bar and dot charts.", why: "Each card says the person's usual in words before the chart, and every card works the same way.", not: "It's the most text of the six, with small charts on every card." },
+    built: { is: "The dark green FloraScore card with the usual range as a bar, the week as a ring a day with its FloraScore under it, and plain bar and dot charts.", why: "Each card says the person's usual in words before the chart, and every card works the same way.", not: "It's the most text of the six, with small charts on every card." },
     oura: { is: "A dark screen with FloraScore as a large round gauge and a small ring for each part of the score.", why: "Oura users already know the layout, with the score as one big gauge.", not: "It breaks the chart rules in four places, starting with part rings that carry no numbers, and it reads as a copy." },
     easy: { is: "One big number and one plain sentence on each card, in large type.", why: "It's the easiest to read, for anyone with reading glasses.", not: "It leaves out the shape of the data, so it's thin for someone who wants depth." },
     rings: { is: "FloraScore as a ring that fills up, with the usual range marked on it, and a small ring for each day.", why: "Rings read at a glance, and a week of rings is easy to count.", not: "A ring filling toward 100 reads as a grade, and a ring a day gets small over 30 days." },

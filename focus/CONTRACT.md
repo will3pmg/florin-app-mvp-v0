@@ -82,12 +82,12 @@ back from `seen`, and `submitted` never from `yes`.
 | `person` | `sarah`, `marcus`, `alex` |
 | `version` | `standard`, `easy` (as used now; it changes if the person switches in Profile) |
 | `version_picked` | `standard`, `easy`, `""` (IN9) |
-| `home` | `score`, `day`, `""` (blank for Easy) |
+| `home` | `score`, `day`, `compact` (Nov 4), `""` (blank for Easy) |
 | `history` | `calendar`, `list` |
 | `week` | `built`, `card`, `strip`, `note`, `chart`, `""` (blank for Easy) |
 | `order` | integer 1 to 5, the Latin square row |
 | `assigned` | `script`, `phone` |
-| `decisions` | One line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built easy=off onboard=short weekCard=card plan=member data=est meals=all persona=sarah` |
+| `decisions` | One line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built easy=off onboard=short weekCard=built plan=member data=est meals=all persona=sarah` |
 | `install` | `seen`, `said`, `browser`, `couldnt` |
 | `install_at` | When the install steps first showed, ISO 8601 UTC. Sent once, by the window that showed them; the code lookup gives it to the app on the home screen, for the install task's `seconds` |
 | `stage` | `consent`, `intake`, `tour`, `compare`, `install`, `free`, `exit`, `done`, `stopped`. Keep the furthest by that order; `stopped` always wins over every stage but `done` |
@@ -139,7 +139,7 @@ The same `qid` can come more than once in a session (FR2 once per part; a task t
 | `active_seconds` | integer, the part of that with the page visible |
 | `outcome` | `seen`, `said`, `stuck`, `declined`, `broken`. For `install`: `seen`, `said`, `browser`, `couldnt` |
 | `hint` | `yes`, `no` |
-| `path` | Short words from a fixed list, joined with ` \| `. bm: `plus tile`, `today row`, `form`, `easy steps`, `details yes`, `details no`, `undo yes`, `undo no`. time: `edit`, `undo and log again`, `gave up`. score: `details`, `chip`, `your weeks`. checkin: `today card`, `plus`. history: `calendar`, `list`, `months moved 0` to `months moved 6`. ask: `suggested`, `typed`, `ask about this`. install: `added`, `code from the address`, `code typed`, `no code needed` |
+| `path` | Short words from a fixed list, joined with ` \| `. bm: `plus tile`, `today row`, `form`, `easy steps`, `details yes`, `details no`, `undo yes`, `undo no`. time: `edit`, `undo and log again`, `gave up`. score: `details`, `chip`, `strip` (Compact), `your weeks`. checkin: `today card`, `plus`. history: `calendar`, `list`, `months moved 0` to `months moved 6`. ask: `suggested`, `typed`, `ask about this`. install: `added`, `code from the address`, `code typed`, `no code needed` |
 | `screens` | integer, screens the phone moved through |
 | `backs` | integer, times they went back or closed something |
 | `ease` | integer 1 to 7 (TE, or IS1 for install), or `""` |
@@ -203,10 +203,10 @@ The phone calls `ack` once per `cid` that has queued pieces, after each flush, a
 
 ### 3.2 `op=claim`: the study code and the arms, at the end of intake
 
-`?op=claim&study=S&sid=SID&code=K7M4PX&platform=iphone&version=standard&homes=score,day&histories=calendar,list&weeks=card,strip&orders=5&callback=cb`
+`?op=claim&study=S&sid=SID&code=K7M4PX&platform=iphone&version=standard&homes=score,compact&histories=calendar,list&weeks=built&orders=5&callback=cb`
 
 ```json
-{ "ok": true, "code": "K7M4PX", "home": "day", "history": "calendar", "week": "card", "order": 3 }
+{ "ok": true, "code": "K7M4PX", "home": "compact", "history": "calendar", "week": "built", "order": 3 }
 ```
 
 - `code` must pass its check character (section 5), else `bad_code`. If another `sid` holds it: `code_taken`, and the
@@ -365,7 +365,7 @@ type of IBS", since October 29.
 
 ### 7.3 Screen keys (`screen`)
 
-`today`, `home-day`, `ez-today`, `plus`, `earlier`, `bm`, `ez-bm`, `sym`, `meal`, `ck`, `ckdone`, `ckday`, `insights`,
+`today`, `home-day`, `home-compact`, `ez-today`, `plus`, `earlier`, `bm`, `ez-bm`, `sym`, `meal`, `ck`, `ckdone`, `ckday`, `insights`,
 `ez-weeks`, `i-score`, `i-timing`, `i-often`, `i-form`, `i-sym`, `i-ck`, `i-pat`, `i-pattern`, `i-days`, `history`,
 `hist-cal`, `ask`, `ask-about`, `pay`, `pf`, `profile`, `a sheet`, `other`. The phone maps any other key to `other`, and
 `ask-alarm`, `ask-chat` to `ask`; the flag note, No BM and the alarm sheets read `a sheet`.
@@ -374,7 +374,8 @@ type of IBS", since October 29.
 
 `tab`, `plus`, `profile`, `idetail`, `iback`, `edit`, `undo`, `quick-bm`, `vr-quick`, `open-bm`, `save-bm`, `open-sym`,
 `open-meal`, `ck-start`, `ck-finish`, `ck-skip`, `vr-cal-day`, `vr-cal-m`, `ask-about`, `askx-ask`, `askx-send`,
-`pay`, `pay-start`, `hmore`, `hfilter`, `irange`, `close`, `fx-wkday`. `flag-report`, `flag-undo` and `nobm` read
+`pay`, `pay-start`, `hmore`, `hfilter`, `irange`, `close`, `fx-wkday`, `vr-cp-day`, `vr-cp-wk`, `vr-cp-ins` (Compact's
+week and its Insights, Nov 4). `flag-report`, `flag-undo` and `nobm` read
 `a sheet` or `a log`; anything else reads `other`.
 
 ## 8. What never travels

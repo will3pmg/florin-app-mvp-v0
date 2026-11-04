@@ -112,6 +112,8 @@
       ${shift ? `<circle class="rg-day-fill" cx="${c}" cy="${c}" r="${r}"/>` : ""}${mark}${shift ? `<circle class="rg-day-edge" cx="${c}" cy="${c}" r="${r1(r + swd / 2 + 0.25)}"/>` : ""}
     </svg>`;
   };
+  /* "+ Add" where a day with nothing logged would show its score (the week card, and Compact's week row in the app) */
+  const ADD = `<span class="rg-wd-add"><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M4 1v6M1 4h6"/></svg>Add</span>`;
   /* the legend items for day rings, only for the states on show */
   const dayLegend = (has) => [
     has("is-usual") && ["usual", "Within your usual"], has("is-shift") && ["shiftring", "Outside your usual"], (has("is-unsure") || has("is-nocount")) && ["unsure", "Not counted"], has("is-flag") && ["flag", "Noted for a clinician"],
@@ -308,7 +310,6 @@
       const sym = d.sym.length ? ` Symptoms: ${d.sym.map((s) => `${s.name.toLowerCase()}, ${s.word.toLowerCase()}`).join("; ")}.` : "";
       return `${nameOf(d)}: ${w}.${showScore(d) ? ` FloraScore ${d.score}.` : ""}${sym}${isOpen(d) ? ` Add to ${d.today ? "today" : "this day"}.` : ""}`;
     };
-    const ADD = `<span class="rg-wd-add"><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M4 1v6M1 4h6"/></svg>Add</span>`;
     const cols = slots.map((d, i) => {
       if (!d) return `<li class="rg-wd is-before" aria-hidden="true"><span class="rg-wd-b"><span class="rg-wd-k">&nbsp;</span><span class="rg-wd-ring"></span><span class="rg-wd-s">&nbsp;</span><span class="rg-wd-sym"></span></span></li>`;
       const open = isOpen(d);
@@ -789,6 +790,16 @@
     id: "rings",
     name: "Rings",
     idea: "One dark hero card with FloraScore as a ring and your usual on it, and every card below read as rings: a morning dial, a 30-day count ring, day rings and part rings that draw themselves in.",
-    components: { score, parts, trend, week, month, timing, often, form, symptoms, checkin, pattern }
+    components: { score, parts, trend, week, month, timing, often, form, symptoms, checkin, pattern },
+    /* the week card's day marks, for a screen that draws a day the week card's way outside the card (Compact's week
+       row in the app, inside .lk-rings .rg-marks, so these rules style it): ring(d, size, stroke) is a day's ring (d:
+       { logged, pending, state }), add the "+ Add" pill, legend(esc, has, sym) the legend for the states on show (has
+       takes a ring class, "is-usual"), with Symptoms when sym */
+    marks: {
+      ring: (d, size, swd) => dayRing(null, d, size, swd),
+      cls: (d) => stateOf(d)[0],
+      add: ADD,
+      legend: (esc, has, sym) => legend({ esc }, [...dayLegend(has), sym && ["sym", "Symptoms"]])
+    }
   });
 })();

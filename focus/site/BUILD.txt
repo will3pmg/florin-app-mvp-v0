@@ -1,5 +1,5 @@
-Florin focus group site, build fg.20261029.e03802a7
-Built 2026-10-29T05:44:49.311Z by focus/build.js. Endpoint: (none: answers wait on the phone).
+Florin focus group site, build fg.20261104.86d30656
+Built 2026-11-04T09:44:13.345Z by focus/build.js. Endpoint: (none: answers wait on the phone).
 Every file, where it came from, and its SHA-1 at build time:
 
 proto/css/app.css  <-  prototype/css/app.css  7e6e83424016
@@ -7,37 +7,37 @@ proto/js/lib.js  <-  prototype/js/lib.js  8f6b6acc8f36
 proto/js/data-app.js  <-  prototype/js/data-app.js  80439a3f11bd
 proto/js/refresh-data.js  <-  prototype/js/refresh-data.js  74ae7701ea5b
 index.html  <-  focus/index.html (paths rewritten)  73b0a42dba93
-proto/css/refresh.css  <-  prototype/css/refresh.css  5c27f1378cd2
-proto/css/look-rings.css  <-  library/css/look-rings.css  b75e85b4da91
+proto/css/refresh.css  <-  prototype/css/refresh.css  63c9d8f6a282
+proto/css/look-rings.css  <-  library/css/look-rings.css  e34a80519f5c
 proto/css/look-journal.css  <-  library/css/look-journal.css  99f2a7ea482a
 proto/css/look-bento.css  <-  library/css/look-bento.css  e162a1ce24a3
 proto/css/look-oura.css  <-  library/css/look-oura.css  33e4905f674e
 proto/css/look-easy.css  <-  library/css/look-easy.css  30d0284a0bf9
 proto/css/refresh-looks.css  <-  prototype/css/refresh-looks.css  054d6186a26a
-proto/css/refresh-variants.css  <-  prototype/css/refresh-variants.css  2962ba1fc053
+proto/css/refresh-variants.css  <-  prototype/css/refresh-variants.css  84c6c5477f3f
 proto/css/refresh-profile.css  <-  prototype/css/refresh-profile.css  b55c6f9fe826
 proto/css/refresh-ask.css  <-  prototype/css/refresh-ask.css  9e94235dd520
 proto/css/refresh-easy.css  <-  prototype/css/refresh-easy.css  296b40307e89
-proto/css/home-options.css  <-  options/home/css/home-options.css  b10dd857e0de
+proto/css/home-options.css  <-  options/home/css/home-options.css  5cac499a3dcf
 proto/js/claims-rules.js  <-  prototype/js/claims-rules.js  cdb8e958c728
 proto/js/app-charts.js  <-  prototype/js/app-charts.js  87869a607bc9
-proto/js/refresh-ui.js  <-  prototype/js/refresh-ui.js  7f3ddbb67530
+proto/js/refresh-ui.js  <-  prototype/js/refresh-ui.js  d699faadee43
 proto/js/refresh-insights.js  <-  prototype/js/refresh-insights.js  d3bc98a7cb71
 proto/js/looks-data.js  <-  library/js/looks-data.js  f53884c6036d
-proto/js/look-rings.js  <-  library/js/look-rings.js  20cf5948c2b7
+proto/js/look-rings.js  <-  library/js/look-rings.js  c39e53818af9
 proto/js/look-journal.js  <-  library/js/look-journal.js  2db36cbd0f87
 proto/js/look-bento.js  <-  library/js/look-bento.js  06c73ebc4d54
 proto/js/look-oura.js  <-  library/js/look-oura.js  07db97258636
-proto/js/look-easy.js  <-  library/js/look-easy.js  60e234fc8b2d
-proto/js/refresh-looks.js  <-  prototype/js/refresh-looks.js  2cada3aab3d3
-proto/js/refresh-variants.js  <-  prototype/js/refresh-variants.js  953893a887ba
+proto/js/look-easy.js  <-  library/js/look-easy.js  091b38500dd1
+proto/js/refresh-looks.js  <-  prototype/js/refresh-looks.js  86788c4388f6
+proto/js/refresh-variants.js  <-  prototype/js/refresh-variants.js  beca1e52deb2
 proto/js/refresh-profile.js  <-  prototype/js/refresh-profile.js  92d196ddbd89
 proto/js/refresh-ask.js  <-  prototype/js/refresh-ask.js  3a1dc3a71302
-proto/js/refresh-easy.js  <-  prototype/js/refresh-easy.js  ff683a59aca5
-proto/js/home-options.js  <-  options/home/js/home-options.js  72f5415ba49f
-proto/js/refresh-app.js  <-  prototype/js/refresh-app.js  80a445821fe2
+proto/js/refresh-easy.js  <-  prototype/js/refresh-easy.js  b31dcdaf9d90
+proto/js/home-options.js  <-  options/home/js/home-options.js  fa1d1a1273d9
+proto/js/refresh-app.js  <-  prototype/js/refresh-app.js  6cac0851d4e7
 app.html  <-  focus/app.html (paths rewritten)  f69bfa2283c7
-config.js  <-  focus/config.js  95d035bb6990
+config.js  <-  focus/config.js  5f6fbec5ca1a
 manifest.webmanifest  <-  focus/manifest.webmanifest  5f1db88dd146
 sw.js  <-  focus/sw.js  a7260a1fd250
 robots.txt  <-  focus/robots.txt  63657cbb7d70
@@ -45,13 +45,13 @@ css/focus-app.css  <-  focus/css/focus-app.css  898ec8a1a416
 css/focus-tokens.css  <-  focus/css/focus-tokens.css  f86440105fda
 css/focus.css  <-  focus/css/focus.css  65007dfb4a6a
 css/fx-base.css  <-  focus/css/fx-base.css  3cb2f55908d7
-js/flow.js  <-  focus/js/flow.js  5f25b459bc44
-js/focus-ext.js  <-  focus/js/focus-ext.js  e0d4e986d485
+js/flow.js  <-  focus/js/flow.js  ddcc0cd588ea
+js/focus-ext.js  <-  focus/js/focus-ext.js  c95c66542b98
 js/focus-week.js  <-  focus/js/focus-week.js  dc6b8c5624b9
 js/focus.js  <-  focus/js/focus.js  ac9b55210688
 js/fx-comment.js  <-  focus/js/fx-comment.js  d212eeed38c6
 js/qr.js  <-  focus/js/qr.js  5a8e61ad9cf2
-js/questions.js  <-  focus/js/questions.js  75d1121d37a5
+js/questions.js  <-  focus/js/questions.js  3a567c577b17
 fonts/dm-sans-italic-latin.woff2  <-  focus/fonts/dm-sans-italic-latin.woff2  cffb387e28ba
 fonts/dm-sans-normal-latin.woff2  <-  focus/fonts/dm-sans-normal-latin.woff2  206ef64771d3
 fonts/fonts.css  <-  focus/fonts/fonts.css  66644ab95192

@@ -386,12 +386,37 @@ set.
   Forest readings. Easy read draws FloraScore as a big number on its range bar, never a ring filling toward 100. On a
   phone, Toggles carries the header's two links. The deck's Florin charts slide shows the new week card.
 
+## Will's notes (Nov 4) and what they changed
+
+Will, in two messages. On the Rings style's week card: "much better on the week card, i like this." And with a
+screenshot of the current app's home (a compact FloraScore card, a tight week calendar, then Today's BMs): "a more
+compressed data view, then the calendar (tighter too) then Today ... maybe make it an option? Little less analysis and
+more navigation." For the week card: no dates over it, a day with nothing logged more obvious, and no name for
+FloraScore.
+
+- **The week card.** Today's week card is now the Rings week in every style that doesn't draw its own, with his three
+  changes: "This week" with no dates, an empty ring with Add on a day with nothing logged (a tap opens plus for that
+  day), and each day's FloraScore under its ring with no line naming it. The ring is now the day mark on Today, while
+  the calendar, History and Easy still draw filled circles: the module-by-module review settles that (data viz.md,
+  section 3).
+- **Compact, Home's third option.** A short FloraScore strip, this week as a row of day buttons with arrows for earlier
+  weeks, then the logs of the day picked. After a review the same day: the row draws the week card's own rings, with
+  "+ Add" under a day with nothing logged and a legend; the strip's number opens FloraScore's page and its change reads
+  "Week average 5 above last week"; "This week" comes back from an earlier week; a log saved to another day shows
+  that day. The sheet keeps Score first as the recommendation, since its sentence says
+  what stood out today, and asks whether Compact should replace it. The focus test now puts Score first against
+  Compact, and shows the new week card. `reference/shipping-app/home.md` has the current app's home in words.
+
 ## The calls for Will
 
 One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the
 line says so.
 
 *Home*
+- Compact in place of Score first as the default? Ours is still Score first, for its sentence; the focus test puts the
+  two side by side.
+- On Compact a past day with a log noted for a clinician (Sarah's Wednesday, "some red in it") is Teal, as on the
+  calendar, while Score first's week card reads and counts it: mark such a day on every surface, or only on today?
 - Confirm Score first: the deck and the Home note both recommend it, and its sentence now says what the log did.
 - On a flag day the score keeps its number but isn't read against the usual, on both options: keep it, or hide it?
 - Should a strong symptom outrank a shift in what stands out?
@@ -413,6 +438,8 @@ line says so.
 - Start the calendar on today, or on the last day with a log?
 - The week card leaves out how many BMs each day had, so it reads in five seconds: add it back (Bento's dot per BM
   inside the day)?
+- The week card draws a day as a ring and the calendar, History and Easy as a filled circle: which one for every screen?
+- The week card names the days outside the usual but not what was different: is a tap to Insights enough?
 
 *Data style*
 - One look everywhere (ours: Florin charts, with Easy read only in the Easy version, so Data style folds into Version),

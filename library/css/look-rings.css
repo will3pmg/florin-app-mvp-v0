@@ -6,7 +6,8 @@
    prefers-reduced-motion: no-preference, and only animates *from* a state, so the still page is the final page. */
 
 /* ---------- the card ---------- */
-.lk-rings .rg {
+/* the card's colours; .rg-marks takes them too, for day rings drawn outside a card (Compact's week row in the app) */
+.lk-rings :is(.rg, .rg-marks) {
   --rg-read: var(--ap-chart);
   --rg-trk: color-mix(in srgb, var(--ap-ink) 9%, transparent);
   --rg-empty: color-mix(in srgb, var(--ap-ink) 24%, transparent);
@@ -18,6 +19,8 @@
   --rg-ink3: var(--ap-ink3);
   --rg-ground: var(--ap-card);
   --rg-st: 70ms;
+}
+.lk-rings .rg {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column; gap: 20px;
   padding: 16px; border-radius: 24px;
@@ -27,6 +30,7 @@
 .lk-rings .rg > * { position: relative; }
 .lk-rings .rg :where(p, h3, ul, ol, dl, dd, figure) { margin: 0; }
 .lk-rings .rg :where(ul, ol) { list-style: none; padding: 0; }
+.lk-rings .rg-marks :where(ul, ol) { margin: 0; list-style: none; padding: 0; }
 .lk-rings .rg-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* the hero: Forest on light, Card 2 on dark. Ray is the reading and Ray at half strength is your usual */
@@ -188,11 +192,14 @@
 .lk-rings .rg-empty-plot span { display: block; border-top: 1px solid var(--ap-grid); }
 
 /* ---------- this week and the month ---------- */
+/* the row runs 12px into the card's 16px padding, so each column is 44px or more at 360 wide */
 .lk-rings .rg-weekrow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-inline: -12px; }
 /* a day's column. With nothing logged on the day it's a button in the app (the whole column, so the tap target is the
    column's width, which reaches 44px at 360 wide because the row runs into the card's padding) */
-.lk-rings .rg-wd { display: flex; min-width: 0; border-radius: 16px; }
-.lk-rings .rg-wd.is-today { background: var(--ap-card2); }
+.lk-rings .rg-wd { position: relative; isolation: isolate; display: flex; min-width: 0; border-radius: 16px; }
+/* today's shaded column stops 4px short of its column on the card's side, so it keeps 8px from the card's edge while
+   the column (the tap target on a day with nothing logged) keeps its full width */
+.lk-rings .rg-wd.is-today::before { content: ""; position: absolute; inset: 0 4px 0 0; z-index: -1; border-radius: 16px; background: var(--ap-card2); }
 .lk-rings .rg-wd-b { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 0; border: 0; border-radius: 16px; background: none; color: inherit; font: inherit; }
 .lk-rings button.rg-wd-b { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .lk-rings button.rg-wd-b:focus-visible { outline: 2px solid var(--ap-teal); outline-offset: -2px; }

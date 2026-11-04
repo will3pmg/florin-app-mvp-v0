@@ -617,6 +617,7 @@
     mount.innerHTML = `
       <header class="ho-head">
         <div class="ho-head-t">
+          <p class="ho-now"><b>Nov 4:</b> Will picked the Rings week card, now Today's week card in the app, and asked for Compact, a third Home option. This page stays as the record of the October 29 comparison.</p>
           <p class="ho-eyebrow">Florin app refresh · Home · October 29</p>
           <h1>Home: how should Today show the week?</h1>
           <p class="ho-lede"><b>We recommend ${esc(REC.name)}, placed under FloraScore and the check-in.</b> The week should tell someone, against their own usual, how their last 7 days went and what was different, so they can decide whether to look closer on Insights or tell a clinician.</p>
