@@ -17,7 +17,7 @@ const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 const problems = [];
 const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
 /* a run: a consistency option, the logs, and any decisions or demo controls to set first (the rest stay at default) */
-const BASE = { persona: "sarah", data: "est", form: "C", theme: "light", checkin: "true", bmUI: "quick", mealUI: "quick", home: "score", history: "list", look: "built", easy: "false", onboard: "short" };
+const BASE = { persona: "sarah", data: "est", form: "C", theme: "light", checkin: "true", bmUI: "quick", mealUI: "quick", home: "compact", history: "list", look: "built", easy: "false", onboard: "short" };
 /* every control a run sets, the module decisions included: a sweep of the Screens list sets the decisions its screens
    belong to (Home: Day first, History: Calendar, the onboarding screens, Easy version), so each run puts them back */
 const SET = ["persona", "data", "form", "theme", "checkin", "bmUI", "mealUI", "home", "history", "look", "easy", "onboard"];
@@ -34,8 +34,8 @@ const TOGGLES = [
   { home: "day", history: "calendar", persona: "marcus", theme: "dark" }, { look: "rings", data: "fresh" }, { look: "journal", form: "B", checkin: "false" },
   { look: "bento", persona: "alex", theme: "dark" }, { look: "oura", home: "day" }, { look: "easy", onboard: "full", persona: "marcus" },
   { easy: "true", persona: "alex", theme: "dark" }, { easy: "true", data: "fresh", checkin: "false", bmUI: "full" },
-  /* Home: Compact (Nov 4) across the people, the options and the logs */
-  { home: "compact", persona: "marcus", form: "A", theme: "dark" }, { home: "compact", persona: "alex", form: "B", data: "new" }, { home: "compact", data: "fresh", checkin: "false", bmUI: "full" }
+  /* Home: Compact, the default since Nov 5, across the people, the options and the logs; and Score first */
+  { home: "score", persona: "marcus", form: "A", theme: "dark" }, { home: "compact", persona: "marcus", form: "A", theme: "dark" }, { home: "compact", persona: "alex", form: "B", data: "new" }, { home: "compact", data: "fresh", checkin: "false", bmUI: "full" }
 ];
 const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }, { easy: "true", history: "calendar" }, { home: "day", look: "oura", theme: "dark" }, { home: "compact", persona: "marcus", theme: "dark" }];
 
@@ -144,7 +144,7 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
         if (two.length) note(`${w} ${form} ${home === "day" ? "Day first's Log a BM" : "plus"}: a tile's word breaks onto two lines: ${two.join(", ")}`);
       }
     }
-    await p.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("home", "score"); api.set("form", "C"); });
+    await p.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("home", "compact"); api.set("form", "C"); });
     await ctx.close();
   }
   for (const [w, h] of [[1000, 800], [780, 700], [900, 900], [1010, 1000]]) {
@@ -170,7 +170,7 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
       return hit && hit.closest(".rx-jump") ? `${last.dataset.rx}=${last.dataset.v}` : null;
     });
     if (cov) note(`${w}x${h}: Read the note covers the toggle ${cov}`);
-    await p.evaluate(() => document.querySelector('[data-rx="home"][data-v="score"]').click());
+    await p.evaluate(() => document.querySelector('[data-rx="home"][data-v="compact"]').click());
     await ctx.close();
   }
   /* ===== end fix-core ===== */

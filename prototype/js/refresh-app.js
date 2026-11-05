@@ -56,7 +56,7 @@
   function Phone(host, cfg) {
     const S = {
       form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member",
-      bmUI: cfg.bmUI || "quick", home: cfg.home || "score", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short",
+      bmUI: cfg.bmUI || "quick", home: cfg.home || "compact", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short",
       tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {}
     };
     S.M = L.build(S.persona, S.data, { meals: S.meals });
@@ -869,7 +869,7 @@
   const BM_OPEN = "Which details stay under the tiles: a sudden urge, straining, not feeling finished, burning, how long? The flag for blood, mucus or a black stool stays.";
   const NOTES = {
     today: (M) => ({
-      t: "Today",
+      t: "Home: Score first",
       lede: M.usual
         ? `Today opens on FloraScore, read against the person's own usual range, with one sentence on what stood out today. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days as a ring a day with its FloraScore under it (a day with nothing logged offers Add), and one next step.`
         : `Florin is still learning this person's usual, so FloraScore shows the day it's on, Day ${L.learnDay(M)} of ${L.LEARN_DAYS}, instead of a number until day ${L.LEARN_DAYS}. Then ${ckOn() ? "the weekly check-in when it's due, " : ""}today's logs, the last 7 days as they're logged, and one next step.`
@@ -1009,7 +1009,7 @@
     ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
     ["Insights", [["insights", "Insights"], ["i-score", "FloraScore"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
     ["Membership", [["pay", "The paywall"], ["free-insights", "Insights, free"], ["free-ask", "Ask Florin, free"]]],
-    ["Tabs", [["today", "Today"], ["history", "History: List"], ["ask", "Ask Florin"]]]
+    ["Tabs", [["today", "Home: Score first"], ["history", "History: List"], ["ask", "Ask Florin"]]]
   ];
   /* the core list with every module's groups merged in: items join a group of the same name, or a new group goes
      before the one it names (or last) */
@@ -1028,11 +1028,14 @@
   /* a phone screen id (key()) to the row that lights up in the list, or null for a screen the list doesn't have (a
      module's overlay with no row of its own): then no row lights up */
   /* Easy's Your weeks stands in for Insights, so it lights the Insights row */
-  const KEY_SCREEN = { "meal-voice": "meal", nobm: "today", "ez-weeks": "insights" };
+  /* the No BM sheet sits over Today, so it lights the row of the Home that's drawn (Home: Compact, say) */
+  const todayKey = () => { const f = EXT.keys["tab:today"]; return (f && P.ph && safe(f, { type: "tab:today", st: Object.assign({}, P.ph.S, { tab: "today" }) })) || "today"; };
+  const KEY_SCREEN = { "meal-voice": "meal", nobm: todayKey, "ez-weeks": "insights" };
   const keyToScreen = (k) => {
     const ids = screenGroups().flatMap(([, items]) => items.map(([id]) => id));
     if (ids.includes(k)) return k;
-    return KEY_SCREEN[k] && ids.includes(KEY_SCREEN[k]) ? KEY_SCREEN[k] : null;
+    const to = typeof KEY_SCREEN[k] === "function" ? KEY_SCREEN[k]() : KEY_SCREEN[k];
+    return to && ids.includes(to) ? to : null;
   };
   const screenLabel = (id) => { for (const [, items] of screenGroups()) { const it = items.find(([x]) => x === id); if (it) return it[1]; } return ""; };
 
@@ -1089,7 +1092,7 @@
       })
     },
     {
-      k: "home", label: "Home", def: "score", wide: true, opts: [["score", "Score first"], ["day", "Day first"], ["compact", "Compact"]],
+      k: "home", label: "Home", def: "compact", wide: true, opts: [["score", "Score first"], ["day", "Day first"], ["compact", "Compact"]],
       q: "What does Today show first?",
       what: "The top of the Today tab, the screen the app opens on."
     },
@@ -1307,8 +1310,9 @@
     ? `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${esc(id)}" disabled><span>${esc(l)}</span><em>Check-in is off</em></button></li>`
     : `<li><button type="button" class="rx-nav-b" data-rx="screen" data-v="${esc(id)}">${esc(l)}</button></li>`).join("")}</ol></li>`).join("");
 
-  /* the page's companions: the decisions deck and every data style side by side (the data looks library), each its own artifact */
-  const DECK_URL = "https://claude.ai/artifact/2h5ikADR2eFCY1DZYbJEJU", LOOKS_URL = "https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL";
+  /* the page's companion: every data style side by side (the data looks library), its own artifact. The links row
+     takes one more (the voting page, to come) */
+  const LOOKS_URL = "https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL";
   mount.innerHTML = `
     <a class="rx-skip" href="#rxStage" data-rx="skip">Skip to the phone</a>
     <nav class="rx-mbar" aria-label="Prototype">
@@ -1319,7 +1323,7 @@
     <header class="rx-head">
       <div class="rx-head-t"><p class="rx-eyebrow">Florin app refresh · Oct 28</p><h1>The app, with the open decisions as toggles</h1></div>
       <div class="rx-head-r"><p class="rx-lede">Today's app, the one that ships without the sensor. Decisions on the left change the app, and the phone changes with them. Demo changes the demo person, not the app. Every row has a note.</p>
-      <p class="rx-head-links"><a href="${DECK_URL}" target="_blank" rel="noopener">The decisions, as slides</a><a href="${LOOKS_URL}" target="_blank" rel="noopener">Every data style, side by side</a></p></div>
+      <p class="rx-head-links"><a href="${LOOKS_URL}" target="_blank" rel="noopener">Every data style, side by side</a></p></div>
     </header>
     <div class="rx-main">
       <aside class="rx-side rx-side--l" id="rxLeft" aria-label="Toggles"></aside>
@@ -1392,7 +1396,7 @@
     sizeSides();
   }
   /* wide: the toggles on the left, the notes on the right. Phone: both in sheets, from the bar at the top */
-  /* the header's two links (the deck, every data style side by side) move to the top of the Toggles sheet on a phone,
+  /* the header's links (every data style side by side) move to the top of the Toggles sheet on a phone,
      where the header is hidden, and back under the header's lede when it's wide: moved, never doubled */
   const links = $(".rx-head-links"), linksHome = links ? links.parentNode : null;
   function place() {
@@ -1430,8 +1434,8 @@
   /* an option's name for the top label and the phone's line: the toggle's letter for Consistency ("C"), else its name */
   const optName = (D, v) => { const o = D.opts.find(([x]) => x === v); if (!o) return String(v); const l = o[1], i = l.indexOf(" · "); return i < 0 ? l : l.slice(0, i); };
   /* a decision, in the sheet's shape: the question, what it decides, a block per option (What it is, Why do it, Why
-     not), the recommendation, at most one open question, and where to try it. The top label numbers it as the deck
-     does and says what we recommend, so the answer is in view before the options */
+     not), the recommendation, at most one open question, and where to try it. The top label numbers it ("Decision 1 of 9")
+     and says what we recommend, so the answer is in view before the options */
   function decNote(D, N) {
     const recV = N.rec ? [].concat(N.rec.v) : [];
     /* a module's note that fails leaves the options as names, so the note still lists them */
@@ -1575,6 +1579,14 @@
     el.innerHTML = `<p class="rx-small">${esc(D.label)} is now ${esc(optName(D, P[k]))}.${sh ? ` ${esc(sh.line)}` : ""}</p><div class="rx-sheet-now-b">${see}<button type="button" class="rx-btn rx-btn--line" data-rx="now-note" data-v="${esc(k)}">Read the note</button></div>`;
     el.hidden = false;
   }
+  /* a row picked from Screens. A row that belongs to a decision sets it, as History: List and Home: Compact do: the
+     core's Today row is Home: Score first (Will, Nov 5: the demo opens on Compact), so it sets Score first. The phone's
+     own open("today") draws whatever Home is picked, so a reset or a new person never changes Home */
+  function openRow(v) {
+    if (v === "today" && P.ph.V().home !== "score") P.ph.set("home", "score");
+    P.ph.open(v);
+    if (v === "today" && P.ph.V().easy) P.ph.toast("The Easy version is on, and it has its own Today. Turn Easy off on the left to see Score first.");
+  }
   /* the plan for the phone: the switch, Start membership, or a free screen from the list */
   function setPlan(v, then) {
     P.ph.set("plan", v);
@@ -1629,7 +1641,7 @@
       case "now-note": P.dec = v; notes(); openSheet("notes"); break;
       case "fold": P.demoOpen = !P.demoOpen; store.set("demoOpen", P.demoOpen); syncFold(); sizeSides(); break;
       /* a row picked from the list always shows that screen's note, even when the phone is already on it */
-      case "screen": closeSheet(); jump.hidden = true; P.dec = null; P.row = v; P.ph.open(v); P.rowKey = P.key; notes(); syncNav(); scrollToStage(); break;
+      case "screen": closeSheet(); jump.hidden = true; P.dec = null; P.row = v; openRow(v); P.rowKey = P.key; notes(); syncNav(); scrollToStage(); break;
       case "persona": case "data": P.ph.set(k, v); break;
       /* the meals control reads like a design option, so changing it shows its note: it's the demo person's history */
       case "meals": P.ph.set(k, v); P.dec = "meals"; notes(); if (isM()) openSheet("notes"); else pointAtNote(DEMO.meals); break;
@@ -1655,7 +1667,7 @@
       const next = flat[(i + (e.key === "ArrowRight" ? 1 : -1) + flat.length) % flat.length];
       e.preventDefault();
       P.dec = null; P.row = next;
-      P.ph.open(next);
+      openRow(next);
       P.rowKey = P.key;
       notes(); syncNav();
       /* a screen that puts focus in the phone (a sheet, a chat) would end the walk there: focus goes back to the lit row */

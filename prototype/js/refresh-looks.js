@@ -585,7 +585,12 @@
     api.S.tab = "insights"; api.S.ins.k = null; api.renderTab(true); api.layer.scrollTop = 0;
     if (!active(api.V())) api.toast(builtToast);
   };
-  EXT.opens["look-today"] = (api) => { api.layer.scrollTop = 0; if (!active(api.V())) api.toast(builtToast); };
+  /* Compact (the default Home since Nov 5) keeps its own strip and week in every style, so this row puts Home on Score
+     first, where FloraScore and the week take the style (the left bar follows) */
+  EXT.opens["look-today"] = (api) => {
+    if (api.V().home === "compact" && !api.V().easy) api.set("home", "score");
+    api.layer.scrollTop = 0; if (!active(api.V())) api.toast(builtToast);
+  };
   EXT.opens["i-days"] = (api) => {
     api.S.tab = "insights";
     if (api.S.plan === "free") { api.S.ins.k = null; api.renderTab(true); api.push("pay", { from: "" }, { instant: true }); return; }
@@ -667,7 +672,7 @@
     aside: "The real choice is Florin charts everywhere, or Oura on Today. Easy read is the Easy version's own, and Rings, Field journal and Bento are here to compare.",
     opts: ["built", "oura", "easy", "rings", "journal", "bento"].map((v) => Object.assign({ v, name: nameOf(v) }, STYLES[v])),
     rec: { v: "built", text: "We recommend one look everywhere, Florin charts, with Easy read only in the Easy version.", why: "A card and its detail page then draw the same day the same way, and Data style folds into Version." },
-    try: "Switch it, then look at Today and Insights. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
+    try: "Switch it, then look at Insights, and at Today with Home on Score first or Day first. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
   });
   /* the screens' own notes, while a style is drawn */
   const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn in the ${nameOf(lookIdOf(P) || "built")} style.`);

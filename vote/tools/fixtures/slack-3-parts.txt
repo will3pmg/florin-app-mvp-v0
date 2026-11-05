@@ -1,0 +1,47 @@
+Test voter 5, 5:46 PM
+Florin app vote: Test voter 5, Engineering (part 1 of 2)
+19 of 19 answered, 13 notes. Ballot WX69AE, Nov 5, 2026, 12:45 PM
+
+Part 1, the app
+1. Home screen: Compact
+   Why: The week of day buttons is the fastest way around, and it matches the current app's home, so nobody has to learn a new map. The strip keeps FloraScore in view without taking the whole first screen.
+2. History: List
+   Why: The list is simpler to build and test, and every day reads the same way as on Today.
+3. Logging a BM: Quick tiles and form
+   Why: Quick tiles save a tap for the people who log most often, and the form is still one tap away.
+4. Consistency words: Seven words
+   Why: Seven of our own words avoid the licence question and still map to steps for a report later.
+5. Weekly check-in: With the check-in
+   Why: Four questions a week is light enough, and it is the one reason to come back each week.
+6. Logging meals: Quick, voice or text
+   Why: Voice is the only way most people will log a meal every day, and the food check needs every day.
+7. Easy version: Add Easy
+   Why: One setting is cheaper to keep than a second app, and the logs stay the same underneath.
+8. Onboarding: Short
+   Why: Asking later, when the answer changes something, keeps day 1 short and every question earns its place.
+
+`FLORIN-VOTE 1 florin-app-vote-1 b=WX69AE n=Test%20voter%205 part=1/2 x=0exce6j`
+
+Test voter 5, 5:46 PM
+Florin app vote: Test voter 5, Engineering (part 2 of 2)
+19 of 19 answered, 13 notes. Ballot WX69AE, Nov 5, 2026, 12:45 PM
+
+Part 2, the charts
+9. FloraScore today: Oura
+   Why: The dark gauge stands out on Today, and it is the look people already know from rings and watches.
+10. FloraScore over time: Oura
+   Why: The same gauge over time keeps the two cards alike.
+11. What moved FloraScore: Florin charts
+12. The last 7 days: Rings
+   Why: Rings for the week, as Will picked, read in one glance.
+13. The month: Rings
+   Why: The month as rings matches the week.
+14. Timing: Florin charts
+15. How often: Florin charts
+16. Consistency: Florin charts
+17. Symptoms: Florin charts
+18. Check-in results: Florin charts
+19. Possible patterns: Oura
+   Why: The same dark card for patterns, so Insights reads as one set.
+
+`FLORIN-VOTE 1 florin-app-vote-1 b=WX69AE n=Test%20voter%205 r=engineering at=2026-11-05T17:45:00Z s=5150 p=home:compact,history:list,bm:quick,words:C,checkin:on,meals:quick,easy:easy,onboard:short,c-score:oura,c-trend:oura,c-parts:built,c-week:rings,c-month:rings,c-timing:built,c-often:built,c-form:built,c-symptoms:built,c-checkin:built,c-pattern:oura w=home,history,bm,words,checkin,meals,easy,onboard,c-score,c-trend,c-week,c-month,c-pattern part=2/2 x=0uefjxl`

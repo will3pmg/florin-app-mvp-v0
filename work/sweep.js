@@ -41,7 +41,7 @@ const K1_ITEM = /^\s*(no bms logged|shifted)\s*$/i;
 
 /* the decisions on the left bar, default first, as the toggles carry them (data-v) */
 const DECS = {
-  form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["score", "day", "compact"], history: ["list", "calendar"], checkin: ["true", "false"],
+  form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["compact", "score", "day"], history: ["list", "calendar"], checkin: ["true", "false"],
   mealUI: ["quick", "detailed"], look: ["built", "rings", "journal", "bento", "oura", "easy"], easy: ["false", "true"], onboard: ["short", "full"]
 };
 const KEYS = Object.keys(DECS);

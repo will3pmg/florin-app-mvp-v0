@@ -1,0 +1,31 @@
+Test voter 1, 7:41 PM
+Changed my mind on Home.
+Florin app vote: test VOTER 1, Design
+19 of 19 answered, 2 notes. Ballot H7KC4X, Nov 5, 2026, 2:40 PM
+
+Part 1, the app
+1. Home screen: Score first
+   Why: On a second look, the score first is what people open the app for.
+2. History: Calendar
+3. Logging a BM: Quick tiles and form
+4. Consistency words: Seven words
+5. Weekly check-in: With the check-in
+6. Logging meals: Quick, voice or text
+7. Easy version: Add Easy
+8. Onboarding: Short
+
+Part 2, the charts
+9. FloraScore today: Rings
+10. FloraScore over time: Florin charts
+11. What moved FloraScore: Florin charts
+12. The last 7 days: Rings
+   Why: Still the rings for the week.
+13. The month: Florin charts, with the week's ring
+14. Timing: Florin charts
+15. How often: Florin charts
+16. Consistency: Bento
+17. Symptoms: Florin charts
+18. Check-in results: Field journal
+19. Possible patterns: Florin charts
+
+`FLORIN-VOTE 1 florin-app-vote-1 b=H7KC4X n=test%20VOTER%201 r=design at=2026-11-05T19:40:00Z s=4821 p=home:score,history:calendar,bm:quick,words:C,checkin:on,meals:quick,easy:easy,onboard:short,c-score:rings,c-trend:built,c-parts:built,c-week:rings,c-month:cal-ring,c-timing:built,c-often:built,c-form:bento,c-symptoms:built,c-checkin:journal,c-pattern:built w=home,c-week x=0di5tkw`

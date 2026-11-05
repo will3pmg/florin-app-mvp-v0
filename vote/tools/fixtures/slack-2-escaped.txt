@@ -1,0 +1,32 @@
+Test voter 4, 5:06 PM
+&gt; Florin app vote: Test voter 4, Patient advocate
+&gt; 19 of 19 answered, 4 notes. Ballot DFH3MN, Nov 5, 2026, 12:05 PM
+&gt; 
+&gt; Part 1, the app
+&gt; 1. Home screen: Day first
+&gt;    Why: Today's logs first &amp; the score small &lt;it reads calmer&gt;.
+&gt; 2. History: Calendar
+&gt; 3. Logging a BM: Quick tiles and form
+&gt;    Why: Two taps is right, see <http://example.com|example.com> for how others do it.
+&gt; 4. Consistency words: Seven words
+&gt; 5. Weekly check-in: Without it
+&gt;    Why: A weekly quiz feels like homework.
+&gt; 6. Logging meals: Quick, voice or text
+&gt; 7. Easy version: Add Easy
+&gt;    Why: My parents would turn this on.
+&gt; 8. Onboarding: Short
+&gt; 
+&gt; Part 2, the charts
+&gt; 9. FloraScore today: Easy read
+&gt; 10. FloraScore over time: Easy read
+&gt; 11. What moved FloraScore: No preference
+&gt; 12. The last 7 days: Rings
+&gt; 13. The month: Florin charts, with the week's ring
+&gt; 14. Timing: Easy read
+&gt; 15. How often: Easy read
+&gt; 16. Consistency: Easy read
+&gt; 17. Symptoms: Easy read
+&gt; 18. Check-in results: No preference
+&gt; 19. Possible patterns: No preference
+&gt; 
+&gt; `FLORIN-VOTE 1 florin-app-vote-1 b=DFH3MN n=Test%20voter%204 r=other ro=Patient%20advocate at=2026-11-05T17:05:00Z s=77 p=home:day,history:calendar,bm:quick,words:C,checkin:off,meals:quick,easy:easy,onboard:short,c-score:easy,c-trend:easy,c-parts:none,c-week:rings,c-month:cal-ring,c-timing:easy,c-often:easy,c-form:easy,c-symptoms:easy,c-checkin:none,c-pattern:none w=home,bm,checkin,easy x=1rxph5p`

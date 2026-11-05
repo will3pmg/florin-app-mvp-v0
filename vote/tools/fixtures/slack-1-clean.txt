@@ -1,0 +1,96 @@
+Will, 2:58 PM
+Florin app vote: please send your picks by Friday.
+Open the link, pick through the 19 questions, then paste what the page copies here.
+
+Test voter 1, 3:11 PM
+Florin app vote: Test voter 1, Design
+19 of 19 answered, 4 notes. Ballot C4NM7P, Nov 5, 2026, 10:10 AM
+
+Part 1, the app
+1. Home screen: Compact
+   Why: I can get to any day in one tap.
+2. History: Calendar
+3. Logging a BM: Quick tiles and form
+4. Consistency words: Seven words
+   Why: Plain words, and no numbers to explain.
+5. Weekly check-in: With the check-in
+6. Logging meals: Quick, voice or text
+   Why: Nobody types a whole meal at dinner.
+7. Easy version: Add Easy
+8. Onboarding: Short
+
+Part 2, the charts
+9. FloraScore today: Rings
+10. FloraScore over time: Florin charts
+11. What moved FloraScore: Florin charts
+12. The last 7 days: Rings
+   Why: The rings read at a glance.
+13. The month: Florin charts, with the week's ring
+14. Timing: Florin charts
+15. How often: Florin charts
+16. Consistency: Bento
+17. Symptoms: Florin charts
+18. Check-in results: Field journal
+19. Possible patterns: No preference
+
+`FLORIN-VOTE 1 florin-app-vote-1 b=C4NM7P n=Test%20voter%201 r=design at=2026-11-05T15:10:00Z s=4821 p=home:compact,history:calendar,bm:quick,words:C,checkin:on,meals:quick,easy:easy,onboard:short,c-score:rings,c-trend:built,c-parts:built,c-week:rings,c-month:cal-ring,c-timing:built,c-often:built,c-form:bento,c-symptoms:built,c-checkin:journal,c-pattern:none w=home,words,meals,c-week x=0gfnpzn`
+
+Test voter 2, 3:31 PM
+Florin app vote: Test voter 2, Product
+8 of 19 answered, 2 notes. Ballot KM4TRA, Nov 5, 2026, 10:30 AM
+
+Part 1, the app
+1. Home screen: Compact
+2. History: List
+   Why: A list is what people expect from a log.
+3. Logging a BM: Full form only
+4. Consistency words: Numbers 1 to 7
+5. Weekly check-in: With the check-in
+6. Logging meals: One meal at a time
+   Why: One meal at a time keeps the times right.
+7. Easy version: Standard only
+8. Onboarding: Full survey
+
+Part 2, the charts
+9. FloraScore today: Not answered
+10. FloraScore over time: Not answered
+11. What moved FloraScore: Not answered
+12. The last 7 days: Not answered
+13. The month: Not answered
+14. Timing: Not answered
+15. How often: Not answered
+16. Consistency: Not answered
+17. Symptoms: Not answered
+18. Check-in results: Not answered
+19. Possible patterns: Not answered
+
+`FLORIN-VOTE 1 florin-app-vote-1 b=KM4TRA n=Test%20voter%202 r=product at=2026-11-05T15:30:00Z s=1207 p=home:compact,history:list,bm:full,words:A,checkin:on,meals:detailed,easy:standard,onboard:full w=history,meals x=140s1kl`
+
+Test voter 7, 4:21 PM
+Florin app vote: Test voter 7, Marketing
+8 of 19 answered, no notes. Ballot JA7MF4, Nov 5, 2026, 11:20 AM
+
+Part 1, the app
+1. Home screen: Day first
+2. History: List
+3. Logging a BM: Full form only
+4. Consistency words: Five words
+5. Weekly check-in: Without it
+6. Logging meals: One meal at a time
+7. Easy version: Standard only
+8. Onboarding: Full survey
+
+Part 2, the charts
+9. FloraScore today: Not answered
+10. FloraScore over time: Not answered
+11. What moved FloraScore: Not answered
+12. The last 7 days: Not answered
+13. The month: Not answered
+14. Timing: Not answered
+15. How often: Not answered
+16. Consistency: Not answered
+17. Symptoms: Not answered
+18. Check-in results: Not answered
+19. Possible patterns: Not answered
+
+`FLORIN-VOTE 1 florin-app-vote-1 b=JA7MF4 n=Test%20voter%207 r=marketing at=2026-11-05T16:20:00Z s=2 p=home:compact,history:list,bm:full,words:B,checkin:off,meals:detailed,easy:standard,onboard:full w= x=0dg7x93`

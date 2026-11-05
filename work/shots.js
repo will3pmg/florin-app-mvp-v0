@@ -29,7 +29,7 @@ const STATES = [
   { id: "C-light-easy", form: "C", theme: "light", data: "est", easy: "true" },
   { id: "C-light-fresh-easy", form: "C", theme: "light", data: "fresh", easy: "true", look: "rings" }
 ];
-const DEFAULTS = { persona: "sarah", checkin: "true", bmUI: "quick", mealUI: "quick", home: "score", history: "list", look: "built", easy: "false", onboard: "short" };
+const DEFAULTS = { persona: "sarah", checkin: "true", bmUI: "quick", mealUI: "quick", home: "compact", history: "list", look: "built", easy: "false", onboard: "short" };
 /* the controls a state sets. A module's screen sets its own decision (Home: Day first, Easy version, the onboarding
    screens), so each shot puts the state back first, and the screen sets only its own */
 const SET = ["persona", "data", "form", "theme", "checkin", "bmUI", "mealUI", "home", "history", "look", "easy", "onboard"];

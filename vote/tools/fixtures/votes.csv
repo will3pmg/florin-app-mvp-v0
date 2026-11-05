@@ -1,0 +1,22 @@
+received,vote,bid,vid,name,name_key,role,role_other,at,build,seed,n,qid,label,pick,pick_name,note,current
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,1,home,Home screen,day,Day first,Today's logs first & the score small <it reads calmer>.,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,2,history,History,calendar,Calendar,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,3,bm,Logging a BM,quick,Quick tiles and form,"Two taps is right, see example.com for how others do it.",yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,4,words,Consistency words,C,Seven words,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,5,checkin,Weekly check-in,off,Without it,A weekly quiz feels like homework.,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,6,meals,Logging meals,quick,"Quick, voice or text",,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,7,easy,Easy version,easy,Add Easy,My parents would turn this on.,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,8,onboard,Onboarding,short,Short,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,9,c-score,FloraScore today,easy,Easy read,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,10,c-trend,FloraScore over time,easy,Easy read,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,11,c-parts,What moved FloraScore,none,No preference,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,12,c-week,The last 7 days,rings,Rings,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,13,c-month,The month,cal-ring,"Florin charts, with the week's ring",,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,14,c-timing,Timing,easy,Easy read,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,15,c-often,How often,easy,Easy read,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,16,c-form,Consistency,easy,Easy read,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,17,c-symptoms,Symptoms,easy,Easy read,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,18,c-checkin,Check-in results,none,No preference,,yes
+2026-11-05 20:04:00,florin-app-vote-1,DFH3MN,c3d4e5f6g7h8,Test voter 4,test voter 4,other,Patient advocate,2026-11-05T17:05:00Z,vote.20261105.test01,77,19,c-pattern,Possible patterns,none,No preference,,yes
+2026-11-05 20:05:00,florin-app-vote-1-test,Y3ATCD,n4o5p6q7r8s9,Test voter 8,test voter 8,leadership,,2026-11-05T19:00:00Z,vote.20261105.test01,8,1,home,Home screen,compact,Compact,Will's own test run.,yes
+2026-11-05 20:05:00,florin-app-vote-1-test,Y3ATCD,n4o5p6q7r8s9,Test voter 8,test voter 8,leadership,,2026-11-05T19:00:00Z,vote.20261105.test01,8,2,history,History,calendar,Calendar,,yes

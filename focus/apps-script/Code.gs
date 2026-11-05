@@ -13,9 +13,14 @@
      doGet(e)   answers the JSONP calls: ack, claim, lookup, token, followup and ping.
      setup()    makes the tabs, their header rows and a README tab, and the recruiter's separate spreadsheet.
 
+   The same deployment also takes the Florin app vote (vote/BALLOT.md, vote/SETUP.md): a ballot posted to ?op=vote
+   becomes one row per question on the Votes tab, and doGet answers op=voted (is this ballot held?) and op=results (the
+   tallies, with the results key). The vote's code is its own section below; it never meets the focus pieces.
+
    Every write runs under the script lock. There are no secrets here: the settings are the study ids below and four
    optional script properties: SHEET_ID (the answers Sheet, for a standalone script), RECRUITER_SHEET_ID (setup()
-   makes that spreadsheet and sets it), STUDIES (replaces the list below) and CLOSED (yes closes the study).
+   makes that spreadsheet and sets it), STUDIES (replaces the list below) and CLOSED (yes closes the study). The vote
+   adds VOTES (replaces its list), VOTE_CLOSED (yes closes the vote) and VOTE_KEY (setup() makes it: the results key).
 
    Kept apart on purpose: thank-you codes go to the recruiter's spreadsheet, one to a row at a random place, with no
    session id and no time. A follow-up contact goes there too, with its week only. Neither ever reaches this Sheet.
@@ -96,6 +101,48 @@ var ARMS = { home: ["score", "day", "compact"], history: ["calendar", "list"], w
 
 /* The alphabet of the study code and the thank-you code, in this order: the check character depends on it. */
 var CODE_ALPHABET = "ACDEFHJKMNPRTWXY34679";
+
+/* ---------------------------------------------------------------- the vote's settings (vote/BALLOT.md) */
+
+/* The vote ids the voting page may send: vote/config.js's `vote`. Will's own runs (?test=1) add "-test", accepted for
+   each. The script property VOTES replaces this list. */
+var VOTES = ["florin-app-vote-1"];
+var VOTE = { maxBody: 40000, maxPicks: 30, note: 280, name: 60, roleOther: 40, perName: 20, perMinute: 40 };
+var VOTE_ROLES = ["leadership", "marketing", "product", "design", "engineering", "clinical", "advisor", "other"];
+/* The 19 questions, as vote/js/questions.js has them (test.js checks the two agree), with the words, so the Votes tab
+   reads on its own. */
+var VOTE_SIX_ = { built: "Florin charts", rings: "Rings", journal: "Field journal", bento: "Bento", oura: "Oura", easy: "Easy read" };
+function voteSix_(month) {
+  var o = { built: VOTE_SIX_.built };
+  if (month) o["cal-ring"] = "Florin charts, with the week's ring";
+  ["rings", "journal", "bento", "oura", "easy"].forEach(function (k) { o[k] = VOTE_SIX_[k]; });
+  return o;
+}
+var VOTE_QS = {
+  home: { part: 1, n: 1, label: "Home screen", opts: { score: "Score first", day: "Day first", compact: "Compact" } },
+  history: { part: 1, n: 2, label: "History", opts: { list: "List", calendar: "Calendar" } },
+  bm: { part: 1, n: 3, label: "Logging a BM", opts: { quick: "Quick tiles and form", full: "Full form only" } },
+  words: { part: 1, n: 4, label: "Consistency words", opts: { A: "Numbers 1 to 7", B: "Five words", C: "Seven words" } },
+  checkin: { part: 1, n: 5, label: "Weekly check-in", opts: { on: "With the check-in", off: "Without it" } },
+  meals: { part: 1, n: 6, label: "Logging meals", opts: { quick: "Quick, voice or text", detailed: "One meal at a time" } },
+  easy: { part: 1, n: 7, label: "Easy version", opts: { standard: "Standard only", easy: "Add Easy" } },
+  onboard: { part: 1, n: 8, label: "Onboarding", opts: { "short": "Short", full: "Full survey" } },
+  "c-score": { part: 2, n: 9, label: "FloraScore today", opts: voteSix_() },
+  "c-trend": { part: 2, n: 10, label: "FloraScore over time", opts: voteSix_() },
+  "c-parts": { part: 2, n: 11, label: "What moved FloraScore", opts: voteSix_() },
+  "c-week": { part: 2, n: 12, label: "The last 7 days", opts: voteSix_() },
+  "c-month": { part: 2, n: 13, label: "The month", opts: voteSix_(true) },
+  "c-timing": { part: 2, n: 14, label: "Timing", opts: voteSix_() },
+  "c-often": { part: 2, n: 15, label: "How often", opts: voteSix_() },
+  "c-form": { part: 2, n: 16, label: "Consistency", opts: voteSix_() },
+  "c-symptoms": { part: 2, n: 17, label: "Symptoms", opts: voteSix_() },
+  "c-checkin": { part: 2, n: 18, label: "Check-in results", opts: voteSix_() },
+  "c-pattern": { part: 2, n: 19, label: "Possible patterns", opts: voteSix_() }
+};
+var VOTE_NONE = "No preference";
+var VOTE_TAB = "Votes";
+var VOTE_HEAD = ["received", "vote", "bid", "vid", "name", "name_key", "role", "role_other", "at", "build", "seed", "n",
+  "qid", "label", "pick", "pick_name", "note", "current"];
 
 /* ---------------------------------------------------------------- field rules */
 
@@ -196,7 +243,10 @@ var EVENT_NAMES = {
 function doPost(e) {
   var out;
   try {
-    out = receive_(e && e.postData ? String(e.postData.contents || "") : "");
+    var p = (e && e.parameter) || {};
+    var body = e && e.postData ? String(e.postData.contents || "") : "";
+    /* the vote posts to ?op=vote; everything else is the focus test's pieces, and the two never meet */
+    out = p.op === "vote" ? receiveVote_(body) : receive_(body);
   } catch (err) {
     logNow_([{ what: "error", field: where_(err) }]);
     out = { ok: false, error: "server" };
@@ -229,6 +279,7 @@ function doGet(e) {
 
 function call_(p) {
   var op = String(p.op || "");
+  if (op === "voted" || op === "results") return voteCall_(p);
   if (!studyOk_(p.study)) return { ok: false, error: "unknown_study" };
   if (op === "ping") return { ok: true, open: !closed_() };
   if (op === "ack") return ack_(p);
@@ -961,7 +1012,7 @@ function book_() {
    missing is added at the end), and its last row kept as rows go in. Every post waits on the one lock, so each call
    to Sheets saved here is time saved for everyone posting. */
 function view_(ss) { return { ss: ss, t: {} }; }
-var HEADS = { _index: INDEX_HEAD, _log: LOG_HEAD, tokens: RECRUITER_TABS.tokens, followup: RECRUITER_TABS.followup };
+var HEADS = { _index: INDEX_HEAD, _log: LOG_HEAD, tokens: RECRUITER_TABS.tokens, followup: RECRUITER_TABS.followup, Votes: VOTE_HEAD };
 
 /* A tab as { sh, head, last, max }. readOnly never makes or changes anything, and gives null for a missing tab. */
 function open_(v, name, readOnly) {
@@ -1103,7 +1154,10 @@ function setup() {
   try {
     readme_(ss);
     var v = view_(ss);
-    Object.keys(TABS).concat([INDEX_TAB, LOG_TAB]).forEach(function (name) { open_(v, name); });
+    Object.keys(TABS).concat([VOTE_TAB, INDEX_TAB, LOG_TAB]).forEach(function (name) { open_(v, name); });
+    /* the vote's results key, made once: the results page's address carries it (#key=...), nothing else does */
+    var vkey = props.getProperty("VOTE_KEY");
+    if (!vkey) { vkey = Utilities.getUuid().replace(/-/g, ""); props.setProperty("VOTE_KEY", vkey); }
     var blank = ss.getSheetByName("Sheet1");
     if (blank && blank.getLastRow() === 0) ss.deleteSheet(blank);
     var rb = recruiterBook_();
@@ -1111,7 +1165,8 @@ function setup() {
     open_(rv, "tokens");
     open_(rv, "followup");
     SpreadsheetApp.flush();
-    var msg = "Done.\nThe answers Sheet: " + ss.getUrl() + "\nThe thank-you codes, for the recruiter only: " + rb.getUrl();
+    var msg = "Done.\nThe answers Sheet: " + ss.getUrl() + "\nThe thank-you codes, for the recruiter only: " + rb.getUrl() +
+      "\nThe vote's results key, for the results page's address: " + vkey;
     Logger.log(msg);
     return msg;
   } finally {
@@ -1154,6 +1209,11 @@ function readme_(ss) {
   h("Keeping it");
   t("Share this Sheet only with the research team named in the consent, with no public or anyone-with-the-link access. Delete it the number of months after the study closes that the consent says. When the study closes, set open to false in config.js, set the script property CLOSED to yes, and archive the deployment.");
   t("");
+  h("Votes: the Florin app vote");
+  t("A separate thing from the focus test, on the same script: people's picks of the app's screens and charts. One row per question answered on a ballot. vote is the vote id (ending -test for Will's own runs), bid the ballot, vid the browser it came from, n the question's number, qid its id, pick the option's id and pick_name its name. none is No preference. note is why they picked it, if they said.");
+  t("name and role are what voters typed, so share this Sheet only with the team. A voter can send again: the latest ballot per name counts, whole, and current is yes on its rows and no on the earlier ones. Two spellings of one name (case, spaces, accents) are one name: see name_key.");
+  t("The results page reads this tab through the script, with the results key setup() printed. To stop the vote, set the script property VOTE_CLOSED to yes. To take a voter's ballots out when they ask: the Florin study menu, Remove a voter's ballots.");
+  t("");
   t("The System Usability Scale: John Brooke (1996), SUS: a quick and dirty usability scale.");
   sh.getRange(1, 1, lines.length, 1).setValues(lines.map(function (l) { return [cell_(l)]; })).setWrap(true);
   bold.forEach(function (r) { sh.getRange(r, 1).setFontWeight("bold"); });
@@ -1167,6 +1227,7 @@ function onOpen() {
     SpreadsheetApp.getUi().createMenu("Florin study")
       .addItem("Set up the tabs", "setup")
       .addItem("Remove a session by its code", "removeByCodePrompt")
+      .addItem("Remove a voter's ballots", "removeVoterPrompt")
       .addToUi();
   } catch (err) {
     /* no menu for a standalone script */
@@ -1219,6 +1280,322 @@ function dropSid_(sh, sid) {
   if (c < 0) return 0;
   var vals = sh.getRange(2, 1, last - 1, lastCol).getValues();
   var keep = vals.filter(function (r) { return String(r[c]) !== sid; });
+  var gone = vals.length - keep.length;
+  if (!gone) return 0;
+  if (keep.length) sh.getRange(2, 1, keep.length, lastCol).setValues(keep.map(function (r) { return r.map(cell_); }));
+  sh.getRange(2 + keep.length, 1, gone, lastCol).clearContent();
+  return gone;
+}
+
+/* ---------------------------------------------------------------- the Florin app vote (vote/BALLOT.md) */
+
+/* A ballot comes as one JSON post to ?op=vote. It is checked whole: a bad envelope refuses it; an unknown question or
+   option drops that pick (logged by field, never the words). Then, under the script lock: a ballot id already held is
+   a duplicate; a name already at 20 ballots, or 40 ballots from everyone this minute, is limited (the page sends again
+   later); otherwise it becomes one row per question answered, and `current` is worked out for that name: yes on the
+   rows of the latest ballot (the latest `at`, a tie to the one received later), no on the rest. */
+
+function votes_() {
+  var prop = PropertiesService.getScriptProperties().getProperty("VOTES");
+  if (prop) return prop.split(",").map(function (s) { return s.trim(); }).filter(String);
+  return VOTES;
+}
+function voteOk_(vote) {
+  if (typeof vote !== "string" || !/^[a-z0-9-]{3,40}$/.test(vote)) return false;
+  return votes_().indexOf(vote.replace(/-test$/, "")) >= 0;
+}
+function voteClosed_() {
+  return /^(yes|true|1)$/i.test(String(PropertiesService.getScriptProperties().getProperty("VOTE_CLOSED") || ""));
+}
+var VOTE_BID_RE = new RegExp("^[" + CODE_ALPHABET + "]{6}$");
+
+/* A voter's name as a key, as ballot.js makes it: accents off, lower case, every run of characters that aren't letters
+   or digits one space, trimmed. "  sam   LEE " and "Sam Lee" are one voter; "" is refused. */
+var VOTE_NOT_LN_ = (function () { try { return new RegExp("[^\\p{L}\\p{N}]+", "gu"); } catch (err) { return null; } })();
+var VOTE_MARKS_ = (function () { try { return new RegExp("\\p{M}", "gu"); } catch (err) { return /[̀-ͯ]/g; } })();
+function voteKey_(name) {
+  var s = String(name === undefined || name === null ? "" : name);
+  if (s.normalize) s = s.normalize("NFKD");
+  s = s.replace(VOTE_MARKS_, "").toLowerCase();
+  s = VOTE_NOT_LN_ ? s.replace(VOTE_NOT_LN_, " ") : s.replace(/[^a-z0-9À-￿]+/g, " ");
+  return s.replace(/^\s+|\s+$/g, "");
+}
+/* words people typed, on one line: control characters and new lines out, runs of spaces one, cut at max */
+function voteText_(v, max) {
+  var s = String(v).replace(/[\u0000-\u001F\u007F\u2028\u2029]/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+  return s.length > max ? s.slice(0, max).replace(/\s+$/, "") : s;
+}
+
+function receiveVote_(body) {
+  if (voteClosed_()) return { ok: false, error: "closed" };
+  if (!body) return { ok: false, error: "bad_request" };
+  if (body.length > VOTE.maxBody) { logNow_([{ what: "vote_too_big", kind: "vote", field: String(body.length) }]); return { ok: false, error: "bad_request" }; }
+  var data;
+  try { data = JSON.parse(body); } catch (err) { logNow_([{ what: "vote_not_json", kind: "vote" }]); return { ok: false, error: "bad_request" }; }
+  if (!data || typeof data !== "object" || Array.isArray(data) || data.type !== "vote") { logNow_([{ what: "vote_shape", kind: "vote" }]); return { ok: false, error: "bad_request" }; }
+  if (!voteOk_(data.vote)) { logNow_([{ what: "vote_unknown", kind: "vote", field: "vote" }]); return { ok: false, error: "unknown_vote" }; }
+  var c = voteCheck_(data);
+  if (!c.ok) { logNow_([{ what: "vote_field", kind: "vote", field: c.field }]); return { ok: false, error: "bad_request", field: c.field }; }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(CONFIG.lockWaitMs); } catch (err) { return { ok: false, error: "server" }; }
+  try {
+    var v = view_(book_());
+    var out = voteStore_(v, c.b);
+    writeLog_(v, c.log);
+    SpreadsheetApp.flush();
+    return out;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* The ballot's fields, each by its rule: { ok, b, log } or { ok: false, field } */
+function voteCheck_(d) {
+  var no = function (f) { return { ok: false, field: f }; };
+  var o = { vote: d.vote };
+  if (typeof d.bid !== "string" || !VOTE_BID_RE.test(d.bid)) return no("bid");
+  o.bid = d.bid;
+  if (typeof d.vid !== "string" || !/^[a-z0-9]{12}$/.test(d.vid)) return no("vid");
+  o.vid = d.vid;
+  if (typeof d.name !== "string") return no("name");
+  o.name = voteText_(d.name, VOTE.name);
+  o.key = voteKey_(o.name);
+  if (!o.key) return no("name");
+  var role = d.role === undefined || d.role === null ? "" : d.role;
+  if (typeof role !== "string" || (role !== "" && VOTE_ROLES.indexOf(role) < 0)) return no("role");
+  o.role = role;
+  o.role_other = role === "other" && typeof d.role_other === "string" ? voteText_(scrub_(voteText_(d.role_other, 400)), VOTE.roleOther) : "";
+  o.at = time_(d.at);
+  if (!o.at) return no("at");
+  var bc = clean_(d.build === undefined || d.build === null ? "" : d.build, { t: "s", max: 24, re: /^[a-z0-9.-]{1,24}$/, blank: true });
+  if (!bc.ok) return no("build");
+  o.build = bc.v;
+  var sc = clean_(d.seed === undefined || d.seed === null ? "" : d.seed, { t: "n", min: 0, max: 2147483647, dp: 0, whole: true, blank: true });
+  if (!sc.ok) return no("seed");
+  o.seed = sc.v;
+  if (!Array.isArray(d.picks) || d.picks.length > VOTE.maxPicks) return no("picks");
+  var seen = {}, picks = [], log = [];
+  for (var i = 0; i < d.picks.length; i++) {
+    var x = d.picks[i];
+    if (!x || typeof x !== "object" || Array.isArray(x)) return no("picks");
+    var q = x.q, pk = x.p;
+    if (typeof q !== "string" || !VOTE_QS.hasOwnProperty(q)) { log.push({ what: "vote_pick", kind: "vote", field: "q" }); continue; }
+    if (seen[q]) return no("repeat");
+    seen[q] = 1;
+    if (typeof pk !== "string" || (pk !== "none" && !VOTE_QS[q].opts.hasOwnProperty(pk))) { log.push({ what: "vote_pick", kind: "vote", field: "p" }); continue; }
+    var note = typeof x.note === "string" ? voteText_(scrub_(voteText_(x.note, 4000)), VOTE.note) : "";
+    picks.push({ q: q, p: pk, note: note });
+  }
+  if (!picks.length) return no("picks");
+  picks.sort(function (a, b) { return VOTE_QS[a.q].n - VOTE_QS[b.q].n; });
+  o.picks = picks;
+  return { ok: true, b: o, log: log };
+}
+
+/* Under the lock: the duplicate and the limits, then the rows, then `current` for this name */
+function voteStore_(v, o) {
+  var t = open_(v, VOTE_TAB);
+  var rows = voteRows_(t);
+  var mine = [], bids = {};
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i].obj;
+    if (String(r.vote) !== o.vote) continue;
+    if (String(r.bid) === o.bid) return { ok: true, accepted: 0, duplicate: 1 };
+    if (voteKey_(r.name) === o.key) { mine.push(rows[i]); bids[String(r.bid)] = 1; }
+  }
+  if (Object.keys(bids).length >= VOTE.perName) return { ok: false, error: "limited", limit: "name" };
+  var cache = CacheService.getScriptCache();
+  var ck = "vote|" + o.vote + "|" + Math.floor(Date.now() / 60000);
+  var inMinute = Number(cache.get(ck) || 0);
+  if (inMinute >= VOTE.perMinute) return { ok: false, error: "limited", limit: "minute" };
+  cache.put(ck, String(inMinute + 1), 120);
+
+  var latest = "";
+  mine.forEach(function (m) { var a = String(m.obj.at || ""); if (a > latest) latest = a; });
+  var current = o.at >= latest;
+  var now = new Date();
+  append_(t, o.picks.map(function (x) {
+    var q = VOTE_QS[x.q];
+    return {
+      received: now, vote: o.vote, bid: o.bid, vid: o.vid, name: o.name, name_key: o.key, role: o.role,
+      role_other: o.role_other, at: o.at, build: o.build, seed: o.seed, n: q.n, qid: x.q, label: q.label, pick: x.p,
+      pick_name: x.p === "none" ? VOTE_NONE : q.opts[x.p], note: x.note, current: current ? "yes" : "no"
+    };
+  }));
+  if (current) {
+    var col = t.head.indexOf("current") + 1;
+    mine.forEach(function (m) { if (String(m.obj.current) !== "no") t.sh.getRange(m.row, col).setValue(cell_("no")); });
+  }
+  return { ok: true, accepted: 1, current: current };
+}
+
+/* every row of the Votes tab as { row, obj }, in one read */
+function voteRows_(t) {
+  if (!t || t.last < 2) return [];
+  return t.sh.getRange(2, 1, t.last - 1, t.head.length).getValues().map(function (vals, i) {
+    return { row: i + 2, obj: obj_(t.head, vals) };
+  }).filter(function (r) { return String(r.obj.bid || "") !== ""; });
+}
+
+/* The JSONP calls. voted: is this ballot held (no key: it only says whether a random id is here). results: every
+   ballot of the vote, the latest per name, and the tallies, in results.json's shape; it needs the results key. */
+function voteCall_(p) {
+  var op = String(p.op || "");
+  var vote = String(p.vote || "");
+  if (!voteOk_(vote)) return { ok: false, error: "unknown_vote" };
+  if (op === "voted") {
+    var bid = String(p.bid || "");
+    if (!VOTE_BID_RE.test(bid)) return { ok: false, error: "bad_request" };
+    var t = open_(view_(book_()), VOTE_TAB, true);
+    if (!t) return { ok: true, have: false };
+    var hits = findAll_(t, "bid", bid);
+    for (var i = 0; i < hits.length; i++) if (String(hits[i].obj.vote) === vote) return { ok: true, have: true };
+    return { ok: true, have: false };
+  }
+  var want = PropertiesService.getScriptProperties().getProperty("VOTE_KEY");
+  if (!want) return { ok: false, error: "no_key_set" };
+  if (String(p.key || "") !== want) return { ok: false, error: "key" };
+  return voteResults_(vote);
+}
+
+/* the rows of one vote as ballots, in the order they arrived */
+function voteBallots_(rows, vote) {
+  var by = {}, order = [];
+  rows.forEach(function (r) {
+    var o = r.obj;
+    if (vote && String(o.vote) !== vote) return;
+    var bid = String(o.bid);
+    if (!by[bid]) {
+      var rec = o.received instanceof Date ? o.received.toISOString().slice(0, 19) + "Z" : String(o.received || "");
+      by[bid] = {
+        bid: bid, name: String(o.name), key: voteKey_(o.name), role: String(o.role || ""), role_other: String(o.role_other || ""),
+        at: String(o.at || ""), source: "sheet", vid: String(o.vid || ""), build: String(o.build || ""),
+        seed: o.seed === "" || o.seed === undefined ? null : Number(o.seed), received: rec, vote: String(o.vote), picks: {}, _i: order.length
+      };
+      order.push(bid);
+    }
+    var q = String(o.qid);
+    if (VOTE_QS.hasOwnProperty(q)) by[bid].picks[q] = { p: String(o.pick), note: String(o.note || "") };
+  });
+  return order.map(function (b) { return by[b]; });
+}
+
+/* The latest ballot per name counts, whole: the latest at, a tie to the one received later. ballot.js latest() is the
+   same rule; test.js checks the two agree. */
+function voteLatest_(all) {
+  var groups = {}, order = [];
+  all.forEach(function (b) {
+    if (!b.key) return;
+    if (!groups[b.key]) { groups[b.key] = []; order.push(b.key); }
+    groups[b.key].push(b);
+  });
+  var counted = [], replaced = [], flags = [];
+  order.forEach(function (k) {
+    var g = groups[k].slice().sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : a._i - b._i; });
+    var win = g[g.length - 1];
+    g.slice(0, -1).forEach(function (b) { replaced.push({ name: b.name, key: k, bid: b.bid, at: b.at, by: win.bid, source: "sheet", file: "" }); });
+    var vids = [];
+    g.forEach(function (b) { if (b.vid && vids.indexOf(b.vid) < 0) vids.push(b.vid); });
+    if (vids.length > 1) flags.push({ name: win.name, bid: win.bid, what: "two_browsers" });
+    counted.push(win);
+  });
+  return { counted: counted, replaced: replaced, flags: flags };
+}
+
+function voteResults_(vote) {
+  var t = open_(view_(book_()), VOTE_TAB, true);
+  var all = voteBallots_(t ? voteRows_(t) : [], vote);
+  var L = voteLatest_(all);
+  var tallies = {};
+  Object.keys(VOTE_QS).forEach(function (q) {
+    var opts = {};
+    Object.keys(VOTE_QS[q].opts).forEach(function (o) { opts[o] = 0; });
+    tallies[q] = { n: 0, none: 0, opts: opts };
+  });
+  L.counted.forEach(function (b) {
+    Object.keys(b.picks).forEach(function (q) {
+      var e = tallies[q], pk = b.picks[q].p;
+      if (pk === "none") { e.n++; e.none++; } else if (e.opts.hasOwnProperty(pk)) { e.n++; e.opts[pk]++; }
+    });
+  });
+  var bare = function (b) { var o = {}; Object.keys(b).forEach(function (k) { if (k !== "_i" && k !== "vote") o[k] = b[k]; }); return o; };
+  return {
+    ok: true, v: 1, vote: vote, generated: new Date().toISOString().slice(0, 19) + "Z", source: "sheet",
+    sources: [{ kind: "sheet", file: "", ballots: all.length }],
+    ballots: L.counted.map(bare), ballots_all: all.map(bare), replaced: L.replaced, flags: L.flags, dropped: [], tallies: tallies
+  };
+}
+
+/* `current` worked out again for every name on the tab, written as one column */
+function voteCurrentAll_(v) {
+  var t = open_(v, VOTE_TAB);
+  var rows = voteRows_(t);
+  if (!rows.length) return 0;
+  var win = {};
+  var votesSeen = [];
+  rows.forEach(function (r) { var vt = String(r.obj.vote); if (votesSeen.indexOf(vt) < 0) votesSeen.push(vt); });
+  votesSeen.forEach(function (vt) { voteLatest_(voteBallots_(rows, vt)).counted.forEach(function (b) { win[vt + "|" + b.bid] = 1; }); });
+  var col = t.head.indexOf("current") + 1;
+  var vals = t.sh.getRange(2, col, t.last - 1, 1).getValues();
+  var byRow = {};
+  rows.forEach(function (r) { byRow[r.row] = win[String(r.obj.vote) + "|" + String(r.obj.bid)] ? "yes" : "no"; });
+  var changed = 0;
+  var out = vals.map(function (a, i) {
+    var want = byRow[i + 2];
+    if (want === undefined) return [cell_(a[0])];
+    if (String(a[0]) !== want) changed++;
+    return [cell_(want)];
+  });
+  if (changed) t.sh.getRange(2, col, t.last - 1, 1).setValues(out);
+  return changed;
+}
+
+/* Taking a voter's ballots out, when they ask: every row under that name key, on every vote id, then `current` again */
+function removeVoterPrompt() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt("Remove a voter's ballots", "The voter's name, as they gave it:", ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  ui.alert("Remove a voter's ballots", removeVoterByName(r.getResponseText()), ui.ButtonSet.OK);
+}
+function removeVoterByProperty() {
+  var props = PropertiesService.getScriptProperties();
+  var out = removeVoterByName(props.getProperty("REMOVE_VOTER") || "");
+  props.deleteProperty("REMOVE_VOTER");
+  Logger.log(out);
+  return out;
+}
+function removeVoterByName(name) {
+  var key = voteKey_(name);
+  var shown = voteText_(String(name || ""), VOTE.name);
+  if (!key) return "That name has no letters or digits. Check it and try again.";
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var ss = book_();
+    var sh = ss.getSheetByName(VOTE_TAB);
+    if (!sh) return "There are no votes yet.";
+    var bids = {};
+    var gone = dropRows_(sh, function (o) {
+      if (voteKey_(o.name) !== key) return false;
+      bids[String(o.vote) + "|" + String(o.bid)] = 1;
+      return true;
+    });
+    if (!gone) return "No ballots under the name " + shown + ".";
+    voteCurrentAll_(view_(ss));
+    SpreadsheetApp.flush();
+    var n = Object.keys(bids).length;
+    return "Removed " + n + (n === 1 ? " ballot" : " ballots") + " (" + gone + " rows) under the name " + shown + ".";
+  } finally {
+    lock.releaseLock();
+  }
+}
+/* A tab without the rows that match: one read and one write, however many rows go */
+function dropRows_(sh, match) {
+  var last = sh.getLastRow(), lastCol = sh.getLastColumn();
+  if (last < 2 || !lastCol) return 0;
+  var head = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  var vals = sh.getRange(2, 1, last - 1, lastCol).getValues();
+  var keep = vals.filter(function (r) { return !match(obj_(head, r)); });
   var gone = vals.length - keep.length;
   if (!gone) return 0;
   if (keep.length) sh.getRange(2, 1, keep.length, lastCol).setValues(keep.map(function (r) { return r.map(cell_); }));

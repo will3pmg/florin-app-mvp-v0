@@ -3055,15 +3055,17 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await cp.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await cw();
     ok(ezr.key !== "ez-weeks" || ezr.lit.v === "insights", `fix-core: with Easy on, its Insights (Your weeks) lights the Insights row (${ezr.key}: ${ezr.lit.v || "none"})`);
     await cp.evaluate(() => { for (const [k, v] of [["home", "score"], ["history", "list"], ["easy", "false"], ["plan", "member"]]) { const x = document.querySelector(`[data-rx="${k}"][data-v="${v}"]`); if (x && x.getAttribute("aria-pressed") !== "true") x.click(); } }); await cw();
-    /* 13. the first Tab stop is Skip to the phone, which takes focus into the phone; the header links the deck and the looks */
+    /* 13. the first Tab stop is Skip to the phone, which takes focus into the phone; the header links the looks (the
+       deck is gone, Will, Nov 5), and nothing on the page names the deck or links its artifact */
     await cp.goto(PAGE); await cp.waitForSelector(".rx-stage .ap-rx"); await cw(500);
     await cp.keyboard.press("Tab");
     const sk = await cp.evaluate(() => { const a = document.activeElement; const r = a.getBoundingClientRect(); return { t: a.textContent, vis: r.top >= 0 && r.height >= 44 }; });
     await cp.keyboard.press("Enter"); await cw(200);
     const inPh = await cp.evaluate(() => !!document.activeElement && !!document.activeElement.closest(".rx-stage .ap-rx"));
     const links = await cp.evaluate(() => [...document.querySelectorAll(".rx-head-links a")].map((a) => `${a.textContent}|${a.target}|${a.rel}|${a.href}`));
+    const deckSaid = await cp.evaluate(() => /\bdeck\b|as slides|2h5ikADR2eFCY1DZYbJEJU/i.test(`${document.body.textContent} ${[...document.querySelectorAll("a[href]")].map((a) => a.href).join(" ")}`));
     ok(sk.t === "Skip to the phone" && sk.vis && inPh, `fix-core: the first Tab stop is Skip to the phone, shown on focus, and it takes focus into the phone`);
-    ok(links.length === 2 && links.every((l) => /\|_blank\|noopener\|https:\/\/claude\.ai\/artifact\//.test(l)) && /decisions, as slides.*2h5ikADR2eFCY1DZYbJEJU/.test(links[0]) && /^Every data style, side by side\|.*FdsxDLSQqETo3HRCVmUZzL/.test(links[1]), "fix-core: the header links the decisions deck and every data style side by side, each in a new tab");
+    ok(links.length === 1 && links.every((l) => /\|_blank\|noopener\|https:\/\/claude\.ai\/artifact\//.test(l)) && /^Every data style, side by side\|.*FdsxDLSQqETo3HRCVmUZzL/.test(links[0]) && !deckSaid, `build: the header links every data style side by side, in a new tab, and nothing on the page names the deck or links it (${links.length} link${deckSaid ? ", the deck still named" : ""})`);
     ok(!ce.length, `fix-core: no console or page errors${ce.length ? ": " + ce.slice(0, 3).join(" | ") : ""}`);
     await cp.close();
   }

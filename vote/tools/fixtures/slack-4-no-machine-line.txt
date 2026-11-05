@@ -1,0 +1,27 @@
+Test voter 6, 6:06 PM
+Florin app vote: Test voter 6
+19 of 19 answered, 1 note. Ballot NT4K7C, Nov 5, 2026, 1:05 PM
+
+Part 1, the app
+1. Home screen: Compact
+2. History: Calendar
+3. Logging a BM: Quick tiles and form
+4. Consistency words: Five words
+   Why: Five words are enough for most people.
+5. Weekly check-in: With the check-in
+6. Logging meals: Quick, voice or text
+7. Easy version: Standard only
+8. Onboarding: Short
+
+Part 2, the charts
+9. FloraScore today: Rings
+10. FloraScore over time: Rings
+11. What moved FloraScore: Florin charts
+12. The last 7 days: Rings
+13. The month: Rings
+14. Timing: Rings
+15. How often: Rings
+16. Consistency: Florin charts
+17. Symptoms: Florin charts
+18. Check-in results: Florin charts
+19. Possible patterns: No preference
