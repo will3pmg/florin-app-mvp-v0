@@ -31,7 +31,7 @@
   function wanted() {
     const s = FX.session() || {}, D = CFG.decisions || {}, arms = s.arms || {}, own = s.prof || {};
     const w = {
-      form: D.form || "C", bmUI: D.bmUI || "quick", home: arms.home || first(D.home) || "score", history: arms.history || first(D.history) || "calendar",
+      form: D.form || "C", bmUI: D.bmUI || "quick", home: arms.home || first(D.home) || "compact", history: arms.history || first(D.history) || "calendar",
       checkin: D.checkin !== false, mealUI: D.mealUI || "quick", look: D.look || "built", easy: s.version === "easy", onboard: D.onboard || "short"
     };
     /* what the person changed in Profile stays theirs, on a reload too */
@@ -97,14 +97,14 @@
     if (el.matches("[data-week], .ap-wk, .ho-strip")) return "Your last 7 days";
     if (el.matches(".ap-ic")) { const k = txt(".ap-ic-t .ap-k"); return k.split(" · ")[0] || ""; }
     if (el.matches(".ez")) return txt(".ez-t");
-    if (el.matches(".ap-ckc")) return "Weekly check-in";
+    if (el.matches(".ap-ckc, .vr-cp-ck")) return "Weekly check-in";
     if (el.matches(".ap-tlw, .vr-hl, .vr-log, .ap-ez-sec")) return txt("h2");
     if (el.matches(".ap-nx")) return "Next step";
     if (el.matches(".vr-cal")) return "Calendar";
     if (el.matches(".ap-hd")) return "A day in History";
     return "";
   }
-  const CARD_SEL = '.ap-hero, .vr-sc-row, .vr-cp-sc, [data-rlk-k="week"], .vr-cpw, [data-week], .ap-wk, .ho-strip, .ap-ic, .ez, .ap-ckc, .ap-tlw, .vr-hl, .vr-log, .ap-nx, .vr-cal, .ap-ez-sec';
+  const CARD_SEL = '.ap-hero, .vr-sc-row, .vr-cp-sc, [data-rlk-k="week"], .vr-cpw, [data-week], .ap-wk, .ho-strip, .ap-ic, .ez, .ap-ckc, .vr-cp-ck, .ap-tlw, .vr-hl, .vr-log, .ap-nx, .vr-cal, .ap-ez-sec';
   const SAFE_TITLE = /^[A-Za-z0-9 ,.'’:()/&+-]{1,60}$/;
   const cleanTitle = (t) => (SAFE_TITLE.test(t || "") ? t : "");
   const ACT_LABEL = {

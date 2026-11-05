@@ -97,7 +97,7 @@ const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", 
               if (r.left > 12 && r.top > 12 && r.right < innerWidth - 12 && r.bottom < innerHeight - 12 && whole) {
                 /* the app's fixed chrome (the tab bar, a sheet's header or Save bar) passing over a hit area is where the
                    screen happens to be scrolled, not the target's size: a probe that stops there falls back to the CSS */
-                const chrome = (x, y) => { const e = document.elementFromPoint(x, y); return !!e && !!e.closest(".ap-tb, .ap-fsh-f, .ap-fsh-h, .ap-ck-h, .ap-nav, .ap-psh-h"); };
+                const chrome = (x, y) => { const e = document.elementFromPoint(x, y); return !!e && !!e.closest(".ap-tb, .ap-fsh-f, .ap-fsh-h, .ap-ck-h, .ap-nav, .ap-psh-h, .ap-askx-dock"); };
                 let byChromeW = false, byChromeH = false;
                 const reach = (dx, dy, half) => { let k = 0; while (k < 32 && hit(cx + dx * (half + k + 0.5), cy + dy * (half + k + 0.5))) k++; if (k < 32 && chrome(cx + dx * (half + k + 0.5), cy + dy * (half + k + 0.5))) { if (dx) byChromeW = true; else byChromeH = true; } return k; };
                 w = (r.width + reach(-1, 0, r.width / 2) + reach(1, 0, r.width / 2)) / scale;

@@ -550,7 +550,7 @@
     const people = CFG.people || {};
     const person = people[segment || "none"] || people.none || "sarah";
     const D = CFG.decisions || {};
-    const homes = [].concat(D.home || "score"), hists = [].concat(D.history || "calendar"), weeks = [].concat(CFG.weekCard || "built");
+    const homes = [].concat(D.home || "compact"), hists = [].concat(D.history || "calendar"), weeks = [].concat(CFG.weekCard || "built");
     let arms = s.arms, code = s.code, assigned = s.assigned;
     if (!arms) {
       let got = null;
@@ -955,7 +955,7 @@
     showApp();
     fa.closeAll();
     const was = k === "home" ? V.home : k === "history" ? V.history : V.look;
-    /* the other option of the arm, as config.js pairs them (Score first against Compact, Nov 4) */
+    /* the other option of the arm, as config.js pairs them (Compact, the default since Nov 5, against Score first) */
     const D = CFG.decisions || {}, pair = (v, all, dflt) => { const a = [].concat(all || []); return a.find((x) => x !== v) || dflt; };
     const other = k === "home" ? pair(was, D.home, was === "score" ? "day" : "score") : k === "history" ? pair(was, D.history, was === "calendar" ? "list" : "calendar") : "oura";
     curCmp = { k, i: step.i, was, other };
@@ -1171,7 +1171,7 @@
     const kinds = Q.comment.kinds;
     FX.ls.set("session", Object.assign({
       sid: r.sid, code: r.code, consented: true, stage: r.stage || "install", A: a, version: r.version || "standard", person: r.person || "sarah",
-      age65: a.IN7 === "65", arms: { home: r.home || "score", history: r.history || "calendar", week: r.week || "built", order: +r.order || 1 }, trOrder: trOrder(),
+      age65: a.IN7 === "65", arms: { home: r.home || "compact", history: r.history || "calendar", week: r.week || "built", order: +r.order || 1 }, trOrder: trOrder(),
       codeHow: how, installAt: r.install_at || "", done: r.done || [], qidsDone: r.qids || [], adopted: standalone ? "app" : "browser",
       /* the comments sent from the other window: listed at Submit, and deletable there, never their words */
       before: (r.comments || []).map((x) => ({ cmid: x.cmid, label: x.target || "This screen", kinds: String(x.kind || "").split(" | ").map((w) => (kinds.find(([, t]) => t === w) || [])[0]).filter(Boolean) })),

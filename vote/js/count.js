@@ -137,14 +137,27 @@
       keep.push(b);
     });
     const L = B.latest(keep);
+    /* one voter, one spelling: a name is shown as that voter's first ballot wrote it (the earliest at, a tie to the one
+       read first), wherever it appears, so "Test voter 1" and "test VOTER 1" don't read as two people. Replaced ballots
+       a results.json carries count as earlier ballots of their name */
+    const shown = {};
+    const seen = (name, at, i) => {
+      const k = B.nameKey(name);
+      if (!k) return;
+      const s = shown[k];
+      if (!s || (at && (!s.at || at < s.at)) || (!at && !s.at && i < s.i)) shown[k] = { name, at: at || "", i };
+    };
+    (o.replaced || []).forEach((r, i) => seen(r.name, r.at, -1000000 + i));
+    keep.forEach((b, i) => seen(b.name, b.at, i));
+    const nameOf = (name) => { const s = shown[B.nameKey(name)]; return s ? s.name : name; };
     const flags = [];
-    L.counted.forEach((b) => (b.flags || []).forEach((f) => flags.push({ name: b.name, bid: b.bid, what: f })));
-    L.flags.forEach((f) => flags.push(Object.assign({}, f)));
+    L.counted.forEach((b) => (b.flags || []).forEach((f) => flags.push({ name: nameOf(b.name), bid: b.bid, what: f })));
+    L.flags.forEach((f) => flags.push(Object.assign({}, f, { name: nameOf(f.name) })));
     return {
       v: 1, vote, generated: o.generated || B.isoNow(),
       sources: (o.sources || []).map((s) => Object.assign({}, s)),
-      ballots: L.counted.map(slim),
-      replaced: (o.replaced || []).map((r) => Object.assign({}, r)).concat(L.replaced),
+      ballots: L.counted.map((b) => Object.assign(slim(b), { name: nameOf(b.name) })),
+      replaced: (o.replaced || []).map((r) => Object.assign({}, r)).concat(L.replaced).map((r) => Object.assign(r, { name: nameOf(r.name) })),
       flags, dropped,
       tallies: B.tally(L.counted),
     };
@@ -171,6 +184,7 @@
   const WHY = {
     two_browsers: "Two browsers sent ballots under this name; the latest counts. If they're two people, ask one to add a last name.",
     read_from_text: "Read from the text: the ballot's last line was missing, so its picks were read from the numbered lines.",
+    line_damaged: "The ballot's last line was damaged, so its picks were read from the numbered lines, which agree with what's left of it.",
     note_lost: "A note named in the ballot's last line wasn't in the text.",
     note_extra: "A note the ballot's last line didn't name was kept.",
     part_missing: "A part of a ballot sent in parts wasn't found; what was there counts.",

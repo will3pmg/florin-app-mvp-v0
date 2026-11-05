@@ -15,7 +15,18 @@
    4. Computed answers: intent matching, composed from the model's numbers, with a small chart from the FLC kit. Used
       whenever sample is null (a local file, a test, a host without it, not granted) and as the fallback.
    Every answer lists the numbers it used under From your logs, then the fine print. window.FLORIN_ASK holds the engine,
-   for the checks in work/behave.js. */
+   for the checks in work/behave.js.
+
+   Will, Nov 5 ("a little dull", "more compact, easy to read on phone"): the chat is built to the coach spec in
+   claude/Florin DESIGN.md. Before anything is asked, an opening read: a chart of the person's own logs and two
+   sentences, then the questions to start as compact chips. Each turn: the Ask token and a folded "Looked at N things in
+   your logs" (the From your logs lines), one source line from the Florin journal, the reply in Lora, then one bold
+   question that hands the turn back. The question offers one more thing to look at, and "yes" asks it ("no" gets a
+   short reply). Options (up to three option rows) come about one turn in three, then thumbs up and down with the fine
+   print, and the composer pinned at the bottom. Claude is asked for the reply and one question, and the checks run on
+   both. The alarm turn keeps the spec: the Teal banner, no source, no options, primary care first, a report to bring.
+   What Ask Florin knows (a sheet from the header) lists what every answer reads and what can be left out of this chat,
+   and holds the opt-in "Let Ask Florin start a conversation". */
 (function () {
   const FL = window.FL, L = window.FLORIN_LOGS, AD = window.FLORIN_APP, RU = window.FLORIN_RUI, C = window.FLC, EXT = window.FLORIN_EXT;
   if (!FL || !L || !AD || !RU || !C || !EXT) return;
@@ -41,10 +52,19 @@
   const lg = (sw, text) => `<span><i class="sw ${sw}"></i>${esc(text)}</span>`;
   const svgIc = (p) => `<svg class="ic" viewBox="0 0 20 20" aria-hidden="true">${p}</svg>`;
   const SEND = '<path d="M10 16V4.5M5 9.5l5-5 5 5"/>', STOP = '<rect x="6" y="6" width="8" height="8" rx="1.5"/>';
+  /* the turn's own small marks: thumbs (the down one is the up one turned over), an open book for the Florin journal,
+     and a card of notes for What Ask Florin knows */
+  const THUMB = '<path d="M6.5 9.2v7.3H4.2a.7.7 0 0 1-.7-.7V9.9a.7.7 0 0 1 .7-.7zM6.5 9.2l3.1-5c.9-.1 1.8.6 1.7 1.6l-.4 2.8H15a1.5 1.5 0 0 1 1.5 1.8l-1 5a1.5 1.5 0 0 1-1.5 1.1H6.5"/>';
+  const THUMBS = { up: THUMB, down: `<g transform="rotate(180 10 10)">${THUMB}</g>` };
+  const BOOK = '<path d="M10 5.6C8.4 4.4 6.1 4.1 3.5 4.4v10.8c2.6-.3 4.9 0 6.5 1.3 1.6-1.3 3.9-1.6 6.5-1.3V4.4c-2.6-.3-4.9 0-6.5 1.2zM10 5.6v10.9"/>';
+  const MEM = '<rect x="3.5" y="4" width="13" height="12" rx="3"/><path d="M7 8.5h6M7 11.5h3.5"/>';
+  /* the Ask token: the Ask glyph on a disc (refresh-ask.css). Decorative: the words beside it say Ask Florin */
+  const tok = (cls) => `<span class="ap-askt${cls ? ` ${cls}` : ""}" aria-hidden="true">${RU.icon("chat")}</span>`;
   const DISC = "Florin Health shows patterns in your own data. It doesn't diagnose, treat or prevent any condition.";
-  const FINE = "Worked out from your logs on this phone. Ask Florin isn't a clinician.";
+  /* the fine print under each turn says where the answer came from; the chat's own foot says it isn't a clinician */
+  const FINE = "Worked out from your logs on this phone.";
   const FINE_SYM = `${FINE} If a symptom is new for you or keeps showing up, talk to a clinician.`;
-  const FINE_CLAUDE = "Written by Claude from the numbers above, and checked against Florin's rules. Ask Florin isn't a clinician.";
+  const FINE_CLAUDE = "Written by Claude from your logs' numbers, and checked against Florin's rules.";
   const CHECKED = "Checked against Florin's rules";
   const PARTN = Object.fromEntries(L.SCORE_PARTS.map(([k, l]) => [k, l]));
   /* the days Florin needs to compare with, in Florin's own word: never good days, a word DESIGN.md keeps out of the data */
@@ -130,20 +150,22 @@
 
   /* The facts packet: every number Ask Florin may state, worked out from the model, in sections of [label, value]
      lines. Claude reads it as text; a computed answer names the lines it used; the numbers check reads it as a set. */
-  function read(M, V, ctx) {
-    const mode = V.form, u = M.usual, ck = RU.ckOn(V);
+  /* o.forget: what the person left out of this chat in What Ask Florin knows (name, today, ck, chat) */
+  function read(M, V, ctx, o = {}) {
+    const fg = o.forget || {};
+    const mode = V.form, u = M.usual, ck = RU.ckOn(V) && !fg.ck;
     const X = {}, secs = [];
     let sec = null;
     /* a line in one of the stretches keeps which stretch it is, for From your logs ("Days logged, last 7 days") */
     let scope = null;
     const S = (title, sc) => { sec = { title, ids: [] }; secs.push(sec); scope = sc || null; };
     const f = (id, label, value) => { if (value == null || value === "") return; X[id] = [label, String(value), scope]; sec.ids.push(id); };
-    const R = { M, V, mode, u, ck, learning: !u, day: L.learnDay(M), X, secs };
+    const R = { M, V, mode, u, ck, learning: !u, day: L.learnDay(M), X, secs, forget: fg, who: fg.name ? "this person" : M.P.name };
     const now = L.dateOf(TODAY);
     R.entries = M.days.reduce((s, x) => s + (x.logged ? x.entries.length : 0), 0);
     R.since = M.start === TODAY ? "today" : short(M.start);
     S("About these logs");
-    f("who", "Whose logs", M.P.name);
+    if (!fg.name) f("who", "Whose logs", M.P.name);
     f("now", "Now", `${Ut.DOWL[now.getDay()]}, ${short(TODAY)}, ${T(L.NOW)}`);
     f("since", "Logging since", R.since);
     f("entries", "Entries logged", R.entries);
@@ -264,10 +286,13 @@
       f("c.due", "This week's check-in", M.checkin.status === "due" ? "due tonight" : M.checkin.status === "done" ? "done" : "skipped");
     }
 
-    S("Today's logs");
     const td = L.day(M, TODAY), es = td ? td.entries : [];
-    if (!es.length) f("t.none", "Today", "nothing logged yet");
-    es.forEach((e, i) => f(`t.${i}`, T(e.t), entryLine(M, e, mode)));
+    R.todayN = es.length;
+    if (!fg.today) {
+      S("Today's logs");
+      if (!es.length) f("t.none", "Today", "nothing logged yet");
+      es.forEach((e, i) => f(`t.${i}`, T(e.t), entryLine(M, e, mode)));
+    }
 
     /* Ask about this: the card's own numbers come in with the question */
     let c = null;
@@ -350,15 +375,25 @@
     ["emoji", /\p{Extended_Pictographic}/u],
     ["a list or markdown", /^\s*([-*\u2022]|\d+[.)])\s|\*\*|__|^#{1,6}\s|`/m]
   ];
-  /* partial: an answer Stop cut short, so it isn't held to 2 to 4 sentences */
+  /* the question that hands the turn back: the answer's last sentence, when it asks one. The reply is the rest */
+  function splitQ(text) {
+    const t = String(text || "").trim();
+    const m = t.match(/(?:^|[.!?]\s+|\n\s*)([^.!?\n]*[^.!?\s][^.!?\n]*\?)$/);
+    if (!m) return { body: t, q: "" };
+    return { body: t.slice(0, t.length - m[1].length).trim(), q: m[1].trim() };
+  }
+  /* partial: an answer Stop cut short, so it isn't held to 2 to 4 sentences. The reply is held to 2 to 4 sentences
+     and ends on one question at most; the rules and the numbers check read the question too */
   function checkText(text, R, o = {}) {
     text = String(text || "");
     const chk = window.FLORIN_REFRESH_CHECK;
     const rules = typeof chk === "function" ? chk(text).map((h) => h.rule.id) : ["no claims check on this page"];
     ASK_RULES.forEach(([id, rx]) => { if (rx.test(text) && !rules.includes(id)) rules.push(id); });
     if (!R.ck && /\bcheck-?ins?\b|\bcheck in\b(?! with a clinician)/i.test(text)) rules.push("check-in is off");
-    const n = sentencesIn(text);
+    const { body } = splitQ(text);
+    const n = sentencesIn(body);
     if (!o.partial && (n < 2 || n > 4)) rules.push(`${n} sentences`);
+    if (!o.partial && /\?/.test(body)) rules.push("more than one question");
     const nums = numbersOff(text, R);
     return { ok: !rules.length && !nums.length && !!text.trim(), rules, nums };
   }
@@ -607,6 +642,66 @@
     }
   };
 
+  /* ---------- the question that hands the turn back (DESIGN.md, Ask Florin: one bold question per turn, never repeated in
+     the body). It offers one more thing to look at in the logs, and each offer carries the question a "yes" asks, so
+     the turn can always be answered. An offer the chat already asked is passed over (pickOffer) ---------- */
+  const OFFER = {
+    timing: ["Want to look at your timing this week?", "How was my timing this week?"],
+    often: ["Want to look at how often you went this week?", "How often do I go?"],
+    forms: ["Want to look at your forms this week?", "How were my forms this week?"],
+    sym: ["Want to look at your symptoms this month?", "How have my symptoms been?"],
+    rough: ["Want to look at what tends to come before your rougher days?", "What tends to come before my rougher days?"],
+    later: ["Want to look at what tends to come before your later mornings?", "What tends to come before my later mornings?"],
+    looser: ["Want to look at what tends to come before a looser BM?", "What tends to come before a looser BM?"],
+    sure: ["Want to see how sure these patterns are?", "How sure are these patterns?"],
+    test: ["Want to see how to test one?", "How do I test one?"],
+    other: ["Want to look at what else could be part of it?", "What else could be part of it?"],
+    meals: ["Want to look at what you've been eating?", "What have I been eating?"],
+    week: ["Want to look at your week so far?", "What do my logs show this week?"],
+    report: ["Want to see how to bring your logs to a clinician?", "How do I bring my logs to a clinician?"],
+    logwhat: ["Want to know what to log, and when?", "What should I log, and when?"],
+    learn: ["Want to know how Florin learns your usual?", "How does Florin learn my usual?"],
+    ck: ["Want to look at your check-ins next to your first weeks?", "What changed since I started?"]
+  };
+  const OFFER_ANY = "What would you like to look at next?";
+  const scoreQ = (R) => (R.mv && R.score != null ? (R.mv.delta > 0 ? "Why did my FloraScore go up this week?" : R.mv.delta < 0 ? "Why did my FloraScore go down this week?" : "What's behind my FloraScore this week?") : null);
+  const PART_OFFER = { timing: "timing", often: "often", form: "forms", comfort: "sym" };
+  function offersOf(R, it, q) {
+    const O = (k) => OFFER[k], u = R.u, PR = R.PR, found = !!(u && PR && !PR.sparse && PR.found.length);
+    const sq = scoreQ(R), score = sq ? ["Want to look at what moved your FloraScore this week?", sq] : null;
+    const start = [O("logwhat"), O("learn")];
+    const s = spanFor(R, it === "form" ? "form" : it === "often" ? "often" : "timing", q, R.w);
+    const list = {
+      score: !u ? start : [R.room ? O(PART_OFFER[R.room.key]) : null, O("week"), O("rough")],
+      scoreHow: !u ? start : [score, O("week")],
+      timing: !u ? start : [s.later ? O("later") : null, O("often"), O("forms")],
+      often: !u ? start : [O("forms"), O("timing")],
+      gap: [O("often"), O("logwhat")],
+      form: !u ? start : [s.looser ? O("looser") : null, O("sym"), O("timing")],
+      symptoms: [u ? O("rough") : null, O("meals"), O("logwhat")],
+      rough: [found ? O("sure") : O("meals"), O("report")],
+      patterns: [found ? O("test") : O("meals"), O("other"), O("sure")],
+      test: [O("other"), O("sure")],
+      try: [O("week"), O("rough")],
+      meals: [u ? O("rough") : null, O("sure"), O("logwhat")],
+      checkin: [O("week"), O("timing")],
+      report: [u ? O("week") : null, O("logwhat")],
+      clinician: [O("report"), u ? O("week") : null],
+      learn: [O("logwhat"), u ? O("week") : null],
+      logHow: [O("learn"), u ? O("week") : null],
+      week: !u ? start : [score, O("timing"), O("rough")]
+    }[it] || [O("week")];
+    /* the check-in only while it's on; the patterns only once there's a usual */
+    return list.filter(Boolean).filter(([, y]) => (R.ck || !/since I started/.test(y)) && (u || !/rougher|later mornings|looser|sure|test one|part of it/.test(y)));
+  }
+  /* two questions are the same when they'd get the same answer */
+  const sameKey = (R) => (q) => { try { const r = route(q); return r.kind === "ask" ? textOf(answerOf(R, q)) : `${r.kind}:${r.which || q.toLowerCase()}`; } catch (e) { return q.toLowerCase(); } };
+  function pickOffer(R, offers, asked) {
+    const key = sameKey(R), seen = new Set(asked.filter(Boolean).map(key));
+    const o = offers.find(([, y]) => !seen.has(key(y)));
+    return o ? { ask: o[0], yes: o[1] } : { ask: OFFER_ANY, yes: null };
+  }
+
   /* ---------- which answer a question gets: the first intent whose words it has, else the card it came from ---------- */
   /* a question about the emergency room, A&E or urgent care gets the clinician answer with the urgent-care line */
   const URGENTQ = /\b(emergency|hospital|urgent care|urgent|walk-in|999|911|112)\b|\b(the|an) (er|a ?& ?e)\b/i, URGENTQ_CASE = /\bER\b|\bA ?& ?E\b/;
@@ -658,7 +753,7 @@
     const o = A[it](R, q, off);
     const used = [];
     (o.used || []).forEach((id) => { if (R.X[id] && !used.some((u) => u.id === id)) { const [l, v] = lineOf(R, id); used.push({ id, l, v }); } });
-    return { intent: it, lines: (o.lines || []).filter(Boolean).slice(0, 3), try: o.try || "", chart: o.chart || "", legend: o.legend || "", used: used.map((u) => [u.l, u.v]), usedIds: used.map((u) => u.id), fine: o.fine || FINE };
+    return { intent: it, lines: (o.lines || []).filter(Boolean).slice(0, 3), try: o.try || "", chart: o.chart || "", legend: o.legend || "", used: used.map((u) => [u.l, u.v]), usedIds: used.map((u) => u.id), fine: o.fine || FINE, offers: offersOf(R, it, q) };
   }
   const textOf = (a) => [...(a.lines || []), a.try].filter(Boolean).join(" ");
   /* an answer that stays on the phone even where Claude is there: the clinician answer to a question about mucus */
@@ -732,8 +827,11 @@
       signLine: "You mentioned this, and it's worth a clinician's look soon. Florin won't try to read it.",
       urgent: bleed ? "If there's a lot of blood, or you feel faint or dizzy, get urgent care now." : URGENT_LINE,
       lines: [ALARM_PRIMARY, "Your logs can go with you as a report, so you don't have to remember dates."],
-      try: "", used: [], fine: "Florin names the sign and doesn't read past it. Ask Florin isn't a clinician."
+      try: "", used: [], fine: "Florin names the sign and doesn't read past it. Ask Florin isn't a clinician.",
+      /* the studio's question, and what a yes or a no to it gets: the report to bring, or urgent care if it's severe */
+      ask: "Can you get an appointment with primary care in the next few days?", yes: REPORT_Q
     };
+    a.noLines = [a.urgent, "When you can get an appointment, your logs can go with you as a report."];
     /* read in the order it's drawn: the sign's line, primary care first, then urgent care, then the report */
     a.text = [a.signLine, a.lines[0], a.urgent, a.lines[1]].join(" ");
     return a;
@@ -745,7 +843,7 @@
   };
   const redirectAnswer = (which) => {
     const r = REDIRECTS[which] || REDIRECTS.clinic;
-    return { kind: "redirect", intent: "redirect", src: "rules", lines: r.lines.slice(), try: "", used: [], opts: r.opts.slice(), fine: "Florin reads your logs and doesn't go past them. Ask Florin isn't a clinician." };
+    return { kind: "redirect", intent: "redirect", src: "rules", lines: r.lines.slice(), try: "", used: [], opts: r.opts.slice(), ask: "Want to look at one of these instead?", yes: r.opts[0], fine: "Florin reads your logs and doesn't go past them. Ask Florin isn't a clinician." };
   };
   /* what a question gets, before anything is sent anywhere */
   function route(q) {
@@ -773,8 +871,8 @@
     "- Never compare them with other people or say what most people do.",
     "- No em dashes, no exclamation points, no humour, no jokes, no emoji, no markdown, no lists.",
     "- Use a number only if it appears in the facts, written in digits exactly as it appears there, and say \"5 of 6\" only for a pair the facts state. Never work out a new number, a share or a percentage, and never say half.",
-    "- Write 2 to 4 short sentences in plain words, to the person as you.",
-    "- End on one thing to log or try.",
+    "- Write 2 or 3 short sentences in plain words, to the person as you, and end them on one thing to log or try.",
+    "- Then, as the last line, ask one short question that hands the turn back: an offer to look at one more thing in their logs, such as their timing, how often they go, their forms, their symptoms or what tends to come before a rougher day. Only one question in the whole answer, never repeating what you just said, and never about how they feel.",
     "- Never name IBD, the Bristol scale or IBS-SSS. Say BM, never bowel movement.",
     "- Answer only about the person's own logs. If the question is about anything else, say briefly what their logs can show instead.",
     "- If the person mentions blood, a black or tar-like stool, a fever, vomiting that won't stop, weight loss or waking at night to go, tell them to contact primary care soon, and don't interpret it.",
@@ -785,10 +883,12 @@
     const pairs = [];
     for (let i = 0; i < ch.msgs.length - 1; i++) {
       const m = ch.msgs[i], a = ch.msgs[i + 1];
-      if (m.role === "user" && a.role === "florin" && a.id !== pendingId && a.kind === "answer" && a.state === "done" && a.text) pairs.push([m.text, a.text]);
+      /* a computed answer's question goes with it, so a yes to it reads in context */
+      if (m.role === "user" && a.role === "florin" && a.id !== pendingId && a.kind === "answer" && a.state === "done" && a.text) pairs.push([m.text, a.src === "claude" || !a.ask ? a.text : `${a.text} ${a.ask}`]);
     }
-    const hist = pairs.slice(-3).flatMap(([u, a]) => [{ role: "user", content: u }, { role: "assistant", content: a }]);
-    return [{ role: "user", content: `${rulesFor(R)}\n\nFacts from ${R.M.P.name}'s logs, worked out by Florin:\n\n${R.text}` }].concat(hist, [{ role: "user", content: q }]);
+    /* left out of this chat in What Ask Florin knows: the earlier exchanges, and the first name */
+    const hist = R.forget && R.forget.chat ? [] : pairs.slice(-3).flatMap(([u, a]) => [{ role: "user", content: u }, { role: "assistant", content: a }]);
+    return [{ role: "user", content: `${rulesFor(R)}\n\nFacts from ${R.forget && R.forget.name ? "the person's" : `${R.M.P.name}'s`} logs, worked out by Florin:\n\n${R.text}` }].concat(hist, [{ role: "user", content: q }]);
   }
   /* the fact lines an answer from Claude used: a line counts only when every number in it, and every "5 of 6" pair, is
      in the answer, ranked by the words its label shares with the answer. With none, the computed answer's lines */
@@ -821,7 +921,7 @@
     session_expired: "Sign in to Claude again to get its answers here. This one comes from your logs alone.",
     upstream_error: "Claude couldn't answer just now, so this answer comes from your logs alone."
   };
-  const srcLine = () => (ASK.off ? "Answers come from your logs alone: Claude isn't available in this view." : ASK.state === "ready" ? (ASK.used ? "Answers come from Claude, on your own Claude account, using only the numbers from your logs. Each one is checked against Florin's rules." : "Answers come from Claude once you allow it, on your own Claude account, using only the numbers from your logs. Each one is checked against Florin's rules.") : "Answers come from your logs alone, worked out on this phone.");
+  const srcLine = () => (ASK.off ? "Answers come from your logs alone: Claude isn't available in this view." : ASK.state === "ready" ? (ASK.used ? "Answers come from Claude on your own account, using only your logs' numbers, each one checked against Florin's rules." : "Answers come from Claude once you allow it, using only your logs' numbers, each one checked against Florin's rules.") : "Answers come from your logs alone, worked out on this phone.");
   const samplePromise = (async () => {
     try {
       const c = window.claude;
@@ -835,16 +935,18 @@
 
   /* ============================== THE CHAT ============================== */
   const ctxKey = (ctx) => (ctx ? `${ctx.k}|${ctx.range}` : null);
-  /* a new model (another person, other logs, Reset) starts a new chat, and stops an answer still coming for the old one */
+  /* a new model (another person, other logs, Reset) starts a new chat, and stops an answer still coming for the old one.
+     forget: what the person left out of this chat in What Ask Florin knows; a new chat starts with everything again */
   const chatOf = (S) => {
     if (!S.askx || S.askx.M !== S.M) {
       if (S.askx && S.askx.busy) { try { S.askx.busy.ctl.abort(); } catch (e) { /* already stopped */ } }
-      S.askx = { M: S.M, msgs: [], draft: "", preload: "", ctxKey: null, ctxSent: null, busy: null, seq: 0 };
+      S.askx = { M: S.M, msgs: [], draft: "", preload: "", ctxKey: null, ctxSent: null, busy: null, seq: 0, forget: {} };
     }
     return S.askx;
   };
   const alive = (ch, S) => S.askx === ch && ch.M === S.M;
   const stopChat = (S) => { const ch = S && S.askx; if (ch && ch.busy) { try { ch.busy.ctl.abort(); } catch (e) { /* already stopped */ } } };
+  const readFor = (M, V, ctx, ch) => read(M, V, ctx, { forget: (ch && ch.forget) || {} });
 
   /* redraw the tab in place, keeping the box's words and where focus was. A new question scrolls up to near the top
      of the screen, so its answer reads from the start as it comes in under it */
@@ -854,6 +956,7 @@
     const lay = api.layer, a = document.activeElement;
     const inPhone = !!a && a !== document.body && api.root.contains(a);
     const wasIn = inPhone && a.classList.contains("ap-askx-in"), wasAct = inPhone && a.dataset ? a.dataset.act : null;
+    const wasKey = inPhone && a.dataset && a.dataset.id ? `[data-act="${CSS.escape(wasAct || "")}"][data-id="${CSS.escape(a.dataset.id)}"][data-v="${CSS.escape(a.dataset.v || "")}"]` : null;
     api.renderTab(true);
     const qEl = o.anchor && lay.querySelector(`[data-askx-q="${CSS.escape(o.anchor)}"]`);
     if (qEl) lay.scrollTop = Math.max(0, qEl.offsetTop - 64);
@@ -862,6 +965,7 @@
     if (wasIn || o.focusIn) f = lay.querySelector(".ap-askx-in");
     else if (["askx-send", "askx-stop", "askx-ask"].includes(wasAct)) f = lay.querySelector(".ap-askx-bar [data-act]");
     else if (wasAct === "askx-new") f = lay.querySelector(".ap-askx-in");
+    else if (wasKey) f = lay.querySelector(wasKey);
     else if (wasAct) f = lay.querySelector(`[data-act="${CSS.escape(wasAct)}"]`);
     if (f) { f.focus({ preventScroll: true }); if (f.classList.contains("ap-askx-in")) { const n = f.value.length; try { f.setSelectionRange(n, n); } catch (e) { /* fine */ } } }
   }
@@ -882,12 +986,87 @@
     if (!a.text) a.text = textOf(a);
     if (api.S.askx === ch) {
       paint(api, { anchor: `q${a.id.slice(1)}` });
-      try { api.say(`Ask Florin: ${a.kind === "alarm" ? `When to see a clinician. ${a.sign}. ` : ""}${a.text || a.note || ""}`); } catch (e) { /* no live region */ }
+      const said = a.src === "claude" ? a.body || a.text : a.text;
+      try { api.say(`Ask Florin: ${a.kind === "alarm" ? `When to see a clinician. ${a.sign}. ` : ""}${said || a.note || ""}${a.ask && a.state === "done" ? ` ${a.ask}` : ""}`); } catch (e) { /* no live region */ }
       try { api.nav(); } catch (e) { warn("telling the page", e); }
     }
     return a;
   }
-  const fromComputed = (comp) => ({ kind: "answer", src: "logs", intent: comp.intent, lines: comp.lines, try: comp.try, chart: comp.chart, legend: comp.legend, used: comp.used, fine: comp.fine, text: textOf(comp) });
+  const fromComputed = (comp) => ({ kind: "answer", src: "logs", intent: comp.intent, lines: comp.lines, try: comp.try, chart: comp.chart, legend: comp.legend, used: comp.used, fine: comp.fine, text: textOf(comp), body: null, own: "", offers: comp.offers || [] });
+
+  /* ---------- a yes or a no to the last turn's question ----------
+     A short yes asks the question the last turn offered; a short no gets a short reply. Anything longer is a question
+     of its own. Read after the alarm words and the redirects, so "yes, there was blood" still gets the clinician */
+  const YES = /^(yes|yeah|yep|yup|sure|ok|okay|please|go on|go ahead|show me|tell me|sounds good|let'?s (do it|see|look))\b/i;
+  const NO = /^(no|nope|not now|not right now|no thanks|no thank you|maybe later|later|not really|not yet)\b/i;
+  const YES_OPT = "Yes, show me";
+  function replyTo(q, last) {
+    if (!last || !last.ask || last.state !== "done") return null;
+    const t = plainQ(q).trim().replace(/[.!]+$/, "");
+    if (t.split(/\s+/).length > 4) return null;
+    if (NO.test(t)) return { no: true };
+    if (YES.test(t)) return last.yes ? { yes: last.yes } : null;
+    return null;
+  }
+  const ackAnswer = (last) => (last.kind === "alarm"
+    ? { kind: "answer", src: "rules", intent: "ack", lines: last.noLines.slice(), try: "", used: [], fine: last.fine, offers: [OFFER.report] }
+    : { kind: "answer", src: "logs", intent: "ack", lines: ["Okay, we can leave that one.", "Ask about anything in your logs when you like."], try: "", used: [], fine: FINE, offers: [] });
+
+  /* ---------- the questions to offer next: the card's, then from the logs. Two questions are the same when they'd get
+     the same answer, so one already asked, the one in the box, or one the last turn offers is never offered again ---------- */
+  const REPORT_Q = "How do I bring my logs to a clinician?";
+  function nextQs(R, ch, extra) {
+    const key = sameKey(R), seen = new Set(), out = [];
+    ch.msgs.forEach((m) => { if (m.role === "user") seen.add(key(m.text)); else if (m.qa) seen.add(key(m.qa)); });
+    if (ch.draft && ch.draft.trim()) seen.add(key(ch.draft));
+    (extra || []).filter((q) => q && q !== YES_OPT).forEach((q) => seen.add(key(q)));
+    const add = (q) => { if (!q) return; const k = key(q); if (seen.has(k)) return; seen.add(k); out.push(q); };
+    if (R.c) R.c.qs.forEach(add);
+    if (!R.u) ["What should I log, and when?", "How does Florin learn my usual?", "When should I talk to a clinician?"].forEach(add);
+    else {
+      if (R.mv && R.score != null) add(scoreQ(R));
+      else if (R.score == null && R.su) add("Why is there no FloraScore today?");
+      if (R.m.withSym || (!R.PR.sparse && R.PR.found.length)) add("What tends to come before my rougher days?");
+      if (R.w.mornings) add("How was my timing this week?");
+      add(REPORT_Q);
+      ["How often do I go?", "How have my symptoms been?", "What could I try this week?"].forEach(add);
+    }
+    return out;
+  }
+  /* the chips under the chat: after the clinician answer none (its turn has the report to bring, DESIGN.md: no
+     options), and none while the last turn shows its own options */
+  function chipsFor(R, ch) {
+    const lastA = ch.msgs.filter((m) => m.role === "florin").pop();
+    if (lastA && (lastA.kind === "alarm" || (lastA.opts && lastA.opts.length))) return [];
+    return nextQs(R, ch, lastA ? [lastA.yes] : []).slice(0, ch.msgs.length ? 3 : 4);
+  }
+  /* options about one turn in three (DESIGN.md): the first answer, then every third answer after the last turn that
+     had options. A redirect always has its own, the clinician answer never */
+  function optsDue(ch, a) {
+    const prev = ch.msgs.filter((m) => m.role === "florin" && m !== a);
+    let since = 0;
+    for (let i = prev.length - 1; i >= 0; i--) {
+      if (prev[i].opts && prev[i].opts.length) return since >= 2;
+      if (prev[i].kind === "answer") since++;
+    }
+    return since === 0 || since >= 2;
+  }
+  /* an answer's question, what a yes to it asks, and its options. Claude's own question stands, with no yes of its
+     own: a yes to it goes to Claude with the conversation */
+  function finish(R, ch, a) {
+    if (a.kind !== "answer" || a.state === "stopped") return a;
+    const asked = ch.msgs.filter((m) => m.role === "user").map((m) => m.text).concat(ch.msgs.filter((m) => m.qa && m !== a).map((m) => m.qa), [a.qa || a.q]);
+    const pk = pickOffer(R, a.offers || [], asked);
+    a.ask = a.own || pk.ask;
+    a.yes = a.own ? null : pk.yes;
+    a.opts = null;
+    if (optsDue(ch, a)) {
+      const next = nextQs(R, ch, [a.yes]).slice(0, a.yes ? 2 : 3);
+      const opts = (a.yes ? [YES_OPT] : []).concat(next);
+      if (opts.length) a.opts = opts;
+    }
+    return a;
+  }
 
   /* one question, through the four steps. computedOnly: the seeded screens, which never ask Claude */
   async function ask(api, q, o = {}) {
@@ -896,7 +1075,8 @@
     if (!q || ch.busy) return null;
     const M = S.M, V = api.V(), ctx = S.askCtx;
     let R;
-    try { R = read(M, V, ctx); } catch (e) { warn("reading the logs threw, so nothing was asked", e); return null; }
+    try { R = readFor(M, V, ctx, ch); } catch (e) { warn("reading the logs threw, so nothing was asked", e); return null; }
+    const last = ch.msgs.filter((m) => m.role === "florin").pop();
     const id = ++ch.seq;
     if (ctx) ch.ctxSent = ctxKey(ctx);
     ch.msgs.push({ id: `q${id}`, role: "user", text: q });
@@ -907,10 +1087,15 @@
     const r = route(q);
     if (r.kind === "alarm") return settle(api, ch, Object.assign(a, alarmAnswer(r.signs)));
     if (r.kind === "redirect") return settle(api, ch, Object.assign(a, redirectAnswer(r.which)));
-    const comp = answerOf(R, q);
+    const rp = replyTo(q, last);
+    if (rp && rp.no) return settle(api, ch, finish(R, ch, Object.assign(a, ackAnswer(last), { qa: null })));
+    /* a yes asks the question the last turn offered, on the phone and to Claude alike */
+    const qa = rp && rp.yes ? rp.yes : q;
+    a.qa = qa;
+    const comp = answerOf(R, qa);
     a.intent = comp.intent;
     /* a question that names mucus gets the clinician answer on the phone, like a sign: never sent for a reading */
-    if (o.computedOnly || ASK.off || ASK.state === "none" || stays(comp, q)) return settle(api, ch, Object.assign(a, fromComputed(comp)));
+    if (o.computedOnly || ASK.off || ASK.state === "none" || stays(comp, qa)) return settle(api, ch, finish(R, ch, Object.assign(a, fromComputed(comp))));
     const ctl = new AbortController();
     ch.busy = { id: a.id, ctl };
     /* an answer still coming when the chat ends (Reset, another person, other logs, a new chat) is stopped, so it
@@ -922,9 +1107,9 @@
       const sf = sampleFn || (await samplePromise);
       if (!alive(ch, S)) return null;
       if (ctl.signal.aborted) return settle(api, ch, Object.assign(a, { state: "stopped", note: "Stopped." }));
-      if (!sf || ASK.off) return settle(api, ch, Object.assign(a, fromComputed(comp)));
+      if (!sf || ASK.off) return settle(api, ch, finish(R, ch, Object.assign(a, fromComputed(comp))));
       try {
-        const res = await sf(turnsFor(ch, R, q, a.id), {
+        const res = await sf(turnsFor(ch, R, qa, a.id), {
           modelTier: "quick", cache: false, signal: ctl.signal,
           onText: ({ text }) => {
             if (gone()) { try { ctl.abort(); } catch (e) { /* already stopped */ } return; }
@@ -936,10 +1121,12 @@
         const text = String((res && res.text) || "");
         const v = checkText(text, R);
         a.checks = v;
-        if (v.ok) Object.assign(a, { kind: "answer", src: "claude", text, lines: null, try: "", chart: "", legend: "", used: usedFor(text, R, comp), fine: FINE_CLAUDE, note: res && res.truncated ? "Cut short. Ask a smaller question for the rest." : "" });
+        /* the reply and its question: the question is drawn bold, never repeated in the reply */
+        const sp = splitQ(text);
+        if (v.ok) Object.assign(a, { kind: "answer", src: "claude", text, body: sp.body, own: sp.q, lines: null, try: "", chart: "", legend: "", used: usedFor(text, R, comp), fine: FINE_CLAUDE, offers: comp.offers, note: res && res.truncated ? "Cut short. Ask a smaller question for the rest." : "" });
         else {
           /* Claude pointed to primary care or urgent care: the clinician answer, never one about something else */
-          const fb = CLIN_TEXT.test(text) && comp.intent !== "report" && comp.intent !== "clinician" ? answerOf(R, q, "clinician") : comp;
+          const fb = CLIN_TEXT.test(text) && comp.intent !== "report" && comp.intent !== "clinician" ? answerOf(R, qa, "clinician") : comp;
           Object.assign(a, fromComputed(fb), { note: CHECKED });
         }
       } catch (e) {
@@ -949,71 +1136,100 @@
         if (code === "cancelled") {
           const part = String((e && e.text) || a.text || "");
           if (part) ASK.used = true;
-          if (part && checkText(part, R, { partial: true }).ok) Object.assign(a, { state: "stopped", src: "claude", text: part, lines: null, used: usedFor(part, R, comp), fine: FINE_CLAUDE, note: "Stopped part way." });
+          if (part && checkText(part, R, { partial: true }).ok) Object.assign(a, { state: "stopped", src: "claude", text: part, body: null, own: "", lines: null, used: usedFor(part, R, comp), fine: FINE_CLAUDE, note: "Stopped part way." });
           else Object.assign(a, { state: "stopped", text: "", lines: null, used: [], note: "Stopped." });
         } else if (HIDE.includes(code)) {
           ASK.off = code;
           Object.assign(a, fromComputed(comp), { note: OFF_NOTE[code] || OFF_NOTE.sampling_disabled });
         } else Object.assign(a, fromComputed(comp), { note: ERR_NOTE[code] || ERR_NOTE.upstream_error });
       }
-      return settle(api, ch, a);
+      return settle(api, ch, finish(R, ch, a));
     } finally { clearInterval(watch); }
   }
 
-  /* the questions to start, from the logs: why FloraScore moved, what comes before rougher days, this week's timing,
-     and how to bring the logs to a clinician. While Florin is learning, questions about getting started */
-  const REPORT_Q = "How do I bring my logs to a clinician?";
-  function chipsFor(R, ch) {
-    /* two questions are the same chip when they'd get the same answer: one already asked, the one in the box, or an
-       option under the last answer is never offered again */
-    const keyOf = (q) => { try { const r = route(q); return r.kind === "ask" ? textOf(answerOf(R, q)) : `${r.kind}:${r.which || q.toLowerCase()}`; } catch (e) { return q.toLowerCase(); } };
-    const seen = new Set(), out = [];
-    const lastA = ch.msgs.filter((m) => m.role === "florin").pop();
-    ch.msgs.filter((m) => m.role === "user").forEach((m) => seen.add(keyOf(m.text)));
-    if (ch.draft && ch.draft.trim()) seen.add(keyOf(ch.draft));
-    if (lastA && lastA.opts) lastA.opts.forEach((q) => seen.add(keyOf(q)));
-    const add = (q) => { if (!q) return; const k = keyOf(q); if (seen.has(k)) return; seen.add(k); out.push(q); };
-    /* after the clinician answer, the one thing to offer is the report to bring (DESIGN.md: the alarm turn has no
-       options of its own) */
-    if (lastA && lastA.kind === "alarm") { add(REPORT_Q); return out; }
-    if (R.c) R.c.qs.forEach(add);
-    if (!R.u) ["What should I log, and when?", "How does Florin learn my usual?", "When should I talk to a clinician?"].forEach(add);
-    else {
-      if (R.mv && R.score != null) add(R.mv.delta > 0 ? "Why did my FloraScore go up this week?" : R.mv.delta < 0 ? "Why did my FloraScore go down this week?" : "What's behind my FloraScore this week?");
-      else if (R.score == null && R.su) add("Why is there no FloraScore today?");
-      if (R.m.withSym || (!R.PR.sparse && R.PR.found.length)) add("What tends to come before my rougher days?");
-      if (R.w.mornings) add("How was my timing this week?");
-      add(REPORT_Q);
-    }
-    return out.slice(0, ch.msgs.length ? 3 : 4);
-  }
+  /* ---------- the source line: one piece from the Florin journal (DESIGN.md, Ask Florin), by what the answer is
+     about. The titles are the journal's own (the brand studio's journal page); the article opens in the app ---------- */
+  const JOURNAL = {
+    usual: "Why Florin compares you with you",
+    test: "Eating earlier: a 7-day experiment",
+    visit: "Bringing your data to your next appointment"
+  };
+  const JR_MSG = "This opens the article in the Florin journal, in the app. That comes in the next pass.";
+  /* a clinician or a report: bringing your data; an answer about later dinners: the 7-day experiment; else why Florin
+     compares you with you. The clinician answer to a sign has none (DESIGN.md: no sources) */
+  const journalOf = (m) => (m.kind === "alarm" || m.intent === "ack" ? null
+    : JOURNAL[["report", "clinician", "redirect"].includes(m.intent) ? "visit" : /\bdinners?\b/i.test(`${m.text || ""} ${(m.lines || []).join(" ")} ${m.try || ""}`) ? "test" : "usual"]);
 
   /* ---------- drawing ---------- */
-  function turn(m) {
+  const REPORT_MSG = (ck) => `A report of your logs to bring to a clinician: dates, BMs, symptoms${ck ? ", meals and check-ins" : " and meals"}. That comes in the next pass.`;
+  function turn(m, o = {}) {
     if (m.role === "user") return `<li class="ap-ask-me" data-askx-q="${esc(m.id)}"><p><span class="sr">You asked: </span>${esc(m.text)}</p></li>`;
-    const busy = m.state === "thinking" || m.state === "streaming";
+    const busy = m.state === "thinking" || m.state === "streaming", done = m.state === "done";
+    /* the head: the Ask token, and what the answer read, folded (From your logs) */
+    const n = m.used ? m.used.length : 0;
+    const from = !busy && n ? `<details class="ap-askx-from"><summary><span>${esc(`Looked at ${plural(n, "thing")} in your logs`)}</span>${RU.icon("down")}</summary><ul class="ap-askx-facts">${m.used.map(([l, v]) => `<li><span>${esc(l)}</span><b>${esc(v)}</b></li>`).join("")}</ul></details>` : `<span class="ap-askx-who">Ask Florin</span>`;
+    const head = `<div class="ap-askx-hd">${tok()}<span class="sr">Answer from Ask Florin</span>${from}</div>`;
+    const jt = done && !busy ? journalOf(m) : null;
+    const jr = jt ? `<button type="button" class="ap-askx-jr" data-act="toast" data-msg="${esc(JR_MSG)}">${svgIc(BOOK)}<span><b>${esc(jt)}</b> <span class="ap-askx-jr-k">Florin journal</span></span></button>` : "";
     /* the clinician answer: the banner with the sign and one line, then primary care first, then urgent care, then
        the report to bring */
     const alarm = m.kind === "alarm" ? `<div class="ap-ask-alarm" role="note"><span class="ap-k">When to see a clinician</span><b>${esc(m.sign)}</b><p>${esc(m.signLine)}</p></div>` : "";
-    const body = m.kind === "alarm" ? `<p>${esc(m.lines[0])}</p><p class="ap-askx-urgent">${esc(m.urgent)}</p>${m.lines.slice(1).map((x) => `<p>${esc(x)}</p>`).join("")}` : m.lines ? `<p>${esc(m.lines.join(" "))}</p>` : paras(m.text);
-    const opts = !busy && m.opts && m.opts.length ? `<div class="ap-ask-opts">${m.opts.map((q) => `<button type="button" class="ap-ask-opt" data-act="askx-ask" data-q="${esc(q)}"><span>${esc(q)}</span>${RU.icon("chev")}</button>`).join("")}</div>` : "";
-    const from = !busy && m.used && m.used.length ? `<details class="ap-shaped ap-askx-from"><summary><span>From your logs</span>${RU.icon("down")}</summary><div class="ap-shaped-b"><ul class="ap-askx-facts">${m.used.map(([l, v]) => `<li><span>${esc(l)}</span><b>${esc(v)}</b></li>`).join("")}</ul></div></details>` : "";
+    const body = m.kind === "alarm" ? `<div class="ap-ask-body ap-askx-text"><p>${esc(m.lines[0])}</p><p class="ap-askx-urgent">${esc(m.urgent)}</p>${m.lines.slice(1).map((x) => `<p>${esc(x)}</p>`).join("")}</div>`
+      : m.lines && !busy ? `<div class="ap-ask-body"><p><span class="ap-askx-text">${esc(m.lines.join(" "))}</span>${m.try ? ` <span class="ap-askx-try">${esc(m.try)}</span>` : ""}</p></div>`
+      : `<div class="ap-ask-body ap-askx-text">${paras(!busy && m.body != null ? m.body : m.text)}</div>`;
+    const q = done && m.ask ? `<p class="ap-ask-q ap-askx-q">${esc(m.ask)}</p>` : "";
+    const opts = done && m.opts && m.opts.length ? `<div class="ap-ask-opts" role="group" aria-label="Answers to that question">${m.opts.map((x) => `<button type="button" class="ap-ask-opt" data-act="askx-ask" data-q="${esc(x)}"><span>${esc(x)}</span>${RU.icon("chev")}</button>`).join("")}</div>` : "";
+    const rep = done && m.kind === "alarm" ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c ap-ask-act" data-act="toast" data-msg="${esc(REPORT_MSG(o.ck))}">${RU.icon("report")}Make a report for your clinician</button>` : "";
+    const note = !busy && m.note ? `<p class="ap-askx-note">${m.note === CHECKED ? RU.icon("check") : ""}<span>${esc(m.note)}</span></p>` : "";
+    const fine = busy || (m.state === "stopped" && !m.text) ? "" : `<p class="ap-fine">${esc(m.fine || FINE)}</p>`;
+    const rate = done ? `<div class="ap-ask-rate" role="group" aria-label="Was this answer helpful?">${["up", "down"].map((v) => `<button type="button" class="ap-ask-thumb" data-act="askx-rate" data-id="${esc(m.id)}" data-v="${v}" aria-label="${v === "up" ? "Helpful" : "Not helpful"}" aria-pressed="${m.rate === v}">${svgIc(THUMBS[v])}</button>`).join("")}</div>` : "";
     return `<li class="ap-ask-turn ap-askx-a${m.kind === "alarm" ? " is-alarm" : ""}" data-askx-a="${esc(m.id)}">
-        <span class="ap-k ap-askx-who"><span class="sr">Answer from </span>Ask Florin</span>
-        ${alarm}
+        ${head}
+        ${alarm}${jr}
         ${m.state === "thinking" ? `<p class="ap-ask-think ap-askx-think" role="status">Thinking...</p>` : ""}
-        <div class="ap-ask-body ap-askx-text">${body}</div>
+        ${body}
         ${!busy && m.chart ? `<figure class="ap-ask-chart ap-askx-fig">${m.chart}${m.legend ? `<div class="ap-legend">${m.legend}</div>` : ""}</figure>` : ""}
-        ${!busy && m.try ? `<p class="ap-askx-try">${esc(m.try)}</p>` : ""}
-        ${!busy && m.note ? `<p class="ap-askx-note">${m.note === CHECKED ? RU.icon("check") : ""}<span>${esc(m.note)}</span></p>` : ""}
-        ${from}${opts}
-        ${busy || (m.state === "stopped" && !m.text) ? "" : `<p class="ap-fine">${esc(m.fine || FINE)}</p>`}
+        ${q}${opts}${rep}
+        ${note || fine || rate ? `<div class="ap-askx-foot"><div class="ap-askx-prov">${note}${fine}</div>${rate}</div>` : ""}
       </li>`;
   }
+
+  /* ---------- the opening read (DESIGN.md: a chart of the person's own logs and two sentences, before they ask
+     anything): the last 7 days against their usual with the mornings drawn, the days so far while Florin is learning,
+     or the card they asked from, with its own chart and its numbers ---------- */
+  const CTX_CHART = { score: "score", timing: "timing", often: "often", form: "form", sym: "sym", days: "week" };
+  const sent = (t) => (/[.?!]$/.test(String(t).trim()) ? String(t).trim() : `${String(t).trim()}.`);
+  function openingOf(R) {
+    const s = R.w;
+    if (R.c) {
+      const ck = R.ctxK && R.ctxK.indexOf("pattern:") === 0 ? R.ctxK : CTX_CHART[R.ctxK];
+      const n = R.cs ? R.cs.n : R.ctxK === "days" && R.V ? 30 : 7;
+      return Object.assign({ k: R.c.title, lead: sent(R.c.facts[0]), body: R.c.facts[1] ? sent(R.c.facts[1]) : "", q: "What would you like to know about it?" }, ck ? cardChart(R, ck, n) : {});
+    }
+    if (!R.u) return Object.assign({ k: "So far", lead: `You're on day ${R.day} of ${L.LEARN_DAYS}, so Florin is still learning your usual.`, body: s.logged ? `So far you've logged ${plural(s.logged, "day")} and ${plural(s.bms, "BM")}.` : "Nothing is logged yet.", q: "Where do you want to start?" }, s.mornings ? timeChart(R, s) : {});
+    const ex = join([s.later ? `${s.later} later` : "", s.earlier ? `${s.earlier} earlier` : ""].filter(Boolean));
+    return Object.assign({
+      k: s.full ? `Last ${s.n} days` : "So far",
+      lead: s.known ? `${upper1(s.lbl)}, ${s.within} of ${plural(s.known, "day")} sat within your usual.` : `Nothing is logged ${s.lbl}.`,
+      body: s.flag ? RU.FLAG_DAY : s.mornings ? `Your first BM came in your usual window on ${s.inW} of ${plural(s.mornings, "morning")}${ex ? `, ${ex}` : ""}.` : "",
+      q: "Where do you want to start?"
+    }, s.mornings ? timeChart(R, s) : {});
+  }
+  function opening(R) {
+    const o = openingOf(R);
+    return `<section class="ap-askx-open" data-a aria-label="Ask Florin's read of your logs">
+        <div class="ap-askx-hd">${tok()}<span class="ap-k ap-askx-ok">${esc(o.k)}</span></div>
+        ${o.chart ? `<figure class="ap-ask-chart ap-askx-fig">${o.chart}${o.legend ? `<div class="ap-legend">${o.legend}</div>` : ""}</figure>` : ""}
+        <p class="ap-ask-lead ap-askx-lead">${esc(o.lead)}</p>
+        ${o.body ? `<div class="ap-ask-body"><p>${esc(o.body)}</p></div>` : ""}
+        <p class="ap-ask-q ap-askx-q">${esc(o.q)}</p>
+      </section>`;
+  }
+
   function screen(M, V, ctx) {
     const api = EXT.api, S = api && api.S && api.S.M === M ? api.S : null;
-    const ch = S ? chatOf(S) : { M, msgs: [], draft: "", preload: "", ctxKey: null, busy: null };
-    const R = read(M, V, ctx);
+    const ch = S ? chatOf(S) : { M, msgs: [], draft: "", preload: "", ctxKey: null, busy: null, forget: {} };
+    const R = readFor(M, V, ctx, ch);
     /* Ask about this: the card comes in as a chip over the box, and its first question goes in the box */
     const key = ctxKey(ctx);
     if (key !== ch.ctxKey) {
@@ -1023,21 +1239,59 @@
     }
     const chips = ch.busy ? [] : chipsFor(R, ch);
     const n = ch.msgs.length;
-    const intro = n ? "" : `<section class="ap-card ap-askc ap-askc--intro" data-a><b>Ask about your logs</b><p class="ap-askc-note">${esc(`Ask about your FloraScore, timing, how often, form, symptoms${R.ck ? ", the weekly check-in" : ""} and patterns. Or tap Ask about this on any Insights card, and its numbers come with the question.`)}</p></section>`;
     const btn = ch.busy
       ? `<button type="button" class="ap-askbar-b ap-askx-stop" data-act="askx-stop" aria-label="Stop the answer">${svgIc(STOP)}</button>`
       : `<button type="button" class="ap-askbar-b ap-askx-send" data-act="askx-send" aria-label="Send"${ch.draft.trim() ? "" : ' aria-disabled="true"'}>${svgIc(SEND)}</button>`;
     return `<div class="ap-scr ap-ask ap-askx">
-      <header class="ap-hist-top ap-askx-top" data-a><div class="ap-askx-th"><h1 class="ap-h1" tabindex="-1">Ask Florin</h1>${n && !ch.busy ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c ap-askx-new" data-act="askx-new">New chat</button>` : ""}</div><p class="ap-hi-sub">Answers from your own logs, read against your usual.</p></header>
-      ${intro}
-      ${n ? `<ol class="ap-askx-log" aria-label="Conversation with Ask Florin">${ch.msgs.map(turn).join("")}</ol>` : ""}
-      ${chips.length ? `<div class="ap-asks ap-askx-sugg" data-a><span class="ap-k">${n ? "Ask next" : "Try asking"}</span>${chips.map((q) => `<button type="button" class="ap-askq" data-act="askx-ask" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>` : ""}
+      <header class="ap-askx-top" data-a>
+        <div class="ap-askx-th"><h1 class="ap-h1" tabindex="-1">Ask Florin</h1><span class="ap-askx-tools"><button type="button" class="ap-askx-ib" data-act="askx-mem" aria-label="What Ask Florin knows">${svgIc(MEM)}</button>${n && !ch.busy ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c ap-askx-new" data-act="askx-new">New chat</button>` : ""}</span></div>
+        <p class="ap-askx-src">${esc(srcLine())}</p>
+      </header>
+      ${n ? `<ol class="ap-askx-log" aria-label="Conversation with Ask Florin">${ch.msgs.map((m) => turn(m, { ck: R.ck })).join("")}</ol>` : opening(R)}
+      ${chips.length ? `<div class="ap-askx-sugg" role="group" aria-label="${n ? "Ask next" : "Questions to start"}" data-a>${chips.map((q) => `<button type="button" class="ap-askq" data-act="askx-ask" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>` : ""}
       <p class="ap-fine">${esc(`Ask Florin answers from your own logs. It isn't a clinician. ${DISC}`)}</p>
       <div class="ap-askx-dock"><div class="ap-ask-compose ap-askx-compose">
         ${R.c ? `<div class="ap-askx-ctx"><span class="ap-chip ap-chip--info" id="askx-ctx-${V.uid}">${esc(`Asking about ${R.c.title}`)}</span><button type="button" class="ap-askc-x" data-act="ask-clear" aria-label="Remove" aria-describedby="askx-ctx-${V.uid}">${RU.icon("close")}</button></div>` : ""}
         <div class="ap-askbar ap-askx-bar"><label class="sr" for="askx-in-${V.uid}">Ask about your logs</label><input id="askx-in-${V.uid}" class="ap-askx-in" type="text" maxlength="${MAXQ}" autocomplete="off" enterkeyhint="send" placeholder="Ask about your logs" value="${esc(ch.draft)}">${btn}</div>
-        <p class="ap-askx-src">${esc(srcLine())}</p>
       </div></div>
+    </div>`;
+  }
+
+  /* ---------- What Ask Florin knows: what every answer reads, what can be left out of this chat, and the opt-in to
+     let Ask Florin start a conversation. Plain words, and nothing it doesn't use ---------- */
+  const FORGET = [
+    ["name", "Your first name", (R) => R.M.P.name],
+    ["today", "Today's logs", (R) => (R.todayN ? plural(R.todayN, "entry", "entries") : "Nothing logged yet")],
+    ["ck", "Your weekly check-ins", () => "Each week next to your first weeks", (R, V) => RU.ckOn(V)],
+    ["chat", "Earlier questions in this chat", () => "Sent with a new question, so a follow-up makes sense"]
+  ];
+  const REACH_F = [["week", "Once a week"], ["twice", "Twice a week"]], REACH_T = [["am", "Morning, 8 AM"], ["pm", "Evening, 7 PM"]];
+  const reachOf = (S) => S.askReach || (S.askReach = { on: false, f: "week", t: "pm" });
+  const reachText = (r) => `${r.f === "twice" ? "Twice a week" : "Once a week"}, ${r.t === "am" ? "in the morning" : "in the evening"}`;
+  function memHTML(M, V, st, api) {
+    const S = api.S, ch = chatOf(S), R = readFor(M, V, S.askCtx, ch), id = `askm${V.uid}`, u = M.usual, rc = reachOf(S);
+    const known = [
+      ["Your usual", u ? `${upper1(`a first BM from ${R.win}, ${u.nLo} to ${u.nHi} a day and ${R.formText}`)}, from your logs ${R.uFrom} to ${R.uTo}` : `Still learning it: day ${R.day} of ${L.LEARN_DAYS}`],
+      ["Your logs", `BMs, No BM, symptoms and meals, from the last ${L.PATTERN_DAYS} days`]
+    ];
+    const rows = FORGET.filter((x) => !x[3] || x[3](R, V)).map(([k, b, em]) => {
+      const off = !!ch.forget[k];
+      return `<li class="askx-mem-row"><span class="ap-ea-m"><b>${esc(b)}</b><em>${esc(off ? "Left out of this chat" : em(R))}</em></span><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="${off ? "askx-keep" : "askx-forget"}" data-k="${k}" aria-label="${esc(`${off ? "Put back" : "Leave out"}: ${b}`)}">${off ? "Put back" : "Leave out"}</button></li>`;
+    }).join("");
+    const pick = (act, opts, cur, lbl) => `<div class="ap-chs askx-mem-chs" role="group" aria-label="${esc(lbl)}">${opts.map(([v, l]) => `<button type="button" class="ap-ch${v === cur ? " is-on" : ""}" data-act="${act}" data-v="${v}" aria-pressed="${v === cur}">${esc(l)}</button>`).join("")}</div>`;
+    return `<div class="ap-psh askx-mem" role="dialog" aria-modal="true" aria-labelledby="${id}">
+      <div class="ap-sheet-grab" aria-hidden="true"></div>
+      <div class="ap-psh-h"><h2 id="${id}" tabindex="-1" data-autofocus>What Ask Florin knows</h2><button type="button" class="ap-lg-x" data-act="close" aria-label="Close">${RU.icon("close")}</button></div>
+      <p class="ap-gd-lede">Ask Florin answers from your own logs. Here's what it reads, and what you can leave out of this chat.</p>
+      <section class="askx-mem-s" aria-labelledby="${id}-a"><h3 class="ap-f-l" id="${id}-a">Every answer reads</h3>
+        <ul class="ap-card ap-ea askx-mem-list">${known.map(([b, em]) => `<li class="askx-mem-row"><span class="ap-ea-m"><b>${esc(b)}</b><em>${esc(em)}</em></span></li>`).join("")}</ul></section>
+      <section class="askx-mem-s" aria-labelledby="${id}-b"><h3 class="ap-f-l" id="${id}-b">You can leave these out of this chat</h3>
+        <ul class="ap-card ap-ea askx-mem-list">${rows}</ul></section>
+      <section class="askx-mem-s" aria-labelledby="${id}-c"><h3 class="ap-f-l" id="${id}-c">A conversation from Ask Florin</h3>
+        <ul class="ap-card ap-ea askx-mem-list"><li><button type="button" class="ap-ea-row askx-sw" role="switch" aria-checked="${rc.on}" data-act="askx-reach"><span class="ap-ea-m"><b>Let Ask Florin start a conversation</b><em>${esc(rc.on ? `${reachText(rc)}: a short read of your logs and one question.` : "A short read of your logs and one question, at a time you pick. Off unless you turn it on.")}</em></span><span class="askx-sw-t" aria-hidden="true"></span></button></li></ul>
+        ${rc.on ? `<div class="ap-f"><span class="ap-f-l">How often</span>${pick("askx-reach-f", REACH_F, rc.f, "How often")}</div><div class="ap-f"><span class="ap-f-l">When</span>${pick("askx-reach-t", REACH_T, rc.t, "When")}</div>` : ""}
+      </section>
+      <p class="ap-fine">A new chat starts with everything again. Ask Florin isn't a clinician.</p>
     </div>`;
   }
 
@@ -1065,6 +1319,43 @@
   act("askx-send", (b, api) => { const inp = api.layer.querySelector(".ap-askx-in"); run(api, inp ? inp.value : chatOf(api.S).draft); });
   act("askx-ask", (b, api) => run(api, b.dataset.q));
   act("askx-stop", (b, api) => stopChat(api.S));
+  /* thumbs under a turn: kept on the turn for this chat, said in one line, and a second tap takes it back */
+  act("askx-rate", (b, api) => {
+    const ch = chatOf(api.S), m = ch.msgs.find((x) => x.id === b.dataset.id);
+    if (!m) return;
+    m.rate = m.rate === b.dataset.v ? null : b.dataset.v;
+    paint(api);
+    api.toast(!m.rate ? "Rating taken back." : m.rate === "up" ? "Thanks. In the app, ratings help tune Ask Florin's answers." : "Thanks. In the app, ratings help tune Ask Florin's answers. Try asking it another way, or tap a question below.");
+  });
+  /* What Ask Florin knows: a sheet over the chat */
+  act("askx-mem", (b, api) => { api.push("askx-mem", {}); });
+  const memRedraw = (api) => { const o = api.top(); if (o && o.type === "askx-mem") api.rerender(o); };
+  const FORGET_NAME = { name: "Your first name", today: "Today's logs", ck: "Your weekly check-ins", chat: "Earlier questions in this chat" };
+  act("askx-forget", (b, api) => {
+    const ch = chatOf(api.S), k = b.dataset.k;
+    ch.forget = Object.assign({}, ch.forget, { [k]: true });
+    memRedraw(api); paint(api);
+    api.toast(`${FORGET_NAME[k] || "That"} left out of this chat.`, () => { ch.forget = Object.assign({}, ch.forget, { [k]: false }); memRedraw(api); paint(api); });
+  });
+  act("askx-keep", (b, api) => {
+    const ch = chatOf(api.S), k = b.dataset.k;
+    ch.forget = Object.assign({}, ch.forget, { [k]: false });
+    memRedraw(api); paint(api);
+    api.toast(`${FORGET_NAME[k] || "That"} back in this chat.`);
+  });
+  act("askx-reach", (b, api) => {
+    const rc = reachOf(api.S);
+    rc.on = !rc.on;
+    memRedraw(api);
+    api.toast(rc.on ? `Ask Florin can start a conversation: ${lower1(reachText(rc))}.` : "Ask Florin won't start conversations.");
+  });
+  act("askx-reach-f", (b, api) => { const rc = reachOf(api.S); rc.f = b.dataset.v; memRedraw(api); api.toast(`Ask Florin can start a conversation: ${lower1(reachText(rc))}.`); });
+  act("askx-reach-t", (b, api) => { const rc = reachOf(api.S); rc.t = b.dataset.v; memRedraw(api); api.toast(`Ask Florin can start a conversation: ${lower1(reachText(rc))}.`); });
+  EXT.overlays["askx-mem"] = {
+    kind: "sheet",
+    render: (M, V, st, api) => { try { return memHTML(M, V, st, api || EXT.api); } catch (e) { warn("What Ask Florin knows threw", e); return ""; } },
+    key: () => "ask-mem"
+  };
   act("askx-new", (b, api) => {
     const S = api.S, was = S.askx;
     if (!was || was.busy) return;
@@ -1127,7 +1418,13 @@
   /* Screens > Ask Florin: the plain tab, with no chat left over from a seeded screen (the tab bar keeps the chat). The
      core's open("ask") hands over to this hook when a module registers it */
   EXT.opens.ask = (api) => { stopChat(api.S); api.S.askx = null; api.S.askCtx = null; api.go("ask"); };
-  EXT.screens.push(["Ask Florin", [["ask-chat", "Ask Florin, a conversation"], ["ask-alarm", "Ask Florin, a sign that needs a clinician"]], { before: "Membership" }]);
+  /* What Ask Florin knows, over the chat. On Free the Ask tab is the lock, so the paywall, as for the other screens */
+  EXT.opens["ask-mem"] = (api) => {
+    if (api.S.plan === "free") { api.go("ask"); api.push("pay", { from: "ask" }, { instant: true }); return; }
+    if (api.S.tab !== "ask") api.go("ask");
+    api.push("askx-mem", {}, { instant: true });
+  };
+  EXT.screens.push(["Ask Florin", [["ask-chat", "Ask Florin, a conversation"], ["ask-alarm", "Ask Florin, a sign that needs a clinician"], ["ask-mem", "Ask Florin, what it knows"]], { before: "Membership" }]);
 
   /* which screen the Ask tab is on, for the notes and the Screens list: a conversation, or one whose last answer is
      the clinician one. With a card just loaded and nothing asked about it yet, the core's Ask about this */
@@ -1159,10 +1456,17 @@
       i++;
       if (ch.busy && ch.busy.id === a.id) { out.push(m, a); continue; }
       if (k === "checkin" && !RU.ckOn(V) && (a.intent === "checkin" || namesCk({ text: m.text }) || (a.src === "claude" && namesCk(a)))) continue;
-      if (a.kind === "answer" && a.state === "done") {
-        const R = read(S.M, V, a.ctx);
+      if (a.kind === "answer" && a.state === "done" && a.intent !== "ack") {
+        const R = readFor(S.M, V, a.ctx, ch);
         const keep = a.src === "claude" && checkText(a.text, R).ok && !(k === "form" && a.mode !== V.form && FORMS_RX.test(a.text));
-        if (!keep) { const note = a.src === "claude" ? "" : a.note; Object.assign(a, fromComputed(answerOf(R, a.q)), { note, mode: V.form }); }
+        if (!keep) {
+          const note = a.src === "claude" ? "" : a.note, opts = a.opts;
+          Object.assign(a, fromComputed(answerOf(R, a.qa || a.q)), { note, mode: V.form });
+          finish(R, ch, a);
+          /* the options stay where they were (about one turn in three), less any that name the check-in once it's off */
+          a.opts = opts ? opts.filter((x) => R.ck || !/check-?in|since I started/i.test(x)) : null;
+          if (a.opts && !a.opts.length) a.opts = null;
+        }
       }
       out.push(m, a);
     }
@@ -1183,29 +1487,42 @@
 
   /* ---------- notes for Will. Oct 28: plain, about 80 words at most, with at most one open question ---------- */
   const engineNow = () => (ASK.state === "ready" && !ASK.off ? "In this view, answers come from Claude on your own account, checked before they show." : "In this view, every answer is worked out from the logs.");
-  const ASK_WAYS = "A warning sign gets the see-a-clinician answer, a request to diagnose, dose or predict gets a fixed reply, and every other answer is checked against Florin's rules and the numbers before it shows.";
+  const ASK_WAYS = "A warning sign gets the see-a-clinician answer, and a request to diagnose, dose or predict gets a fixed reply.";
   EXT.notes["ask-chat"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, a conversation",
-    lede: `A chat on the person's own logs. Questions to start come from the logs, and each answer lists the numbers it used. ${ASK_WAYS} ${engineNow()}`
+    lede: `A chat on the person's own logs. Each turn says what it looked at and cites one Florin journal piece, answers in a few lines, and ends on one bold question that offers the next thing to look at: a yes asks it. Options come about one turn in three, with thumbs under each turn. ${engineNow()}`
   });
   EXT.notes["ask-alarm"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, a sign that needs a clinician",
-    lede: "A question that names a warning sign, such as blood, a black stool, a fever or waking at night to go, gets the see-a-clinician answer: the sign named, primary care first, and a report to bring. Florin never reads anything into the sign, and the question is never sent to Claude."
+    lede: "A question that names a warning sign, such as blood, a black stool, a fever or waking at night to go, gets the see-a-clinician answer: the Teal banner with the sign named, primary care first, then urgent care, and a report to bring. No source and no options. Florin never reads anything into the sign, and the question is never sent to Claude."
   });
   EXT.notes.ask = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin",
-    lede: `A chat on the person's own logs. Questions to start come from the logs, and Ask about this on any Insights card brings that card's numbers in. ${ASK_WAYS} ${engineNow()}`,
+    lede: `Before anything is asked, Ask Florin opens on a read of the last 7 days: the mornings drawn against the person's usual window, two sentences, then questions to start. Ask about this on an Insights card brings that card's chart and numbers in instead. ${ASK_WAYS} ${engineNow()}`,
     open: ["Give Free one answer a week, with questions about seeing a doctor always answered?"]
   });
   EXT.notes["ask-about"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask about this",
-    lede: "Every Insights card and detail has Ask about this. It opens Ask Florin with the card's question in the box and its numbers loaded, so the answer starts from the same figures as the chart."
+    lede: "Every Insights card and detail has Ask about this: a Ray button with the Ask token, the same token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart."
+  });
+  EXT.notes["ask-mem"] = (M, P) => (P.plan === "free" ? null : {
+    t: "Ask Florin, what it knows",
+    lede: `From the chat's header: what every answer reads (the person's usual and their logs), what they can leave out of this chat (their first name, today's logs${P.checkin === false ? "" : ", the weekly check-ins"} and earlier questions), and an opt-in to let Ask Florin start a conversation at a time they pick, off unless turned on. A new chat starts with everything again.`,
+    open: ["Should the opt-in sit with the reminders in Profile too?"]
   });
 
   /* the engine, for work/behave.js and the notes: pure functions of the model, no DOM */
   window.FLORIN_ASK = {
     read, route, signsIn, isRedirect, intentOf, check: checkText, numbersOff, textOf, turnsFor, rulesFor, chipsFor, usedFor, sentencesIn,
-    answer: (M, V, q, ctx) => { const R = read(M, V, ctx); const r = route(q); return r.kind === "alarm" ? Object.assign({ R }, alarmAnswer(r.signs)) : r.kind === "redirect" ? Object.assign({ R }, redirectAnswer(r.which)) : Object.assign({ R }, answerOf(R, q)); },
+    /* an answer as the chat draws it, its hand-back question included (picked against the question asked) */
+    answer: (M, V, q, ctx) => {
+      const R = read(M, V, ctx), r = route(q);
+      if (r.kind === "alarm") return Object.assign({ R }, alarmAnswer(r.signs));
+      if (r.kind === "redirect") return Object.assign({ R }, redirectAnswer(r.which));
+      const A = answerOf(R, q), pk = pickOffer(R, A.offers, [q]);
+      return Object.assign({ R, ask: pk.ask, yes: pk.yes }, A);
+    },
+    splitQ, offersOf, openingOf, replyTo, OFFER,
     state: () => ({ state: ASK.state, off: ASK.off }),
     QUESTIONS: ["Why did my FloraScore go down this week?", "How is FloraScore worked out?", "Why is there no FloraScore today?", "How was my timing this week?", "What sets my usual window?", "How often do I go?", "Why does a gap not count as zero?", "What do the forms mean?", "Why were some BMs looser?", "How have my symptoms been?", "What tends to come before my rougher days?", "How sure are these patterns?", "Why does a food need 5 logs?", "What else could be part of it?", "How do I test one?", "What could I try this week?", "What have I been eating?", "What changed since I started?", "How do I bring my logs to a clinician?", "When should I talk to a clinician?", "How does Florin learn my usual?", "What should I log, and when?", "How do I log symptoms well?", "What should I note this week?", "What do my logs show this week?", "Tell me a story about space"]
   };

@@ -1,45 +1,140 @@
 /* Florin app refresh: styles for js/refresh-ask.js (Ask Florin, interactive). Built on the chat components the studio
-   already has (.ap-ask-turn, .ap-ask-me, .ap-ask-body, .ap-ask-alarm, .ap-ask-compose in app.css) and the refresh's
-   (.ap-askq, .ap-askbar, .ap-shaped, .ap-chip), so a restyle of those, the Easy version's included, reaches the chat
-   too. Tokens only, light and dark from the same rules; every spacing and corner on the DESIGN.md scale. */
+   already has (.ap-ask-turn, .ap-ask-me, .ap-ask-body, .ap-ask-q, .ap-ask-opt, .ap-ask-thumb, .ap-ask-alarm,
+   .ap-ask-compose in app.css) and the refresh's (.ap-askq, .ap-askbar, .ap-chip), so a restyle of those, the Easy
+   version's included, reaches the chat too. Tokens only, light and dark from the same rules; every spacing and corner
+   on the DESIGN.md scale.
 
+   Will, Nov 5: the ways into Ask stand out (Ray, with the Ask token), and the chat is compact and easy to read on a
+   phone, built to the coach spec in DESIGN.md (the opening read, each turn's head, source line, reply in Lora, one bold
+   question, options about one turn in three, thumbs, the composer pinned). */
+
+/* ---------- the Ask token and the ways into Ask ----------
+   The token is Ask Florin's glyph (refresh-ui.js, "chat": a round bubble holding the Flow wave) on a disc: Forest with
+   the glyph in Ray on light grounds and on Ray, Ray with the glyph in Forest on dark grounds. The Ask buttons are Ray
+   pills with Forest words. Ray barely shows on Cream (about 1.05:1), so in light a hairline mixed from Forest and Ray
+   edges the pill at 3:1 or more against the card; in dark Ray stands well clear of the ground on its own */
+.ap-rx { --ap-ask-edge: color-mix(in srgb, var(--forest) 55%, var(--ray)); --ap-ask-drop: 0 4px 12px -8px color-mix(in srgb, var(--forest) 55%, transparent); }
+.ap-rx[data-theme="dark"] { --ap-ask-edge: transparent; --ap-ask-drop: 0 4px 12px -8px color-mix(in srgb, var(--forest) 90%, transparent); }
+.ap-askt { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 999px; background: var(--forest); color: var(--ray); }
+.ap-askt .ic { width: 16px; height: 16px; stroke-width: 1.8; }
+.ap-askt--lg { width: 32px; height: 32px; }
+.ap-askt--lg .ic { width: 20px; height: 20px; }
+.ap-rx[data-theme="dark"] .ap-askt { background: var(--ray); color: var(--forest); }
+
+/* the buttons the core, the looks and Easy draw: their own glyph becomes the token, on a Ray pill. On Free the card's
+   button keeps its lock, on the same token */
+.ap-rx :is(.ap-ask-b, .ap-idt-ask, .ap-ez-ask) > .ic:first-child { box-sizing: border-box; width: 28px; height: 28px; margin: 0; padding: 4px; border-radius: 999px; background: var(--forest); color: var(--ray); stroke-width: 1.8; }
+.ap-rx .ap-ask-b { min-height: 36px; padding: 0 16px 0 4px; gap: 8px; border-radius: 999px; background: var(--ray); color: var(--forest); font-size: 14px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--ap-ask-edge), var(--ap-ask-drop); }
+.ap-rx .ap-btn.ap-idt-ask { gap: 8px; padding: 0 20px 0 8px; background: var(--ray); color: var(--forest); box-shadow: inset 0 0 0 1px var(--ap-ask-edge), var(--ap-ask-drop); }
+.ap-rx .ap-ez-link.ap-ez-ask { gap: 12px; padding: 0 24px 0 8px; background: var(--ray); color: var(--forest); box-shadow: inset 0 0 0 1px var(--ap-ask-edge), var(--ap-ask-drop); }
+.ap-rx :is(.ap-ask-b, .ap-idt-ask, .ap-ez-ask):active { transform: scale(.97); }
+/* Easy draws its buttons bigger and in Ink; on Ray the words stay Forest */
+.ap-rx.ap--easy :is(.ap-ask-b, .ap-idt-ask) { padding: 0 24px 0 8px; color: var(--forest); }
+.ap-rx.ap--easy :is(.ap-ask-b, .ap-idt-ask, .ap-ez-ask) > .ic:first-child { width: 40px; height: 40px; padding: 8px; }
+
+/* the Ask tab: the token in place of the plain icon, the same height in the bar as the other icons, so every label
+   sits on one line */
+.ap-rx .ap-tb-b[data-tab="ask"] .ic { box-sizing: border-box; width: 28px; height: 28px; margin: -4px 0; padding: 4px; border-radius: 999px; background: var(--forest); color: var(--ray); stroke-width: 1.8; }
+.ap-rx[data-theme="dark"] .ap-tb-b[data-tab="ask"] .ic { background: var(--ray); color: var(--forest); }
+.ap-rx .ap-tb-b[data-tab="ask"] { color: var(--ap-ink); }
+.ap-rx.ap--easy .ap-tb-b[data-tab="ask"] .ic { width: 36px; height: 36px; margin: 0; padding: 8px; }
+
+/* ---------- the chat ---------- */
 /* the box sits last, in a dock that clears the tab bar, so the screen needs no padding of its own at the end. The
    screen is at least as tall as the phone and the dock takes the space left over, so the box stays pinned to the
    bottom when the chat is short */
-.ap-scr.ap-askx { padding-bottom: 0; min-height: 100%; }
-.ap-askx-th { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.ap-askx-new { flex: none; }
+.ap-scr.ap-askx { padding-bottom: 0; min-height: 100%; gap: 16px; }
 
-/* the conversation */
-.ap-askx-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+/* the header: the token, the name, What Ask Florin knows and New chat on one line, where the answers come from under it */
+.ap-askx-top { display: flex; flex-direction: column; gap: 4px; }
+.ap-askx-th { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.ap-askx-th .ap-h1 { min-width: 0; margin-top: 0 !important; font-size: 26px; line-height: 1.15; letter-spacing: -.02em; }
+.ap-askx-tools { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
+.ap-askx-ib { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); }
+.ap-askx-ib::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
+.ap-askx-ib .ic { width: 18px; height: 18px; }
+.ap-askx-new { flex: none; }
+.ap-askx-src { font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); }
+
+/* the opening read: a chart of the person's own logs and two sentences, then the question to start */
+.ap-askx-open { display: flex; flex-direction: column; gap: 12px; }
+.ap-askx-open .ap-askx-hd { align-items: center; }
+.ap-askx-open .ap-askx-hd > .ap-askt { margin-top: 0; }
+.ap-askx .ap-askx-lead { margin-top: 0 !important; font-family: var(--serif); font-size: 20px; line-height: 1.35; color: var(--ap-ink); }
+
+/* the conversation: turns 24px apart, the parts of a turn 8px apart */
+.ap-askx-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 24px; }
 .ap-askx-log > li { margin: 0; }
 .ap-askx-a { gap: 8px; }
-.ap-askx-who { color: var(--ap-teal); }
+.ap-askx .ap-ask-me { margin-top: 0; }
+.ap-askx .ap-ask-me p { padding: 8px 16px; font-size: 16px; line-height: 1.45; }
+
+/* each turn's head: the token and what it looked at, folded (From your logs) */
+.ap-askx-hd { display: flex; align-items: flex-start; min-height: 36px; }
+.ap-askx-who { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ap-askx-hd > .ap-askt { width: 28px; height: 28px; margin: 4px 8px 0 0; }
+.ap-askx-hd > .ap-askt .ic { width: 18px; height: 18px; }
+.ap-askx-from { flex: 1; min-width: 0; }
+.ap-askx-from summary { position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; list-style: none; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ap-askx-from summary::-webkit-details-marker { display: none; }
+.ap-askx-from summary::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-askx-from summary > .ic { width: 14px; height: 14px; transition: transform .25s var(--ap-ease); }
+.ap-askx-from[open] summary > .ic { transform: rotate(180deg); }
+.ap-askx-from[open] summary { color: var(--ap-ink); }
+
+/* From your logs, opened: the lines an answer used, label and value */
+.ap-askx-facts { list-style: none; margin: 4px 0 0; padding: 4px 16px; display: flex; flex-direction: column; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ap-askx-facts li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--ap-line); font-size: 13px; line-height: 1.4; }
+.ap-askx-facts li:first-child { border-top: 0; }
+.ap-askx-facts span { color: var(--ap-ink2); }
+.ap-askx-facts b { font-weight: 500; text-align: right; color: var(--ap-ink); }
+
+/* the source line: one piece from the Florin journal, a 12px-corner source row */
+.ap-askx-jr { position: relative; display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; max-width: 100%; min-height: 36px; padding: 4px 12px 4px 8px; border-radius: 12px; background: var(--ap-card2); font-size: 13px; line-height: 1.35; text-align: left; color: var(--ap-ink2); }
+.ap-askx-jr::after { content: ""; position: absolute; inset: -4px 0; }
+.ap-askx-jr > .ic { width: 16px; height: 16px; color: var(--ap-ink2); }
+.ap-askx-jr b { font-weight: 500; color: var(--ap-ink); }
+.ap-askx-jr-k { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; color: var(--ap-ink2); }
+
+/* the reply, in Lora at 17px in Ink; the one thing to log or try ends it, a little heavier */
+.ap-askx .ap-ask-body { gap: 8px; }
+.ap-askx .ap-ask-body p { font-size: 17px; line-height: 1.5; color: var(--ap-ink); white-space: normal; }
 .ap-askx-text:empty { display: none; }
-.ap-askx-text p { white-space: pre-line; }
-.ap-askx-try { font-size: 15px; font-weight: 500; line-height: 1.45; color: var(--ap-ink); }
-.ap-askx-note { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); }
-.ap-askx-note .ic { width: 14px; height: 14px; color: var(--ap-ink2); }
+.ap-askx-try { font-weight: 500; }
 .ap-askx-think { animation: askxPulse 1.4s ease-in-out infinite; }
 @keyframes askxPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .ap-askx-think { animation: none; } }
-.ap-askx-a .ap-fine { padding: 0 4px; }
 
-/* the small chart in an answer: a card, the chart, then a word for every colour */
+/* the one bold question that hands the turn back */
+.ap-askx .ap-ask-q { font-size: 16px; font-weight: 600; line-height: 1.4; letter-spacing: -.005em; color: var(--ap-ink); }
+
+/* the small chart in an answer and in the opening read: a card, the chart, then a word for every colour */
 .ap-askx-fig.ap-ask-chart { margin: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
 .ap-askx-fig .c-spark { display: block; width: 100%; height: 48px; }
 .ap-askx-fig .c-range { margin: 4px 0 0; }
 
-/* From your logs: the lines an answer used, label and value */
-.ap-askx-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.ap-askx-facts li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--ap-line); font-size: 13px; line-height: 1.4; }
-.ap-askx-facts li:first-child { border-top: 0; padding-top: 0; }
-.ap-askx-facts span { color: var(--ap-ink2); }
-.ap-askx-facts b { font-weight: 500; text-align: right; color: var(--ap-ink); }
-
-/* options under a redirect, and the clinician answer's urgent-care line, after primary care */
-.ap-askx .ap-ask-opt { min-height: 44px; }
+/* options (about one turn in three), and under a redirect */
+.ap-askx .ap-ask-opts { gap: 8px; }
+.ap-askx .ap-ask-opt { min-height: 44px; font-size: 15px; }
 .ap-askx-a .ap-askx-urgent { font-weight: 500; color: var(--ap-ink); }
+.ap-askx-a .ap-ask-act { margin-top: 4px; }
+
+/* the foot: a quiet note when there is one, where the answer came from, and the thumbs */
+.ap-askx-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ap-askx-prov { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-askx-prov .ap-fine { padding: 0; font-size: 12px; line-height: 1.4; }
+.ap-askx-note { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-askx-note .ic { width: 14px; height: 14px; color: var(--ap-ink2); }
+.ap-askx .ap-ask-rate { display: flex; gap: 8px; margin: 0; flex: none; }
+.ap-askx .ap-ask-thumb { position: relative; width: 36px; height: 36px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ap-line); color: var(--ap-ink2); transition: background .2s, color .2s; }
+.ap-askx .ap-ask-thumb::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
+.ap-askx .ap-ask-thumb .ic { width: 18px; height: 18px; }
+.ap-askx .ap-ask-thumb[aria-pressed="true"] { background: var(--ap-ink); color: var(--ap-bg); box-shadow: none; }
+
+/* the questions to start, and to ask next: compact chips that wrap */
+.ap-askx-sugg { display: flex; flex-wrap: wrap; gap: 8px; }
+.ap-askx-sugg .ap-askq { position: relative; min-height: 36px; padding: 8px 12px; border-radius: 16px; background: var(--ap-card); box-shadow: inset 0 0 0 1px var(--ap-line); font-size: 14px; font-weight: 500; line-height: 1.3; color: var(--ap-ink); text-align: left; }
+.ap-askx-sugg .ap-askq::after { content: ""; position: absolute; inset: -4px 0; }
 
 /* the box: a card in a dock pinned to the bottom, clear of the floating tab bar, while the conversation scrolls under
    it. The dock fades into the ground above the card and is solid ground behind the tab bar */
@@ -50,22 +145,53 @@
 .ap-askx-bar:focus-within { box-shadow: inset 0 0 0 1.5px var(--ap-chart); }
 .ap[data-theme="dark"] .ap-askx-bar:focus-within { box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
 .ap-rx .ap-askx-in:focus, .ap-rx .ap-askx-in:focus-visible { outline: none; }
-.ap-askx-in { flex: 1; min-width: 0; height: 48px; padding: 0 0 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--ap-ink); font-family: var(--sans); font-size: 15px; outline: none; }
+.ap-askx-in { flex: 1; min-width: 0; height: 48px; padding: 0 0 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--ap-ink); font-family: var(--sans); font-size: 16px; outline: none; }
 .ap-askx-in::placeholder { color: var(--ap-ink3); opacity: 1; }
 .ap-askx-send[aria-disabled="true"] { background: var(--ap-card2); color: var(--ap-ink3); cursor: default; }
 .ap-askx-stop .ic { fill: currentColor; stroke: none; }
 .ap-askx-ctx { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0 0 0 8px; }
 .ap-askx-ctx .ap-chip { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.ap-askx-src { padding: 0 8px 4px; font-size: 11.5px; line-height: 1.4; color: var(--ap-ink2); }
 
-/* the Easy version: the chat's own pieces grow with the rest of the app. Its tab bar is taller (64px buttons in 8px
-   of padding, 24px up from the edge), so the dock clears 104px plus 16 */
+/* ---------- What Ask Florin knows: a sheet ---------- */
+.askx-mem-s { display: flex; flex-direction: column; gap: 8px; }
+.askx-mem-s > .ap-f-l { margin: 0; }
+.askx-mem-list { margin: 0; }
+.askx-mem-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; }
+.askx-mem-row .ap-btn { flex: none; }
+.askx-mem-row .ap-ea-m em { line-height: 1.4; }
+.askx-mem-chs { flex-wrap: wrap; }
+.askx-sw-t { position: relative; flex: none; width: 44px; height: 24px; border-radius: 999px; background: var(--ap-card2); box-shadow: inset 0 0 0 1.5px var(--ap-line); transition: background .2s, box-shadow .2s; }
+.askx-sw-t::after { content: ""; position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--ap-ink3); transition: transform .25s var(--ap-ease), background .2s; }
+.askx-sw[aria-checked="true"] .askx-sw-t { background: var(--ap-chart); box-shadow: none; }
+.askx-sw[aria-checked="true"] .askx-sw-t::after { transform: translateX(20px); background: var(--ap-card); }
+.ap-rx[data-theme="dark"] .askx-sw[aria-checked="true"] .askx-sw-t { background: var(--ap-ink); }
+.ap-rx[data-theme="dark"] .askx-sw[aria-checked="true"] .askx-sw-t::after { background: var(--ap-bg); }
+
+/* ---------- the Easy version: the chat's own pieces grow with the rest of the app. Its tab bar is taller (64px buttons
+   in 8px of padding, 24px up from the edge), so the dock clears 104px plus 16 ---------- */
 .ap[data-easy="true"] .ap-askx-dock { padding-bottom: 120px; }
 .ap[data-easy="true"] .ap-askx-ctx { flex-wrap: wrap; padding: 0; }
 .ap[data-easy="true"] .ap-askx-in { font-size: 18px; }
-.ap[data-easy="true"] .ap-askx-try { font-size: 17px; }
-.ap[data-easy="true"] .ap-askx-facts li { font-size: 15px; }
-.ap[data-easy="true"] .ap-askx-src, .ap[data-easy="true"] .ap-askx-note { font-size: 13px; }
-/* the way out of a redirect: the same size as the Ask next chips beside it (refresh-easy.css, .ap-askq) */
+.ap[data-easy="true"] .ap-askx-try { font-size: 18px; }
+.ap[data-easy="true"] .ap-askx-facts li { font-size: 16px; }
+.ap[data-easy="true"] .ap-askx-src, .ap[data-easy="true"] .ap-askx-note { font-size: 16px; }
+.ap[data-easy="true"] .ap-askx .ap-ask-q { font-size: 20px; line-height: 1.4; }
+.ap[data-easy="true"] .ap-askx .ap-askx-lead { font-size: 24px; }
+.ap[data-easy="true"] .ap-askx-th .ap-h1 { font-size: 32px; }
+.ap[data-easy="true"] .ap-askx-hd > .ap-askt { width: 32px; height: 32px; margin-top: 12px; }
+.ap[data-easy="true"] .ap-askx-hd > .ap-askt .ic { width: 20px; height: 20px; }
+.ap[data-easy="true"] .ap-askx-who, .ap[data-easy="true"] .ap-askx-from summary { min-height: 56px; font-size: 18px; color: var(--ap-ink); }
+.ap[data-easy="true"] .ap-askx-jr { min-height: 48px; padding: 8px 16px 8px 12px; font-size: 16px; }
+.ap[data-easy="true"] .ap-askx-jr > .ic { width: 20px; height: 20px; }
+.ap[data-easy="true"] .ap-askx-jr-k { font-family: var(--sans); font-size: 16px; letter-spacing: 0; text-transform: none; }
+.ap[data-easy="true"] .ap-askx-prov .ap-fine { font-size: 16px; color: var(--ap-ink); }
+.ap[data-easy="true"] .ap-askx .ap-ask-thumb { width: 48px; height: 48px; }
+.ap[data-easy="true"] .ap-askx .ap-ask-thumb .ic { width: 24px; height: 24px; }
+.ap[data-easy="true"] .ap-askx-ib { width: 48px; height: 48px; }
+.ap[data-easy="true"] .ap-askx-ib .ic { width: 24px; height: 24px; }
+.ap[data-easy="true"] .ap-askx-sugg { flex-direction: column; align-items: stretch; gap: 12px; }
+/* the way out of a redirect, and the options: the same size as the Ask next chips beside them (refresh-easy.css, .ap-askq) */
 .ap[data-easy="true"] .ap-ask-opt { min-height: 64px; padding: 16px 20px; gap: 12px; font-size: 18px; line-height: 1.45; }
 .ap[data-easy="true"] .ap-ask-opt .ic { width: 20px; height: 20px; }
+.ap[data-easy="true"] .askx-mem-row .ap-ea-m b { font-size: 20px; }
+.ap[data-easy="true"] .askx-mem-row .ap-ea-m em { font-size: 18px; color: var(--ap-ink); }

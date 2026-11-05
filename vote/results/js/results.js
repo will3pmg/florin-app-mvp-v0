@@ -3,8 +3,12 @@
 
    Where the votes come from, tried in this order and named on the page:
      1. the hosted Sheet: config.js's endpoint and #key=<VOTE_KEY> in the address, by JSONP (op=results), with Refresh;
-     2. results.json beside the page (made by vote/tools/aggregate.js); from a file, results-data.js, the same data;
+     2. results.json beside the page (made by vote/tools/aggregate.js); from a file, results-data.js, the same data.
+        The hosted site (config.js's hosted, stamped by vote/build.js) never has either, so it never asks for them;
      3. neither: a panel to open a results.json or paste Slack ballots.
+   What we recommend comes from js/recs.js where the page is Will's own (the claude.ai artifact, a file), or from the
+   Sheet's reply, which needs the key: the hosted site doesn't carry recs.js, so a voter who finds the page sees no
+   recommendation. With neither, the page shows the votes without it.
    Slack ballots pasted into "Add Slack ballots" are read here by ballot.js, kept in this browser only, and counted with
    the rest under the same rule: the latest ballot from each name counts.
 
@@ -13,8 +17,9 @@
    window.VOTE_RESULTS_PAGE exposes the state for the checks. */
 (function () {
   "use strict";
-  const Q = window.VOTE_Q, B = window.VOTE_BALLOT, C = window.VOTE_COUNT, R = window.VOTE_RECS || {};
+  const Q = window.VOTE_Q, B = window.VOTE_BALLOT, C = window.VOTE_COUNT;
   const CFG = window.VOTE_CONFIG || {};
+  const HOSTED = CFG.hosted === true;
   const VOTE = String(CFG.vote || "florin-app-vote-1");
   const mount = document.getElementById("vr");
   if (!mount || !Q || !B || !C) {
@@ -84,7 +89,10 @@
     "cal-ring": "Charts, ring", built: "Florin charts", journal: "Journal", easy: "Easy read", none: "No pref.",
   };
   const shortName = (q, id) => SHORT[`${q.id}.${id}`] || (q.part === 2 ? SHORT[id] : null) || (id === "none" ? SHORT.none : optName(q, id));
-  const recOf = (q) => R[q.id] || null;
+  /* what we recommend: the Sheet's reply's (with the key), else recs.js's, else nothing */
+  const recs = () => (S.base && S.base.recs && typeof S.base.recs === "object" ? S.base.recs : window.VOTE_RECS || {});
+  const hasRecs = () => Object.keys(recs()).length > 0;
+  const recOf = (q) => recs()[q.id] || null;
   const recIds = (q) => { const r = recOf(q); return !r ? [] : Array.isArray(r.v) ? r.v : [r.v]; };
 
   /* ---------------------------------------------------------------- the model: every ballot, counted once */
@@ -142,7 +150,9 @@
     if (src.kind === "sheet") line = `From the Sheet, updated ${esc(when(src.at, false))}.`;
     else if (src.kind === "json" || src.kind === "file") line = `From results.json, made ${esc(when(S.base && S.base.generated))}.`;
     else if (src.kind === "opened") line = `From the results.json you opened, made ${esc(when(S.base && S.base.generated))}.`;
-    const pasted = S.pasted.length ? ` Plus ${res.sources.filter((s) => s.file === "pasted here").reduce((t, s) => t + s.ballots, 0)} pasted here.` : "";
+    const pn = res.sources.filter((s) => s.file === "pasted here").reduce((t, s) => t + s.ballots, 0);
+    const pw = `${pn} ${pn === 1 ? "ballot" : "ballots"} pasted here.`;
+    const pasted = S.pasted.length ? (line ? ` Plus ${pw}` : `From ${pw}`) : "";
     const err = src.error ? `<p class="vr-src vr-src--err">${esc(src.error)}</p>` : "";
     return `<header class="vr-head">
       <div class="vr-head-top">
@@ -169,6 +179,7 @@
         <p class="vr-filter-h">Part</p>
         ${seg("part", "Part", [["both", "Both"], ["1", "The app"], ["2", "The charts"]], S.part)}
       </div>
+      ${S.role !== "all" ? `<p class="vr-showing" role="status">Showing ${inView(all).length} of ${all.length}: ${esc((chips.find((c) => c.id === S.role) || { name: "" }).name)}.</p>` : ""}
     </section>`;
   }
 
@@ -177,17 +188,20 @@
     const items = [];
     const byWhat = (w) => res.flags.filter((f) => f.what === w);
     res.replaced.forEach((r) => items.push(`<li><b>${esc(r.name)}</b>: an earlier ballot (${esc(r.bid)}${r.at ? `, ${esc(when(r.at))}` : ""}) was replaced by a later one (${esc(r.by)}) and isn't counted.</li>`));
-    ["two_browsers", "read_from_text", "note_lost", "note_extra", "part_missing", "unknown_pick"].forEach((w) => byWhat(w).forEach((f) =>
+    ["two_browsers", "read_from_text", "line_damaged", "note_lost", "note_extra", "part_missing", "unknown_pick"].forEach((w) => byWhat(w).forEach((f) =>
       items.push(`<li><b>${esc(f.name)}</b>, ballot ${esc(f.bid)}: ${esc(C.why(w))}</li>`)));
     res.dropped.forEach((d) => {
       const t = d.why === "check_failed" && d.text ? `<details class="vr-held"><summary>See the ballot as it came</summary><pre class="vr-pre">${esc(d.text)}</pre></details>` : "";
       items.push(`<li><b>${esc(d.name || "No name")}</b>${d.bid ? `, ballot ${esc(d.bid)}` : ""}: ${esc(C.why(d.why))}${t}</li>`);
     });
     if (!items.length) return "";
-    return `<section class="vr-card vr-check" aria-labelledby="vr-check-h">
-      <h2 class="vr-h2" id="vr-check-h">Check these</h2>
-      <ul class="vr-check-list">${items.join("")}</ul>
-    </section>`;
+    /* folded to one line under the table at a glance: housekeeping, not the results */
+    const held = res.dropped.filter((d) => d.why === "check_failed").length;
+    const sum = `${items.length} ${items.length === 1 ? "thing" : "things"} to check${held ? `, ${held === 1 ? "1 ballot" : `${held} ballots`} held out until you look` : ""}`;
+    return `<details class="vr-card vr-check">
+      <summary class="vr-check-s"><span class="vr-h2" id="vr-check-h">Check these</span><span class="vr-check-n">${esc(sum)}</span></summary>
+      <ul class="vr-check-list" aria-labelledby="vr-check-h">${items.join("")}</ul>
+    </details>`;
   }
 
   const leadText = (q, t) => {
@@ -202,22 +216,39 @@
     return ids.map((id) => `${optName(q, id)}, ${(t.opts[id] || 0)} of ${t.n}`).join("; ");
   };
 
+  /* how one question's votes split: a segment per option, most picked first and darkest, No preference last and
+     lightest, one colour at falling strengths. Its words are the row's */
+  const split = (q, t) => {
+    const r = C.ranked(q, t);
+    if (!t.n) return '<span class="vr-dim">No votes yet</span>';
+    const words = r.filter((o) => o.count).map((o) => `${o.name} ${o.count}`).join(", ");
+    let k = 0;
+    const segs = r.filter((o) => o.count).map((o) => `<i class="vr-seg-${o.none ? "none" : Math.min(3, k++)}" style="flex-grow:${o.count}" title="${esc(`${o.name}: ${o.count}`)}"></i>`).join("");
+    return `<span class="vr-stack" role="img" aria-label="${esc(`The votes: ${words}`)}">${segs}</span>`;
+  };
   function glance(view, T) {
+    const withRecs = hasRecs();
     const rows = partsShown().map((P) => Q.inPart(P.n).map((q) => {
       const t = T[q.id];
-      return `<tr>
+      const L = C.lead(q, t), ids = recIds(q);
+      /* our recommendation isn't (or isn't alone) the most picked: said in a tag, not a colour */
+      const differs = withRecs && L.count && ids.length && !ids.some((id) => L.ids.indexOf(id) >= 0);
+      return `<tr${differs ? ' class="is-diff"' : ""}>
         <td class="vr-num">${q.n}</td>
         <th scope="row"><a class="vr-jump" href="#q-${esc(q.id)}" data-q="${esc(q.id)}">${esc(q.label)}</a></th>
-        <td data-k="lead">${esc(leadText(q, t))}</td>
-        <td data-k="rec">${esc(recText(q, t))}</td>
-        <td class="vr-num" data-k="none">${t.none} of ${t.n}</td>
+        <td class="vr-split" data-k="split" data-label="The votes">${split(q, t)}</td>
+        <td data-k="lead" data-label="Most picked">${esc(leadText(q, t))}</td>
+        ${withRecs ? `<td data-k="rec" data-label="We recommend"><span class="vr-rec-t">${esc(recText(q, t))}</span>${differs ? '<span class="vr-tag">Not the most picked</span>' : ""}</td>` : ""}
+        <td class="vr-tab" data-k="none" data-label="No preference">${t.none} of ${t.n}</td>
       </tr>`;
     }).join("")).join("");
+    const nDiff = withRecs ? partsShown().reduce((a, P) => a + Q.inPart(P.n).filter((q) => { const t = T[q.id], L = C.lead(q, t), ids = recIds(q); return L.count && ids.length && !ids.some((id) => L.ids.indexOf(id) >= 0); }).length, 0) : 0;
     return `<section class="vr-card" aria-labelledby="vr-glance-h">
       <h2 class="vr-h2" id="vr-glance-h">At a glance</h2>
+      ${withRecs ? `<p class="vr-p">${nDiff ? `On ${nDiff} of ${partsShown().reduce((a, P) => a + Q.inPart(P.n).length, 0)} questions, the most picked isn't what we recommend: those rows say so.` : "On every question with votes, what we recommend is the most picked, or tied for it."}</p>` : ""}
       <div class="vr-scroll" tabindex="0" role="region" aria-label="At a glance, scrolls sideways">
         <table class="vr-table vr-glance">
-          <thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">Most picked</th><th scope="col">We recommend</th><th scope="col">No preference</th></tr></thead>
+          <thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">The votes</th><th scope="col">Most picked</th>${withRecs ? '<th scope="col">We recommend</th>' : ""}<th scope="col">No preference</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
@@ -236,9 +267,12 @@
       const isRec = recSet.indexOf(o.id) >= 0;
       const names = (who[o.id] || []).map((b) => b.name);
       const w = (100 * o.count) / scale;
+      /* the option's line, as the voting page said it (plain where the voting page filled a figure from the model) */
+      const op = o.none ? null : Q.optOf(q, o.id);
+      const line = op ? op.plain || op.line || "" : "";
       return `<li class="vr-bar${o.none ? " vr-bar--none" : ""}${isRec ? " vr-bar--rec" : ""}" data-opt="${esc(o.id)}" data-count="${o.count}">
         <div class="vr-bar-top">
-          <span class="vr-bar-name">${esc(o.name)}</span>
+          <span class="vr-bar-name">${esc(o.name)}${line && !/\{\w+\}/.test(line) ? `<span class="vr-bar-line">${esc(line)}</span>` : ""}</span>
           ${isRec ? '<span class="vr-tag">We recommend</span>' : ""}
           <span class="vr-bar-n vr-num">${o.count} of ${t.n}</span>
         </div>
@@ -266,7 +300,7 @@
       </div>
       <div class="vr-q-body">
         <ol class="vr-bars" aria-label="${esc(q.label)}: the votes per option">${bars}</ol>
-        ${rec ? `<aside class="vr-rec" aria-label="What we recommend"><p class="vr-rec-say">${esc(rec.say)}</p>${rec.why.map((w) => `<p class="vr-rec-why">${esc(w)}</p>`).join("")}</aside>` : ""}
+        ${rec ? `<aside class="vr-rec" aria-label="What we recommend"><p class="vr-rec-say">${esc(rec.say)}</p>${rec.why.map((w) => `<p class="vr-rec-why">${esc(w)}</p>`).join("")}${rec.open ? `<p class="vr-rec-why">Still open: ${esc(rec.open)}</p>` : ""}</aside>` : ""}
       </div>
       <div class="vr-notes">
         <h4 class="vr-notes-h">Why they picked it</h4>
@@ -315,7 +349,7 @@
   function copyBox() {
     return `<section class="vr-card" aria-labelledby="vr-copy-h">
       <h2 class="vr-h2" id="vr-copy-h">Copy a summary</h2>
-      <p class="vr-p">Each question's counts, the most picked and what we recommend, as plain text for Slack, for the filters above. No names and no notes.</p>
+      <p class="vr-p">Each question's counts, the most picked${hasRecs() ? " and what we recommend" : ""}, as plain text for Slack, for the filters above. No names and no notes.</p>
       <div class="vr-row"><button type="button" class="vr-btn" data-act="copy">Copy a summary</button><span class="vr-say" role="status" id="vr-copy-say"></span></div>
       ${S.copied ? `<label class="vr-label" for="vr-copied">Select all and copy.</label><textarea id="vr-copied" class="vr-text" readonly rows="8">${esc(S.copied)}</textarea>` : ""}
     </section>`;
@@ -324,7 +358,7 @@
   function addBox(empty) {
     return `<section class="vr-card vr-add" aria-labelledby="vr-add-h">
       <h2 class="vr-h2" id="vr-add-h">${empty ? "Load the votes" : "Add Slack ballots"}</h2>
-      ${empty ? `<p class="vr-p">There's no results.json beside this page yet. Open one made by vote/tools/aggregate.js, or paste ballots from Slack.</p>
+      ${empty ? `<p class="vr-p">${HOSTED ? (KEY ? "The Sheet didn't send the votes. Check the key in the address, or open a results.json made by vote/tools/aggregate.js." : "This page reads the votes from the Sheet with the results key in its address: add #key= and the key setup printed to the end of the address. Or open a results.json made by vote/tools/aggregate.js.") : "There's no results.json beside this page yet. Open one made by vote/tools/aggregate.js, or paste ballots from Slack."}</p>
         <div class="vr-row"><label class="vr-btn vr-btn--file" for="vr-file">Open a results.json</label><input type="file" id="vr-file" class="vr-file" accept=".json,application/json"></div>` : ""}
       <p class="vr-p">Paste whole Slack messages, from "Florin app vote:" to the last line. Ballots you paste are counted with the rest, the latest from each name, and stay in this browser only.</p>
       <label class="vr-label" for="vr-paste">Slack ballots</label>
@@ -353,8 +387,8 @@
     mount.innerHTML = [
       head(res, all),
       filters(all),
-      check(res),
       view.length ? glance(view, T) : "",
+      check(res),
       sections,
       whoPicked(view),
       view.length ? copyBox() : "",
@@ -397,6 +431,9 @@
   }
   function fromFile() {
     if (window.VOTE_RESULTS) { S.base = window.VOTE_RESULTS; S.src = { kind: "file" }; return Promise.resolve(); }
+    /* the hosted site never carries results.json or results-data.js (vote/build.js keeps voters' names off it), so
+       asking for them would only log a 404 */
+    if (HOSTED) return Promise.reject(new Error("none"));
     if (/^https?:$/.test(location.protocol)) {
       return fetch("results.json", { cache: "no-store" }).then((r) => {
         if (!r.ok) throw new Error("none");
@@ -417,7 +454,7 @@
     render();
     const sheet = CFG.endpoint && KEY;
     const first = sheet ? fromSheet().catch((e) => {
-      S.src = { kind: "none", error: `${e && e.message && e.message !== "timeout" && e.message !== "load" ? e.message : "The Sheet didn't answer in 15 seconds."} Showing results.json instead, if there is one.` };
+      S.src = { kind: "none", error: `${e && e.message && e.message !== "timeout" && e.message !== "load" ? e.message : "The Sheet didn't answer in 15 seconds."}${HOSTED ? "" : " Showing results.json instead, if there is one."}` };
       const err = S.src.error;
       return fromFile().then(() => { S.src.error = err; });
     }) : fromFile();

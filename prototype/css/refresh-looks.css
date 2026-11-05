@@ -10,6 +10,9 @@
 .rlk-look { min-width: 0; }
 .ap-rx .rlk-go { align-self: flex-end; justify-content: flex-end; gap: 4px; padding: 0 8px; margin-right: -8px; text-align: right; }
 .ap-rx .rlk-go .ic { width: 14px; height: 14px; }
+/* a card's foot: Ask about this, then the way into its detail (Will, Nov 5) */
+.ap-rx .rlk-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.ap-rx .rlk-foot > .rlk-go { margin-left: auto; }
 .ap-rx .rlk-go[data-act="pay"] .ic { color: var(--ap-ink3); }
 .ap-rx .rlk-today .rlk-go { margin-top: -4px; }
 

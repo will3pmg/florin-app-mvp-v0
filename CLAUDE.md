@@ -42,7 +42,9 @@ prototype/js/refresh-profile.js   Profile, from the Today avatar, and onboarding
                               survey reworded), with the primary care note on a sign
 prototype/js/refresh-ask.js       Ask Florin as a chat: alarm words first (L.alarmsIn), a fixed redirect for diagnose,
                               dose or predict, then Claude through the sample capability, checked, with answers computed
-                              from the logs as the floor; Make a report on the flag note opens it on the clinician path
+                              from the logs as the floor; Make a report on the flag note opens it on the clinician path.
+                              Built to DESIGN.md's coach spec (Will, Nov 5): an opening read, compact turns ending on one
+                              bold question, options about one turn in three, thumbs, What Ask Florin knows
 prototype/js/refresh-easy.js      the Easy version: larger text and simpler screens. Its own Today, plus, a BM in four
                               steps, symptoms, Your weeks in place of Insights; History and Ask drawn bigger
 prototype/css/refresh-{looks,variants,profile,ask,easy}.css   each module's styles, scoped to what it draws
@@ -308,6 +310,20 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   second one in a module.
 - **Make a report** on the flag note is `data-act="flag-report"` with the question in `data-q`. The core toasts that
   the report comes later; the Ask module opens Ask on the clinician path with it (Member), or the paywall (Free).
+- **Ask Florin's shape** (Will, Nov 5; DESIGN.md, Ask Florin). Every way into Ask is Ray with the Ask token: the
+  `chat` icon in refresh-ui.js is Ask Florin's glyph (a round bubble holding the Flow wave), and refresh-ask.css sets it
+  on a disc (Forest with a Ray glyph, Ray with a Forest glyph on dark grounds) on the Ask tab, `.ap-ask-b`,
+  `.ap-idt-ask` and `.ap-ez-ask`, which are Ray pills edged at 3:1 in light. A data style's Insights cards carry Ask
+  about this too (refresh-looks, `.rlk-ask`, with the card's own range in `data-range`). The chat opens on a read of the last 7
+  days (or of the card it was asked from): a chart and two sentences, then the questions to start as chips. A turn is
+  the token with "Looked at N things in your logs" (From your logs, folded), one Florin journal line (never on the
+  clinician answer), the reply in Lora, then one bold question (`a.ask`) offering one more thing to look at; its
+  `a.yes` is what a short "yes" asks, a short "no" gets a short reply. Options (`a.opts`, "Yes, show me" first) come on
+  the first answer and then every third; a redirect keeps its own; the clinician answer has none, only the report
+  button. Claude is asked for 2 or 3 sentences and one question; `check` reads the reply and the question
+  (`splitQ`), and the computed answer's question stands in when Claude asks none. What Ask Florin knows (`askx-mem`)
+  lists what every answer reads and what can be left out of this chat (`ch.forget`: name, today, ck, chat), and the
+  opt-in "Let Ask Florin start a conversation" (`S.askReach`, off by default).
 
 What each module registers (the file's header comment has the detail):
 
@@ -327,9 +343,10 @@ refresh-variants  wraps RU.today (Day first and Compact), RU.history (Calendar),
                   notes, decisions.home and .history; onSet (home); state S.vrCp, S.vrCpSeen, S.vrCpLg, S.vrCpSlide
 refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
                   (the first name); screens Onboarding and profile; notes, decisions.onboard; onSet
-refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-*, ask-about and ask-clear (wrapped),
-                  flag-report; screens ask-chat and ask-alarm; opens ask-chat, ask-alarm and ask (Screens > Ask
-                  Florin is a fresh chat); keys tab:ask; notes; onSet (form, check-in, meals, plan)
+refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-* (send, ask, stop, new, rate, mem,
+                  forget, keep, reach), ask-about and ask-clear (wrapped), flag-report; overlay askx-mem; screens
+                  ask-chat, ask-alarm and ask-mem; opens ask-chat, ask-alarm, ask-mem and ask (Screens > Ask Florin is
+                  a fresh chat); keys tab:ask; notes; onSet (form, check-in, meals, plan)
 refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idetail under V.easy; acts ez-* and plus-day
                   (wrapped); screens ez-today and ez-bm (which set Version to Easy); keys tab:today, tab:insights, bm;
                   notes (its screens, plus and sym in Easy), decisions.easy; onSet (easy, theme)

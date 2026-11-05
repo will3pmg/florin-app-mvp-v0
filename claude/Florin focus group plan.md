@@ -18,7 +18,7 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 | Where | Their own iPhone or Android phone, from a link. No account. The tasks run in the phone's browser; the last task puts the app on the home screen, and the rest runs from there |
 | How | Self-guided: the flow walks each person through alone. Nobody watches or records them |
 | What they do | Consent, nine intake questions, eight tasks with a rating and a few questions each, two short comparisons (three for Oura users), putting the app on the phone, two minutes of free use with comments, an exit survey |
-| What they see | The Florin app as the prototype draws it, with our recommended decisions, the week card Will picked (the Rings week, Nov 4), and Sarah's 12 weeks of logs. Home (Score first or Compact) and History are each shown half one way, half the other |
+| What they see | The Florin app as the prototype draws it, with our recommended decisions, the week card Will picked (the Rings week, Nov 4), and Sarah's 12 weeks of logs. Home (Compact, the default Will chose on Nov 5, or Score first) and History are each shown half one way, half the other |
 | Where it lands | One Google Sheet, five tabs (sessions, answers, tasks, comments, events), through a Google Apps Script web app. Thank-you codes go to a separate sheet for the recruiter. We summarise it when Will asks |
 | The app | A static web app in `focus/`, hosted on Netlify (publish directory `focus/site`), loading the prototype's files and one focus module. Settings in `focus/config.js` |
 | Why not a Claude artifact | An artifact can't take writes from people outside Florin Health's organisation, and its content security policy blocks posts to other hosts, so answers couldn't reach the Sheet |
@@ -56,11 +56,11 @@ decisions and our recommendations), `claude/Florin data viz.md` (the marks and t
 
 ## Calls for Will
 
-- **Home's arms: Score first against Compact** (Nov 4). config.js now splits Home between Score first, our
-  recommendation, and Compact, the option Will asked for after the current app's home; Day first is out of this round.
-  Confirm, or put Day first back as the second arm (`decisions.home` in config.js). Compact has no week card: its week
-  is the row of days under FloraScore, so WK1 (which asks about the card's count) isn't asked on it, and the week card
-  results come from the Score first arm alone.
+- **Home's arms: Compact against Score first.** Will chose Compact as the default Home (Nov 5), so the split now checks
+  that choice: half the Standard sessions see Compact, the app's default, and half Score first, the Home it replaced
+  as our recommendation. Day first is out of this round. Confirm, or drop the Score first arm and test Compact alone
+  (`decisions.home` in config.js). Compact has no week card: its week is the row of days under FloraScore, so WK1
+  (which asks about the card's count) isn't asked on it, and the week card results come from the Score first arm alone.
 - **The week card:** picked (Before launch 0).
 - **Recruitment:** who finds the 32, including five people 65 or over and six who use the Florin app now, and the
   budget for recruiting and the thank-you. If current users come from Florin's own user list, the person who contacts
@@ -191,7 +191,7 @@ by demo person.
 
 | Arm | Options | Who |
 |---|---|---|
-| Home (`home`) | Score first · Compact (Nov 4; Day first is out of this round, a call for Will) | Standard version only (Easy has its own Today) |
+| Home (`home`) | Compact (the default, Will's choice, Nov 5) · Score first (Day first is out of this round, a call for Will) | Standard version only (Easy has its own Today) |
 | History (`history`) | Calendar · List | Everyone |
 | Week card (`weekCard`) | The Rings week Will picked (`built`, the prototype's own card since Nov 4); a second design only if Will wants one | Standard version on Score first (Compact has no week card, and Easy draws its own week) |
 | Task order | Five rows of a Latin square over the five rotated tasks (3.5) | Everyone |
@@ -435,7 +435,8 @@ when its question shows, from the phone's live logs.
 
 **T6 The weekly check-in** (`checkin`, rotated, about 1.5 minutes)
 - Task: "{name}'s weekly check-in is due tonight. Answer it. Pick any answers you like."
-- Hint: "On Today, tap Start on the Weekly check-in card." Easy: "On Today, tap Start under Weekly check-in."
+- Hint: "On Today, tap Start on the Weekly check-in card." Compact: "On Today, tap Weekly check-in, under the row of
+  days." Easy: "On Today, tap Start under Weekly check-in."
 - Goal: the screen key is `ckdone`.
 - Then: CK1, TE, TR (six chips).
 
@@ -823,7 +824,7 @@ when all ten are answered.
 | FV3 | Which part would you not miss? | As FV1, in a random order · I'd miss all of them · Not sure | What could go, at the level of the app (G9) |
 | VA2 | Which comes closest to what you'd do? (after the membership page) | Use the free plan · Try membership, then decide · Pay for membership · Use neither · Not sure | The membership offer, as the app describes it (G7) |
 | VA3 | What would feel like a fair price for membership, each month? | Under $5 · $5 to $9 · $10 to $14 · $15 or more · I wouldn't pay · Not sure | Direction for the price, which is Will's call. The page shows no price, so it isn't anchored |
-| MG1 | Here are three ways we might describe the Florin app. Which would make you most want to try it? | Two taps to log a BM. Florin does the reading. · Your logs give you back your usual, your FloraScore and a record for your clinician. · The start of your gut record, one log at a time. · None of these | Messaging, which has no recommendation yet: the deck's three directions (`deck/project/slides/more.html`) as draft lines, for counsel to read. Random order, None last |
+| MG1 | Here are three ways we might describe the Florin app. Which would make you most want to try it? | Two taps to log a BM. Florin does the reading. · Your logs give you back your usual, your FloraScore and a record for your clinician. · The start of your gut record, one log at a time. · None of these | Messaging, which has no recommendation yet: three draft lines, for counsel to read. Random order, None last |
 | MG2 | What made you pick it? (optional) | A box for words | Why, in their words |
 | LS1 | Anything else you'd like to tell the team? (optional) | A box for words | Room for what we didn't ask |
 
@@ -877,7 +878,7 @@ rebuilds the model and goes to Today, so they're set before a task starts, never
 |---|---|---|---|
 | Consistency | `form` | C | Our recommendation; BM1 and BM2 test its words |
 | BM logging | `bmUI` | Quick tiles and form | Our recommendation. Sarah has far more than 5 BMs, so a tile saves at once (`RU.QUICK_AFTER`) |
-| Home | `home` | Half Score first, half Compact (2.4) | Our recommendation against the option Will asked for (Nov 4), counterbalanced; CP1 shows the other |
+| Home | `home` | Half Compact, half Score first (2.4) | Will's choice, the default since Nov 5, against the Home it replaced, counterbalanced; CP1 shows the other |
 | History | `history` | Half Calendar, half List (2.4) | The same; CP2 shows the other |
 | Weekly check-in | `checkin` | On | Our recommendation; T6 |
 | Meal sheet | `mealUI` | Quick, voice or text | Our recommendation. Reached in free use; the microphone plays a sample (`L.mealSay`), as in the prototype |
@@ -1167,7 +1168,7 @@ subgroup on at least 3. Each pair of bars meets, so every result falls on one si
 |---|---|---|---|
 | 1 Consistency: C | BM1 and BM2, by IN5 | Every word is marked unclear, and every pair hard to tell apart, by fewer than 1 in 5 | A word or a pair reaches 1 in 5 (5 of 24): reword it before counsel reads C. If at least 3 of today's users mark Pellets or Soft, at twice the others' rate: a one-time note for them where the tiles first show |
 | 2 BM logging: Quick tiles | The bm and time tasks' outcomes, seconds and paths; Undo straight after a one-tap save | 4 in 5 save a BM without a hint, and 4 in 5 change the time within 60 seconds | Fewer than 4 in 5 save without a hint: look at plus and the tiles. Fewer than 4 in 5 change the time within 60 seconds: build the time buttons before any pilot. 1 in 4 or more undo a one-tap save: open the form for the first two weeks (the decision's open question) |
-| 3 Home: Score first, or Compact | The week and score tasks by Home arm; WK2 and WK3 by arm (does a Gold ring with no word read as outside the usual on Compact?); CP1 on its own | Of those with a preference, fewer than 6 in 10 prefer the week with a day's logs, and the Compact arm doesn't reach those goals more often by 3 people or more | 6 in 10 or more of those with a preference prefer Compact, or the Compact arm reaches them more often by 3 people or more: Compact as the default goes to Will (the decision's open question). WK2 or WK3 right for fewer than 4 in 5 on Compact: its week needs words before it can be the default |
+| 3 Home: Compact, or Score first | The week and score tasks by Home arm; WK2 and WK3 by arm (does a Gold ring with no word read as outside the usual on Compact?); CP1 on its own | Of those with a preference, fewer than 6 in 10 prefer the FloraScore card, and the Score first arm doesn't reach those goals more often by 3 people or more | 6 in 10 or more of those with a preference prefer Score first, or the Score first arm reaches them more often by 3 people or more: the default goes back to Will (the decision's open question). WK2 or WK3 right for fewer than 4 in 5 on Compact: its week needs words before it can be the default |
 | 4 History: Calendar | The history task by arm, HI1, CP2 | 4 in 5 in the Calendar arm find the day in {month} | Fewer than 4 in 5: the gap needs its own mark or word on the calendar. 6 in 10 or more of those with a preference prefer the list: keep a List switch on History (the open question) |
 | 5 Weekly check-in: On | CK1, the check-in task's ease | Half or more would answer every week or most weeks, and the median ease is 6 or more | Under half would answer most weeks: keep it, and let people turn it off in Profile (the open question). Median ease under 6: look at the check-in's screens |
 | 7 Data style: Florin charts, and the hero's words | SC1 and SC2 by version, the score task's chips, comments on the hero and the cards; CP3's words | SC1 right for 4 in 5 in Standard | Fewer than 4 in 5 in Standard: the hero says "compares you with you" on Today, as Easy does. Oura users' CP3 words go to Will with open call 1, as words, not a count |

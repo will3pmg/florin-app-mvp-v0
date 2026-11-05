@@ -141,6 +141,64 @@ test("a pick changed in the machine line fails its check and is held out; Will's
   assert.ok(res.dropped[0].text.indexOf("FLORIN-VOTE") >= 0, "the held-out ballot keeps its text for the page");
 });
 
+test("a damaged last line: mended when wrapped, counted from the numbered lines when cut, held out when they disagree", () => {
+  const b = FX.ballot("v5");
+  const whole = B.text(b).text;
+  const line = whole.split("\n").pop();
+  /* wrapped in the middle of a word, and at a space: mended exactly, no flag */
+  const at = line.indexOf("p=") + 20;
+  [[line.slice(0, at) + "\n" + line.slice(at)], [line.replace(" w=", "\nw=")]].forEach(([l]) => {
+    const g = B.parse(whole.replace(line, l))[0];
+    assert.ok(g.ok, g.flags.join());
+    assert.deepStrictEqual(g.flags, []);
+    assert.strictEqual(Object.keys(g.picks).length, b.picks.length);
+  });
+  /* cut short (no check left): counted from the numbered lines, every note kept, flagged */
+  const cut = B.parse(whole.replace(line, line.slice(0, line.indexOf(" w=") - 30) + "`"))[0];
+  assert.ok(cut.ok, cut.flags.join());
+  assert.deepStrictEqual(cut.flags, ["line_damaged"]);
+  const want = {};
+  b.picks.forEach((x) => { want[x.q] = { p: x.p, note: x.note }; });
+  assert.deepStrictEqual(cut.picks, want);
+  assert.strictEqual(cut.name, b.name);
+  assert.strictEqual(cut.at, b.at);
+  /* cut short, and a numbered line changed: held out */
+  const first = b.picks[0], q = Q.qOf(first.q);
+  const other = q.opts.find((o) => o.id !== first.p);
+  const bad = B.parse(whole.replace(`${q.n}. ${q.label}: ${Q.optName(q, first.p)}`, `${q.n}. ${q.label}: ${other.name}`).replace(line, line.slice(0, line.indexOf(" w=") - 30) + "`"))[0];
+  assert.strictEqual(bad.ok, false);
+  assert.ok(bad.flags.indexOf("check_failed") >= 0);
+  /* a results.json says why */
+  const res = C.build([cut], { vote: VOTE });
+  assert.deepStrictEqual(res.flags.map((f) => f.what), ["line_damaged"]);
+  assert.ok(/damaged/.test(C.why("line_damaged")));
+});
+
+test("numbered lines Slack turned into bullets, or numbered again from 1: picks and notes kept by each question's label", () => {
+  const b = FX.ballot("v5");
+  const whole = B.text(b).text;
+  const bullets = whole.replace(/^(\d{1,2})\. /gm, "• ");
+  const g = B.parse(bullets)[0];
+  assert.deepStrictEqual(g.flags, []);
+  assert.strictEqual(Object.values(g.picks).filter((x) => x.note).length, b.picks.filter((x) => x.note).length);
+  /* with the last line gone too, the picks come from the labels */
+  const noLine = B.parse(bullets.split("\n").slice(0, -1).join("\n"))[0];
+  assert.ok(noLine.flags.indexOf("read_from_text") >= 0);
+  assert.strictEqual(Object.keys(noLine.picks).length, b.picks.length);
+  let n = 0;
+  const again = B.parse(whole.replace(/^(\d{1,2})\. /gm, () => `${++n > 8 ? n - 8 : n}. `).split("\n").slice(0, -1).join("\n"))[0];
+  assert.deepStrictEqual(Object.keys(again.picks).sort(), b.picks.map((x) => x.q).sort(), "Part 2 numbered again from 1 still reads by label");
+  assert.ok(!again.flags.includes("unknown_pick"), again.flags.join());
+});
+
+test("one voter, one spelling: the first ballot's, in the ballots, the replaced list and the flags", () => {
+  const a = B.parse(B.text(FX.ballot("v1")).text)[0], z = B.parse(B.text(FX.ballot("v1b")).text)[0];
+  const res = C.build([z, a], { vote: VOTE });
+  assert.strictEqual(res.ballots[0].name, "Test voter 1");
+  assert.strictEqual(res.replaced[0].name, "Test voter 1");
+  assert.ok(res.flags.every((f) => f.name === "Test voter 1"));
+});
+
 test("name keys: case, spaces, accents and symbols", () => {
   assert.strictEqual(B.nameKey("  sam   LEE "), B.nameKey("Sam Lee"));
   assert.strictEqual(B.nameKey("José"), B.nameKey("Jose"));
@@ -218,12 +276,14 @@ test("recs.js says what decisions.md and modules.js say, on options the question
     if (!/^We recommend /.test(r.say)) stale.push(`${q.id}: say starts "${r.say.slice(0, 20)}"`);
     if (r.from.src === "decisions") {
       if (sheet.indexOf(r.from.anchor) < 0) stale.push(`${q.id}: decisions.md no longer says "${r.from.anchor}"`);
-      r.why.forEach((w) => { if (sheet.indexOf(w) < 0) stale.push(`${q.id}: decisions.md no longer says "${w.slice(0, 60)}..."`); });
+      r.why.concat(r.open ? [r.open] : []).forEach((w) => { if (sheet.indexOf(w) < 0) stale.push(`${q.id}: decisions.md no longer says "${w.slice(0, 60)}..."`); });
     } else {
       const at = mods.indexOf(`key: "${r.from.key}"`);
       if (at < 0) { stale.push(`${q.id}: modules.js has no module ${r.from.key}`); return; }
       const block = mods.slice(at, at + 4000);
-      const field = (f) => { const m = new RegExp(`\\b${f}: "((?:[^"\\\\]|\\\\.)*)"`).exec(block); return m ? JSON.parse(`"${m[1]}"`) : null; };
+      /* recs.js's declared edits (the source's "your pick" as "Will's pick"), applied to the source's words first */
+      const edit = (t) => (t == null ? t : (RECS.EDITS || []).reduce((s, [a, b]) => s.split(a).join(b), t));
+      const field = (f) => { const m = new RegExp(`\\b${f}: "((?:[^"\\\\]|\\\\.)*)"`).exec(block); return m ? edit(JSON.parse(`"${m[1]}"`)) : null; };
       if (field("rec") !== r.v) stale.push(`${q.id}: modules.js recommends ${field("rec")}, recs.js ${r.v}`);
       if (field("say") !== r.say) stale.push(`${q.id}: modules.js says "${field("say")}"`);
       if (field("why") !== r.why[0]) stale.push(`${q.id}: modules.js's why is "${field("why")}"`);
@@ -377,7 +437,7 @@ async function browser() {
       const want = notesOf(Object.keys(COUNTED));
       assert.strictEqual(notes.length, want.length);
       want.forEach((n) => assert.ok(notes.some((t) => t.endsWith(n.note)), n.note));
-      const glance = await page.$$eval(".vr-glance tbody tr", (rs) => rs.map((r) => ({ q: r.querySelector(".vr-jump").getAttribute("data-q"), lead: r.querySelector('[data-k="lead"]').textContent, rec: r.querySelector('[data-k="rec"]').textContent, none: r.querySelector('[data-k="none"]').textContent })));
+      const glance = await page.$$eval(".vr-glance tbody tr", (rs) => rs.map((r) => ({ q: r.querySelector(".vr-jump").getAttribute("data-q"), lead: r.querySelector('[data-k="lead"]').textContent, rec: r.querySelector('[data-k="rec"] .vr-rec-t').textContent, diff: !!r.querySelector('[data-k="rec"] .vr-tag'), split: r.querySelector(".vr-stack") ? r.querySelector(".vr-stack").getAttribute("aria-label") : "", none: r.querySelector('[data-k="none"]').textContent })));
       assert.strictEqual(glance.length, 19);
       glance.forEach((g) => {
         const q = Q.qOf(g.q), t = sample.tallies[g.q];
@@ -388,6 +448,9 @@ async function browser() {
         const r = RECS[g.q].v;
         assert.strictEqual(g.rec, `${Q.optName(q, r)}, ${t.opts[r]} of ${t.n}`);
         assert.strictEqual(g.none, `${t.none} of ${t.n}`);
+        /* the split bar says each option's count, and the tag marks a row where the most picked isn't ours */
+        C.ranked(q, t).filter((o) => o.count).forEach((o) => assert.ok(g.split.indexOf(`${o.name} ${o.count}`) >= 0, `${g.q}: ${g.split}`));
+        assert.strictEqual(g.diff, L.ids.indexOf(r) < 0, `${g.q}: Not the most picked`);
       });
       assert.strictEqual(glance.find((g) => g.q === "home").lead, "Compact, 3 of 6");
       const grid = await page.$$eval(".vr-grid tbody tr", (rs) => rs.map((r) => ({ bid: r.getAttribute("data-bid"), cells: [...r.querySelectorAll("td[data-q]")].map((c) => [c.getAttribute("data-q"), c.textContent]) })));
@@ -409,7 +472,8 @@ async function browser() {
       const t = expected(["v1b"]);
       got.forEach((s) => s.bars.forEach((b) => assert.strictEqual(b.n, b.id === "none" ? t[s.q].none : t[s.q].opts[b.id], `${s.q} ${b.id}`)));
       const home = got.find((s) => s.q === "home");
-      assert.strictEqual(home.bars.find((b) => b.id === "score").who, "test VOTER 1");
+      /* one voter, one spelling: the first ballot's */
+      assert.strictEqual(home.bars.find((b) => b.id === "score").who, "Test voter 1");
       assert.strictEqual(await page.$$eval(".vr-grid tbody tr", (r) => r.length), 1);
       if (SHOTS) await page.screenshot({ path: path.join(SHOTS, "results-1440-dark-design.png"), fullPage: true });
       /* the charts only */
@@ -453,7 +517,11 @@ async function browser() {
       const { ctx, page } = await open(1440, 900, "light");
       const items = await page.$$eval(".vr-check-list > li", (ls) => ls.map((l) => l.textContent));
       assert.ok(items.some((t) => /^Test voter 1: an earlier ballot \(C4NM7P/.test(t)), items.join("\n"));
-      assert.ok(items.some((t) => /Test Voter 3, ballot RYJ9F3: Two browsers/.test(t)));
+      assert.ok(items.some((t) => /Test voter 3, ballot RYJ9F3: Two browsers/.test(t)), "the first ballot's spelling");
+      /* folded under the table at a glance, to one line */
+      assert.strictEqual(await page.$eval(".vr-check", (d) => d.open), false);
+      assert.ok(/^\d+ things to check, 1 ballot held out until you look$/.test(await page.textContent(".vr-check-n")), await page.textContent(".vr-check-n"));
+      assert.ok(await page.evaluate(() => document.querySelector(".vr-glance").compareDocumentPosition(document.querySelector(".vr-check")) & Node.DOCUMENT_POSITION_FOLLOWING), "Check these comes after At a glance");
       assert.ok(items.some((t) => /Test voter 6, ballot NT4K7C: Read from the text/.test(t)));
       assert.ok(items.some((t) => /Test voter 7, ballot JA7MF4: The last line doesn't match/.test(t)));
       assert.ok(items.some((t) => /Test voter 8, ballot Y3ATCD: A test ballot/.test(t)));
@@ -519,7 +587,7 @@ async function browser() {
       await page.waitForFunction(() => /Copied/.test(document.getElementById("vr-copy-say").textContent));
       const text = await page.evaluate(() => navigator.clipboard.readText());
       assert.ok(text.startsWith("Florin app vote results: 6 people voted"), text.slice(0, 80));
-      assert.ok(text.indexOf("1. Home screen (6 answered): Compact 3, Score first 2, Day first 1, No preference 0. Most picked: Compact, 3 of 6. We recommend Score first.") >= 0, text);
+      assert.ok(text.indexOf("1. Home screen (6 answered): Compact 3, Score first 2, Day first 1, No preference 0. Most picked: Compact, 3 of 6. We recommend Compact.") >= 0, text);
       ["Test voter", "I can get to any day"].forEach((w) => assert.ok(text.indexOf(w) < 0, w));
       await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error("no")); });
       await page.click('[data-act="copy"]');

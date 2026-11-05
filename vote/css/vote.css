@@ -2,13 +2,16 @@
    the six brand colours and tokens derived from them, light, dark and data-theme). Each picture sits in .ap.ap-rx and
    uses the app's own tokens, as on the phone.
    Layout: under 640px one column, a question's options in a row that scrolls sideways with snap (a card is 86% of the
-   width, so the next one shows at the edge); 640 to 1099 two cards a row; from 1100 Part 1's options all in one row
-   (an option's frames side by side when they fit) and Part 2's styles three a row. A phone is drawn at 390 by 844 and
-   scaled to its column (vote.js sets zoom). Back and Next sit in a bar at the foot of the screen.
+   width, so the next one shows at the edge), and a Part 1 picture cut to the part of its screen the option is about,
+   ending in a fade (vote.js sets is-crop and the height), with Pick right under it; 640 to 1099 two cards a row; from
+   1100 Part 1's options all in one row (an option's frames side by side when each gets 300px) and Part 2's styles
+   three a row. A phone is drawn at 390 by 844 and scaled to its column (vote.js sets zoom). Nothing in a picture
+   scrolls on the page, so the wheel and a swipe move the page; the bigger view scrolls a long screen. Back and Next,
+   and on the review the send action, sit in a bar at the foot of the screen.
    Spacing and radii on the DESIGN.md scales; no Plum or Gold on the page, since in the app they mean the usual and a
    shift: a pick is an Ink edge. */
 
-.vt-page { min-height: 100%; display: flex; flex-direction: column; }
+.vt-page { min-height: 100svh; display: flex; flex-direction: column; }
 .vt-wrap { box-sizing: border-box; width: 100%; max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .vt :focus-visible, .vt-head :focus-visible, .vt-dlg :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .vt-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -85,8 +88,9 @@
 .vt-qh { display: flex; flex-direction: column; gap: 8px; max-width: 760px; }
 .vt-qh h1 { font-size: clamp(28px, 5vw, 40px); }
 .vt-sub { margin: 0; font-family: var(--serif); font-style: italic; font-size: 18px; line-height: 1.45; color: var(--ink); }
+.vt-sub-k { font-family: var(--sans); font-style: normal; font-size: 14px; color: var(--ink-2); }
 .vt-lede { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink); max-width: 68ch; text-wrap: pretty; }
-.vt-demo { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.vt-demo { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
 .vt-also { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-2); font-size: 14.5px; line-height: 1.45; }
 .vt-qh .vt-ctl { margin-top: 8px; }
 
@@ -112,26 +116,38 @@
 .vt-strip p { margin: 0; min-width: 0; font-size: 13.5px; line-height: 1.35; color: var(--ink-2); }
 .vt-strip p b { font-family: var(--mono); font-weight: 400; font-size: 11.5px; letter-spacing: .04em; color: var(--ink-2); margin-right: 8px; font-variant-numeric: tabular-nums; }
 .vt-pic.is-side .vt-strip { display: none; }
-.vt-frames { display: grid; gap: 12px; align-items: start; min-width: 0; }
+.vt-frames { position: relative; display: grid; gap: 12px; align-items: start; min-width: 0; }
 .vt-pic:not(.is-side) .vt-fr:not(.is-on) { display: none; }
 .vt-pic.is-side .vt-frames { grid-template-columns: repeat(var(--vt-n, 1), minmax(0, 1fr)); }
-.vt-fr { display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
+.vt-fr { position: relative; display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
 .vt-fr figcaption { font-size: 13px; line-height: 1.35; color: var(--ink-2); text-wrap: pretty; }
 .vt-pic:not(.is-side) .vt-fr figcaption { display: none; }
 .vt-fit { position: relative; width: 100%; min-width: 0; display: flex; justify-content: center; }
 .vt-zoom { flex: none; width: 390px; }
 .vt-span { margin: 0 0 8px; font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: .04em; color: var(--ink-2); }
 .vt-missing { margin: 0; padding: 16px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
-.vt-big { position: absolute; right: 8px; bottom: 8px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--ink); color: var(--bg); font: 500 13.5px/1.2 var(--sans); cursor: pointer; box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--forest) 60%, transparent); }
+.vt-opt-f { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.vt-opt-f .vt-why { align-self: stretch; }
+.vt-big { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 500 14px/1.2 var(--sans); cursor: pointer; }
+.vt-big:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
 .vt-big svg { width: 16px; height: 16px; }
-.vt-big-cover { display: none; position: absolute; inset: 0; z-index: 4; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.vt-big-cover { display: block; position: absolute; inset: 0; z-index: 4; padding: 0; border: 0; background: none; cursor: zoom-in; }
+/* a Part 1 picture on a phone, cut to CROP of its screen (vote.js sets the height, and for a sheet scrolls the frame to
+   the sheet's top), ending in a fade at the end that's cut */
+.vt-fit.is-crop { overflow: hidden; align-items: flex-start; border-radius: 24px; }
+.vt-fade { display: none; }
+.vt-fit.is-crop + .vt-fade { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: linear-gradient(to bottom, color-mix(in srgb, var(--panel) 0%, transparent), var(--panel)); pointer-events: none; }
+.vt-fit.is-crop.is-end + .vt-fade { top: 0; bottom: auto; background: linear-gradient(to top, color-mix(in srgb, var(--panel) 0%, transparent), var(--panel)); }
 
 /* the drawn phone and the drawn card: pictures, so nothing in them takes a press, and a long screen scrolls inside */
-.vt-phone { position: relative; width: 390px; height: 844px; overflow: hidden; border-radius: 32px; box-shadow: 0 0 0 1px var(--line), 0 24px 48px -32px color-mix(in srgb, var(--forest) 55%, transparent); }
-.vt-card { box-sizing: border-box; width: 390px; padding: 16px; border-radius: 32px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+.vt-phone { position: relative; width: 390px; height: 844px; overflow: hidden; contain: paint; border-radius: 32px; box-shadow: 0 0 0 1px var(--line), 0 24px 48px -32px color-mix(in srgb, var(--forest) 55%, transparent); }
+.vt-card { box-sizing: border-box; width: 390px; padding: 16px; border-radius: 32px; overflow: hidden; contain: paint; box-shadow: 0 0 0 1px var(--line); }
 .vt-card-in { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 358px; margin: 0 auto; }
 .vt-phone *, .vt-card * { animation: none !important; transition: none !important; pointer-events: none; }
-.vt-phone .ap-layer, .vt-phone [data-scroll], .vt-phone .ap-fsh-b, .vt-phone .ap-ck-b { pointer-events: auto; scrollbar-width: none; }
+/* on the page a picture never scrolls (its frame is set to the part to show by vote.js, which can still set scrollTop);
+   in the bigger view a long screen scrolls */
+.vt .vt-phone .ap-layer, .vt .vt-phone [data-scroll], .vt .vt-phone .ap-fsh-b, .vt .vt-phone .ap-ck-b { overflow: hidden; scrollbar-width: none; }
+.vt-dlg .vt-phone .ap-layer, .vt-dlg .vt-phone [data-scroll], .vt-dlg .vt-phone .ap-fsh-b, .vt-dlg .vt-phone .ap-ck-b { pointer-events: auto; overflow-y: auto; scrollbar-width: none; }
 .vt-phone .ap-ico:disabled, .vt-card .ap-ico:disabled { opacity: 1; }
 .vt-phone button:disabled, .vt-card button:disabled { cursor: default; }
 /* the week's ring in Florin charts' calendar (modules.js's ringInto): the Rings look's ring for that day in place of
@@ -155,14 +171,17 @@
 .vt-why dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 .vt-why dd { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
 
-/* the pick: a radio, full width */
-.vt-pick, .vt-none { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1.5px var(--ink); font: 500 15px/1.2 var(--sans); color: var(--ink); cursor: pointer; }
+/* the pick: a native radio (hidden, still focusable) in a label drawn as a full-width button */
+.vt-opts { min-width: 0; margin: 0; padding: 0; border: 0; }
+.vt-pick, .vt-none { position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1.5px var(--ink); font: 500 15px/1.2 var(--sans); color: var(--ink); cursor: pointer; text-align: center; }
+.vt-pick-t { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+.vt-radio { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .vt-pick:hover, .vt-none:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
-.vt-pick[aria-checked="true"], .vt-none[aria-checked="true"] { background: var(--ink); color: var(--bg); }
+.vt-pick.is-on, .vt-none.is-on { background: var(--ink); color: var(--bg); }
+.vt-pick:has(.vt-radio:focus-visible), .vt-none:has(.vt-radio:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
 .vt-pick svg, .vt-none svg { width: 18px; height: 18px; flex: none; }
 .vt-none { box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink-2); }
-.vt-none[aria-checked="true"] { color: var(--bg); }
-.vt-opt.is-on .vt-pick { margin-top: auto; }
+.vt-none.is-on { color: var(--bg); }
 
 .vt-note { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
 .vt-note label { font-size: 15px; font-weight: 500; }
@@ -193,8 +212,13 @@
 .vt-status:empty { display: none; }
 .vt-copybox { display: flex; flex-direction: column; gap: 8px; }
 .vt-copybox textarea, .vt-pre { box-sizing: border-box; width: 100%; margin: 0; padding: 12px 16px; border: 0; border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); font: 400 12.5px/1.55 var(--mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-.vt-copybox textarea { min-height: 240px; resize: vertical; }
+.vt-copybox textarea { min-height: 240px; resize: vertical; font-size: 16px; /* 16px, so iOS doesn't zoom the page when it takes focus */ }
 .vt-pre { max-height: 360px; overflow: auto; }
+/* Part 2's opening: the six styles, one line each */
+.vt-styles { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.vt-styles li { display: flex; flex-direction: column; gap: 4px; padding-block: 12px; border-bottom: 1px solid var(--line-2); }
+.vt-styles b { font-weight: 500; font-size: 16px; }
+.vt-styles span { font-size: 15px; line-height: 1.45; color: var(--ink-2); }
 .vt-confirm { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; box-shadow: inset 0 0 0 1.5px var(--ink); }
 .vt-confirm p { margin: 0; }
 .vt-bid { font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ink-2); }
@@ -214,22 +238,27 @@
 /* ---------- widths ---------- */
 @media (max-width: 639px) {
   .vt { padding-block: 16px 32px; }
-  .vt-q { gap: 20px; padding-top: 8px; }
+  .vt-q { gap: 16px; padding-top: 0; }
+  .vt-qh { gap: 4px; }
+  .vt-qh h1 { font-size: 26px; line-height: 1.12; }
+  .vt-sub { font-size: 16px; line-height: 1.4; }
+  .vt-lede { font-size: 14.5px; line-height: 1.45; }
+  .vt-demo { font-size: 13px; }
+  .vt-qh .vt-ctl { margin-top: 4px; }
+  .vt-prog { gap: 4px; }
   .vt-nav { display: flex; }
-  .vt-row { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); scroll-padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .vt-row { display: flex; gap: 12px; overflow-x: auto; contain: paint; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); scroll-padding-left: max(16px, env(safe-area-inset-left, 0px)); }
   .vt-row::-webkit-scrollbar { display: none; }
   .vt-row > .vt-opt { flex: 0 0 86%; scroll-snap-align: start; padding: 12px; }
   .vt-row--one > .vt-opt { flex-basis: 100%; }
-  /* on a phone a tap on the picture opens it bigger, and the page scrolls rather than the picture */
-  .vt-big-cover { display: block; }
-  .vt-phone .ap-layer, .vt-phone [data-scroll], .vt-phone .ap-fsh-b, .vt-phone .ap-ck-b { overflow: hidden; }
-  .vt-dlg .vt-phone .ap-layer, .vt-dlg .vt-phone [data-scroll], .vt-dlg .vt-phone .ap-fsh-b, .vt-dlg .vt-phone .ap-ck-b { overflow-y: auto; }
   .vt-dlg { width: 100vw; max-height: 100dvh; border-radius: 0; }
   .vt-dlg-in { max-height: 100dvh; }
   .vt-dlg-b { padding: 12px 16px; }
   .vt-dlg-f { padding-left: 16px; padding-right: 16px; }
   .vt-dlg .vt-pick { width: 100%; }
   .vt-next .vt-hint { display: none; }
+  .vt-actions.is-warn { flex-wrap: wrap; }
+  .vt-actions.is-warn .vt-next .vt-hint { display: block; }
 }
 @media (min-width: 640px) {
   .vt-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -240,4 +269,21 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .vt-row { scroll-behavior: auto; }
+}
+
+/* ---------- browsers without relative colours (Safari before 18) ----------
+   The page's tokens and the app's own (app.css, refresh.css) are made with oklch(from ...), which Safari reads only
+   from version 18; without it every such token is lost and the pictures lose their colours. These stand in for them,
+   mixed from the same six brand colours: near, not the same. Nothing here applies where relative colours work. */
+@supports not (color: oklch(from red l c h)) {
+  :root { --raydeep: color-mix(in srgb, var(--ray) 45%, var(--forest)); --bg: color-mix(in srgb, var(--cream) 94%, var(--forest)); --panel: var(--cream); --ink-2: color-mix(in srgb, var(--forest) 82%, var(--cream)); --ink-3: color-mix(in srgb, var(--forest) 70%, var(--cream)); }
+  :root[data-theme="dark"] { --bg: var(--forest); --panel: color-mix(in srgb, var(--forest) 92%, var(--cream)); --ink-2: color-mix(in srgb, var(--cream) 82%, var(--forest)); --ink-3: color-mix(in srgb, var(--cream) 62%, var(--forest)); }
+  .ap { --ap-bg: color-mix(in srgb, var(--cream) 95%, var(--forest)); --ap-card: var(--cream); --ap-card2: color-mix(in srgb, var(--cream) 90%, var(--gold)); --ap-ink2: color-mix(in srgb, var(--forest) 82%, var(--cream)); --ap-ink3: color-mix(in srgb, var(--forest) 70%, var(--cream)); --ap-shift: color-mix(in srgb, var(--gold) 86%, var(--forest)); --ap-shift-ink: color-mix(in srgb, var(--gold) 45%, var(--forest)); --ap-info-ink: color-mix(in srgb, var(--teal) 85%, var(--forest)); --h0: color-mix(in srgb, var(--cream) 92%, var(--gold)); }
+  .ap-rx:not([data-theme="dark"]) { --ap-ink3: color-mix(in srgb, var(--forest) 70%, var(--cream)); }
+  .ap[data-theme="dark"] { --ap-bg: var(--forest); --ap-card: color-mix(in srgb, var(--forest) 92%, var(--cream)); --ap-card2: color-mix(in srgb, var(--forest) 86%, var(--cream)); --ap-ink2: color-mix(in srgb, var(--cream) 80%, var(--forest)); --ap-ink3: color-mix(in srgb, var(--cream) 62%, var(--forest)); --ap-shift: color-mix(in srgb, var(--gold) 92%, var(--cream)); --ap-shift-ink: color-mix(in srgb, var(--gold) 80%, var(--cream)); --ap-usual-ink: var(--ray); --ap-live: color-mix(in srgb, var(--ray) 80%, var(--forest)); --ap-plum: color-mix(in srgb, var(--plum) 40%, var(--cream)); --ap-teal: color-mix(in srgb, var(--teal) 60%, var(--cream)); --ap-info-ink: color-mix(in srgb, var(--teal) 45%, var(--cream)); --h1: color-mix(in srgb, var(--plum) 80%, var(--cream)); --h2: color-mix(in srgb, var(--plum) 60%, var(--cream)); --h3: color-mix(in srgb, var(--plum) 35%, var(--cream)); --ap-pat-bg: var(--plum); }
+}
+@media (prefers-color-scheme: dark) {
+  @supports not (color: oklch(from red l c h)) {
+    :root:not([data-theme="light"]) { --bg: var(--forest); --panel: color-mix(in srgb, var(--forest) 92%, var(--cream)); --ink-2: color-mix(in srgb, var(--cream) 82%, var(--forest)); --ink-3: color-mix(in srgb, var(--cream) 62%, var(--forest)); }
+  }
 }

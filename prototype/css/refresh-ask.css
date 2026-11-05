@@ -137,8 +137,10 @@
 .ap-askx-sugg .ap-askq::after { content: ""; position: absolute; inset: -4px 0; }
 
 /* the box: a card in a dock pinned to the bottom, clear of the floating tab bar, while the conversation scrolls under
-   it. The dock fades into the ground above the card and is solid ground behind the tab bar */
-.ap-askx-dock { position: sticky; bottom: 0; z-index: 3; margin: auto -20px 0; padding: 8px 20px 96px; background: linear-gradient(to bottom, transparent, var(--ap-bg) 8px); }
+   it. The dock is solid ground behind the tab bar, and fades into the ground above the card; the fade takes no taps, so
+   a chip just above the box keeps its whole target */
+.ap-askx-dock { position: sticky; bottom: 0; z-index: 3; margin: auto -20px 0; padding: 0 20px 96px; background: var(--ap-bg); }
+.ap-askx-dock::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 8px; background: linear-gradient(to bottom, transparent, var(--ap-bg)); pointer-events: none; }
 .ap-askx-compose.ap-ask-compose { position: relative; bottom: auto; z-index: auto; margin: 0; padding: 8px; gap: 8px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow), inset 0 0 0 1px var(--ap-line); }
 .ap-askx-bar.ap-askbar { padding: 0 4px 0 0; background: var(--ap-bg); }
 /* the box takes the app's field focus: the line darkens, with no second ring on the input inside it */
@@ -180,6 +182,7 @@
 .ap[data-easy="true"] .ap-askx-th .ap-h1 { font-size: 32px; }
 .ap[data-easy="true"] .ap-askx-hd > .ap-askt { width: 32px; height: 32px; margin-top: 12px; }
 .ap[data-easy="true"] .ap-askx-hd > .ap-askt .ic { width: 20px; height: 20px; }
+.ap[data-easy="true"] .ap-askx-open .ap-askx-hd > .ap-askt { margin-top: 0; }
 .ap[data-easy="true"] .ap-askx-who, .ap[data-easy="true"] .ap-askx-from summary { min-height: 56px; font-size: 18px; color: var(--ap-ink); }
 .ap[data-easy="true"] .ap-askx-jr { min-height: 48px; padding: 8px 16px 8px 12px; font-size: 16px; }
 .ap[data-easy="true"] .ap-askx-jr > .ic { width: 20px; height: 20px; }

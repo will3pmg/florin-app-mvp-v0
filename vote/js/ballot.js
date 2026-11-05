@@ -23,8 +23,11 @@
      fromJSON(o, { source })           a posted ballot (array picks) or a results.json one (object picks), read alike
      latest(ballots)                   { counted, replaced, flags }: the latest ballot per name counts, whole
      tally(ballots)                    { qid: { n, none, opts: { id: count } } }
-   Flags: read_from_text, note_lost, note_extra, check_failed, part_missing, unknown_pick, two_browsers. A ballot with
-   check_failed has ok false and is held out of the counts. */
+   Flags: read_from_text, line_damaged, note_lost, note_extra, check_failed, part_missing, unknown_pick, two_browsers.
+   A last line that fails its check (cut short, wrapped past mending, or changed) is line_damaged when the numbered lines
+   agree with what's left of it on every pick and the name, and the ballot counts from them; any disagreement is
+   check_failed: ok false, held out of the counts. The numbered lines are read by each question's label first (so a
+   list Slack turned into bullets keeps its picks and its Why lines), then by number. */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory(require("./questions.js"));
   else root.VOTE_BALLOT = factory(root.VOTE_Q);
@@ -186,8 +189,21 @@
   const squash = (s) => String(s || "").toLowerCase().replace(/[\s ]+/g, " ").trim();
   const HEAD_RE = /^\s*(?:[*_~]+\s*)?Florin app vote\s*:\s*(.+?)\s*(?:\(part\s+(\d+)\s+of\s+(\d+)\))?\s*(?:[*_~]+)?\s*$/i;
   const LINE2_RE = /Ballot\s+([A-Z0-9]{6})\b(?:\s*,\s*(.+?))?\s*$/i;
-  const NUM_RE = /^\s*(\d{1,2})\.\s+(.+?)\s*:\s+(.+?)\s*$/;
-  const WHY_RE = /^\s*Why\s*:\s?(.*)$/i;
+  /* a pick's line: its number ("12." or "12)"), a bullet Slack may have put in its place, or nothing, then the
+     question's label, a colon and the option. The label says which question it is, so a list Slack turned into bullets
+     or numbered again from 1 still reads right; the number is the fallback for a label that isn't one of ours */
+  const ROW_RE = /^\s*(?:(\d{1,2})\s*[.)]|[-*•◦▪‣·∙])?\s*(.+?)\s*:\s+(.+?)\s*$/;
+  const WHY_RE = /^\s*(?:[-*•◦▪‣·∙]\s*)?Why\s*:\s?(.*)$/i;
+  const byLabel = {};
+  Q.QS.forEach((q) => { byLabel[squash(q.label)] = q; });
+  /* a line to the question it answers, or null: by its label, else by its number */
+  function rowOf(l) {
+    const m = ROW_RE.exec(l);
+    if (!m) return null;
+    const q = byLabel[squash(m[2].replace(/^[*_~]+|[*_~]+$/g, ""))] || (m[1] ? Q.QS[+m[1] - 1] || null : null);
+    if (!q) return m[1] ? { n: +m[1], label: m[2], pick: m[3], q: null } : null;
+    return { n: q.n, label: m[2], pick: m[3], q };
+  }
   const MACH_RE = /FLORIN-VOTE\s+(\d+)\s+(\S+)((?:\s+[a-z]+=[^\s`]*)*)/;
   const unquote = (l) => l.replace(/^(\s*&gt;\s?|\s*>\s?)+/, "");
 
@@ -240,6 +256,24 @@
     return o ? o.id : undefined;
   }
 
+  /* a machine line cut by a line break (an email client or a narrow paste can wrap it): the next lines joined on, with
+     nothing or with a space between, until the check passes. Only a line with no check of its own is mended this way,
+     and only a join the check confirms is kept */
+  function mend(m, l, lines, i) {
+    if (!m || m.ok || m.kv.x != null) return { m, used: 0 };
+    let tail = "";
+    for (let j = 1; j <= 3 && i + j < lines.length; j++) {
+      const next = lines[i + j].replace(/`/g, "").trim();
+      if (!next || HEAD_RE.test(next)) break;
+      for (const sep of ["", " "]) {
+        const m2 = readMachine(l.replace(/\s+$/, "") + sep + tail + next);
+        if (m2 && m2.ok) return { m: m2, used: j };
+      }
+      tail += next;
+    }
+    return { m, used: 0 };
+  }
+
   /* one blob of Slack text to ballots */
   function parse(blob, o) {
     o = o || {};
@@ -247,20 +281,28 @@
     /* segments: from a header to the next header; a machine line closes one */
     const segs = [];
     let cur = null;
-    lines.forEach((raw, i) => {
+    for (let i = 0; i < lines.length; i++) {
+      const raw = lines[i];
       const l = raw.replace(/`/g, "");
       const h = HEAD_RE.exec(l);
-      if (h) { cur = { line: i + 1, head: h[1], part: h[2] ? { k: +h[2], n: +h[3] } : null, rows: [], whys: {}, lastN: null, mach: null, line2: null, raw: [raw] }; segs.push(cur); return; }
-      if (!cur) return;
+      if (h) { cur = { line: i + 1, head: h[1], part: h[2] ? { k: +h[2], n: +h[3] } : null, rows: [], whys: {}, lastN: null, mach: null, line2: null, raw: [raw] }; segs.push(cur); continue; }
+      if (!cur) continue;
       cur.raw.push(raw);
-      const m = l.indexOf("FLORIN-VOTE") >= 0 ? readMachine(l) : null;
-      if (m) { cur.mach = m; cur = null; return; }
-      if (!cur.line2) { const l2 = LINE2_RE.exec(l); if (l2) { cur.line2 = { bid: l2[1].toUpperCase(), when: l2[2] || "" }; return; } }
+      const m0 = l.indexOf("FLORIN-VOTE") >= 0 ? readMachine(l) : null;
+      if (m0) {
+        const fixed = mend(m0, l, lines, i);
+        for (let j = 1; j <= fixed.used; j++) cur.raw.push(lines[i + j]);
+        i += fixed.used;
+        cur.mach = fixed.m;
+        cur = null;
+        continue;
+      }
+      if (!cur.line2) { const l2 = LINE2_RE.exec(l); if (l2) { cur.line2 = { bid: l2[1].toUpperCase(), when: l2[2] || "" }; continue; } }
       const w = WHY_RE.exec(l);
-      if (w && cur.lastN != null) { cur.whys[cur.lastN] = (cur.whys[cur.lastN] ? cur.whys[cur.lastN] + " " : "") + w[1]; return; }
-      const n = NUM_RE.exec(l);
-      if (n) { cur.rows.push({ n: +n[1], label: n[2], pick: n[3] }); cur.lastN = +n[1]; }
-    });
+      if (w && cur.lastN != null) { cur.whys[cur.lastN] = (cur.whys[cur.lastN] ? cur.whys[cur.lastN] + " " : "") + w[1]; continue; }
+      const r = rowOf(l);
+      if (r) { cur.rows.push(r); cur.lastN = r.n; }
+    }
     /* a segment counts only with a header and a list or a machine line */
     const good = segs.filter((s) => s.rows.length || s.mach);
     /* parts of one ballot join by vote and ballot id */
@@ -298,7 +340,24 @@
       picks: {}, source: o.source || "slack", file: o.file || "", line: first.line,
       text: parts.map((p) => p.raw.join("\n")).join("\n"), ok: true, flags
     };
-    if (M) {
+    /* the picks the readable lines give: { qid: option id }, and what couldn't be read */
+    const fromText = () => {
+      const out = {}, bad = [];
+      rows.forEach((r) => {
+        const q = r.q || qByNum(r.n);
+        if (!q) { bad.push("unknown_pick"); return; }
+        const p = optByName(q, r.pick);
+        if (p === null) return;
+        if (p === undefined || out[q.id]) { bad.push("unknown_pick"); return; }
+        out[q.id] = p;
+      });
+      return { out, bad };
+    };
+    const fromHead = () => {
+      b.name = nameOf(head.name); b.role = head.role; b.role_other = head.role_other;
+      b.at = readLocal(first.line2 && first.line2.when);
+    };
+    if (M && okAll) {
       b.name = nameOf(M.name); b.role = ROLE_IDS.includes(M.role) ? M.role : ""; b.role_other = b.role === "other" ? oneLine(M.role_other).slice(0, ROLE_MAX) : "";
       b.at = M.at; b.seed = M.seed;
       M.p.forEach(([q, p]) => {
@@ -306,20 +365,36 @@
         if (!Qq || !Q.optOf(Qq, p) || b.picks[q]) { flags.push("unknown_pick"); return; }
         b.picks[q] = { p, note: "" };
       });
+    } else if (anyMach && !okAll) {
+      /* a last line that fails its check. Cut short (no check left) or changed, it can't be trusted alone, but the
+         numbered lines can be: the ballot counts from them, flagged, when they and what's left of the last line agree
+         on every pick both name, and on the name. Any pick or name they disagree on holds the ballot out */
+      const T = fromText();
+      const mp = {};
+      const ML = M || anyMach.mach;
+      (ML && ML.p ? ML.p : []).forEach(([q, p]) => { if (Q.qOf(q) && Q.optOf(q, p) && !(q in mp)) mp[q] = p; });
+      const clash = Object.keys(mp).some((q) => q in T.out && T.out[q] !== mp[q]) || Object.keys(mp).some((q) => !(q in T.out));
+      const nameClash = ML && ML.kv && ML.kv.n != null && ML.kv.x != null && nameKey(ML.name) !== nameKey(head.name);
+      if (!Object.keys(T.out).length || clash || nameClash) {
+        b.ok = false; flags.push("check_failed");
+        /* what the last line says, so the held-out ballot still names who and what */
+        if (ML) { b.name = nameOf(ML.name || head.name); b.at = ML.at || ""; (ML.p || []).forEach(([q, p]) => { if (Q.qOf(q) && Q.optOf(q, p) && !b.picks[q]) b.picks[q] = { p, note: "" }; }); }
+        else fromHead();
+      } else {
+        flags.push("line_damaged");
+        fromHead();
+        if (ML && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(ML.at || "")) b.at = ML.at;
+        if (ML && ML.seed != null) b.seed = ML.seed;
+        T.bad.forEach((f) => flags.push(f));
+        Object.keys(T.out).forEach((q) => { b.picks[q] = { p: T.out[q], note: "" }; });
+      }
     } else {
       flags.push("read_from_text");
-      b.name = nameOf(head.name); b.role = head.role; b.role_other = head.role_other;
-      b.at = readLocal(first.line2 && first.line2.when);
-      rows.forEach((r) => {
-        const q = qByNum(r.n);
-        if (!q) { flags.push("unknown_pick"); return; }
-        const p = optByName(q, r.pick);
-        if (p === null) return;
-        if (p === undefined || b.picks[q.id]) { flags.push("unknown_pick"); return; }
-        b.picks[q.id] = { p, note: "" };
-      });
+      fromHead();
+      const T = fromText();
+      T.bad.forEach((f) => flags.push(f));
+      Object.keys(T.out).forEach((q) => { b.picks[q] = { p: T.out[q], note: "" }; });
     }
-    if (anyMach && !okAll) { b.ok = false; flags.push("check_failed"); }
     /* the notes, from the readable lines */
     const w = M && M.w ? M.w : null;
     Object.keys(whys).forEach((n) => {

@@ -66,7 +66,7 @@ const test = (name, fn) => tests.push([name, fn]);
 test("setup makes the tabs, the headers, the README and the recruiter's spreadsheet, and can run again", () => {
   const { g, c } = fresh();
   const names = g.book().getSheets().map((s) => s.getName());
-  assert.deepStrictEqual(names, ["README", "Sessions", "Answers", "Tasks", "Comments", "Events", "_index", "_log"]);
+  assert.deepStrictEqual(names, ["README", "Sessions", "Answers", "Tasks", "Comments", "Events", "Votes", "_index", "_log"]);
   assert.ok(g.book().getSheetByName("_index").isSheetHidden() && g.book().getSheetByName("_log").isSheetHidden());
   const head = g.book().getSheetByName("Answers").getRange(1, 1, 1, 18).getValues()[0];
   assert.deepStrictEqual(head.slice(0, 7), ["received", "sid", "cid", "seq", "at", "study", "build"]);
@@ -77,7 +77,7 @@ test("setup makes the tabs, the headers, the README and the recruiter's spreadsh
   const readme = g.rowsOf("README");
   assert.ok(g.book().getSheetByName("README").getRange(2, 1).getValue() === "Prototype only. Not for patients.");
   c.setup();
-  assert.strictEqual(g.book().getSheets().length, 8);
+  assert.strictEqual(g.book().getSheets().length, 9);
   assert.strictEqual(g.props.RECRUITER_SHEET_ID, rid, "a second run keeps the same recruiter's spreadsheet");
   void readme;
 });
@@ -826,6 +826,285 @@ test("a whole session, about 560 pieces in posts of 25, lands once, with a rough
   assert.deepStrictEqual([ses.stage, ses.submitted, ses.sus, ses.code], ["done", "yes", 75, code]);
   /* the whole queue once more, as a phone that lost every ack would send it: every piece a duplicate */
   test.note = `${all.length} pieces in ${posts} posts: about ${Math.round(calls / posts)} reads and ${Math.round(writes / posts)} writes to Sheets a post, at most ${most} reads`;
+});
+
+
+/* ------------------------------------------------------------------ the Florin app vote (vote/BALLOT.md) */
+
+const VOTE_ID = "florin-app-vote-1";
+const ROOT = path.join(__dirname, "..", "..");
+let VQ = null, VB = null;
+try { VQ = require(path.join(ROOT, "vote/js/questions.js")); VB = require(path.join(ROOT, "vote/js/ballot.js")); } catch (err) { /* the list test says so */ }
+const newBid = () => rand(A21, 6);
+const newVid = () => rand("abcdefghijklmnopqrstuvwxyz0123456789", 12);
+/* a ballot as the voting page posts it */
+function ballot(over, picks) {
+  return Object.assign({ type: "vote", v: 1, vote: VOTE_ID, bid: newBid(), vid: newVid(), name: "Test voter 1", role: "design", role_other: "",
+    at: iso(clock), build: "vote.20261105.ab12cd", seed: 4821,
+    picks: picks || [{ q: "home", p: "compact", note: "I can get to any day in one tap." }, { q: "history", p: "calendar", note: "" }, { q: "c-pattern", p: "none", note: "" }] }, over || {});
+}
+const vpost = (c, b, raw) => JSON.parse(c.doPost({ parameter: { op: "vote" }, postData: { contents: raw !== undefined ? raw : JSON.stringify(b), type: "text/plain" } }).getContent());
+const vget = (c, params) => {
+  const out = c.doGet({ parameter: Object.assign({ callback: "cb" }, params) });
+  let got;
+  vm.runInNewContext(out.getContent(), { cb: (x) => { got = JSON.parse(JSON.stringify(x)); } });
+  return got;
+};
+const votes = (g) => g.rowsOf("Votes");
+const cur = (g, bid) => votes(g).filter((r) => r.bid === bid).map((r) => r.current);
+
+test("vote: setup makes the Votes tab and the results key once; the README has a Votes section", () => {
+  const { g, c } = fresh();
+  const head = g.book().getSheetByName("Votes").getRange(1, 1, 1, 18).getValues()[0];
+  assert.deepStrictEqual(head, Array.from(c.VOTE_HEAD));
+  const key = g.props.VOTE_KEY;
+  assert.ok(/^[0-9a-f]{32}$/.test(key), key);
+  const msg = c.setup();
+  assert.ok(msg.indexOf("The vote's results key, for the results page's address: " + key) >= 0, msg);
+  assert.strictEqual(g.props.VOTE_KEY, key, "a second run keeps the key");
+  const readme = g.book().getSheetByName("README").getRange(1, 1, 60, 1).getValues().map((r) => String(r[0])).join("\n");
+  assert.ok(/Votes: the Florin app vote/.test(readme) && /VOTE_CLOSED/.test(readme) && /latest ballot per name/.test(readme));
+});
+
+test("vote: a ballot is one row per pick, current yes, the note cut and scrubbed, text kept as text", () => {
+  const { g, c } = fresh();
+  const long = "Call me on 555 123 4567 or sam@example.com. " + "x".repeat(400);
+  const b = ballot({ name: "=HYPERLINK(\"x\")", role: "other", role_other: "Advisor to the board, part time, mostly remote work" },
+    [{ q: "home", p: "compact", note: long }, { q: "words", p: "C", note: "12" }, { q: "checkin", p: "on", note: "TRUE" }, { q: "c-month", p: "cal-ring", note: "3/4" }, { q: "c-pattern", p: "none", note: "line one\nline two" }]);
+  const r = vpost(c, b);
+  assert.deepStrictEqual(r, { ok: true, accepted: 1, current: true });
+  const rows = votes(g);
+  assert.strictEqual(rows.length, 5);
+  assert.ok(rows.every((x) => x.current === "yes" && x.bid === b.bid && x.vote === VOTE_ID && x.received instanceof Date));
+  assert.strictEqual(rows[0].name, "=HYPERLINK(\"x\")", "a name starting with = stays text");
+  assert.strictEqual(rows[0].name_key, "hyperlink x");
+  assert.strictEqual(rows[0].role_other, "Advisor to the board, part time, mostly");
+  assert.strictEqual(rows[0].note.length, 280);
+  assert.ok(rows[0].note.startsWith("Call me on [removed] or [removed]."), rows[0].note.slice(0, 60));
+  assert.deepStrictEqual(rows.map((x) => [x.n, x.qid, x.label, x.pick, x.pick_name]), [[1, "home", "Home screen", "compact", "Compact"], [4, "words", "Consistency words", "C", "Seven words"],
+    [5, "checkin", "Weekly check-in", "on", "With the check-in"], [13, "c-month", "The month", "cal-ring", "Florin charts, with the week's ring"], [19, "c-pattern", "Possible patterns", "none", "No preference"]]);
+  assert.deepStrictEqual(rows.slice(1).map((x) => x.note), ["12", "TRUE", "3/4", "line one line two"], "notes Sheets would parse stay text");
+  assert.strictEqual(rows[0].seed, 4821);
+  assert.strictEqual(rows[0].at, iso(clock));
+});
+
+test("vote: the same bid twice is a duplicate and adds no rows; voted says what's held", () => {
+  const { g, c } = fresh();
+  const b = ballot();
+  assert.strictEqual(vpost(c, b).accepted, 1);
+  assert.deepStrictEqual(vpost(c, b), { ok: true, accepted: 0, duplicate: 1 });
+  assert.strictEqual(votes(g).length, 3);
+  assert.deepStrictEqual(vget(c, { op: "voted", vote: VOTE_ID, bid: b.bid }), { ok: true, have: true });
+  assert.deepStrictEqual(vget(c, { op: "voted", vote: VOTE_ID, bid: newBid() }), { ok: true, have: false });
+  assert.deepStrictEqual(vget(c, { op: "voted", vote: VOTE_ID + "-test", bid: b.bid }), { ok: true, have: false }, "a bid is held per vote id");
+  assert.deepStrictEqual(vget(c, { op: "voted", vote: VOTE_ID, bid: "bad" }), { ok: false, error: "bad_request" });
+  assert.deepStrictEqual(vget(c, { op: "voted", vote: "someone-else", bid: b.bid }), { ok: false, error: "unknown_vote" });
+});
+
+test("vote: a re-vote turns the old rows' current to no; an older ballot that arrives later stays no", () => {
+  const { g, c } = fresh();
+  const first = ballot({ at: iso(clock) });
+  vpost(c, first);
+  clock += 120000;
+  const second = ballot({ name: "  test   VOTER 1 ", at: iso(clock), picks: [{ q: "home", p: "score", note: "" }] });
+  assert.strictEqual(vpost(c, second).current, true);
+  assert.deepStrictEqual(cur(g, first.bid), ["no", "no", "no"]);
+  assert.deepStrictEqual(cur(g, second.bid), ["yes"]);
+  /* made before the second, sent after it (a phone that was offline) */
+  const late = ballot({ at: iso(clock - 60000), picks: [{ q: "home", p: "day", note: "" }] });
+  assert.deepStrictEqual(vpost(c, late), { ok: true, accepted: 1, current: false });
+  assert.deepStrictEqual(cur(g, late.bid), ["no"]);
+  assert.deepStrictEqual(cur(g, second.bid), ["yes"]);
+  /* the same at as the current one, received later: it wins the tie */
+  const tie = ballot({ at: second.at, picks: [{ q: "home", p: "compact", note: "" }] });
+  assert.strictEqual(vpost(c, tie).current, true);
+  assert.deepStrictEqual(cur(g, second.bid), ["no"]);
+  /* someone else's rows are never touched */
+  const other = ballot({ name: "Test voter 2" });
+  vpost(c, other);
+  assert.deepStrictEqual(cur(g, tie.bid), ["yes"]);
+  assert.deepStrictEqual(cur(g, other.bid), ["yes", "yes", "yes"]);
+});
+
+test("vote: name keys: case and spaces, accents, and a name of only symbols refused", () => {
+  const { g, c } = fresh();
+  assert.strictEqual(c.voteKey_("  sam   LEE "), c.voteKey_("Sam Lee"));
+  assert.strictEqual(c.voteKey_("José"), c.voteKey_("Jose"));
+  assert.strictEqual(c.voteKey_("Ana-María O'Neil"), "ana maria o neil");
+  const r = vpost(c, ballot({ name: "!!! ..." }));
+  assert.deepStrictEqual(r, { ok: false, error: "bad_request", field: "name" });
+  vpost(c, ballot({ name: "José Ruiz", at: iso(clock - 60000) }));
+  vpost(c, ballot({ name: "jose  ruiz", at: iso(clock) }));
+  const keys = votes(g).map((x) => x.name_key).filter((k, i, a) => a.indexOf(k) === i);
+  assert.deepStrictEqual(keys, ["jose ruiz"]);
+  assert.strictEqual(votes(g).filter((x) => x.current === "yes").length, 3, "one voter: only the latest ballot is current");
+  assert.ok(g.rowsOf("_log").some((x) => x.what === "vote_field" && x.field === "name"));
+});
+
+test("vote: ids: an unknown vote refused, -test accepted, VOTE_CLOSED closes the vote only, CLOSED the study only", () => {
+  const { g, c } = fresh();
+  assert.deepStrictEqual(vpost(c, ballot({ vote: "another-vote" })), { ok: false, error: "unknown_vote" });
+  assert.strictEqual(vpost(c, ballot({ vote: VOTE_ID + "-test" })).accepted, 1);
+  g.props.VOTE_CLOSED = "yes";
+  assert.deepStrictEqual(vpost(c, ballot()), { ok: false, error: "closed" });
+  const s = session();
+  assert.strictEqual(post(c, [answer(s, "IN1")]).accepted, 1, "the study stays open");
+  delete g.props.VOTE_CLOSED;
+  g.props.CLOSED = "yes";
+  assert.strictEqual(post(c, [answer(s, "IN2")]).error, "closed");
+  assert.strictEqual(vpost(c, ballot()).accepted, 1, "the vote stays open");
+  delete g.props.CLOSED;
+  g.props.VOTES = "florin-app-vote-2";
+  assert.deepStrictEqual(vpost(c, ballot()), { ok: false, error: "unknown_vote" });
+  assert.strictEqual(vpost(c, ballot({ vote: "florin-app-vote-2" })).accepted, 1, "the VOTES property replaces the list");
+});
+
+test("vote: fields: an unknown question or option drops that pick and logs it; 31 picks, a repeat, a big body and a bad bid are refused", () => {
+  const { g, c } = fresh();
+  const r = vpost(c, ballot({}, [{ q: "home", p: "compact", note: "" }, { q: "nope", p: "x", note: "secret words" }, { q: "history", p: "grid", note: "" }, { q: "words", p: "A", note: "" }]));
+  assert.strictEqual(r.accepted, 1);
+  assert.deepStrictEqual(votes(g).map((x) => x.qid), ["home", "words"]);
+  const log = g.rowsOf("_log").filter((x) => x.what === "vote_pick");
+  assert.deepStrictEqual(log.map((x) => x.field), ["q", "p"]);
+  assert.ok(!JSON.stringify(g.rowsOf("_log")).includes("secret words"), "the log never holds the words");
+  const many = [];
+  for (let i = 0; i < 31; i++) many.push({ q: "home", p: "compact", note: "" });
+  assert.deepStrictEqual(vpost(c, ballot({}, many)), { ok: false, error: "bad_request", field: "picks" });
+  assert.deepStrictEqual(vpost(c, ballot({}, [{ q: "home", p: "compact" }, { q: "home", p: "score" }])), { ok: false, error: "bad_request", field: "repeat" });
+  assert.deepStrictEqual(vpost(c, null, "x".repeat(40001)), { ok: false, error: "bad_request" });
+  assert.deepStrictEqual(vpost(c, null, "{not json"), { ok: false, error: "bad_request" });
+  assert.deepStrictEqual(vpost(c, null, JSON.stringify({ type: "session" })), { ok: false, error: "bad_request" });
+  assert.deepStrictEqual(vpost(c, ballot({ bid: "ABC12" })), { ok: false, error: "bad_request", field: "bid" });
+  assert.deepStrictEqual(vpost(c, ballot({ bid: "BBBBBB" })), { ok: false, error: "bad_request", field: "bid" }, "B isn't in the code alphabet");
+  assert.deepStrictEqual(vpost(c, ballot({ vid: "SHORT" })), { ok: false, error: "bad_request", field: "vid" });
+  assert.deepStrictEqual(vpost(c, ballot({ role: "ceo" })), { ok: false, error: "bad_request", field: "role" });
+  assert.deepStrictEqual(vpost(c, ballot({ at: "yesterday" })), { ok: false, error: "bad_request", field: "at" });
+  assert.deepStrictEqual(vpost(c, ballot({ seed: 1.5 })), { ok: false, error: "bad_request", field: "seed" });
+  assert.deepStrictEqual(vpost(c, ballot({}, [{ q: "nope", p: "x" }])), { ok: false, error: "bad_request", field: "picks" });
+  assert.strictEqual(votes(g).length, 2, "nothing refused was written");
+  /* role_other is kept only with other */
+  vpost(c, ballot({ name: "Test voter 9", role: "design", role_other: "ignored" }));
+  assert.ok(votes(g).filter((x) => x.name === "Test voter 9").every((x) => x.role_other === ""));
+  /* a ballot to the focus endpoint without ?op=vote is the focus test's, and is refused there */
+  assert.strictEqual(JSON.parse(c.doPost({ parameter: {}, postData: { contents: JSON.stringify(ballot()) } }).getContent()).error, "bad_request");
+});
+
+test("vote: limits: 20 ballots a name, 40 a minute from everyone; a limited ballot is taken after the minute", () => {
+  const { g, c } = fresh();
+  for (let i = 0; i < 20; i++) { clock += 1000; assert.strictEqual(vpost(c, ballot({ at: iso(clock), picks: [{ q: "home", p: "compact", note: "" }] })).accepted, 1); }
+  assert.deepStrictEqual(vpost(c, ballot({ at: iso(clock) })), { ok: false, error: "limited", limit: "name" });
+  clock = Math.ceil(clock / 60000) * 60000 + 1000;   // a new minute
+  for (let i = 0; i < 40; i++) assert.strictEqual(vpost(c, ballot({ name: "Voter " + i, picks: [{ q: "home", p: "day", note: "" }] })).accepted, 1, "ballot " + i);
+  const held = ballot({ name: "Voter 41", picks: [{ q: "home", p: "score", note: "" }] });
+  assert.deepStrictEqual(vpost(c, held), { ok: false, error: "limited", limit: "minute" });
+  assert.deepStrictEqual(vget(c, { op: "voted", vote: VOTE_ID, bid: held.bid }), { ok: true, have: false });
+  clock += 60000;
+  assert.strictEqual(vpost(c, held).accepted, 1, "sent again the next minute, it's taken");
+  assert.strictEqual(votes(g).length, 20 + 40 + 1);
+});
+
+test("vote: results needs the key; with it, the latest ballot per name, the replaced ones, two browsers and the tallies, as JSONP or JSON", () => {
+  const { g, c } = fresh();
+  delete g.props.VOTE_KEY;
+  assert.deepStrictEqual(vget(c, { op: "results", vote: VOTE_ID, key: "x" }), { ok: false, error: "no_key_set" });
+  c.setup();
+  const key = g.props.VOTE_KEY;
+  assert.deepStrictEqual(vget(c, { op: "results", vote: VOTE_ID, key: "wrong" }), { ok: false, error: "key" });
+  assert.deepStrictEqual(vget(c, { op: "results", vote: VOTE_ID }), { ok: false, error: "key" });
+  const a1 = ballot({ name: "Ana Ruiz", vid: "aaaaaaaaaaaa", at: iso(clock) }, [{ q: "home", p: "compact", note: "First go." }, { q: "c-week", p: "rings", note: "" }]);
+  const b1 = ballot({ name: "Ben Lo", role: "", at: iso(clock) }, [{ q: "home", p: "score", note: "" }, { q: "c-week", p: "none", note: "" }]);
+  const a2 = ballot({ name: "ana ruiz", vid: "bbbbbbbbbbbb", at: iso(clock + 60000) }, [{ q: "home", p: "day", note: "Second go." }]);
+  const t1 = ballot({ name: "Will", vote: VOTE_ID + "-test" });
+  [a1, b1, a2, t1].forEach((b) => { clock += 1000; vpost(c, b); });
+  const r = vget(c, { op: "results", vote: VOTE_ID, key });
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.source, "sheet");
+  assert.deepStrictEqual(r.ballots.map((b) => b.bid).sort(), [a2.bid, b1.bid].sort());
+  assert.deepStrictEqual(r.ballots_all.map((b) => b.bid), [a1.bid, b1.bid, a2.bid], "every ballot of this vote, in the order received");
+  assert.deepStrictEqual(r.replaced.map((x) => [x.bid, x.by]), [[a1.bid, a2.bid]]);
+  assert.deepStrictEqual(r.flags, [{ name: "ana ruiz", bid: a2.bid, what: "two_browsers" }]);
+  assert.deepStrictEqual(r.tallies.home, { n: 2, none: 0, opts: { score: 1, day: 1, compact: 0 } });
+  assert.deepStrictEqual(r.tallies["c-week"], { n: 1, none: 1, opts: { built: 0, rings: 0, journal: 0, bento: 0, oura: 0, easy: 0 } });
+  assert.strictEqual(r.ballots.find((b) => b.bid === a2.bid).picks.home.note, "Second go.");
+  assert.strictEqual(Object.keys(r.tallies).length, 19);
+  /* what we recommend comes only with the key: the hosted site never carries recs.js */
+  assert.strictEqual(r.recs.home.v, "compact");
+  assert.ok(!("recs" in vget(c, { op: "voted", vote: VOTE_ID, bid: a1.bid })) && !("recs" in vget(c, { op: "results", vote: VOTE_ID, key: "wrong" })));
+  const t = vget(c, { op: "results", vote: VOTE_ID + "-test", key });
+  assert.deepStrictEqual(t.ballots.map((b) => b.bid), [t1.bid], "a test vote's results are its own");
+  /* plain JSON without a callback, for a check from the address bar */
+  const plain = c.doGet({ parameter: { op: "results", vote: VOTE_ID, key } });
+  assert.strictEqual(plain.getMimeType(), "JSON");
+  assert.strictEqual(JSON.parse(plain.getContent()).ballots.length, 2);
+  /* the focus test's calls still need their study id; the vote's don't */
+  assert.deepStrictEqual(vget(c, { op: "ping", study: "florin-fg-1" }), { ok: true, open: true });
+  assert.deepStrictEqual(vget(c, { op: "ping" }), { ok: false, error: "unknown_study" });
+});
+
+test("vote: removing a voter's ballots, by the menu's name prompt or the property, and current worked out again", () => {
+  const { g, c } = fresh();
+  const a1 = ballot({ name: "Ana Ruiz", at: iso(clock) });
+  const a2 = ballot({ name: "ANA ruiz", at: iso(clock + 60000) });
+  const b1 = ballot({ name: "Ben Lo", at: iso(clock) });
+  [a1, a2, b1].forEach((b) => vpost(c, b));
+  /* someone set Ben's row to no by hand: the removal puts current right again */
+  const sh = g.book().getSheetByName("Votes");
+  const head = sh.getRange(1, 1, 1, 18).getValues()[0];
+  const benRow = votes(g).findIndex((x) => x.bid === b1.bid) + 2;
+  g.lock.held = true;    // as a person's edit in the Sheet, which the stand-in would otherwise log as a script write outside the lock
+  sh.getRange(benRow, head.indexOf("current") + 1).setValue("'no");
+  g.lock.held = false;
+  g.ui.promptReply = { button: "OK", text: "  ana   RUIZ" };
+  c.removeVoterPrompt();
+  const said = g.ui.calls.filter((x) => x[0] === "alert").pop()[2];
+  assert.strictEqual(said, "Removed 2 ballots (6 rows) under the name ana RUIZ.");
+  assert.deepStrictEqual(votes(g).map((x) => x.name).filter((n, i, a) => a.indexOf(n) === i), ["Ben Lo"]);
+  assert.deepStrictEqual(cur(g, b1.bid), ["yes", "yes", "yes"]);
+  g.props.REMOVE_VOTER = "Nobody Here";
+  assert.strictEqual(c.removeVoterByProperty(), "No ballots under the name Nobody Here.");
+  assert.ok(!("REMOVE_VOTER" in g.props));
+  assert.strictEqual(c.removeVoterByName("..."), "That name has no letters or digits. Check it and try again.");
+  c.onOpen();
+  assert.ok(g.ui.calls.some((x) => x[0] === "menu" && x[2].some((it) => it[0] === "Remove a voter's ballots" && it[1] === "removeVoterPrompt")));
+});
+
+test("vote: Code.gs's questions and roles are vote/js/questions.js's, and its rule agrees with ballot.js on the fixtures", () => {
+  assert.ok(VQ && VB, "vote/js/questions.js and vote/js/ballot.js are needed beside this repository's focus/");
+  const { c } = fresh();
+  const mine = {};
+  VQ.QS.forEach((q) => { const opts = {}; q.opts.forEach((o) => { opts[o.id] = o.name; }); mine[q.id] = { part: q.part, n: q.n, label: q.label, opts }; });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(c.VOTE_QS)), mine);
+  assert.deepStrictEqual(Array.from(c.VOTE_ROLES), VQ.ROLES.map((r) => r[0]));
+  assert.strictEqual(c.VOTE_NONE, VQ.NONE.name);
+  /* the recommendations op=results gives are recs.js's, word for word */
+  const RECS = require(path.join(ROOT, "vote/results/js/recs.js"));
+  const recs = {};
+  Object.keys(RECS).forEach((k) => { const r = RECS[k]; recs[k] = Object.assign({ v: r.v, say: r.say, why: r.why }, r.open ? { open: r.open } : {}); });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(c.VOTE_RECS_)), recs, "Code.gs's VOTE_RECS_ differs from vote/results/js/recs.js: copy it across");
+  ["  sam   LEE ", "José Ruiz", "Ana-María O'Neil", "Zoë", "李 小龍", "!!!", "test  VOTER 1", "Ｆｕｌｌ Ｗｉｄｔｈ"].forEach((n) => assert.strictEqual(c.voteKey_(n), VB.nameKey(n), n));
+  /* every fixture ballot posted in the order aggregate.js reads them: the script and ballot.js count the same ballots */
+  const C2 = require(path.join(ROOT, "vote/js/count.js"));
+  const dir = path.join(ROOT, "vote/tools/fixtures");
+  const files = fs.readdirSync(dir).sort();
+  const order = files.filter((f) => /\.txt$/.test(f)).concat(files.filter((f) => /\.(json|csv)$/.test(f)));
+  let all = [];
+  order.forEach((f) => { all = all.concat(C2.readFile(f, fs.readFileSync(path.join(dir, f), "utf8")).ballots); });
+  all = all.filter((b) => b.ok !== false && (b.vote === VOTE_ID || b.vote === ""));
+  const seen = {};
+  const { g: g2, c: c2 } = fresh();
+  all.forEach((b) => {
+    if (seen[b.bid]) return;
+    seen[b.bid] = 1;
+    clock += 1000;
+    const j = VB.toJSON(Object.assign({}, b, { vote: VOTE_ID, vid: b.vid || newVid(), at: b.at || iso(clock), seed: b.seed || 0 }));
+    const r = vpost(c2, j);
+    assert.ok(r.ok, JSON.stringify(r) + " " + b.name);
+  });
+  const sheet = vget(c2, { op: "results", vote: VOTE_ID, key: g2.props.VOTE_KEY });
+  const L = VB.latest(all.map((b) => Object.assign({}, b, { vote: VOTE_ID })));
+  assert.deepStrictEqual(sheet.ballots.map((b) => b.bid).sort(), L.counted.map((b) => b.bid).sort());
+  assert.deepStrictEqual(sheet.tallies, JSON.parse(JSON.stringify(VB.tally(L.counted))));
+  void c;
 });
 
 /* ------------------------------------------------------------------ run */

@@ -308,50 +308,66 @@ app:
 
 ### Compact's week row
 
-Compact (Home's third option, Will, Nov 4) has no week card. Its week is a row of day buttons under a short FloraScore
-strip, for getting around more than for reading:
+Compact (Home's third option, Will, Nov 4; the default since Nov 5) has no week card. Its week is a row of day buttons
+under a short FloraScore strip, for getting around more than for reading:
 
 ```
- (<)          October 2026          >
+ (<)  Oct 2026 (i)                       >
  Mon   Tue   Wed   Thu   Fri   Sat   Today
- (5)   (6)   (7)   ( 8)  (9)   (10)  (11)
+ (5)   (6)   (7)   ( 8)  (9)   (10)  [(11)]
              ■    + Add               ■
- o Within your usual   o Outside your usual
- o Nothing logged      ■ Symptoms
- Today                           4 ENTRIES
+ [check-in: one row, when it's due]
+ Today                            (+ Add)
  Within your usual timing, BM count and forms.
- (today's logs, as History draws the day)
+ (today's logs, one line each)
 ```
 
-- **One week, Monday to Sunday**, with the month and year between two arrows ("September to October 2026" when the
-  week spans two). The arrows step a week, from the week of the first day to this week, and stop at both ends. On a
-  Sunday, as in the demo, the row is the same seven days as the week card; on any other day, the days after today show
-  as faded dates and aren't buttons, and days before the person started as dates in Ink 3.
-- **Each day:** its short weekday (Today on today's) and the week card's ring at 32px with the date inside, drawn by the
-  week card's own renderer (`FLOOKS` rings `.marks.ring`, styled by look-rings.css), so the two rows can't drift apart:
-  Plum within (Ray on dark), Gold outside (tint and Shift Ink edge in light, a solid disc on dark), Ink 3 not counted
-  or logged, a thin empty ring with the week card's "+ Add" under it for a day with nothing logged (a tap picks the day
-  and opens plus for it, as the week card's Add does), and a Teal ring for a day noted for a clinician. A Teal square
-  under a day with symptoms. The day picked sits on Card 2. Under the row, the week card's legend, only the marks on
-  show.
+- **One week, Monday to Sunday**, under one header row: an arrow a week back, the month short ("Oct 2026", "Sep to Oct
+  2026" when the week spans two; in full for a screen reader), the legend's info button, "Today" while the row is on
+  another week, and an arrow a week on. The arrows step a week, from the week of the first day to this week, and stop
+  at both ends; a swipe across the row does the same. Nothing comes and goes on a row of its own, so the days never
+  move. On a Sunday, as in the demo, the row is the same seven days as the week card; on any other day, the days after
+  today show as faded dates and aren't buttons, and days before the person started as dates in Ink 3. The month is a
+  button to History's calendar on the day picked, when History is the calendar.
+- **Each day:** its short weekday (Today on today's) and the week card's ring at 32px with the date inside (14px),
+  drawn by the week card's own renderer (`FLOOKS` rings `.marks.ring`, styled by look-rings.css), so the two rows
+  can't drift apart: Plum within (Ray on dark), Gold outside (tint and Shift Ink edge in light, a solid disc on dark),
+  Ink 3 not counted or logged, a thin empty ring with the week card's "+ Add" under it for a day with nothing logged,
+  and a Teal ring for a day noted for a clinician. A Teal square under a day with symptoms. The day picked sits on
+  Card 2 inside an Ink edge, so it shows on dark, where Card 2 is close to the card; never Plum or Ray.
+- **The legend** is the week card's, only the marks on show, and never "Nothing logged", which "+ Add" says. It folds
+  behind the info button: open before day 14, while every mark is new, closed after. Each day's button name and the
+  picked day's line carry the words, so colour never stands alone.
 - **What a mark says comes from History's calendar** (`cellOf`), not from Today's card: a past day with a sign is
-  noted for a clinician, as the calendar marks it, and on Free a day before the last 7 is only Logged.
-- **No count, no sentence and no numbers.** A day's words are its legend and its button's name ("Wednesday, October 7:
-  outside your usual, ..."), and the day picked opens under the row with its `L.dayWhy` line. A day within the usual
-  says what that means, "Within your usual timing, BM count and forms.", so it never reads as FloraScore's usual
+  noted for a clinician, as the calendar marks it, and on Free a day before the last 7 is only Logged, with the
+  calendar's line ("Every day against your usual, with Florin membership") under the row while such a day is on show.
+- **No count, no sentence and no numbers.** A day's words are its button's name ("Wednesday, October 7: outside your
+  usual, ..."), and the day picked opens under the row with its `L.dayWhy` line, across the width. A day within the
+  usual says what that means, "Within your usual timing, BM count and forms.", so it never reads as FloraScore's usual
   range in the strip above it.
+- **The day picked** is drawn by `RU.historyDay`, with Add at its top where History counts the entries, and its logs
+  one line each: the word and what the person picked, never the stock line that explains the word; a meal's own words
+  and a note keep their line. Today with nothing logged offers the BM tiles (the BM logging decision's way), and No BM
+  today in the evening, as Score first does.
 - **Taps:** every day from the first day to today is a 44px tab (manual activation, the day picked its panel); Left and
-  Right, Home and End, and Page Up and Page Down move through it. "This week" under the month brings an earlier week
-  back to today in one tap. A log saved to another day (the plus button, Log for an earlier day) moves the pick there.
+  Right, Home and End, and Page Up and Page Down move through it. A tap picks a day, an empty one too: the day then
+  offers Add (Score first's week card keeps its direct Add, since its days aren't tabs). A log saved to another day
+  (the plus button, Log for an earlier day) moves the pick there, and with a past day picked plus offers that day.
 - **A past day with an alarm feature** (Sarah's Wednesday note "some red in it") is Teal here, noted for a clinician,
   as on the calendar; Score first's week card still reads and counts it (L.facts flags only today). Open call 8.
 
 **Compact's FloraScore strip** follows section 4's range bar, thinner: the usual range labelled ("Your usual 76 to
-82") with today's dot, no dot on a flagged today, Day 5 of 14 over 14 steps while learning, and `L.NO_SCORE` with no
-score. The number is a button to FloraScore's page (one tap, as on Score first and Day first). Beside it, the week's
-change as an average, "Week average 5 above last week" (`L.scoreMoved`'s `delta`: this week's average against last
-week's, as shown), in plain text, never Gold, and never on a day with no score. Saying "average" keeps it from reading
-as today's move, which is why section 2 took the "+1 vs last week" pill off the hero (row 1, and section 6, row 6).
+82") with today's dot, and the bar only with a dot (a band with nothing on it reads as a broken chart): no bar with no
+score today (`L.NO_SCORE` says why) or on a flagged today ("Not read against your usual today"). Where the number sits
+is the dot, the label and the number itself, so the strip doesn't say it again in words: `RU.scoreRel`'s "A little
+above its usual range" is in the number's name for a screen reader. Day 5 of 14 over 14 steps while learning. The
+number is a button to FloraScore's page (one tap, as on Score first and Day first), with a chevron on Free too, since
+only the page is a member's. Beside it, the week's change as a sentence, "This week's average is 5 above last week's."
+(`L.scoreMoved`'s `delta`: this week's average against last week's, as shown), never Gold, and never on a day with no
+score. Saying "this week's average" keeps it from reading as today's move, which is why section 2 took the "+1 vs last
+week" pill off the hero (row 1, and section 6, row 6). While another day is picked under the week, the strip's name
+reads "FloraScore · Today". On a flagged today the Teal primary-care note right under the strip is a button to When to
+see a clinician, with Make a report.
 
 ### The card before Nov 4 (the record: `RU.core.weekCard`)
 
@@ -605,8 +621,8 @@ Where a screen says something the model doesn't, and the fix. Worst first. The w
 | 23 | Easy's Your weeks | "15 of 29 days within your usual range" beside "19 of 29 days within your usual" | Two measures | "FloraScore was in its usual range on 15 of 29 days" [M6] |
 
 Also from the truth audit: Sarah and Marcus share one seeded week (only the window and meal count differ), so
-switching person shows almost the same card. Giving each a different week would change 90 days of patterns, scores,
-deck figures and existing checks, so it is left for a later pass. And How often's part of "what moved it" is exactly 0
+switching person shows almost the same card. Giving each a different week would change 90 days of patterns, scores and
+existing checks, so it is left for a later pass. And How often's part of "what moved it" is exactly 0
 for every demo person, because every logged day in both weeks had a usual count. It reads "How often didn't move",
 with no bar, until a No BM or a 3 BM day moves it.
 
@@ -623,8 +639,7 @@ day on Free, ties named, Ask drawing the card's own chart, the weekly bars in Pl
 days). M7 and the parts of M2 marked "after Will's call" wait for it, so Rings, Bento and Oura still draw their own
 marks (FloraScore in Gold in places, a ring for a day with nothing logged); only their retired words are fixed. The
 module screen notes below are applied, and so are the hand-offs at the end that belong to the notes workflow (the
-`refresh-app.js` screen notes, the decision notes, the brief and CLAUDE.md, by fix-words). The deck's are the deck
-workflow's. The usual five checks run after each group: `qa.js`, `behave.js`, `audit-spacing.js`,
+`refresh-app.js` screen notes, the decision notes, the brief and CLAUDE.md, by fix-words). The usual five checks run after each group: `qa.js`, `behave.js`, `audit-spacing.js`,
 `shots.js`, `sweep.js` (both themes, 12 weeks and Just joined, `--plan free` and `--width 390` too).
 
 ### Core
@@ -750,21 +765,6 @@ as it stands on Oct 28, after finish-viz; the new says what the screens draw now
   way, and Oura breaks the chart rules in four places." }; `open` "Keep a fixed Oura on Today's FloraScore and week, or
   one look everywhere? With one look, Data style folds into Version."
 
-**The deck** (`deck/project/slides`, owned by the deck workflow). What the slides still say or draw, and what the phone
-draws now:
-
-- `history.html`, the Calendar option. Old: "A month on one screen, each day marked the way the week card marks it,
-  with a struck date for a day with nothing logged." New: "A month on one screen, each day marked the way the week
-  card marks it, with the date alone for a day with nothing logged."
-- `home.html`, Day first. Old: "FloraScore as a small ring at the top". New: "FloraScore as a small chip at the top"
-  (the sheet's words; the chip carries the glyph, which holds no value).
-- `style-built.html`, the Florin charts FloraScore card. It draws the old card: a ring that sweeps full, "83, a little
-  above your usual range", four part bars (Timing 95, How often 97, Form 94, Comfort 93), a 30-day line with today's
-  dot, and a number that counts up. The card now draws "83, a little above its usual range", the line on the usual
-  band with today ringed and labelled "Today 83", and one sentence on the part that moved most ("Timing and form moved
-  it most this week, adding 2 points each"), with no part bars and no count-up.
-- The data style slides follow the sheet's Data style block, which now recommends Option 1.
-
 **The brief** (`claude/Florin app refresh brief.md`, owned by the notes workflow; applied by fix-words, Oct 28: the
 build lines and the calls changed, the dated logs left as written with one line under them saying which marks
 changed, and a section for Will's Oct 28 notes). Lines that describe the build as it
@@ -826,8 +826,8 @@ library is republished together with the prototype.
    History, Your days and Easy draw section 1's filled circle, with a day with nothing logged as the date alone. The
    module-by-module page puts the calendar with the week's ring to Will; `RU.dayMark` stays as it is until he picks,
    since that page draws Florin charts' filled circles from it.
-7. **Compact's "+5 this week"** (settled Nov 4): it reads "Week average 5 above last week", and says nothing with no
-   score today.
+7. **Compact's "+5 this week"** (settled Nov 4, worded Nov 5): it reads "This week's average is 5 above last
+   week's.", and says nothing with no score today.
 8. **A past day with an alarm feature:** Teal on the calendar and Compact, read and counted on Today's week card and
    Insights. Mark it everywhere (and leave it out of every count), or only today?
 

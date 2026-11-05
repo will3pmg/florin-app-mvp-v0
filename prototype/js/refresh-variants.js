@@ -1,9 +1,9 @@
 /* Florin app refresh: the Home decision's Day first (V.home "day") and Compact (V.home "compact"), and the History
    decision's Calendar (V.history "calendar"). A feature module: it registers into window.FLORIN_EXT and wraps RU.today
    and RU.history (CLAUDE.md, Extension hooks), and never edits a core file.
-   - Compact (Will, Nov 4): a short FloraScore strip, this week as a row of day buttons (the Rings week card's marks,
-     smaller) with arrows for earlier weeks, then the day picked as History draws it, and the check-in when it's due.
-     The section COMPACT below has the detail.
+   - Compact (Will, Nov 4; the default Home since Nov 5): a short FloraScore strip, this week as a row of day buttons
+     (the Rings week card's marks, smaller) with arrows and swipe for earlier weeks, the check-in as one row when it's
+     due, then the day picked as History draws it, its logs one line each. The section COMPACT below has the detail.
    - Day first: the date with a small FloraScore chip (the glyph and the number) that opens its detail; today's logs in time order, with the one
      that stood out most marked; a row to log from that follows the BM logging decision; one sentence that leads with
      what stood out, gives FloraScore against yesterday and (with membership) what that log did to it, scored with and
@@ -21,7 +21,7 @@
 (function () {
   const FL = window.FL, L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, AD = window.FLORIN_APP, EXT = window.FLORIN_EXT, C = window.FLC;
   if (!FL || !L || !RU || !AD || !EXT) return;
-  const MOD = "refresh-variants (Day first and Calendar)";
+  const MOD = "refresh-variants (Day first, Compact and Calendar)";
   const warn = (what, e) => { try { console.warn(`Florin ${MOD}: ${what} failed, so the core's version is drawn instead.`, e); } catch (x) { /* nowhere to report */ } };
   const esc = FL.esc, Ut = AD.util, T = Ut.fmtTime, ic = RU.icon;
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
@@ -500,7 +500,7 @@
       if (extra.length) line += ` · ${extra.join(" · ")}`;
     } else if (e.kind === "sym") { if (t.sub) line += ` · ${t.sub}`; }
     else if (e.kind === "meal") sub = t.sub || "";
-    return h.replace(/^\s*<li\b/, '<li class="vr-dn"').replace(/<b>[^<]*<\/b>(<em>[^<]*<\/em>)?/, `<b>${esc(line)}</b>${sub ? `<em>${esc(sub)}</em>` : ""}`);
+    return h.replace(/^\s*<li\b/, '<li class="vr-dn"').replace(/<b>[^<]*<\/b>(<em>[^<]*<\/em>)?/, () => `<b>${esc(line)}</b>${sub ? `<em>${esc(sub)}</em>` : ""}`);
   };
   RU.entryRow = (e, M, V, o) => {
     if (!DENSE || !V || V.easy) return baseEntryRow(e, M, V, o);
@@ -522,9 +522,9 @@
     if (k0 >= 0 && k1 >= 0) h = `${h.slice(0, k0)}${add}${h.slice(k1 + 7)}`;
     /* a gap's own Add to this day is the header's now */
     h = h.replace(/(<div class="ap-hd-gap">[\s\S]*?<\/p>)\s*<button\b[\s\S]*?<\/button>/, "$1");
-    if (isT && f.pending) h = h.replace(/<p class="ap-hd-none">[^<]*<\/p>/, cpLog(M, V));
+    if (isT && f.pending) h = h.replace(/<p class="ap-hd-none">[^<]*<\/p>/, () => cpLog(M, V));
     /* No BM today? in the evening, as Score first offers it: FloraScore needs a BM or No BM on 2 of the last 3 days */
-    else if (isT && f.logged && L.isLate() && !x.entries.some((e) => e.kind === "bm" || e.kind === "nobm")) h = h.replace(/<\/section>\s*$/, `<button type="button" class="ap-tl-nobm vr-cp-nobm" data-act="nobm">${ic("nobm")}<span><b>No BM today?</b><em>Log it, so the day doesn't read as a gap</em></span></button></section>`);
+    else if (isT && f.logged && L.isLate() && !x.entries.some((e) => e.kind === "bm" || e.kind === "nobm")) h = h.replace(/<\/section>\s*$/, () => `<button type="button" class="ap-tl-nobm vr-cp-nobm" data-act="nobm">${ic("nobm")}<span><b>No BM today?</b><em>Log it, so the day doesn't read as a gap</em></span></button></section>`);
     return `<div class="vr-cp-day" id="${ids.panel}" role="tabpanel" aria-labelledby="${ids.tab(sel)}" data-vr-day="${sel}">${h}</div>`;
   };
   /* the greeting and the profile button, without the date line: the week row shows the date */
@@ -850,7 +850,7 @@
       if (!V || V.easy || V.home !== "compact" || (st && st.d != null) || !S || S.tab !== "today") return h;
       const d = cpSel(M);
       if (d === L.TODAY) return h;
-      return h.replace(/<button type="button" class="ap-psh-ago" data-act="plus-earlier">[\s\S]*?<\/button>/, `<button type="button" class="ap-psh-ago" data-act="plus-day" data-v="${d}">${ic("cal")}Log for ${esc(addTo(d))}</button>`);
+      return h.replace(/<button type="button" class="ap-psh-ago" data-act="plus-earlier">[\s\S]*?<\/button>/, () => `<button type="button" class="ap-psh-ago" data-act="plus-day" data-v="${d}">${ic("cal")}Log for ${esc(addTo(d))}</button>`);
     } catch (e) { warn("plus with a day picked", e); return h; }
   };
   /* the When to see a clinician sheet, opened from the Teal note on Compact rather than after a save: its heading

@@ -9,6 +9,8 @@
      the core's card kept as RU.core.weekCard (for a week drawn to another day, or if the look can't draw)
    - RU.insights, RU.todayParts.hero and .week, wrapped; RU.idetail, wrapped for one detail page of its own ("days",
      the days behind the week and month cards), and RU.askContext, for that page's Ask about this
+   - Ask about this on every Insights card in a look (Will, Nov 5), at the range the card reads (data-range), drawn Ray
+     with the Ask token by refresh-ask.css; on Free it opens the paywall, as the core's cards do
    - RU.lookOf(V), RU.lookCards(M, V, keys, o) and RU.lookAfter(el), so another module (the Easy version) can draw
      cards in a look through RU
    - EXT.decisions.look (the decision's note for Will), EXT.notes for its screens, EXT.screens, EXT.opens,
@@ -268,9 +270,19 @@
     if (V.plan === "free") return `<button type="button" class="ap-link rlk-go" data-act="pay" data-pay="${PAY_FROM[k] || dk}">${ic("lock")}<span>${esc(words)}</span><span class="sr">, with Florin membership</span></button>`;
     return `<button type="button" class="ap-link rlk-go" data-act="idetail" data-k="${dk}" data-range="${range}" data-rlk>${esc(words)}${ic("chev")}</button>`;
   };
+  /* Ask about this (Will, Nov 5: every Insights card has a way into Ask, and it stands out): the card's question for
+     Ask Florin, at the range the card reads (the week and the month open Your days' counts); on Free the paywall, as
+     the core's cards do. refresh-ask.css draws it Ray, with the Ask token */
+  const ASK_OF = { score: "score", parts: "score", trend: "score", week: "days", month: "days", timing: "timing", often: "often", form: "form", symptoms: "sym", checkin: "ck", pattern: "pat" };
+  const askBtn = (k, V) => {
+    const ak = ASK_OF[k];
+    if (!ak) return "";
+    return V.plan === "free" ? `<button type="button" class="ap-ask-b rlk-ask" data-act="pay" data-pay="ask" data-k="${ak}">${ic("lock")}Ask about this</button>`
+      : `<button type="button" class="ap-ask-b rlk-ask" data-act="ask-about" data-k="${ak}" data-range="${DETAIL[k][1]}">${ic("chat")}Ask about this</button>`;
+  };
   const cardBlock = (look, k, D, M, V) => {
     const html = card(look, k, D, M, V);
-    return html ? `<section class="rlk-card" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}">${wrap(look, html)}${goLink(k, V, D)}</section>` : "";
+    return html ? `<section class="rlk-card" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}">${wrap(look, html)}<div class="rlk-foot">${askBtn(k, V)}${goLink(k, V, D)}</div></section>` : "";
   };
 
   /* ---------- Insights in a look ----------

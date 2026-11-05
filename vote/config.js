@@ -19,5 +19,9 @@ window.VOTE_CONFIG = {
   slackOpen: "",
 
   /* who the ballot goes to, as the page names him */
-  to: "Will"
+  to: "Will",
+
+  /* true only on the hosted site (vote/build.js stamps it): the results page there reads the votes from the Sheet with
+     the key, and never asks for a results.json, which the site never carries */
+  hosted: false
 };

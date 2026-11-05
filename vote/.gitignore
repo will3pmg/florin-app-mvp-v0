@@ -1,0 +1,6 @@
+# Voters' names, roles and notes stay out of git: the ballots Claude saves from Slack, the counts made from them, and
+# the hosted build (rebuilt from the sources with node vote/build.js).
+ballots/
+results/results.json
+results/results-data.js
+site/

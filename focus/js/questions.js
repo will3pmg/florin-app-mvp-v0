@@ -60,7 +60,7 @@
     },
     checkin: {
       title: (c) => `${c.name}'s weekly check-in is due tonight. Answer it. Pick any answers you like.`,
-      hint: (c) => (c.easy ? "On Today, tap Start under Weekly check-in." : "On Today, tap Start on the Weekly check-in card.")
+      hint: (c) => (c.easy ? "On Today, tap Start under Weekly check-in." : c.home === "compact" ? "On Today, tap Weekly check-in, under the row of days." : "On Today, tap Start on the Weekly check-in card.")
     },
     history: {
       title: (c) => (c.gaps > 1 ? `${c.name} didn't log anything on two days in ${c.month}. Find one of them in History.` : `${c.name} didn't log anything on one day in ${c.month}. Find that day in History.`),

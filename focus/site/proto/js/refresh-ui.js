@@ -27,7 +27,9 @@
     close: "<path d=\"M5.5 5.5l9 9M14.5 5.5l-9 9\"/>",
     down: "<path d=\"M6 8.2 10 12l4-3.8\"/>",
     list: '<path d="M7.5 5.5h9M7.5 10h9M7.5 14.5h9"/><circle cx="4" cy="5.5" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="14.5" r="1" fill="currentColor" stroke="none"/>',
-    chat: '<path d="M4.5 4h11A1.5 1.5 0 0 1 17 5.5v7a1.5 1.5 0 0 1-1.5 1.5H9.5L6 16.8V14H4.5A1.5 1.5 0 0 1 3 12.5v-7A1.5 1.5 0 0 1 4.5 4z"/>',
+    /* Ask Florin's glyph (Will, Nov 5): a round speech bubble holding the Flow wave, never the logo itself. Every way
+       into Ask draws it, and refresh-ask.css sets it on a disc as the Ask token */
+    chat: '<path d="M7.75 3.5h4.5a5 5 0 0 1 0 10H9l-3.2 3v-3.4a5 5 0 0 1 1.95-9.6z"/><path d="M6.6 8.6c1-1.5 2.4-1.5 3.4 0s2.4 1.5 3.4 0"/>',
     today: '<circle cx="10" cy="10" r="3.2"/><path d="M10 2.8v1.6M10 15.6v1.6M2.8 10h1.6M15.6 10h1.6M4.9 4.9l1.1 1.1M14 14l1.1 1.1M4.9 15.1 6 14M14 6l1.1-1.1"/>',
     sym: '<path d="M10 16.5s-6-3.6-6-8.1A3.4 3.4 0 0 1 10 6a3.4 3.4 0 0 1 6 2.4c0 4.5-6 8.1-6 8.1z"/>',
     ck: '<rect x="4.5" y="3.5" width="11" height="14" rx="2"/><path d="M7.5 3.5V2.6h5v.9M7.3 10.6l2 2 3.6-4"/>',

@@ -17,6 +17,7 @@
 }
 .vr :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .vr-num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.vr-tab { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vr-dim { color: var(--ink-3); }
 .vr-empty { margin: 0; color: var(--ink-2); }
 
@@ -106,7 +107,7 @@
 }
 .vr-h2 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.25; text-wrap: balance; }
 .vr-h3 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.25; text-wrap: balance; }
-.vr-h4, .vr-notes-h, .vr-filter-h {
+.vr-notes-h, .vr-filter-h {
   margin: 0;
   font-family: var(--mono);
   font-weight: 400;
@@ -116,13 +117,23 @@
   color: var(--ink-2);
 }
 .vr-p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+.vr-h4 { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink); }
+.vr-showing { margin: 0; color: var(--ink-2); flex-basis: 100%; }
 
 .vr-filters { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-start; }
 .vr-filter { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 
-.vr-check-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+/* Check these: folded to one line under the table at a glance */
+.vr-check { gap: 0; padding-block: 0; }
+.vr-check-s { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-height: 48px; padding-block: 16px; cursor: pointer; list-style: none; }
+.vr-check-s::-webkit-details-marker { display: none; }
+.vr-check-s::after { content: ""; align-self: center; margin-left: auto; width: 8px; height: 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); /* grid-exempt: a chevron drawn in CSS */ }
+.vr-check[open] .vr-check-s::after { transform: rotate(-135deg); /* grid-exempt: a chevron drawn in CSS */ }
+.vr-check-s .vr-h2 { font-size: 20px; }
+.vr-check-n { color: var(--ink-2); }
+.vr-check-list { margin: 0 0 24px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
 .vr-held { margin-top: 8px; }
-.vr-held summary { cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
+.vr-held summary { cursor: pointer; padding-block: 12px; }
 .vr-pre {
   margin: 0;
   padding: 12px;
@@ -143,7 +154,19 @@
 .vr-table thead th { font-weight: 500; color: var(--ink-2); border-bottom-color: var(--line); white-space: nowrap; }
 .vr-glance { min-width: 640px; }
 .vr-glance tbody th { font-weight: 500; }
-.vr-jump { color: var(--ink); text-underline-offset: 3px; }
+.vr-jump { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); text-underline-offset: 3px; }
+.vr-glance td, .vr-glance th { vertical-align: middle; }
+/* how the votes split: one colour at falling strengths, No preference lightest; the words are in the row */
+.vr-split { min-width: 120px; }
+.vr-stack { display: flex; width: 100%; min-width: 96px; height: 12px; border-radius: 4px; overflow: hidden; background: var(--line-2); }
+.vr-stack i { display: block; min-width: 4px; height: 100%; }
+.vr-stack i + i { box-shadow: inset 2px 0 0 var(--panel); }
+.vr-seg-0 { background: var(--bar); }
+.vr-seg-1 { background: color-mix(in srgb, var(--bar) 60%, var(--panel)); }
+.vr-seg-2 { background: color-mix(in srgb, var(--bar) 36%, var(--panel)); }
+.vr-seg-3 { background: color-mix(in srgb, var(--bar) 22%, var(--panel)); }
+.vr-seg-none { background: color-mix(in srgb, var(--ink-3) 40%, var(--panel)); }
+.vr-glance [data-k="rec"] .vr-tag { display: inline-block; margin-left: 8px; white-space: nowrap; }
 .vr-glance td.vr-num, .vr-glance th:first-child { white-space: nowrap; }
 .vr-grid { width: auto; }
 .vr-grid td, .vr-grid th { white-space: nowrap; }
@@ -174,7 +197,8 @@
 }
 .vr-bar--rec { border-color: var(--ink); }
 .vr-bar-top { display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap; }
-.vr-bar-name { font-weight: 500; }
+.vr-bar-name { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 240px; font-weight: 500; }
+.vr-bar-line { font-weight: 400; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
 .vr-bar-n { margin-left: auto; font-size: 13px; white-space: nowrap; }
 .vr-tag {
   font-family: var(--mono);
@@ -205,7 +229,7 @@
 /* ---------------------------------------------------------------- who picked what: a table, or a list on a phone */
 .vr-who-list { display: none; list-style: none; margin: 0; padding: 0; }
 .vr-voter { border-bottom: 1px solid var(--line-2); }
-.vr-voter summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding-block: 8px; }
+.vr-voter summary { cursor: pointer; padding-block: 12px; }
 .vr-voter-l { margin: 0; padding: 0 0 12px; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 .vr-voter-l .vr-num { color: var(--ink-3); display: inline-block; min-width: 24px; }
 
@@ -218,6 +242,16 @@
   .vr-who-table { display: none; }
   .vr-who-list { display: block; }
   .vr-q-n { min-width: 24px; font-size: 18px; }
+  /* the table at a glance as a list: each question, then its three answers with their names */
+  .vr-glance { min-width: 0; }
+  .vr-glance thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .vr-glance, .vr-glance tbody, .vr-glance tr, .vr-glance td, .vr-glance th { display: block; }
+  .vr-glance tr { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 4px 8px; padding-block: 12px; border-bottom: 1px solid var(--line-2); }
+  .vr-glance td, .vr-glance th { padding: 0; border: 0; }
+  .vr-glance td[data-label] { grid-column: 2; }
+  .vr-glance td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-2); }
+  .vr-glance td.vr-split::before { content: none; }
+  .vr-glance [data-k="rec"] .vr-tag { margin: 4px 0 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .vr * { scroll-behavior: auto; }

@@ -22,7 +22,7 @@ const FOCUS = path.resolve(__dirname, ".."), REPO = path.dirname(FOCUS);
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i < 0 ? d : args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : true; };
 const PATH_ = opt("path", "here");
-const DEVICE = opt("device", "iphone"), EASY = args.includes("--easy"), HOME = opt("home", "score"), HIST = opt("history", "calendar"), WEEK = opt("week", "built"), THEME = opt("theme", "light");
+const DEVICE = opt("device", "iphone"), EASY = args.includes("--easy"), HOME = opt("home", "compact"), HIST = opt("history", "calendar"), WEEK = opt("week", "built"), THEME = opt("theme", "light");
 const OUT = path.resolve(opt("out", path.join(os.tmpdir(), "florin-focus-check")));
 const TAG = `${DEVICE}-${EASY ? "easy" : "std"}-${HOME}-${HIST}-${WEEK}-${THEME}${PATH_ === "installed" ? "-installed" : ""}`;
 const PE = 9300 + Math.floor(Math.random() * 200), PS = PE + 400;

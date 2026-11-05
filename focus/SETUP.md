@@ -18,6 +18,8 @@ A preview to click through before any of this: https://claude.ai/artifact/Sv2W1q
 share it from its Share menu). It is focus/site with the flow as the artifact's page and nothing connected, so answers
 stay on the device and nothing is sent. Adding it to a home screen adds the claude.ai page, not the full-screen app.
 
+The same script also takes the Florin app vote, on a Votes tab of the same Sheet: see `vote/SETUP.md`.
+
 Prototype only. Not for patients.
 
 ---
@@ -284,7 +286,7 @@ code; pay only codes a participant sends you, and if **tokens** ever holds more 
 |---|---|
 | `Code.gs` | The script. The only file that goes into Google |
 | `gas-stub.js` | A stand-in for Google's services, so Code.gs runs on a computer for the tests and the local endpoint |
-| `test.js` | 36 tests of Code.gs: `node focus/apps-script/test.js` |
+| `test.js` | 47 tests of Code.gs, the vote's 11 included: `node focus/apps-script/test.js` |
 | `contract-test.js` | The app's own `focus.js` sends to Code.gs, and every piece must be taken: `node focus/apps-script/contract-test.js` |
 | `browser-test.js` | The real browser path, on an emulated iPhone and Android phone: `NODE_PATH=$(npm root -g) node focus/apps-script/browser-test.js` |
 

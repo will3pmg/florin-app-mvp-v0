@@ -201,7 +201,7 @@ Will, after seeing the second pass: the app is a lot of text and simple graphs; 
 
 Will, after the Oct 14 build: put the open decisions on the page as toggles instead of separate demos, then build out
 what each decision needs. His asks, what was built for each, and the calls that are his. Everything below is in the
-prototype at the same link, and in the decisions deck (https://claude.ai/artifact/2h5ikADR2eFCY1DZYbJEJU).
+prototype at the same link.
 
 **What was built, ask by ask**
 
@@ -213,9 +213,8 @@ prototype at the same link, and in the decisions deck (https://claude.ai/artifac
   label), at most one open question, and where to try it. The notes for the screen sit on the right. On a phone the
   app is full screen, with Toggles and Notes as sheets; a decision changed in Toggles says so at the top of the sheet,
   with See it and Read the note.
-- **The 3 demos become a toggle and a slide.** The A, B and C phones side by side are gone. Consistency is one toggle
-  (A 1 to 7, B 5 words, C 7 words) that redraws the whole app, and the deck has a Consistency slide that sets the three
-  side by side with one demo person's last 30 days in each.
+- **The 3 demos become a toggle.** The A, B and C phones side by side are gone. Consistency is one toggle (A 1 to 7, B
+  5 words, C 7 words) that redraws the whole app.
 - **Quick BM or full.** BM logging: Quick tiles and form (the tiles on plus; once 5 BMs are logged a tile saves at
   once, with Add details and Undo) or Full form only (one Log a BM row, every BM through the form, no one-tap save).
 - **History and home.** Home: Score first (the Forest FloraScore card) or Day first (the date with a small FloraScore
@@ -255,9 +254,6 @@ prototype at the same link, and in the decisions deck (https://claude.ai/artifac
   then a check of the answer (the 22 claims rules, Ask's own rules and a numbers check). A failed check, or no
   Claude, gives the answer computed from the logs. Ask about this brings a card's numbers in, and every answer lists
   the numbers it used.
-- **A decisions deck.** 21 slides in Claude Slides: how to use the demo, every decision at a glance, one slide per
-  decision, one per data style with Sarah's figures, then the business calls and the list of what we need from Will.
-  Its source is `deck/`.
 
 **Making the modules one app (Oct 28)**
 
@@ -301,8 +297,8 @@ Five reviewers read the third pass. What the core changed:
 - *The page.* Read the note sits under the toggles, never over the phone's tab bar. A row picked from Screens always
   shows its note. The arrow keys walk every row once, in order. With Easy on, Home and Data style each say "Easy has
   its own Today. Turn Easy off to see this choice." (charts, for Data style). A changed decision whose option shows
-  elsewhere offers Show it on the phone. Skip to the phone is the first Tab stop, and the header links the deck and
-  the looks library.
+  elsewhere offers Show it on the phone. Skip to the phone is the first Tab stop, and the header links the looks
+  library.
 - *Craft.* BM tiles keep Formed on one line at 360 wide. Mild symptom squares are 3.4:1 (were 1.5:1). The detail
   charts lost their dashed lines; a day not logged is its struck date. The faintest inks, in the app and on the page,
   clear 4.5:1 in light. These two token changes, and the chart kit's dashes, are for the studio to take back.
@@ -341,8 +337,6 @@ A fresh read of the pass found a flagged today still read in places, and a few s
   Ask's meals answer names the coverage the gate reads.
 - *The page.* Read the note no longer covers the last toggle at 1000 wide: the toggles end above it. After the page
   follows the system theme, Oura is dark first again. The library's selector says Consistency.
-- *The deck.* The Home mock shows what membership adds to the sentence; Rings and Oura use the app's blend wording;
-  Profile lists Delete my account and the phone's "Set from your logs" wording; Easy's answer sizes match the note.
 
 *Since then,* the data visualisation pass of Oct 28 (next section) changed marks the logs above describe: the hero is a
 range bar, with no Ray ring and no count-up; there are no struck dates; a symptom is one Teal square whatever its
@@ -352,15 +346,15 @@ were written.
 ## Will's notes (Oct 28) and what they changed
 
 Will, after the Oct 27 build: Today's week card was confusing (his screenshot was Marcus at 12 weeks), and the
-decisions in the deck were convoluted. "Make it simple." He asked for each decision laid out as its options, each with
+decisions were convoluted. "Make it simple." He asked for each decision laid out as its options, each with
 why you'd do it and why you wouldn't, then what we recommend. He asked what "rough days only" meals means, and what we
 recommend for the weekly check-in. And he asked for a pass on the app's data visualisation, to make sure it's the right
 set.
 
 - **One sheet for the decisions.** `claude/Florin decisions.md` is the one source. Each decision has the question, what
   it decides, each option (what it is, why do it, why not), what we recommend and why, at most one open question, and
-  where to try it. The phone's decision notes, the demo controls' notes and the deck are rebuilt from it, word for
-  word where they share a line.
+  where to try it. The phone's decision notes and the demo controls' notes are rebuilt from it, word for word
+  where they share a line.
 - **"Rough days only" meals.** The demo control is now Demo person's meals: Every day, Only with symptoms, or Never.
   It changes the demo person's past, not the app. It shows a trap: meals written down only on days with symptoms leave
   no ordinary days to compare with, so everyday foods can look linked to symptoms. So Insights holds food patterns back
@@ -384,7 +378,7 @@ set.
   History: List. There's no FloraScore before day 14 on any day, so the 90-day line starts there, and a short run of
   scored days between gaps keeps its dots. A Plum legend counts days ("Days in your window"), so it never reads as the
   Forest readings. Easy read draws FloraScore as a big number on its range bar, never a ring filling toward 100. On a
-  phone, Toggles carries the header's two links. The deck's Florin charts slide shows the new week card.
+  phone, Toggles carries the header's links.
 
 ## Will's notes (Nov 4) and what they changed
 
@@ -407,17 +401,40 @@ FloraScore.
   what stood out today, and asks whether Compact should replace it. The focus test now puts Score first against
   Compact, and shows the new week card. `reference/shipping-app/home.md` has the current app's home in words.
 
+## Will's notes (Nov 5) and what they changed
+
+Will: "Set the default to compact for home screen. So take a look and see if you want to change anything." And: "The
+deck isn't needed. can kill that."
+
+- **Compact is the default Home.** The demo opens on it, and the sheet and the Home note recommend it as his choice.
+  A viewer who picked another Home keeps it. Score first is still an option, with its own row in Screens (Home: Score
+  first), and the focus test now checks the choice: Score first against Compact.
+- **Compact, tightened after two reviews.** The due check-in is one row under the week; the day picked has Add at its
+  top and its logs one line each; the legend folds behind an info button (open before day 14); a swipe steps a week,
+  and the month opens History's calendar; the strip drops the words its bar already says. Section 3 of
+  `claude/Florin data viz.md` has the detail.
+- **The deck is gone,** at his word: its folder, the page's link to it and every mention. The header keeps room for
+  one more link.
+- **Ask Florin** (Will, Nov 5: "The Ask buttons maybe should be yellow? They get washed out... Little token somehow...
+  icon." and "The Ask experience is a little dull. Can you make it more compact, easy to read on phone?"). Every way
+  into Ask is now a Ray pill with the Ask token (a round bubble holding the Flow wave, on a Forest disc), and the Ask
+  tab carries the token. The chat is built to DESIGN.md's coach spec: an opening read (a chart of the last 7 days and
+  two sentences), then compact turns, each with what it looked at folded away, one Florin journal line, the reply in
+  Lora and one bold question that offers the next thing to look at (a yes asks it), options about one turn in three,
+  and thumbs. What Ask Florin knows lists what it reads and what can be left out of a chat, with an opt-in to let it
+  start a conversation.
+
 ## The calls for Will
 
 One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the
 line says so.
 
 *Home*
-- Compact in place of Score first as the default? Ours is still Score first, for its sentence; the focus test puts the
-  two side by side.
+- Compact is the default now (Will, Nov 5). Is a Gold ring, with the day's line a tap away, enough without Score
+  first's sentence on what stood out? The focus test checks the choice against Score first.
 - On Compact a past day with a log noted for a clinician (Sarah's Wednesday, "some red in it") is Teal, as on the
   calendar, while Score first's week card reads and counts it: mark such a day on every surface, or only on today?
-- Confirm Score first: the deck and the Home note both recommend it, and its sentence now says what the log did.
+- On Compact the legend folds behind an info button from day 14: or keep it open, as on the week card?
 - On a flag day the score keeps its number but isn't read against the usual, on both options: keep it, or hide it?
 - Should a strong symptom outrank a shift in what stands out?
 - On an ordinary day a mild symptom leads the sentence: should it, or only moderate and strong ones?
@@ -427,7 +444,8 @@ line says so.
 - Day first puts the BM tiles on Today as well as on plus: keep both, or only Today's?
 - Does the day's sentence say enough, or too much?
 - One log moves the score by about a third of what it would alone (it blends 3 days): say so on the score's detail?
-- The check-in card sits second on the evening it's due, then folds to one line: right place?
+- The check-in card sits second on Score first on the evening it's due, then folds to one line; on Compact it's one row
+  under the week: right place?
 
 *History and the week*
 - A flagged day is marked for a clinician and not read against the usual: right, or show both?
@@ -489,10 +507,12 @@ line says so.
 - Deleting the account may not cancel an app store membership: should the delete sheet say so for a member?
 
 *Ask Florin*
-- On Free: locked, as built, or one answered question a week and the clinician question never locked, as the deck says?
+- On Free: locked, as built, or one answered question a week and the clinician question never locked, as the sheet
+  recommends?
 - Claude runs on the viewer's own account here; shipping needs Florin's own model account and a privacy review first.
 - Show Claude's answer only once it's checked, at the cost of a pause?
-- Thumbs, and memories the person can see and delete?
+- Thumbs are in, and What Ask Florin knows (what it reads, what can be left out of a chat). Will's Oct 12 note said no
+  blog links for now, and the coach spec gives each turn one Florin journal line: keep the line, or drop it?
 - A card's question: straight into the box, or waiting as a chip?
 - Once the report is built, offer it in the clinician answer? And an urgent-care number for the person's country?
 - A mucus question gets the flag note's line and primary care, but no Teal banner (it isn't an alarm): add the banner?
@@ -518,7 +538,7 @@ line says so.
 
 *Logging a BM and symptoms*
 - Which BM extras stay? All show under the form (Will, Oct 14); ours: keep the flag and Sudden urge to go, and drop
-  Burning and Didn't feel finished first if the form feels long. Also on the deck's asks slide.
+  Burning and Didn't feel finished first if the form feels long.
 - Should a person's first two weeks always open the form, while Florin learns their usual, rather than the first 5 BMs?
 - A one-tap log has no details (urgency, straining, how long, the flag): enough for the people who need them most?
 - The tiles on the plus menu card, or only inside Log a BM? And the check-in in plus every week, with a dot only when due?
@@ -535,8 +555,7 @@ line says so.
 
 *Insights and FloraScore*
 - A day is within your usual when the first BM landed in the window, the count was usual and every form was within the
-  usual; a B word either side, or a day with only symptoms or meals, counts on neither. Right definition? Also on the
-  deck's asks slide.
+  usual; a B word either side, or a day with only symptoms or meals, counts on neither. Right definition?
 - Symptoms' usual is how often they came up (about 1 day in 3 for Sarah): enough, or no usual for symptoms at all?
 - Score Form on steps only, so the consistency option can't change the score?
 - Comfort counts a symptom logged without a strength like the lightest one: right?

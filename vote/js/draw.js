@@ -11,13 +11,13 @@
    Every frame goes through still(), copied from modules.js: count-ups stripped, buttons disabled with role none and
    their acts removed, links unlinked, inputs disabled, tab stops removed, ids made unique with their references
    rewritten. The page marks each picture aria-hidden: its words are the app's, and the option's name, line and Why or
-   why not carry it for a screen reader. Pictures aren't inert, so a wide screen can scroll a long Today inside its
-   phone; nothing in them takes a press (vote.css).
+   why not carry it for a screen reader. Nothing in a picture takes a press or scrolls on the page, so the wheel and a
+   swipe always move the page; a long screen scrolls only in the bigger view (vote.css).
 
    The model: Sarah, 12 weeks of logs, meals every day (L.build), and for Home's Day 5 control her logs on day 5. Part 2
    reads the data looks' one object (FLD.build over the same model). Both are built on the first question and kept.
-   frames(q, optId, o) gives [{ cap, kind, html, at }]; a frame that throws gives html null (the page says "This picture
-   didn't draw.") and is logged. */
+   frames(q, optId, o) gives [{ cap, kind, html, at, focus }]; a frame that throws gives html null (the page says "This
+   picture didn't draw.") and is logged. The month's two calendars are drawn on the last whole month. */
 (function () {
   "use strict";
   const W = window;
@@ -126,7 +126,9 @@
     if (el) el.setAttribute("data-vt-at", "1");
     return b.innerHTML;
   }
-  const done = (o) => { const el = still(box(o.html)); return { cap: o.cap, kind: o.kind, html: el.innerHTML, at: !!el.querySelector("[data-vt-at]"), raw: o.raw || "" }; };
+  /* focus: where a picture cut short on a phone keeps its view (vote.js): the top of the screen, or the top of a sheet
+     that rises from the bottom (the plus menu), so the part the option is about is the part shown */
+  const done = (o) => { const el = still(box(o.html)); return { cap: o.cap, kind: o.kind, html: el.innerHTML, at: !!el.querySelector("[data-vt-at]"), raw: o.raw || "", focus: o.focus || (el.querySelector(".ap-o--sheet") ? "sheet" : "top") }; };
 
   /* ---------- the logs a picture needs ---------- */
   const newBm = (o) => Object.assign({ d: L.TODAY, t: L.NOW, form: null, word: null, how: {}, dur: null, flags: {}, note: "", details: false }, o || {});
@@ -197,7 +199,7 @@
       ckN: cap1(Q.word(L.CHECKIN.length)),
       words5: andJoin(L.WORDS.map((w) => w.word)),
       words7: andJoin(L.TYPES.slice(1).map((t) => t.short)),
-      shortN: shortN != null ? cap1(Q.word(shortN)) : null,
+      shortN: shortN != null ? String(shortN) : null,
       fullN: fullN != null ? String(fullN) : null,
       blend: L.BLEND || 3,
       name: personName(), weeks: weeks(), day: learnDay()
@@ -263,7 +265,7 @@
       const M = models().M;
       if (o.id === "on") {
         const v = V({ checkin: true });
-        const t = mark(today(M, v), ".ap-ckc");
+        const t = mark(today(M, v), ".ap-ckc, .vr-cp-ck, [data-act=\"ck-start\"]");
         const ins = mark(RU.insights(M, v, { range: 30 }), '.ap-ic-h[data-k="ck"]', (h) => h.closest("section") || h);
         return [
           { cap: "Today", kind: "phone", html: phone({ V: v, tab: "today", screen: t }) },
@@ -324,7 +326,15 @@
   const insBox = (n) => { const k = `ins${n}`; if (!MEMO[k]) MEMO[k] = box(RU.insights(models().M, V(), { range: n })); return MEMO[k]; };
   const insSection = (n, k) => { const h = insBox(n).querySelector(`.ap-ic-h[data-k="${k}"]`); return h ? h.closest("section") : null; };
   const outer = (el) => (el ? el.outerHTML : null);
-  const calendar = () => box(RU.history(models().M, V({ history: "calendar" }), {})).querySelector("section.vr-cal");
+  /* the month question draws both calendars on the last whole month, so they show as many days as the other styles'
+     30, never a month barely begun (the calendar's own month step, st.vrM, as its arrows set it) */
+  const VAR = W.FLORIN_VARIANTS || {};
+  const calMonth = () => {
+    const M = models().M;
+    if (!VAR.monthOf) return null;
+    return Math.max(VAR.monthOf(M.start), VAR.monthOf(L.TODAY) - 1);
+  };
+  const calendar = () => box(RU.history(models().M, V({ history: "calendar" }), calMonth() != null ? { vrM: calMonth() } : {})).querySelector("section.vr-cal");
   /* Florin charts: each module as the app draws it now (modules.js's BUILT; its extra sub-figures left out) */
   const BUILT = {
     score: () => RU.scoreHero(models().M, V()),
@@ -347,25 +357,26 @@
     pattern: () => outer(insSection(30, "pat"))
   };
   const CARD = { score: "score", trend: "trend", parts: "parts", week: "week", month: "month", timing: "timing", often: "often", form: "form", symptoms: "symptoms", checkin: "checkin", pattern: "pattern" };
-  /* the week's ring for a day, from the Rings look's month card (modules.js's ringsByDay and ringInto) */
-  function ringsByDay() {
-    if (MEMO.rings) return MEMO.rings;
-    const look = lookById("rings"), out = {};
-    if (look && look.components && look.components.month) {
-      const D = looksData();
-      const b = box(look.components.month(D, ctxOf(look)));
-      const cells = [...b.querySelectorAll("li.rg-md:not(.is-pad)")];
-      (D.days[30] || []).forEach((d, i) => { const svg = cells[i] && cells[i].querySelector("svg.rg-day"); if (svg && d && d.d != null) out[d.d] = svg.outerHTML; });
+  /* the week's ring for a day: the Rings look's own day ring (its marks.ring, drawn at its month card's size), from that
+     day's facts, for any day of any month (modules.js's ringInto) */
+  function ringFor(d) {
+    const k = `ring:${d}`;
+    if (k in MEMO) return MEMO[k];
+    const look = lookById("rings"), M = models().M, x = L.day(M, d);
+    let svg = null;
+    if (look && look.marks && look.marks.ring && x) {
+      const f = L.facts(M, x, MODE);
+      svg = look.marks.ring({ logged: f.logged && !f.pending, pending: f.pending, state: f.state }, 34, 3.6);
     }
-    MEMO.rings = out;
-    return out;
+    MEMO[k] = svg;
+    return svg;
   }
   const RINGED = ["usual", "shift", "quiet"];
   function ringInto(markEl) {
     const k = RINGED.find((c) => markEl.classList.contains(`ap-day--${c}`));
     const c = markEl.querySelector(".ap-day-c");
     const d = +markEl.dataset.day;
-    const svg = k && c && ringsByDay()[d];
+    const svg = k && c && ringFor(d);
     if (!svg) return false;
     const r = document.createElement("span");
     r.className = "vt-ringc rlk-look lk-rings";
@@ -414,7 +425,12 @@
       case "weeks": return "This week against last";
       case "checkin": return "This week's answers, against the first weeks";
       case "month": {
-        if (style === "built" || style === "cal-ring") { const t = dOf(L.TODAY); return `${Ut.MONL[t.getMonth()]} so far, ${span2(Math.max(L.TODAY - t.getDate() + 1, M.start), L.TODAY)}`; }
+        if (style === "built" || style === "cal-ring") {
+          const m = calMonth();
+          if (m == null) { const t = dOf(L.TODAY); return `${Ut.MONL[t.getMonth()]} so far, ${span2(Math.max(L.TODAY - t.getDate() + 1, M.start), L.TODAY)}`; }
+          const ds = VAR.monthDays(m).filter((d) => d >= M.start && d <= L.TODAY);
+          return `${Ut.MONL[m % 12]}, ${span2(ds[0], ds[ds.length - 1])}`;
+        }
         return last30();
       }
       default: return "";
@@ -452,7 +468,8 @@
     try { fig = q.part === 2 ? chartHtml(q.mod, optId) || "" : ""; } catch (e) { fig = ""; }
     return Q.sheetOf(opt, { fig, blend: L.BLEND || 3 });
   }
-  /* a question's lede: what the screen is, or the stretch the cards count */
+  /* a question's lede: what the screen is, or the stretch the cards count (the month's calendars say their own month
+     over the picture, since it differs from the others' 30 days) */
   const lede = (q) => (q.part === 1 ? q.lede : spanOf(q.mod, "rings"));
 
   const again = (el) => reid(el, `vt${++PIC}`);
