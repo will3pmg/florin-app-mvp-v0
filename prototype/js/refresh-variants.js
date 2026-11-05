@@ -942,11 +942,11 @@
     opts: [
       { v: "score", is: "Today opens on the FloraScore card, with the person's usual range and one sentence on what stood out today, then today's logs and the last 7 days.", why: "One number for the day, read against the person's own usual, is the quickest thing to check.", not: `There's no score before day ${L.LEARN_DAYS}, and on a rough evening a score inside the usual range can read as if nothing happened.` },
       { v: "day", is: "Today opens on the date and today's logs in time order, with the one that stood out marked, and FloraScore as a small chip at the top.", why: "It suits people who open the app to log, and it looks the same from day 1, before Florin has a score.", not: "FloraScore, the number at the centre of Florin, is easy to miss." },
-      { v: "compact", is: "Today opens on a short FloraScore strip, then this week as a row of days with arrows for earlier weeks, then the logs of the day picked, today's first.", why: "It's built for getting around, as the current app's home is: the week is in view, and any day, with its logs and a way to add to it, is one tap away.", not: "No sentence says what stood out today or how the week went, so a day outside the usual shows only as a Gold ring until the person taps it." }
+      { v: "compact", is: "Today opens on a short FloraScore strip, then this week as a row of days to tap or swipe through, then the day picked, today first, with Add and its logs one line each.", why: "It's built for getting around, as the current app's home is: the week is in view, and any day, with its logs and a way to add to it, is one tap away.", not: "No sentence says what stood out today or how the week went, so a day outside the usual shows only as a Gold ring until the person taps it." }
     ],
-    rec: { v: "score", text: "We recommend Score first.", why: "FloraScore is the centre of Florin, so it should come first, and its sentence says what stood out today, which Compact leaves out." },
-    open: "Should Compact replace Score first as the default? The focus test puts the two side by side.",
-    try: "Switch it, then look at the Today tab. The demo opens on Score first. On Compact, tap a day in the week to see its logs, or an arrow for an earlier week."
+    rec: { v: "compact", text: "We recommend Compact, Will's choice for the default (Nov 5).", why: "It puts getting around and logging first, as the current app does, and keeps FloraScore at the top, at the cost of Score first's sentence on what stood out today." },
+    open: "Is a Gold ring, with the day's line a tap away, enough without Score first's sentence? The focus test checks the choice against Score first.",
+    try: "Switch it, then look at the Today tab. The demo opens on Compact: tap a day in the week for its logs, or swipe across the week or tap an arrow for an earlier one."
   });
   /* "your usual" is Plum, and Ray on dark (DESIGN.md): the notes name the colour the calendar draws in the phone's theme */
   const usualC = (P) => (P && P.theme === "dark" ? "Ray" : "Plum");
@@ -970,7 +970,7 @@
     const look = lookName(P);
     return {
       t: "Home: Compact",
-      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days with arrows for earlier weeks: ${usualC(P)} within the person's usual, Gold outside it, an empty ring with Add for a day with nothing logged. Tap a day for its logs, or the score for its page. A past day noted for a clinician is Teal here, as on the calendar; Score first's week card still reads it.${look ? ` The ${look} data style shows on Insights.` : ""}`
+      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days, ${usualC(P)} within the person's usual, Gold outside it, an empty ring with Add for a day with nothing logged. Tap a day for its logs, one line each, or swipe the week; the month opens History's calendar.${RU.ckOn(P) ? " A due check-in is one row." : ""} A past day noted for a clinician is Teal, as on the calendar.${look ? ` The ${look} data style shows on Insights.` : ""}`
     };
   };
   const calScreenNote = (M, P) => {

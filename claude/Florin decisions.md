@@ -27,7 +27,7 @@ Two words used throughout:
 |---|---|---|---|
 | 1 | How does a person describe a BM's consistency? | A: numbers 1 to 7; B: five words; C: seven words | C, once counsel has read it |
 | 2 | Should one tap on a tile save a BM? | Quick tiles and form; Full form only | Quick tiles and form, plus buttons to fix the time |
-| 3 | What does Today show first? | Score first; Day first; Compact | Score first; whether Compact should replace it is open |
+| 3 | What does Today show first? | Score first; Day first; Compact | Compact, Will's choice for the default (Nov 5) |
 | 4 | How should History show past days? | List; Calendar | Calendar |
 | 5 | Should the app ask how the week felt? | On; Off | On: four questions a week, free for everyone |
 | 6 | How does a person log what they ate? | Quick, voice or text; One meal at a time | Quick, and a free food check |
@@ -116,23 +116,21 @@ demo, only the first 5 do.
 - Why not: FloraScore, the number at the centre of Florin, is easy to miss.
 
 **Compact**
-- What it is: Today opens on a short FloraScore strip, then this week as a row of days with arrows for earlier weeks,
-  then the logs of the day picked, today's first.
+- What it is: Today opens on a short FloraScore strip, then this week as a row of days to tap or swipe through, then
+  the day picked, today first, with Add and its logs one line each.
 - Why do it: It's built for getting around, as the current app's home is: the week is in view, and any day, with its
   logs and a way to add to it, is one tap away.
 - Why not: No sentence says what stood out today or how the week went, so a day outside the usual shows only as a Gold
   ring until the person taps it.
 
-**We recommend Score first.** FloraScore is the centre of Florin, so it should come first, and its sentence says what
-stood out today, which Compact leaves out.
+**We recommend Compact, Will's choice for the default (Nov 5).** It puts getting around and logging first, as the
+current app does, and keeps FloraScore at the top, at the cost of Score first's sentence on what stood out today.
 
-Compact doesn't change our recommendation yet. It keeps FloraScore at the top, so the case against Day first doesn't
-apply to it, but it trades the day's sentence for getting around, and that trade is your call.
+**Open question:** Is a Gold ring, with the day's line a tap away, enough without Score first's sentence? The focus
+test checks the choice against Score first.
 
-**Open question:** Should Compact replace Score first as the default? The focus test puts the two side by side.
-
-**Try it:** Decisions, Home, then the Today tab. The demo opens on Score first. On Compact, tap a day in the week to see
-its logs, or an arrow for an earlier week.
+**Try it:** Decisions, Home, then the Today tab. The demo opens on Compact: tap a day in the week for its logs, or
+swipe across the week or tap an arrow for an earlier one.
 
 ## 4. History
 
@@ -271,7 +269,8 @@ version's own, and Rings, Field journal and Bento are here to compare.
 **We recommend one look everywhere, Florin charts, with Easy read only in the Easy version (decision 8).** A card and
 its detail page then draw the same day the same way, and Data style folds into Version.
 
-**Try it:** Decisions, Data style, then the Today and Insights tabs. Florin charts is the first option on the toggle.
+**Try it:** Decisions, Data style, then the Insights tab, and the Today tab with Home on Score first or Day first.
+Florin charts is the first option on the toggle.
 Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. The demo shows one style at a time, and
 detail pages don't change. To see every style on every card, open the style gallery:
 https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (linked at the top of the demo, and in Toggles on a phone).
@@ -366,7 +365,7 @@ a question.
   patterns Florin finds from them are in membership. None of it works in the demo. Profile lists the three apps as Not
   connected.
 - **Messaging.** How do we describe this app, which asks people to log by hand, before Florin One (the sensor)
-  launches? No recommendation yet. The deck has three directions to react to.
+  launches? No recommendation yet.
 
 ## The demo controls
 
