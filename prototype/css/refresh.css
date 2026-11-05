@@ -69,6 +69,10 @@
 .rx .rx-info .ic { width: 18px; height: 18px; }
 .rx-info:hover { color: var(--ink); background: var(--line-2); }
 .rx-info[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+/* the view (Will, Nov 5): Default or Will's picks, the first thing in the toggles. It sets Data style, and a plain
+   line under it says what the phone draws */
+.rx-panel--view .rx-seg button { min-height: 36px; font-size: 14px; }
+.rx-view-l { margin-top: 8px; color: var(--ink-2); }
 /* the demo controls fold to one line that says what's showing. A plain line under the name says they change the demo
    person, not the app, folded or open */
 .rx-panel--demo { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }

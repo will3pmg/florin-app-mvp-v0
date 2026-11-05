@@ -970,7 +970,7 @@
     const look = lookName(P);
     return {
       t: "Home: Compact",
-      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days, ${usualC(P)} within the person's usual, Gold outside it, an empty ring with Add for a day with nothing logged. Tap a day for its logs, one line each, or swipe the week; the month opens History's calendar.${RU.ckOn(P) ? " A due check-in is one row." : ""} A past day noted for a clinician is Teal, as on the calendar.${look ? ` The ${look} data style shows on Insights.` : ""}`
+      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days, ${usualC(P)} within the person's usual, Gold outside it, an empty ring with Add for a day with nothing logged. Tap a day for its logs, one line each, or swipe the week${P && P.history === "calendar" ? "; the month opens History's calendar" : ""}.${RU.ckOn(P) ? " A due check-in is one row." : ""} A past day noted for a clinician is Teal, as on the calendar.${look ? ` The ${look} data style shows on Insights.` : ""}`
     };
   };
   const calScreenNote = (M, P) => {

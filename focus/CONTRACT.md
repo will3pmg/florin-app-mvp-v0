@@ -82,12 +82,12 @@ back from `seen`, and `submitted` never from `yes`.
 | `person` | `sarah`, `marcus`, `alex` |
 | `version` | `standard`, `easy` (as used now; it changes if the person switches in Profile) |
 | `version_picked` | `standard`, `easy`, `""` (IN9) |
-| `home` | `score`, `day`, `compact` (Nov 4), `""` (blank for Easy) |
+| `home` | `compact` (Nov 4; the app's default since Nov 5), `score`, `day`, `""` (blank for Easy) |
 | `history` | `calendar`, `list` |
 | `week` | `built`, `card`, `strip`, `note`, `chart`, `""` (blank for Easy) |
 | `order` | integer 1 to 5, the Latin square row |
 | `assigned` | `script`, `phone` |
-| `decisions` | One line: `form=C bmUI=quick home=score history=calendar checkin=on mealUI=quick look=built easy=off onboard=short weekCard=built plan=member data=est meals=all persona=sarah` |
+| `decisions` | One line: `form=C bmUI=quick home=compact history=calendar checkin=on mealUI=quick look=built easy=off onboard=short weekCard=built plan=member data=est meals=all persona=sarah` |
 | `install` | `seen`, `said`, `browser`, `couldnt` |
 | `install_at` | When the install steps first showed, ISO 8601 UTC. Sent once, by the window that showed them; the code lookup gives it to the app on the home screen, for the install task's `seconds` |
 | `stage` | `consent`, `intake`, `tour`, `compare`, `install`, `free`, `exit`, `done`, `stopped`. Keep the furthest by that order; `stopped` always wins over every stage but `done` |

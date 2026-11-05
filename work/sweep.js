@@ -42,7 +42,7 @@ const K1_ITEM = /^\s*(no bms logged|shifted)\s*$/i;
 /* the decisions on the left bar, default first, as the toggles carry them (data-v) */
 const DECS = {
   form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["compact", "score", "day"], history: ["list", "calendar"], checkin: ["true", "false"],
-  mealUI: ["quick", "detailed"], look: ["built", "rings", "journal", "bento", "oura", "easy"], easy: ["false", "true"], onboard: ["short", "full"]
+  mealUI: ["quick", "detailed"], look: ["built", "picks", "rings", "journal", "bento", "oura", "easy"], easy: ["false", "true"], onboard: ["short", "full"]
 };
 const KEYS = Object.keys(DECS);
 const pairs = [];
@@ -228,7 +228,7 @@ async function k1Pass(browser, problems) {
       if (m) out.push({ where, what: `"${m[0]}": ...${r.text.slice(Math.max(0, m.index - 50), m.index + 50).replace(/\s+/g, " ")}...` });
       if (it) out.push({ where, what: `as an item: "${it.trim()}"` });
     };
-    const STYLES = [["built", false], ["rings", false], ["journal", false], ["bento", false], ["oura", false], ["easy", false], ["built", true]];
+    const STYLES = [["built", false], ["picks", false], ["rings", false], ["journal", false], ["bento", false], ["oura", false], ["easy", false], ["built", true]];
     const KEYS = ["score", "timing", "often", "form", "sym", "ck", "pat"];
     for (const [lk, easy] of STYLES) for (const who of ["sarah", "marcus", "alex"]) for (const data of ["est", "new"]) {
       api.set("persona", who); api.set("data", data); api.set("look", lk); api.set("easy", easy);

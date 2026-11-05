@@ -2,7 +2,9 @@
 
 October 28, 2026, revised the same day after a review, again after the fix pass (fix-viz), and after the finishing pass
 (finish-viz): this file now says what is built. November 4: Will picked the Rings week card for Today, and Home gained
-Compact; section 3 says what both draw and where they depart from section 1. The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
+Compact; section 3 says what both draw and where they depart from section 1. November 5: Insights' FloraScore card is
+the Rings hero (Will's pick), and Will's picks, a Data style option, draws each card he picked in its style (section
+5, "Will's picks"). The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
 chart's design (both themes, all six data styles, 390 and 1440 wide) and one of every number against the model. It sits
 under DESIGN.md's Data Visualization rules. Where it asks DESIGN.md to change, it says so and leaves the change to the
 studio.
@@ -155,7 +157,7 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 3a | Today, Compact's week | Which day do I want to look at? | A row of seven day buttons, Monday to Sunday, in the week card's rings at 32px, with arrows for other weeks; the day picked under it | Add (Will, Nov 4) | Section 3, Compact's week row |
 | 4 | Today, check-in card | Is my check-in due? | Text and the calendar icon | Keep | Its due dot was the same mark as a logged BM |
 | 5 | Today, Day first's chip and marked log | How is today, and which log stood out? | The FloraScore glyph and number in a chip; a chip on the log that stood out | Change | The chip's ring was a gauge at 24px, too small to show your usual: it becomes the glyph, and the chip's word carries the reading. A symptom's edge was Ink here and Teal elsewhere: make it Teal |
-| 6 | Insights, FloraScore | Has FloraScore stayed in its usual range? | A line on the band, today ringed and labelled; one sentence on the part that moved most (every part named on a tie: "Timing and form moved it most this week, adding 2 points each") | Change | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
+| 6 | Insights, FloraScore | How is FloraScore today, and has it stayed in its usual range? | Will's pick (Nov 5): the Rings look's hero first, the number in a big ring with the usual range on the ring, its end never Gold; then the card below, "In its usual range on N of M days" over the range, a line on the band, today ringed and labelled, one sentence on the part that moved most (every part named on a tie: "Timing and form moved it most this week, adding 2 points each") | Built | Two charts in one card. Four part bars in the 90s that look the same, labelled "today" but showing this week. An area fill hid the band |
 | 7 | Insights, the summary | How many days sat within my usual? | The count over a segment bar of the days read (within, outside); not counted and nothing logged in words under it | Change | The bar showed 4 of 7 under "4 of 6": it added a nothing-logged segment (1.16:1, invisible) and dropped the days that could be either. Gold had no edge. Its words differed from every other card |
 | 8 | Insights, Timing | Did my first BM come in my usual window? | Dots on a straight time axis, your window as a band; today's label above the band, with a lead down to its dot | Keep | Gold under 3:1. The flag ring and the today ring differed only by hue |
 | 9 | Insights, How often | Did I go my usual number of times? | One dot per day on a count line from 0, your usual count as a band | Change | Thin bars at 1 or 2 read as a barcode. No BM was a ring. Today wasn't marked. The average counted the flagged day. A fixed 0 to 3 axis would clip the first person with 4 |
@@ -192,7 +194,7 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 40 | Data style: As built | All of the above | Repaired into these marks | Change | It is what every style's detail pages draw, and it disagreed with itself. It becomes the base, not an option |
 | 41 | Data style: Field journal | | | Fold into the base | Its answer-first sentence moves into the base's cards. Kept in the library |
 | 42 | Data style: Easy read | | | Keep, with the Easy version | Section 5 |
-| 43 | Data style: Rings | | | Cut, but its week card | One mark, the ring, means eight things. Its week card stays: it is Today's week card in every style that doesn't draw its own (Will, Nov 4) |
+| 43 | Data style: Rings | | | Cut, but its week card and its FloraScore hero | One mark, the ring, means eight things. Its week card stays: it is Today's week card in every style that doesn't draw its own (Will, Nov 4). Its FloraScore hero is Insights' FloraScore card (Will, Nov 5) |
 | 44 | Data style: Bento | | | Cut | Donuts repeat the chart beside them |
 | 45 | Data style: Oura | | | Cut, Will's call | Section 5 |
 | 46 | Data looks library page | Which look draws each answer best? | Each look with its status in the app, and the question on every row | Change | It shows five looks as peers though three fail the same rules, and never says which one the app draws |
@@ -334,7 +336,9 @@ under a short FloraScore strip, for getting around more than for reading:
   can't drift apart: Plum within (Ray on dark), Gold outside (tint and Shift Ink edge in light, a solid disc on dark),
   Ink 3 not counted or logged, a thin empty ring with the week card's "+ Add" under it for a day with nothing logged,
   and a Teal ring for a day noted for a clinician. A Teal square under a day with symptoms. The day picked sits on
-  Card 2 inside an Ink edge, so it shows on dark, where Card 2 is close to the card; never Plum or Ray.
+  Card 2 inside an Ink edge, so it shows on dark, where Card 2 is close to the card; never Plum or Ray. Inside that
+  edge "+ Add" drops its own outline, which would run about 1px inside the edge at 360 (today, say, picked on opening
+  before anything is logged).
 - **The legend** is the week card's, only the marks on show, and never "Nothing logged", which "+ Add" says. It folds
   behind the info button: open before day 14, while every mark is new, closed after. Each day's button name and the
   picked day's line carry the words, so colour never stands alone.
@@ -530,7 +534,7 @@ built, repaired into these marks) has to be right first, because every detail pa
 | As built | The base | Repaired into section 1's marks, it is what the app draws, not an option |
 | Field journal | Fold into the base | Its best idea, the answer in a sentence above each chart, moves into the base's cards. Kept in the library |
 | Easy read | Keep, with the Easy version | One number, one sentence, one labelled picture. Already the Easy version's |
-| Rings | Cut, but its week card | The ring means eight things card to card; radial bars and a curved time axis are hard to read on a phone; the part rings carry no labels. Its week card is now Today's (Will's pick, Nov 4, section 3), and Will dropped the legend line naming the numbers |
+| Rings | Cut, but its week card and its FloraScore hero | The ring means eight things card to card; radial bars and a curved time axis are hard to read on a phone; the part rings carry no labels. Its week card is now Today's (Will's pick, Nov 4, section 3), and Will dropped the legend line naming the numbers. Its FloraScore hero is Insights' FloraScore card (Will's pick, Nov 5, below) |
 | Bento | Cut | Donuts repeat the chart beside them; a hollow ring means "last week" in one tile and "today" in another; the symptom heat strips are mostly empty cells; a glass surface outside the app's tokens. Its week pills (a dot per BM) are worth keeping as an idea if Will wants the BM count per day seen |
 | Oura | Cut, Will's call | Below |
 
@@ -578,6 +582,32 @@ journal for the detail pages" was never built: the detail pages stay As built in
   - "FloraScore was in its usual range on 15 of 29 days."
   - The parts said as moves in points.
   - No count-up on the big numbers.
+
+**Will's picks (Nov 5).** Will picks a style module by module on the data modules page; Data style's seventh option,
+Will's picks, lays his picks out in the app, and View at the top of the left bar switches to it and back to the
+default. It is the core's Insights, in its own order and range tabs, with each picked card in its style (the table is
+`WILL_PICKS` in `refresh-looks.js`):
+
+- **FloraScore today:** the Rings look's hero ("the large green big circle like in the Score first visual"), in the
+  default too. It is the Rings renderer's own card, with one change in the app: outside its usual range the ring's end
+  and the dot before its sentence stay the reading colour, since FloraScore is never Gold (section 1). It keeps the
+  flag rule (the number stays, "Not read against your usual today") and the learning one (Day 5 of 14 on a ring of 14
+  steps). FloraScore over time and what moved it aren't picked, so the Florin charts card stays under it, its head the
+  count FloraScore's page gives ("In its usual range on 15 of 29 days"). Where it departs from row 1 and section 4: a
+  ring that fills toward 100, which section 2 warned reads as a grade. Today's hero keeps its range bar.
+- **Timing, Symptoms, the weekly check-in:** Oura's cards. A look's card reads the last 30 days (the days so far while
+  Florin learns), so at 7 and 90 days, and on Free, Timing and Symptoms are Florin charts' cards, and the screen's note
+  says so. The check-in has no range.
+- **Form:** a mix, Rings' count over Oura's bars, at 7, 30 and 90 days. Rings' head, its big number ("37 of 39 BMs in
+  your usual forms") and its sentence; then one bar for each stretch up to the range (the last 7 days, 30, 90) and one
+  for the weeks that set the usual, each split from firmer to looser, with its count written beside it. Every count is
+  the Form card's (L.span over the range, a flagged today left out, L.inForms for each BM), so the big number, the
+  range's own bar and the Florin charts card agree. The marks are section 1's for a reading: in the usual forms the
+  reading colour, outside them Gold with its edge, could be either (or logged before day 14) Ink 3; a part is never
+  narrower than 4% of its bar, so one BM in 120 still shows, and the legend names only the marks drawn.
+- **Everything else** (How often, Possible patterns, the summary, every detail page, Today) stays Florin charts. The
+  last 7 days is Rings already, as Today's week card. The theme is the phone's: an Oura card takes its light or dark
+  form from it.
 
 **Until Will decides,** the six options stay as they are, so the comparison stays live. After the call, stored values
 fall back safely: the page already drops a stored value that isn't one of the options.
@@ -817,7 +847,7 @@ library is republished together with the prototype.
    has why and why not for each.
 2. **The dark reading:** Cream (proposal) or Ray (DESIGN.md today). The studio's call.
 3. **The FloraScore hero:** a range bar with the glyph by the label (proposal), in place of the studio's ring gauge.
-   The studio's call.
+   The studio's call. On Insights it is the Rings ring now, Will's pick (Nov 5); Today keeps the bar.
 4. **"Without it, FloraScore would be N":** fixed for No BM. Keep it for other logs? It can read as a cost for
    logging.
 5. **The BM count per day on the week card:** left out for five-second reading. Bento's week pills (a dot per BM

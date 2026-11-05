@@ -31,7 +31,7 @@ Two words used throughout:
 | 4 | How should History show past days? | List; Calendar | Calendar |
 | 5 | Should the app ask how the week felt? | On; Off | On: four questions a week, free for everyone |
 | 6 | How does a person log what they ate? | Quick, voice or text; One meal at a time | Quick, and a free food check |
-| 7 | How should Florin draw the numbers? | Florin charts (dots and bars), Rings (score as ring), Field journal (captioned figures), Bento (number tiles), Oura (score gauge), Easy read (big numbers) | Florin charts everywhere, Easy read only in the Easy version |
+| 7 | How should Florin draw the numbers? | Florin charts (dots and bars), Will's picks (his cards so far), Rings (score as ring), Field journal (captioned figures), Bento (number tiles), Oura (score gauge), Easy read (big numbers) | Florin charts everywhere, Easy read only in the Easy version |
 | 8 | Should the app offer larger text and simpler screens? | Standard; Easy | Easy, as a setting anyone can turn on |
 | 9 | How much do we ask a new person? | Short; Full survey | Short; ask the rest later, when the answer changes something |
 
@@ -231,14 +231,22 @@ use one. The dinner button isn't in the demo yet.
 **What it decides:** How FloraScore, the week and the Insights cards look, with the same numbers from the same logs in
 every style.
 
-The real choice is Florin charts everywhere, or Oura on Today and Florin charts everywhere else. Easy read is the Easy
-version's own, and Rings, Field journal and Bento are here to compare.
+The real choice is Florin charts everywhere, or Oura on Today and Florin charts everywhere else. Will's picks lays out
+the cards Will has picked so far. Easy read is the Easy version's own, and Rings, Field journal and Bento are here to
+compare.
 
 **Florin charts**
-- What it is: The dark green FloraScore card with the usual range as a bar, the week as a ring a day with its FloraScore
-  under it, and plain bar and dot charts.
+- What it is: The dark green FloraScore card, with the usual range as a bar on Today and on a big ring on Insights, the
+  week as a ring a day with its FloraScore under it, and plain bar and dot charts.
 - Why do it: Each card says the person's usual in words before the chart, and every card works the same way.
 - Why not: It's the most text of the six, with small charts on every card.
+
+**Will's picks** (Will, Nov 5)
+- What it is: Florin charts, with each Insights card Will has picked on the data modules page drawn in his style:
+  Timing, Symptoms and the check-in in Oura's cards; Form as Rings' count over Oura's bars.
+- Why do it: It lays his picks out one by one, in Insights' own order, from the same logs as every other style.
+- Why not: Styles mix on one screen, and Oura's cards draw only 30 days, so at 7 and 90 days those cards are Florin
+  charts'.
 
 **Oura**
 - What it is: A dark screen with FloraScore as a large round gauge and a small ring for each part of the score.
@@ -270,7 +278,8 @@ version's own, and Rings, Field journal and Bento are here to compare.
 its detail page then draw the same day the same way, and Data style folds into Version.
 
 **Try it:** Decisions, Data style, then the Insights tab, and the Today tab with Home on Score first or Day first.
-Florin charts is the first option on the toggle.
+Florin charts is the first option on the toggle. View, at the top of the left bar, switches between the default and
+Will's picks.
 Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. The demo shows one style at a time, and
 detail pages don't change. To see every style on every card, open the style gallery:
 https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (linked at the top of the demo, and in Toggles on a phone).

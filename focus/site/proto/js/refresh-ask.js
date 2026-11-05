@@ -997,13 +997,13 @@
   /* ---------- a yes or a no to the last turn's question ----------
      A short yes asks the question the last turn offered; a short no gets a short reply. Anything longer is a question
      of its own. Read after the alarm words and the redirects, so "yes, there was blood" still gets the clinician */
-  const YES = /^(yes|yeah|yep|yup|sure|ok|okay|please|go on|go ahead|show me|tell me|sounds good|let'?s (do it|see|look))\b/i;
-  const NO = /^(no|nope|not now|not right now|no thanks|no thank you|maybe later|later|not really|not yet)\b/i;
+  const YES = /^(yes|yeah|yep|yup|sure|ok|okay|please|go on|go ahead|show me|tell me|sounds good|let'?s (do it|see|look))(,? (please|show me|tell me|go on|sure))?$/i;
+  const NO = /^(no|nope|not now|not right now|no,? thanks|no,? thank you|maybe later|later|not really|not yet)$/i;
   const YES_OPT = "Yes, show me";
+  /* the whole message has to be the yes or the no: "ok, how often do I go?" is a question of its own */
   function replyTo(q, last) {
     if (!last || !last.ask || last.state !== "done") return null;
-    const t = plainQ(q).trim().replace(/[.!]+$/, "");
-    if (t.split(/\s+/).length > 4) return null;
+    const t = plainQ(q).trim().replace(/[.!]+$/, "").replace(/\s+/g, " ");
     if (NO.test(t)) return { no: true };
     if (YES.test(t)) return last.yes ? { yes: last.yes } : null;
     return null;
@@ -1365,7 +1365,13 @@
     api.toast("Started a new chat.", () => { if (was.M === S.M) { S.askx = was; paint(api, { focusIn: true }); api.nav(); } });
   });
   /* Ask about this, and clearing it, land in the box with the question ready */
-  act("ask-about", (b, api, e, prev) => { if (prev) prev(b, api, e); else api.core("ask-about", b, e); if (api.S.plan !== "free" && api.S.tab === "ask") api.focusSel(".ap-askx-in"); });
+  /* a card that reads a stretch of its own (a data style's cards) says which, so the chat reads that stretch too */
+  act("ask-about", (b, api, e, prev) => {
+    if (prev) prev(b, api, e); else api.core("ask-about", b, e);
+    const r = +(b.dataset.range || 0);
+    if (r && api.S.askCtx && api.S.askCtx.range !== r) { api.S.askCtx.range = r; if (api.S.tab === "ask") api.renderTab(true); }
+    if (api.S.plan !== "free" && api.S.tab === "ask") api.focusSel(".ap-askx-in");
+  });
   act("ask-clear", (b, api, e, prev) => { if (prev) prev(b, api, e); else api.core("ask-clear", b, e); if (api.S.tab === "ask") api.focusSel(".ap-askx-in"); });
 
   /* typing never redraws: the words go into the chat's draft and Send turns on; Enter sends */

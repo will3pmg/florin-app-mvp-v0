@@ -34,10 +34,12 @@ const TOGGLES = [
   { home: "day", history: "calendar", persona: "marcus", theme: "dark" }, { look: "rings", data: "fresh" }, { look: "journal", form: "B", checkin: "false" },
   { look: "bento", persona: "alex", theme: "dark" }, { look: "oura", home: "day" }, { look: "easy", onboard: "full", persona: "marcus" },
   { easy: "true", persona: "alex", theme: "dark" }, { easy: "true", data: "fresh", checkin: "false", bmUI: "full" },
+  /* Will's picks (Nov 5), across the people, the options and the logs */
+  { look: "picks", persona: "marcus", theme: "dark" }, { look: "picks", data: "new", form: "B" }, { look: "picks", persona: "alex", form: "A", checkin: "false" },
   /* Home: Compact, the default since Nov 5, across the people, the options and the logs; and Score first */
   { home: "score", persona: "marcus", form: "A", theme: "dark" }, { home: "compact", persona: "marcus", form: "A", theme: "dark" }, { home: "compact", persona: "alex", form: "B", data: "new" }, { home: "compact", data: "fresh", checkin: "false", bmUI: "full" }
 ];
-const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }, { easy: "true", history: "calendar" }, { home: "day", look: "oura", theme: "dark" }, { home: "compact", persona: "marcus", theme: "dark" }];
+const NARROW = [{ form: "A" }, { data: "fresh", checkin: "false", bmUI: "full", theme: "dark" }, { bmUI: "full", persona: "marcus", data: "new" }, { easy: "true", history: "calendar" }, { home: "day", look: "oura", theme: "dark" }, { home: "compact", persona: "marcus", theme: "dark" }, { look: "picks", theme: "dark" }];
 
 (async () => {
   const browser = await chromium.launch();

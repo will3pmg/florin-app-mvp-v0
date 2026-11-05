@@ -31,7 +31,9 @@ prototype/js/refresh-insights.js  the Insights tab, its detail pages and the Ask
 prototype/js/app-charts.js    the studio's small SVG chart kit (window.FLC), used by Insights
 prototype/js/refresh-looks.js     the Data style decision: Insights as a library look's cards, Today's FloraScore and week
                               as its score and week cards, and one detail page of its own, Your days (i-days). It also
-                              makes Today's week card the Rings look's week in every style (Will's pick, Nov 4)
+                              makes Today's week card the Rings look's week in every style (Will's pick, Nov 4),
+                              Insights' FloraScore card the Rings look's hero (Will, Nov 5), and draws Will's picks
+                              (Data style "picks", the WILL_PICKS table)
 prototype/js/refresh-variants.js  Home Day first (the date with a small FloraScore chip, the glyph and the number, today's
                               logs with the one that stood out marked, a row to log from), Home Compact, the default
                               (a short FloraScore strip, a week of day buttons with arrows and swipe, the check-in as
@@ -67,7 +69,9 @@ in this order: looks, variants, profile, ask, easy, and refresh-app.js last. The
 refresh.css, look-*.css, refresh-<module>.css). A later module wraps what an earlier one drew: Easy wraps Day first's
 Today and the look's Insights, and draws its own in their place.
 
-The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar holds **Decisions**
+The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar opens with **View**
+(Default or Will's picks, Will, Nov 5), which sets Data style through phone.set (Default is its default; Will's picks
+opens Insights), with one plain line under it. Then it holds **Decisions**
 (Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), one line each,
 then **Demo** (Person; Logs: 12 weeks, New, day 5 or Just joined; Demo person's meals: Every day, Only with symptoms or
 Never; Plan; Theme; Reset), under one plain line, "These change the demo person, not the app", which folds to a
@@ -110,7 +114,7 @@ side by side"), with room in its links row for one more (the voting page, to com
 phone in its note, which opens that screen and keeps the note up. With the Easy version on, the Home and Data style rows
 each get one plain line, "Easy has its own Today (charts). Turn Easy off to see this choice.", under the row and at the top
 of the note (`SHADOWED` in refresh-app.js). Under 760px the app is full screen and a slim bar at the top opens Toggles
-(Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled. A decision changed in the
+(View, Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled. A decision changed in the
 Toggles sheet says so in one line at the sheet's top ("History is now Calendar."), with See it (closing the sheet, on the
 screen the option shows on) and Read the note; changing Demo person's meals opens its note. The bar is at the top so the app
 keeps its own tab bar at the bottom, as on a real phone (Will, Oct 28: a bottom bar covered the app's tabs). The app
@@ -125,6 +129,17 @@ Calendar, Data style, Version Easy and Onboarding are stored and stamped on the 
 they meet: Easy has its own Today (Home's Day first or Compact waits under it) and always draws Easy read (whatever Data style says), and
 keeps History as a calendar when that's picked; Profile's Larger text and simpler screens sets Version, its Logging
 rows set BM logging and Meal sheet, and its theme row sets the theme, all through phone.set, so the left bar follows.
+
+**Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"), Data
+style's `picks`: the core's Insights in its own order and range tabs, each card Will picked on the data modules page
+(`WILL_PICKS` in refresh-looks.js, his saved picks as read Nov 5; change the table when he picks more) in his style:
+Timing, Symptoms and the check-in in Oura's cards, Form as the mix (Rings' count over Oura's bars, one bar a stretch up
+to the range and one for the weeks that set the usual; `RU.picksForm` is the count, the Form card's own), the rest in
+Florin charts. A look's card reads 30 days (or the days so far while learning), so at 7 and 90 days, and on Free, Oura's
+cards are Florin charts' and the screen's note says so. Each keeps Ask about this and opens Florin charts' detail.
+Today, the detail pages and the theme don't change (an Oura card takes the phone's theme). In every view but a library
+look and Easy, Insights' FloraScore card is the Rings look's hero, "the large green big circle" (Will, Nov 5), drawn
+by its own renderer with the core's card under it for the range and what moved it; FloraScore stays out of Gold there.
 
 The prototype loads the library's looks (looks-data.js, look-*.js and their css, never library.js, which mounts the
 library page) before the modules: `_local.html` from `../library/`, `index.html` from `js/` and `css/`, so publish them
@@ -328,7 +343,8 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
 What each module registers (the file's header comment has the detail):
 
 ```
-refresh-looks     wraps RU.weekCard (Today's week is the Rings week; RU.core.weekCard keeps the core's), RU.insights,
+refresh-looks     wraps RU.weekCard (Today's week is the Rings week; RU.core.weekCard keeps the core's), RU.insights
+                  (a look's cards; else the core's with the Rings FloraScore hero, and Will's picks' cards), adds RU.picksForm,
                   RU.todayParts.hero and .week, RU.idetail (Your days), RU.askContext; acts idetail,
                   iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style (Data style: Today
                   puts Home on Score first while it's Compact, which draws no data style); keys tab:insights and

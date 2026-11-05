@@ -413,6 +413,11 @@ deck isn't needed. can kill that."
   top and its logs one line each; the legend folds behind an info button (open before day 14); a swipe steps a week,
   and the month opens History's calendar; the strip drops the words its bar already says. Section 3 of
   `claude/Florin data viz.md` has the detail.
+- **Compact keeps its strip** (Will, Nov 5). His note on "the large green big circle" was for Insights' FloraScore
+  (below), so Compact's FloraScore stays the short strip, and the week row is in view on opening, on a 390 by 844 phone,
+  in every state. The reviews' last craft point is in: under the day picked, "+ Add" sits inside the day's edge without
+  an outline of its own, so it has room at 360. The focus test opens on Compact, the default, with Home split against
+  Score first, and its walk-through passes on an iPhone and an Android size for both.
 - **The deck is gone,** at his word: its folder, the page's link to it and every mention. The header keeps room for
   one more link.
 - **Ask Florin** (Will, Nov 5: "The Ask buttons maybe should be yellow? They get washed out... Little token somehow...
@@ -423,6 +428,20 @@ deck isn't needed. can kill that."
   Lora and one bold question that offers the next thing to look at (a yes asks it), options about one turn in three,
   and thumbs. What Ask Florin knows lists what it reads and what can be left out of a chat, with an opt-in to let it
   start a conversation.
+- **Will's picks, a view** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a
+  default? I want to see how they lay out one by one."). View, at the top of the left bar (and of Toggles on a phone),
+  switches between Default and Will's picks, a new Data style option. Will's picks keeps Insights' order and range
+  tabs and draws each card he picked on the data modules page in his style: Timing, Symptoms and the check-in in
+  Oura's cards, and Form as a mix, Rings' count ("37 of 39 BMs in your usual forms") over Oura's bars, a bar for each
+  stretch up to the range and one for the weeks that set the usual, at 7, 30 and 90 days. Oura's cards draw only 30
+  days, so at 7 and 90 days (and on Free) those two are Florin charts' cards, and the note says so. Everything he
+  hasn't picked yet stays Florin charts, as do the detail pages, Today and the theme. The picks are one table in
+  `refresh-looks.js` (`WILL_PICKS`), to change as he picks more.
+- **FloraScore on Insights is the Rings ring** (Will, Nov 5, on the default demo: "the large green big circle like in
+  the Score first visual"). Insights' FloraScore card is now the Rings style's hero in the default and in Will's picks:
+  the number inside a big ring with the usual range on it. The Florin charts card stays under it for the line over
+  the range and what moved the score. Today's hero keeps its range bar. One change from the library's card: outside
+  its usual range the ring's end stays the reading colour, since FloraScore is never Gold.
 
 ## The calls for Will
 
@@ -435,6 +454,8 @@ line says so.
 - On Compact a past day with a log noted for a clinician (Sarah's Wednesday, "some red in it") is Teal, as on the
   calendar, while Score first's week card reads and counts it: mark such a day on every surface, or only on today?
 - On Compact the legend folds behind an info button from day 14: or keep it open, as on the week card?
+- On Compact a day within the usual says "Within your usual timing, BM count and forms.": keep it, so Plum never reads
+  as FloraScore's range in the strip above, or drop it on those days and keep the line for every other day?
 - On a flag day the score keeps its number but isn't read against the usual, on both options: keep it, or hide it?
 - Should a strong symptom outrank a shift in what stands out?
 - On an ordinary day a mild symptom leads the sentence: should it, or only moderate and strong ones?
@@ -472,6 +493,9 @@ line says so.
 - Rings says "1 of 3 check-ins saved" before the first three: is that the way to put it?
 - Bento's usual days now have a Plum edge on light, so a usual month looks busier: acceptable?
 - Rings and Oura lead with a big 0 ("0 of 4 like your first weeks") when every answer moved: follow Easy read?
+- Will's picks (Nov 5): Oura's Timing and Symptoms draw only 30 days, so at 7 and 90 days they are Florin charts'. Build
+  Oura's cards at every range, or keep the switch? And the Insights FloraScore ring fills toward 100, which data viz.md
+  warned can read as a grade: keep it, with its end never Gold?
 
 *Easy version*
 - A setting in Profile (recommended), or a version of its own?

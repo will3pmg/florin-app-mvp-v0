@@ -511,7 +511,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         leftScrolls: getComputedStyle(l).overflowY === "auto" && getComputedStyle(l).position === "sticky" && parseFloat(getComputedStyle(l).maxHeight) <= window.innerHeight && l.scrollHeight > l.clientHeight
       };
     });
-    ok(lay.heads[0] === "Decisions" && lay.heads.indexOf("Screens") > lay.heads.indexOf("Demo") && lay.heads.indexOf("Demo") > 0, `the left bar runs Decisions, Demo, then Screens (${lay.heads.join(", ")})`);
+    /* wills-picks (Will, Nov 5): View, Default or Will's picks, opens the bar */
+    ok(lay.heads[0] === "View" && lay.heads[1] === "Decisions" && lay.heads.indexOf("Screens") > lay.heads.indexOf("Demo") && lay.heads.indexOf("Demo") > 1, `the left bar runs View, Decisions, Demo, then Screens (${lay.heads.join(", ")})`);
     ok(lay.phones === 1 && !lay.compare && !lay.headSwitch, "one phone, no compare mode, and no switches left in the header");
     ok(["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"].every((k) => lay.decs.includes(k)) && lay.info === lay.decs.length, `every decision has a toggle and an info button (${lay.decs.join(", ")})`);
     /* notes-page (Oct 28): the Demo panel says, in one plain line, that it changes the demo person, not the app; every
@@ -584,7 +585,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   await p.evaluate(() => { document.documentElement.style.removeProperty("--rx-sat"); document.documentElement.style.removeProperty("--rx-sab"); });
   await p.setViewportSize({ width: 390, height: 844 }); await wait(400);
   ok(tc.every((x) => x.ok) && barSafe, `the app's tab bar is whole and tappable under the page's top bar: ${tc.map((x) => `${x.w} wide, ${x.gap}px clear of the bottom`).join("; ")} (the last with a stand-in safe area of 47 top and 34 bottom)`);
-  ok(mob.heads.join("|") === "Decisions|Demo|Screens" && mob.notes, `the Toggles sheet holds ${mob.heads.join(", ")}; the Notes sheet the notes`);
+  ok(mob.heads.join("|") === "View|Decisions|Demo|Screens" && mob.notes, `the Toggles sheet holds ${mob.heads.join(", ")}; the Notes sheet the notes`);
   await p.click('.rx-mbar [data-v="toggles"]'); await wait(300);
   ok(await p.evaluate(() => !document.querySelector("#rxSheet-toggles").hidden && document.activeElement && document.activeElement.matches("#rxSheet-toggles .rx-x")), "Toggles opens its sheet, focus on Close");
   await p.keyboard.press("Escape"); await wait(300);
@@ -840,7 +841,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
        one look everywhere, Florin charts, as data viz.md's Option 1) */
     await lpick("look", "oura");
     const dn = await q.evaluate(() => ({ rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", opts: [...document.querySelectorAll("#rxNotes .rx-opts .rx-opt .rx-opt-h b")].map((x) => x.textContent).join(","), marked: [...document.querySelectorAll("#rxNotes .rx-opt.is-rec .rx-opt-h b")].map((x) => x.textContent).join(",") }));
-    ok(dn.opts === "Florin charts,Oura,Easy read,Rings,Field journal,Bento" && dn.marked === "Florin charts" && /^We recommend one look everywhere, Florin charts, with Easy read only in the Easy version\. A card and its detail page then draw the same day the same way/.test(dn.rec), `data style: a block per style, the two real options first, Florin charts marked, and the sheet's recommendation (${dn.opts})`);
+    ok(dn.opts === "Florin charts,Will's picks,Oura,Easy read,Rings,Field journal,Bento" && dn.marked === "Florin charts" && /^We recommend one look everywhere, Florin charts, with Easy read only in the Easy version\. A card and its detail page then draw the same day the same way/.test(dn.rec), `data style: a block per style, the two real options first, Florin charts marked, and the sheet's recommendation (${dn.opts})`);
     for (const id of LOOKS) {
       await lpick("look", id);
       for (const theme of ["light", "dark"]) {
@@ -4841,6 +4842,340 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ccx.close();
   }
   /* ===== end compact ===== */
+
+  /* ===== compact-finish (Nov 5): Compact as the app opens on it, on a 390 by 844 phone. The strip's number is
+     L.score, and a real tap on it opens FloraScore's page (the paywall on Free, from the same number); the week row
+     sits above the fold, under the strip and any Teal note, in every state below; a flag, or an alarm feature typed
+     in a note, puts the Teal note right under the strip; day 5, Just joined and no score say what the hero says; and
+     in the day picked, "+ Add" has room inside the column's Ink edge. Its own context, so what it logs reaches no
+     other check ===== */
+  {
+    const fe = [];
+    const fcx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    const f = await fcx.newPage();
+    f.on("pageerror", (e) => fe.push(e.message));
+    f.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /refresh-variants/.test(m.text()))) fe.push(m.text()); });
+    await f.goto(PAGE); await f.waitForSelector(".rx-stage .ap-rx"); await f.waitForTimeout(400);
+    const fw = (ms = 350) => f.waitForTimeout(ms);
+    const fset = async (key, v) => { await f.evaluate(([key, v]) => window.FLORIN_EXT.api.set(key, v), [key, v]); await fw(250); };
+    /* Today on Compact, at the top, with nothing open */
+    const fhome = async () => { await f.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.open("home-compact"); api.layer.scrollTop = 0; }); await fw(); };
+    const SC = ".rx-stage .ap-rx .vr-cp-sc";
+    /* what the strip shows and what the model says: the number (or the learning day), the week's change, the why line */
+    const fstrip = () => f.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form;
+      const sc = document.querySelector(".rx-stage .ap-rx .vr-cp-sc"), t = (s) => ((sc && sc.querySelector(s)) || {}).textContent || "";
+      const nb = sc && sc.querySelector("button.vr-cp-n");
+      if (!M.usual) return { learn: true, day: L.learnDay(M), n: t(".vr-cp-n"), on: sc.querySelectorAll(".vr-cp-steps i.is-on").length, steps: sc.querySelectorAll(".vr-cp-steps i").length, why: t(".vr-cp-why"), btn: !!nb, go: t('[data-act="vr-cp-ins"]') };
+      const s = L.score(M, L.TODAY, mode), v = s ? s.value : null;
+      return { learn: false, shown: nb ? nb.querySelector("span").textContent : null, want: v == null ? "No score" : String(v), v, act: nb ? nb.dataset.act : null, mv: t(".vr-cp-mv"), why: t(".vr-cp-why"), nr: t(".vr-cp-nr"), flag: RU.flagToday(M), bar: !!sc.querySelector(".vr-cp-bar"), go: t('[data-act="vr-cp-ins"]') };
+    });
+    /* the week row (the seven day tabs) inside the screen, under the top bar and above the app's tab bar, with the
+       screen at its top: nothing to scroll to reach it */
+    const ffold = () => f.evaluate(() => {
+      const ph = document.querySelector(".rx-stage .ap-rx"), l = ph.querySelector(".ap-layer"), g = ph.querySelector(".vr-cpw-g"), tb = ph.querySelector(".ap-tb");
+      if (!l || !g || !tb) return { ok: false, why: `missing ${!l ? "layer" : !g ? "week row" : "tab bar"}` };
+      const r = g.getBoundingClientRect(), t = tb.getBoundingClientRect(), lr = l.getBoundingClientRect();
+      return { ok: l.scrollTop === 0 && r.top >= lr.top && r.bottom <= t.top && r.bottom <= window.innerHeight && r.height >= 44, top: Math.round(r.top), bottom: Math.round(r.bottom), bar: Math.round(t.top) };
+    });
+    /* where a tap went: the tab, the Insights detail open, the overlay on top */
+    const fwhere = () => f.evaluate(() => { const api = window.FLORIN_EXT.api, t = api.top(); return { tab: api.S.tab, k: api.S.ins.k, top: t ? t.type : null }; });
+    const ftap = async (sel) => { await f.tap(`.rx-stage .ap-rx ${sel}`); await fw(450); };
+
+    /* 1. the app opens on Compact. Sarah, Marcus and Alex at 12 weeks: the strip's number is L.score for today, the
+       week row is above the fold, and a real tap on the number opens FloraScore's page */
+    const nbad = [];
+    for (const p of ["sarah", "marcus", "alex"]) {
+      await fset("persona", p); await fhome();
+      const s = await fstrip(), fo = await ffold();
+      await ftap(".vr-cp-sc button.vr-cp-n");
+      const w = await fwhere();
+      if (s.learn || s.shown !== s.want || s.v == null || s.act !== "idetail" || !fo.ok || w.tab !== "insights" || w.k !== "score" || w.top) nbad.push(`${p}: ${JSON.stringify({ s, fo, w })}`);
+    }
+    await fset("persona", "sarah"); await fhome();
+    const open0 = await f.evaluate(() => ({ home: window.FLORIN_EXT.api.V().home, cp: !!document.querySelector(".rx-stage .ap-rx .vr-cp") }));
+    ok(open0.home === "compact" && open0.cp && !nbad.length, `compact-finish: at 390 by 844 the app opens on Compact; for Sarah, Marcus and Alex the strip's number is L.score for today, the week row is above the fold, and a tap on the number opens FloraScore's page${nbad.length ? `: ${nbad.slice(0, 2).join(" | ")}` : ""}`);
+
+    /* 2. Free: the same number, with the week row above the fold; a tap opens the paywall over Today, not the page */
+    await fset("plan", "free"); await fhome();
+    const fs0 = await fstrip(), ff0 = await ffold();
+    const free0 = await f.evaluate(() => {
+      const RU = window.FLORIN_RUI, n = document.querySelector(".rx-stage .ap-rx .vr-cp-sc button.vr-cp-n"), ink = (k) => { const d = document.createElement("div"); d.innerHTML = RU.icon(k); return d.firstElementChild.innerHTML; };
+      const svgs = n ? [...n.querySelectorAll("svg")].map((s) => s.innerHTML) : [];
+      return { act: n && n.dataset.act, pay: n && n.dataset.pay, lock: svgs.includes(ink("lock")), chev: svgs.includes(ink("chev")) };
+    });
+    await ftap(".vr-cp-sc button.vr-cp-n");
+    const fwh = await fwhere();
+    await f.evaluate(() => window.FLORIN_EXT.api.closeAll()); await fw();
+    await fset("plan", "member");
+    ok(fs0.shown === fs0.want && ff0.ok && free0.act === "pay" && free0.pay === "score" && !free0.lock && free0.chev && fwh.top === "pay" && fwh.tab === "today" && !fwh.k, `compact-finish, Free: the strip's number is still L.score (${fs0.shown}), the week row is above the fold, the number keeps its chevron (never a lock), and a tap on it opens the paywall (${fwh.top}) over Today, not FloraScore's page`);
+
+    /* 3. a flag today (a BM with blood, Marcus): the number stays L.score's, read against nothing, and the Teal note
+       is the strip's next sibling, in RU.highlightOf's words; a tap opens When to see a clinician. Then an alarm
+       feature typed in a symptom's note (Alex, "a fever"), with no flag on any BM: the same note, in its words. The
+       week row stays above the fold under the note */
+    const flagOf = () => f.evaluate(() => {
+      const RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, sc = document.querySelector(".rx-stage .ap-rx .vr-cp-sc"), nx = sc && sc.nextElementSibling, H = RU.highlightOf(api.M(), api.V().form);
+      return { note: !!nx && nx.matches(".vr-cp-flag"), text: nx ? nx.textContent.replace(/\s+/g, " ").trim() : "", want: H ? H.text : "", alarm: !!(H && H.alarm), btn: !!nx && nx.tagName === "BUTTON" && nx.dataset.act === "vr-cp-flag" };
+    });
+    await fset("persona", "marcus"); await fhome();
+    await f.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api; L.add(api.M(), { kind: "bm", d: L.TODAY, t: 18.5, form: 4, word: null, how: {}, dur: null, flags: { blood: true }, note: "" }); api.renderTab(true); }); await fw();
+    const fl1 = await flagOf(), fls1 = await fstrip(), flf1 = await ffold();
+    await ftap(".vr-cp-flag");
+    const flw1 = await fwhere(), flh = await f.evaluate(() => (document.querySelector(".rx-stage .ap-rx .ap-o--t-flag:not(.is-out) h2") || {}).textContent || "");
+    await f.evaluate(() => window.FLORIN_EXT.api.closeAll()); await fw();
+    await fset("persona", "alex"); await fhome();
+    const typed = "I've had a fever since lunch";
+    const sign = await f.evaluate((typed) => window.FLORIN_LOGS.alarmsIn(typed), typed);
+    await f.evaluate((typed) => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api; L.add(api.M(), { kind: "sym", d: L.TODAY, t: 18.75, items: [{ name: "Bloating", s: 1 }], note: typed }); api.renderTab(true); }, typed); await fw();
+    const fl2 = await flagOf(), fls2 = await fstrip(), flf2 = await ffold();
+    ok(fl1.note && fl1.btn && fl1.alarm && fl1.text.startsWith(fl1.want) && fls1.flag && fls1.shown === fls1.want && fls1.nr === "Not read against your usual today" && !fls1.bar && flf1.ok && flw1.top === "flag" && /clinician/i.test(flh) && sign.length > 0 && fl2.note && fl2.alarm && fl2.text.startsWith(fl2.want) && /fever/i.test(fl2.text) && fls2.shown === fls2.want && flf2.ok,
+      `compact-finish: a BM flag puts the Teal note right under the strip ("${fl1.want}"), the number still L.score's (${fls1.shown}) and read against nothing, a tap opening "${flh}"; a fever typed in a symptom's note does the same ("${fl2.want}"); the week row stays above the fold under the note (${flf1.bottom} and ${flf2.bottom}, the tab bar at ${flf2.bar})`);
+
+    /* 4. day 5 and Just joined: the strip says "Day N of 14" (L.learnDay) over 14 steps with N lit, and the hero's line,
+       with no number to tap and Insights kept; the week row is above the fold with the legend open */
+    const lbad = [];
+    for (const data of ["new", "fresh"]) {
+      await fset("persona", "sarah"); await fset("data", data); await fhome();
+      const s = await fstrip(), fo = await ffold();
+      if (!s.learn || s.n !== `Day ${s.day} of 14` || s.on !== s.day || s.steps !== 14 || s.why !== "FloraScore starts on day 14, once Florin knows your usual." || s.btn || s.go !== "Insights" || !fo.ok) lbad.push(`${data}: ${JSON.stringify({ s, fo })}`);
+    }
+    await fset("data", "est");
+    ok(!lbad.length, `compact-finish: day 5 and Just joined say "Day N of 14" over 14 steps, N lit, with the hero's line and Insights, no number to tap, and the week row above the fold${lbad.length ? `: ${lbad.join(" | ")}` : ""}`);
+
+    /* 5. no score today (Alex, every BM and No BM of the last 3 days taken out): "No score" and L.NO_SCORE in the
+       hero's words, no week's change, no bar; the number still opens FloraScore's page; the week row above the fold */
+    await fset("persona", "alex"); await fhome();
+    await f.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(); [L.TODAY, L.TODAY - 1, L.TODAY - 2].forEach((d) => { const x = L.day(M, d); x.entries = x.entries.filter((e) => e.kind !== "bm" && e.kind !== "nobm"); }); api.renderTab(true); }); await fw();
+    const ns = await fstrip(), nsf = await ffold(), noScore = await f.evaluate(() => window.FLORIN_LOGS.NO_SCORE);
+    await ftap(".vr-cp-sc button.vr-cp-n");
+    const nsw = await fwhere();
+    ok(ns.v == null && ns.shown === "No score" && ns.why === `${noScore.charAt(0).toUpperCase()}${noScore.slice(1)}.` && !ns.mv && !ns.bar && nsf.ok && nsw.tab === "insights" && nsw.k === "score", `compact-finish: with no score today the strip says "No score" and "${ns.why}", with no week's change and no bar, the number still opens FloraScore's page, and the week row is above the fold`);
+
+    /* 6. "+ Add" in the day picked: at 360 and 390, on day 5, today is picked with nothing logged; inside its Ink edge
+       the pill drops its own outline and keeps 4px or more each side, while an empty day not picked keeps its outline */
+    const abad = [];
+    for (const width of [360, 390]) {
+      await f.setViewportSize({ width, height: 844 }); await fw();
+      await fset("persona", "sarah"); await fset("data", "new"); await fhome();
+      const a = await f.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .vr-cpw-d")].filter((d) => d.querySelector(".vr-cpw-s .rg-wd-add")).map((d) => {
+        const p = d.querySelector(".vr-cpw-s .rg-wd-add"), c = d.getBoundingClientRect(), r = p.getBoundingClientRect();
+        return { sel: d.getAttribute("aria-selected") === "true", line: getComputedStyle(p).boxShadow !== "none", room: Math.min(r.left - c.left, c.right - r.right) };
+      }));
+      const pick = a.find((x) => x.sel), other = a.find((x) => !x.sel);
+      if (!pick || pick.line || pick.room < 4 || (other && !other.line)) abad.push(`${width}: ${JSON.stringify(a)}`);
+    }
+    await f.setViewportSize({ width: 390, height: 844 }); await fset("data", "est");
+    ok(!abad.length, `compact-finish: at 360 and 390, "+ Add" under the day picked sits inside its Ink edge without its own outline and with 4px or more each side, and an empty day not picked keeps the pill's outline${abad.length ? `: ${abad.join(" | ")}` : ""}`);
+
+    ok(!fe.length, `compact-finish: no console or page errors${fe.length ? ": " + fe.slice(0, 3).join(" | ") : ""}`);
+    await fcx.close();
+  }
+  /* ===== end compact-finish ===== */
+
+  /* ===== wills-picks (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default? I
+     want to see how they lay out one by one."). Data style's "picks" draws the core's Insights with each card Will
+     picked on the data modules page in his style (prototype/js/refresh-looks.js, WILL_PICKS); View, at the top of the
+     left bar, switches between it and the default; FloraScore today on Insights is the Rings look's hero in both.
+     Its own page and context, so what it picks reaches no other check ===== */
+  {
+    const wc = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+    const w = await wc.newPage();
+    const we = [];
+    w.on("pageerror", (e) => we.push(e.message));
+    w.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /refresh-/.test(m.text()))) we.push(m.text()); });
+    await w.goto(PAGE); await w.waitForSelector(".rx-stage .ap-rx"); await w.waitForTimeout(400);
+    const ww = (ms = 450) => w.waitForTimeout(ms);
+    const wclick = async (sel, ms) => { await w.evaluate((sel) => { const b2 = document.querySelector(sel); if (!b2) throw new Error(`no ${sel}`); b2.click(); }, sel); await ww(ms); };
+    const wset = async (k, v) => { await w.evaluate(([k, v]) => window.FLORIN_EXT.api.set(k, v), [k, v]); await ww(300); };
+    const wkey = () => w.evaluate(() => window.FLORIN_EXT.api.key());
+    const wopen = async (id) => { await wclick(`[data-rx="screen"][data-v="${id}"]`); };
+    const range = async (n) => { await wclick(`${ph} [data-act="irange"][data-v="${n}"]`); };
+    /* what Insights draws: each card's key and style in order, which picked cards are drawn in their look, and each
+       picked card's foot (Ask about this, and its detail) */
+    const insOf = () => w.evaluate(() => {
+      const l = document.querySelector(".rx-stage .ap-rx .ap-layer"), r = l.querySelector(".ap-ins");
+      const q = (s) => !!l.querySelector(s);
+      return {
+        rpk: !!r && r.classList.contains("rpk-ins"), picks: !!r && r.dataset.rpk === "picks",
+        cards: r ? [...r.querySelectorAll(":scope > section")].map((s) => (s.dataset.rlkK ? `${s.dataset.rlkK}:${s.dataset.rlkLook}` : s.classList.contains("ap-sum") ? "sum" : `${((s.querySelector(".ap-ic-h") || {}).dataset || {}).k}:core`)) : [],
+        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-oura .ou-timing'), form: q('[data-rlk-k="form"] .lk-rings .rpk-mix'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
+        foot: [...l.querySelectorAll(".rpk-card")].map((c) => { const a = c.querySelector(':scope > .rlk-foot [data-act="ask-about"], :scope > .rlk-foot [data-pay="ask"]'), g = c.querySelector(":scope > .rlk-foot .rlk-go"); return `${c.dataset.rlkK}:${a ? (a.dataset.act === "pay" ? "pay" : `ask=${a.dataset.k}`) : "none"}:${g ? `${g.dataset.act}=${g.dataset.k || g.dataset.pay}` : "none"}`; }),
+        theme: [...new Set([...l.querySelectorAll(".rpk-card .rlk-look")].map((n) => n.dataset.theme))].join(","),
+        bad: /\bNaN\b|\bundefined\b/.test(l.textContent),
+        note: (document.querySelector("#rxNotes") || {}).textContent || ""
+      };
+    });
+    /* the switch, the Data style row and the phone, as they stand */
+    const agree = () => w.evaluate(() => ({ view: ((document.querySelector('[data-rx="view"][aria-pressed="true"]') || {}).dataset || {}).v || "none", look: ((document.querySelector('[data-rx="look"][aria-pressed="true"]') || {}).dataset || {}).v, phone: document.querySelector(".rx-stage .ap-rx").getAttribute("data-look"), stored: JSON.parse(localStorage.getItem("florin-refresh:look") || "null"), line: (document.querySelector("[data-view-line]") || {}).textContent || "" }));
+
+    /* 1. the default: Insights opens on the Rings FloraScore card, the core's card under it for the range and what
+       moved it, then the summary; the Rings card opens FloraScore's page, whose count the card under it says */
+    await wopen("insights");
+    const d0 = await insOf();
+    ok(d0.rpk && !d0.picks && d0.cards.slice(0, 3).join(",") === "score:rings,score:core,sum" && d0.looks.score && !d0.looks.timing && !d0.looks.form && !d0.bad, `wills-picks: the default's Insights opens on the Rings FloraScore card, the core's card under it, then the summary (${d0.cards.slice(0, 3).join(", ")})`);
+    const hero = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"), end = s.querySelector(".rg-end"), arc = s.querySelector(".rg-arc"), dot = s.querySelector(".rg-rel i"); return { out: !!s.querySelector(".rg-end.is-shift"), end: end && getComputedStyle(end).fill, read: arc && getComputedStyle(arc).stroke, dot: dot && getComputedStyle(dot).backgroundColor, trend: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t b') || {}).textContent || "", kick: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t .ap-k') || {}).textContent || "" }; });
+    ok(hero.out && hero.end === hero.read && hero.dot === hero.read, `wills-picks: FloraScore outside its usual range is never Gold on the Rings card: the ring's end and the dot before the sentence are the reading colour (${hero.end})`);
+    await wclick(`${ph} .rpk-score .rlk-go`);
+    const det = await w.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), cap: [...document.querySelectorAll(".rx-stage .ap-rx .ap-figcap b")].map((x) => x.textContent).find((t) => /^In its usual range on|^Not scored/.test(t)) || "", look: !!document.querySelector(".rx-stage .ap-rx .ap-layer .rlk-look") }));
+    await wclick(`${ph} .ap-back`);
+    const back0 = await w.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('.rpk-score') && a.matches(".rlk-go"); });
+    ok(det.key === "i-score" && !det.look && hero.trend === det.cap && hero.kick === "FloraScore · last 30 days" && await wkey() === "insights" && back0, `wills-picks: the Rings card opens FloraScore's page (Florin charts), whose count the card under it says ("${hero.trend}"), and Back lands on the Rings card's link`);
+    ok(/Rings style's big ring/.test(d0.note), "wills-picks: the default Insights note says FloraScore is the Rings style's big ring");
+
+    /* 2. the switch: Will's picks sets Data style through phone.set, opens Insights in the picks, with its note */
+    const a0 = await agree();
+    await wclick('#rxLeft [data-rx="view"][data-v="picks"]', 600);
+    const a1 = await agree(), k1 = await wkey(), p30 = await insOf();
+    ok(a0.view === "built" && a0.look === "built" && a1.view === "picks" && a1.look === "picks" && a1.phone === "picks" && a1.stored === "picks" && k1 === "look-insights" && /Will picked/.test(a1.line), `wills-picks: View's Will's picks presses Data style's Will's picks, stamps the phone, is stored, and opens Insights (${a1.view}, ${a1.look}, ${a1.phone}, ${k1})`);
+    ok(/^\s*This screen\s*Insights, in Will's picks/i.test(p30.note.replace(/\s+/g, " ")) && /data modules page/.test(p30.note) && !/[–—!]/.test(p30.note), "wills-picks: the screen's note is Insights, in Will's picks, plain");
+
+    /* 3. each picked card in its style, in Insights' own order, at 7, 30 and 90 days; where Oura draws no card (7 and
+       90) it is Florin charts', and the note says so. Every picked card keeps Ask about this and opens its detail */
+    const EXP = { 30: "score:rings,score:core,sum,timing:oura,often:core,form:rings,symptoms:oura,checkin:oura,pat:core", 7: "score:rings,score:core,sum,timing:core,often:core,form:rings,sym:core,checkin:oura,pat:core", 90: "score:rings,score:core,sum,timing:core,often:core,form:rings,sym:core,checkin:oura,pat:core" };
+    const FOOT = { score: "ask=score:idetail=score", timing: "ask=timing:idetail=timing", form: "ask=form:idetail=form", symptoms: "ask=sym:idetail=sym", checkin: "ask=ck:idetail=ck" };
+    for (const n of [7, 30, 90]) {
+      await range(n);
+      const r = await insOf();
+      const feet = r.foot.every((f) => { const [k] = f.split(":"); return f === `${k}:${FOOT[k]}`; });
+      ok(r.picks && r.cards.join(",") === EXP[n] && r.looks.score && r.looks.form && r.looks.checkin && r.looks.timing === (n === 30) && r.looks.symptoms === (n === 30) && feet && !r.bad, `wills-picks, ${n} days: ${n === 30 ? "FloraScore in Rings, Timing, Symptoms and the check-in in Oura, Form as the mix" : "FloraScore in Rings, the check-in in Oura, Form as the mix, Timing and Symptoms Florin charts'"}, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
+      ok(n === 30 ? !/draws 30 days/.test(r.note) : new RegExp(`Oura draws 30 days, so at ${n} days Timing and Symptoms are Florin charts'`).test(r.note), `wills-picks, ${n} days: the note ${n === 30 ? "names no fallback" : "says Timing and Symptoms are Florin charts' at this range"}`);
+    }
+
+    /* 4. the mix's count is the model's: L.span over the range, a flagged today left out, L.inForms per BM, and the
+       same as Insights' Form card in the default (Rings' big number, the range's own bar, and the core's card), for
+       each person, A, B and C */
+    const mixBad = [];
+    for (const [who, form] of [["sarah", "C"], ["marcus", "C"], ["alex", "C"], ["sarah", "A"], ["sarah", "B"]]) {
+      await wset("form", form); await wset("persona", who); await wopen("look-insights");
+      for (const n of [7, 30, 90]) {
+        await range(n);
+        const m = await w.evaluate((n) => {
+          const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form;
+          const bms = L.span(M, n, mode).filter((f) => !f.flag).flatMap((f) => f.bms), st = bms.map((x) => L.inForms(M, x, mode));
+          const model = { in: st.filter((s) => s === true).length, read: st.filter((s) => s !== null).length, out: st.filter((s) => s === false).length, n: bms.length };
+          const c = document.querySelector(".rx-stage .ap-rx .rpk-mix"), rows = [...c.querySelectorAll(".rpk-hb")];
+          const own = rows.filter((x) => !/Your usual/.test(x.querySelector(".rpk-hb-top span").textContent)).pop();
+          const core = RU.core.insights(M, Object.assign({}, api.V(), { look: "built" }), { range: n }).replace(/<[^>]+>/g, "").match(/(\d+) of (\d+) BMs? in your usual forms/);
+          const pf = RU.picksForm(M, mode, n);
+          return { model, big: +c.querySelector(".rg-n").textContent, of: (c.querySelector(".rg-of").textContent.match(/of (\d+)/) || [])[1], bar: own ? own.querySelector(".rpk-hb-top b").textContent : "", core: core ? `${core[1]} of ${core[2]}` : "", parts: pf.fi + pf.el + pf.in + pf.eh + pf.lo === pf.n && pf.out === model.out };
+        }, n);
+        const want = `${m.model.in} of ${m.model.read}`;
+        if (!(m.big === m.model.in && +m.of === m.model.read && m.bar === want && m.core === want && m.parts)) mixBad.push(`${who} ${form} ${n}: model ${want}, card ${m.big} of ${m.of}, bar ${m.bar}, Form card ${m.core}`);
+      }
+    }
+    ok(!mixBad.length, `wills-picks: the mix's count equals the model at 7, 30 and 90 days, for each person and in A, B and C: Rings' number, the range's own bar and Insights' Form card agree (${mixBad.slice(0, 2).join("; ") || "15 counts"})`);
+    await wset("form", "C"); await wset("persona", "sarah"); await wopen("look-insights");
+
+    /* 5. a picked card's detail is Florin charts', and Back lands on that card; Ask about this reads the card's range */
+    await range(30);
+    await wclick(`${ph} [data-rlk-k="timing"] .rlk-go`);
+    const td = await w.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), look: !!document.querySelector(".rx-stage .ap-rx .ap-layer .rlk-look"), core: !!document.querySelector(".rx-stage .ap-rx .ap-layer .ap-idt") }));
+    await wclick(`${ph} .ap-back`, 600);
+    const tb0 = await w.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('[data-rlk-k="timing"]') && a.matches(".rlk-go"); });
+    ok(td.key === "i-timing" && !td.look && td.core && tb0 && await wkey() === "look-insights", `wills-picks: Oura's Timing card opens Florin charts' Timing page, and Back lands on the card (${td.key})`);
+    await range(90);
+    await wclick(`${ph} [data-rlk-k="form"] [data-act="ask-about"]`, 600);
+    const ak = await w.evaluate(() => ({ tab: window.FLORIN_EXT.api.S.tab, ctx: window.FLORIN_EXT.api.S.askCtx }));
+    ok(ak.tab === "ask" && ak.ctx && ak.ctx.k === "form" && ak.ctx.range === 90, `wills-picks: the mix's Ask about this opens Ask Florin on Form at 90 days (${ak.ctx ? `${ak.ctx.k}, ${ak.ctx.range}` : "none"})`);
+    await wopen("look-insights"); await range(30);
+
+    /* 6. the theme is the phone's: Will's picks never sets it, and each card follows it light and dark. From Oura,
+       which turns the phone dark on its own, Will's picks gives the theme back */
+    const thOf = () => w.evaluate(() => document.querySelector(".rx-stage .ap-rx").dataset.theme);
+    const th0 = await thOf(), l0 = (await insOf()).theme;
+    await wclick('#rxLeft [data-rx="look"][data-v="oura"]', 400);
+    const th2 = await thOf();
+    await wclick('#rxLeft [data-rx="view"][data-v="picks"]', 600);
+    const th3 = await thOf(), l3 = (await insOf()).theme;
+    await range(30);
+    await wclick('[data-rx="theme"][data-v="dark"]', 400);
+    const l1 = (await insOf()).theme, th1 = await thOf();
+    await wclick('[data-rx="theme"][data-v="light"]', 400);
+    ok(th0 === "light" && l0 === "light" && th2 === "dark" && th3 === "light" && l3 === "light" && th1 === "dark" && l1 === "dark", `wills-picks: Will's picks leaves the theme alone (from Oura's ${th2} the phone's ${th3} comes back) and its cards follow the phone, light and dark (${l0}, ${l1})`);
+
+    /* 7. the switch and the Data style row agree, whoever sets it: another style presses neither view, Data style's
+       Will's picks presses View's, View's Default presses Florin charts, and a set from the phone moves both */
+    await wclick('#rxLeft [data-rx="look"][data-v="rings"]', 400);
+    const g1 = await agree();
+    await wclick('#rxLeft [data-rx="look"][data-v="picks"]', 400);
+    const g2 = await agree();
+    await wclick('#rxLeft [data-rx="view"][data-v="built"]', 500);
+    const g3 = await agree(), r3 = await insOf();
+    await wset("look", "picks");
+    const g4 = await agree();
+    await wset("look", "built");
+    ok(g1.view === "none" && g1.look === "rings" && /Rings/.test(g1.line) && g2.view === "picks" && g2.look === "picks" && g3.view === "built" && g3.look === "built" && g3.phone === "built" && !r3.picks && g4.view === "picks" && g4.look === "picks", `wills-picks: View and Data style always agree (rings: ${g1.view}/${g1.look}; picks: ${g2.view}/${g2.look}; Default: ${g3.view}/${g3.look}; set from the phone: ${g4.view}/${g4.look})`);
+
+    /* 8. every option of every decision is still drawn: the phone is stamped with it, and its note has a block per
+       option in the sheet's shape */
+    const decs = await w.evaluate(() => [...document.querySelectorAll("#rxLeft .rx-dec[data-dec]")].map((d) => [d.dataset.dec, [...d.querySelectorAll(`[data-rx="${d.dataset.dec}"]`)].map((x) => x.dataset.v)]));
+    const optBad = [];
+    for (const [k, vs] of decs) {
+      const was = await w.evaluate((k) => document.querySelector(`#rxLeft [data-rx="${k}"][aria-pressed="true"]`).dataset.v, k);
+      for (const v of vs) {
+        await wclick(`#rxLeft [data-rx="${k}"][data-v="${v}"]`, 250);
+        const r = await w.evaluate(([k, v]) => {
+          const attr = "data-" + k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+          const ph2 = document.querySelector(".rx-stage .ap-rx"), blocks = [...document.querySelectorAll("#rxNotes .rx-opts .rx-opt")];
+          return { stamp: ph2.getAttribute(attr) === v, blocks: blocks.length, shape: blocks.every((o) => [...o.querySelectorAll("dt")].map((t) => t.textContent).join("|") === "What it is|Why do it|Why not") };
+        }, [k, v]);
+        if (!r.stamp || r.blocks !== vs.length || !r.shape) optBad.push(`${k}=${v}${r.stamp ? "" : " not on the phone"}${r.blocks !== vs.length ? `, ${r.blocks} blocks for ${vs.length}` : ""}${r.shape ? "" : ", a block out of shape"}`);
+      }
+      await wclick(`#rxLeft [data-rx="${k}"][data-v="${was}"]`, 250);
+    }
+    ok(!optBad.length && decs.length === 9 && decs.find(([k]) => k === "look")[1].includes("picks"), `wills-picks: every option of every decision is drawn on the phone, Will's picks among Data style's, each with a block in the sheet's shape (${optBad.slice(0, 3).join("; ") || `${decs.reduce((s, [, vs]) => s + vs.length, 0)} options`})`);
+
+    /* 9. Free: the same paywall rules. Insights is 7 days, so Oura's cards are Florin charts' there; the check-in and the
+       mix keep their style, and their details and Ask open the paywall */
+    await wclick('#rxLeft [data-rx="view"][data-v="picks"]', 500);
+    await wset("plan", "free"); await wopen("look-insights");
+    const fr = await insOf();
+    ok(fr.cards.join(",") === EXP[7] && fr.foot.every((f) => /:pay:pay=/.test(f)) && /On Free, Insights is 7 days and Oura draws 30/.test(fr.note), `wills-picks, Free: 7 days, the check-in in Oura, Form as the mix, FloraScore in Rings, each card's Ask and detail opening the paywall (${fr.foot.join(" ")})`);
+    await wclick(`${ph} [data-rlk-k="checkin"] .rlk-go`);
+    const fp = await w.evaluate(() => { const t = window.FLORIN_EXT.api.top(); return t ? t.type : null; });
+    await w.keyboard.press("Escape"); await ww();
+    ok(fp === "pay", `wills-picks, Free: a picked card's detail opens the paywall (${fp})`);
+    await wset("plan", "member");
+
+    /* 10. while Florin learns the usual (day 5, and just joined), and on a flagged today: the Rings card follows the
+       learning and flag rules, the picked cards draw the days so far, nothing reads NaN */
+    const lb = [];
+    for (const data of ["new", "fresh"]) {
+      await wset("data", data); await wopen("look-insights");
+      const r = await insOf(), t = await w.evaluate(() => ({ learn: !!document.querySelector(".rx-stage .ap-rx .rpk-score .rg-learn"), day: (document.querySelector(".rx-stage .ap-rx .rpk-score") || {}).textContent || "", mix: (document.querySelector(".rx-stage .ap-rx .rpk-mix") || {}).textContent || "" }));
+      if (!(t.learn && /Day\s*\d+\s*of 14/.test(t.day.replace(/\s+/g, " ")) && r.looks.timing && r.looks.form && !r.bad && /so far/i.test(t.mix) && r.cards[0] === "score:rings" && r.cards[1] === "sum")) lb.push(`${data}: ${r.cards.join(",")}`);
+    }
+    await wset("data", "est"); await wopen("look-insights");
+    await w.evaluate(() => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M(); L.add(M, { kind: "bm", d: L.TODAY, t: 19.7, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" }); api.renderTab(true); }); await ww();
+    const fl = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"); return { text: s.textContent.replace(/\s+/g, " "), num: !!s.querySelector(".rg-dial-n") && /\d/.test(s.querySelector(".rg-dial-n").textContent), gold: !!s.querySelector(".rg-end.is-shift") }; });
+    ok(!lb.length && /Not read against your usual today/.test(fl.text) && fl.num && !fl.gold, `wills-picks: while Florin learns, the Rings card is Day 5 of 14 and the picked cards show the days so far; on a flagged today it keeps the number and says Not read against your usual today${lb.length ? ` (${lb.join("; ")})` : ""}`);
+    await wset("data", "est");
+
+    /* 11. the Easy version keeps its own screens; View says so under the switch */
+    await wset("easy", true); await wopen("look-insights");
+    const ez = await w.evaluate(() => ({ rpk: !!document.querySelector(".rx-stage .ap-rx .rpk-ins"), line: (document.querySelector("[data-view-line]") || {}).textContent || "" }));
+    await wset("easy", false);
+    ok(!ez.rpk && /^Easy has its own charts/.test(ez.line), `wills-picks: with Easy on, the phone keeps Easy's own screens, and View's line says so ("${ez.line}")`);
+
+    /* 12. on a phone the switch is the same panel in the Toggles sheet, at its top under the links; picking it says
+       what changed, with See it and Read the note */
+    await w.setViewportSize({ width: 390, height: 844 }); await ww(500);
+    await wclick('#rxLeft [data-rx="view"][data-v="built"], [data-rx="view"][data-v="built"]', 300);
+    await wclick('.rx-mbar [data-rx="sheet"][data-v="toggles"]', 500);
+    const sh = await w.evaluate(() => { const t = document.querySelector("#rxSheet-toggles [data-slot]"); return { first: [...t.children].map((x) => x.className.split(" ")[0]).slice(0, 3).join(","), one: document.querySelectorAll(".rx-panel--view").length, side: !!document.querySelector("#rxLeft .rx-panel--view") }; });
+    await wclick('#rxSheet-toggles [data-rx="view"][data-v="picks"]', 600);
+    const now = await w.evaluate(() => { const n = document.querySelector("#rxSheet-toggles [data-sheet-now]"); return { hidden: n.hidden, text: n.textContent, see: !!n.querySelector('[data-rx="sheet-close"], [data-rx="show"]'), read: !!n.querySelector('[data-rx="now-note"][data-v="look"]') }; });
+    const k12 = await wkey();
+    await w.keyboard.press("Escape"); await ww();
+    ok(sh.first === "rx-head-links,rx-panel,rx-panel" && sh.one === 1 && !sh.side && !now.hidden && /Data style is now Will's picks/.test(now.text) && now.see && now.read && k12 === "look-insights", `wills-picks: on a phone the View panel moves into Toggles under the links (${sh.first}), never doubled, and picking Will's picks says so with See it and Read the note`);
+
+    await w.setViewportSize({ width: 1440, height: 1000 }); await ww(400);
+    await wclick('#rxLeft [data-rx="view"][data-v="built"]', 300);
+    ok(!we.length, `wills-picks: no console errors or module warnings${we.length ? ": " + we.slice(0, 3).join(" | ") : ""}`);
+    await wc.close();
+  }
+  /* ===== end wills-picks ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

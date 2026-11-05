@@ -944,10 +944,10 @@
       return {
         t: "Insights",
         lede: !M.usual
-          ? `Florin is still learning this person's usual, so the cards show counts only until day ${L.LEARN_DAYS}. A food is checked once it's logged ${L.PATTERN_BAR.n} times.`
+          ? `Florin is still learning this person's usual, so FloraScore's big ring shows the day it's on, Day ${L.learnDay(M)} of ${L.LEARN_DAYS}, and the cards show counts only until day ${L.LEARN_DAYS}. A food is checked once it's logged ${L.PATTERN_BAR.n} times.`
           : P.plan === "free"
-            ? `On Free, Insights covers the last ${L.RANGES[0]} days. Longer ranges, the details and possible patterns come with membership, shown as the person's own counts, blurred.`
-            : `One card per question: FloraScore, timing, how often, form, symptoms${ckOn() ? ", the weekly check-in" : ""} and possible patterns. Each says the person's usual in words, gives a count, then the chart. A card opens its detail, and Ask about this opens Ask Florin with that card's numbers.${PR.sparse ? ` Meals are logged on too few days here, so food patterns are held back and a ${L.FOOD_CHECK_DAYS}-day food check is offered.` : ""}`
+            ? `On Free, Insights covers the last ${L.RANGES[0]} days, under FloraScore's big ring. Longer ranges, the details and possible patterns come with membership, shown as the person's own counts, blurred.`
+            : `FloraScore first, in the Rings style's big ring with the usual range on it (Will's pick, Nov 5), then its line over the range. Then a card per question: timing, how often, form, symptoms${ckOn() ? ", the weekly check-in" : ""} and possible patterns, each with the usual in words, a count and a chart. A card opens its detail, and Ask about this opens Ask Florin with its numbers.${PR.sparse ? ` Meals are logged on too few days here, so food patterns are held back and a ${L.FOOD_CHECK_DAYS}-day food check is offered.` : ""}`
       };
     },
     pay: () => ({
@@ -1142,7 +1142,7 @@
     },
     {
       k: "look", label: "Data style", def: "built", chips: true,
-      opts: [["built", "Florin charts"], ["rings", "Rings"], ["journal", "Field journal"], ["bento", "Bento"], ["oura", "Oura"], ["easy", "Easy read"]],
+      opts: [["built", "Florin charts"], ["picks", "Will's picks"], ["rings", "Rings"], ["journal", "Field journal"], ["bento", "Bento"], ["oura", "Oura"], ["easy", "Easy read"]],
       q: "How should Florin draw the numbers?",
       what: "How FloraScore, the week and the Insights cards look, with the same numbers from the same logs in every style."
     },
@@ -1345,6 +1345,19 @@
   const sheets = { toggles: $("#rxSheet-toggles"), notes: $("#rxSheet-notes") };
   const make = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
   /* the panels exist once, and move between the side bars (wide) and the sheets (phone), so nothing is doubled */
+  /* the view (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"): one
+     switch at the top of the toggles, Default or Will's picks. It sets Data style through phone.set, so the Data style
+     row, the stored decision and the phone always agree; Default is Data style's default. Moved with the other panels,
+     never doubled */
+  const VIEWS = [[DEC.look.def, "Default"], ["picks", "Will's picks"]];
+  const viewPanel = make(`<section class="rx-panel rx-panel--view" aria-labelledby="rxViewH"><h2 class="rx-h" id="rxViewH">View</h2><div class="rx-seg" role="group" aria-labelledby="rxViewH">${btns("view", VIEWS, P.look)}</div><p class="rx-small rx-view-l" data-view-line></p></section>`);
+  const viewLine = () => {
+    const sh = shadowOf("look");
+    if (sh) return sh.line;
+    if (P.look === "picks") return "Each Insights card in the style Will picked, the rest in Florin charts.";
+    if (P.look === DEC.look.def) return `The app as it stands, ${optName(DEC.look, P.look)} everywhere.`;
+    return `Data style is ${optName(DEC.look, P.look)}.`;
+  };
   const decPanel = make(`<section class="rx-panel rx-panel--dec" aria-labelledby="rxDecH"><h2 class="rx-h" id="rxDecH">Decisions</h2><p class="rx-small rx-dec-lede">Each one changes the app on the phone.</p><div class="rx-decs">${DECISIONS.map(decHTML).join("")}</div></section>`);
   /* the demo controls fold away to one line, so the Screens list is near the top of the bar. Open or folded is
      remembered for this viewer */
@@ -1402,8 +1415,8 @@
   function place() {
     const m = isM();
     const tSlot = m ? sheets.toggles.querySelector("[data-slot]") : left;
-    [decPanel, demoPanel, navPanel].forEach((el) => tSlot.appendChild(el));
-    if (links) { if (m) tSlot.insertBefore(links, decPanel); else if (links.parentNode !== linksHome) linksHome.appendChild(links); }
+    [viewPanel, decPanel, demoPanel, navPanel].forEach((el) => tSlot.appendChild(el));
+    if (links) { if (m) tSlot.insertBefore(links, viewPanel); else if (links.parentNode !== linksHome) linksHome.appendChild(links); }
     const nSlot = m ? sheets.notes.querySelector("[data-slot]") : right;
     nSlot.appendChild(notesPanel);
     mount.classList.toggle("rx--m", m);
@@ -1529,6 +1542,9 @@
     ["persona", "data", "meals", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
     mount.querySelectorAll('[data-rx="theme"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === appTheme())));
     mount.querySelectorAll("[data-shadow]").forEach((el) => { const sh = shadowOf(el.dataset.shadow); el.hidden = !sh; el.textContent = sh ? sh.line : ""; });
+    /* the view follows Data style: Default or Will's picks pressed, or neither for another style */
+    viewPanel.querySelectorAll('[data-rx="view"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.look)));
+    viewPanel.querySelector("[data-view-line]").textContent = viewLine();
     syncFold();
   }
 
@@ -1639,6 +1655,17 @@
       case "jump": jump.hidden = true; toNotes(); break;
       /* the phone's Toggles sheet: Read the note, for the decision just changed */
       case "now-note": P.dec = v; notes(); openSheet("notes"); break;
+      /* the view: Data style through phone.set. Will's picks opens Insights, where the picks are, with its note; Default
+         redraws the screen the phone is on. On a phone the sheet says what changed, as a decision does */
+      case "view": {
+        jump.hidden = true;
+        P.ph.set("look", v);
+        P.dec = null;
+        if (v === "picks" && !P.ph.V().easy) { P.row = "look-insights"; P.ph.open("look-insights"); P.rowKey = P.key; }
+        notes(); syncNav(); sheetNow("look");
+        if (!isM()) scrollToStage();
+        break;
+      }
       case "fold": P.demoOpen = !P.demoOpen; store.set("demoOpen", P.demoOpen); syncFold(); sizeSides(); break;
       /* a row picked from the list always shows that screen's note, even when the phone is already on it */
       case "screen": closeSheet(); jump.hidden = true; P.dec = null; P.row = v; openRow(v); P.rowKey = P.key; notes(); syncNav(); scrollToStage(); break;
