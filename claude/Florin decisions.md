@@ -176,17 +176,17 @@ everyone.
 - Then an optional line: tags such as Travel, Stress or Short nights, and a note.
 - Florin compares each answer with the person's first three weeks and says About the same, More than at first, or Less
   than at first. No score.
-- It's due once a week, on a day the person picks (Sunday evening to start). It shows as a card on Today and an item in
-  the plus menu, with one reminder. A person can skip a week, and it never blocks logging or Insights.
+- It's due once a week, on a day the person picks (Sunday evening to start). It shows on Today when it's due and as an
+  item in the plus menu, with one reminder. A person can skip a week, and it never blocks logging or Insights.
 
 **On**
-- What it is: The check-in card on Today when it's due, an item in the plus menu every week, and its trend on Insights.
+- What it is: The check-in on Today when it's due, an item in the plus menu every week, and its trend on Insights.
 - Why do it: It's the one place Florin asks how the week felt, not just what happened, and it gives people a reason to
   come back each week.
 - Why not: It's one more task a week, and in a steady week the answers add little that the logs didn't show.
 
 **Off**
-- What it is: No check-in anywhere: no Today card, no plus item, no Insights card and no reminder.
+- What it is: No check-in anywhere: nothing on Today, no plus item, no Insights card and no reminder.
 - Why do it: The app asks less of people, and the week's logs already show what happened.
 - Why not: Nothing asks how the week felt, so a hard week shows only as logs.
 
@@ -194,7 +194,7 @@ everyone.
 
 **Open question:** Should a person be able to turn it off themselves, in Profile?
 
-**Try it:** Decisions, Weekly check-in. With it on, tap Start on the Today card. With it off, it leaves every screen.
+**Try it:** Decisions, Weekly check-in. With it on, tap the check-in on Today. With it off, it leaves every screen.
 
 ## 6. Meal sheet
 

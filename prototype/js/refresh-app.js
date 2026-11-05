@@ -771,7 +771,7 @@
         /* a module that keeps a chat says how a fresh one opens (the Ask module: no chat left over from a seeded screen) */
         case "ask": S.askCtx = null; go("ask"); if (EXT.opens.ask) safe(EXT.opens.ask, api); break;
         case "ask-about": S.askCtx = { k: "timing", range: S.ins.range }; go("ask"); break;
-        case "ck-card": go("today"); { const c = layer.querySelector(".ap-ckc"); if (c) layer.scrollTop = Math.max(0, c.offsetTop - 64); } break;
+        case "ck-card": go("today"); { const c = layer.querySelector(".ap-ckc, .vr-cp-ck"); if (c) layer.scrollTop = Math.max(0, c.offsetTop - 64); } break;
         case "today": go("today"); break;
         /* a screen a module added: it says how to get there */
         default: if (EXT.opens[id]) { go("today"); safe(EXT.opens[id], api); } else go("today");
@@ -1006,7 +1006,7 @@
   /* the list of screens beside the phone. A module adds its own through EXT.screens */
   const SCREENS = [
     ["Logging", [["plus", "Plus menu"], ["earlier", "Log for an earlier day"], ["bm", "Log a BM"], ["bm-details", "Log a BM, details filled in"], ["guide", "How to pick (i)"], ["flag", "After a flagged BM"], ["sym", "Log symptoms"], ["meal", "Log what you ate"], ["meal-voice", "What you ate, said"]]],
-    ["Weekly check-in", [["ck-card", "The card on Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
+    ["Weekly check-in", [["ck-card", "On Today"], ["ck", "First question"], ["ck-last", "Last question"], ["ckdone", "Saved"], ["ckday", "When it's due"]]],
     ["Insights", [["insights", "Insights"], ["i-score", "FloraScore"], ["i-timing", "Timing"], ["i-often", "How often"], ["i-form", "Form"], ["i-sym", "Symptoms"], ["i-ck", "Check-in trend"], ["i-pat", "Possible patterns"], ["i-pattern", "One pattern"], ["ask-about", "Ask about this"]]],
     ["Membership", [["pay", "The paywall"], ["free-insights", "Insights, free"], ["free-ask", "Ask Florin, free"]]],
     ["Tabs", [["today", "Home: Score first"], ["history", "History: List"], ["ask", "Ask Florin"]]]
@@ -1114,16 +1114,16 @@
           more: [
             `Then an optional line: tags such as ${listOf(L.CHECKIN_TAGS.slice(0, 3), "or")}, and a note.`,
             `Florin compares each answer with the person's first ${num(L.BASE_WEEKS)} weeks and says About the same, More than at first, or Less than at first. No score.`,
-            `It's due once a week, on a day the person picks (${AD.util.DOWL[M.ckDay.dow]} ${M.ckDay.when} to start). It shows as a card on Today and an item in the plus menu, with one reminder. A person can skip a week, and it never blocks logging or Insights.`
+            `It's due once a week, on a day the person picks (${AD.util.DOWL[M.ckDay.dow]} ${M.ckDay.when} to start). It shows on Today when it's due and as an item in the plus menu, with one reminder. A person can skip a week, and it never blocks logging or Insights.`
           ]
         },
         opts: [
-          { v: true, is: "The check-in card on Today when it's due, an item in the plus menu every week, and its trend on Insights.", why: "It's the one place Florin asks how the week felt, not just what happened, and it gives people a reason to come back each week.", not: "It's one more task a week, and in a steady week the answers add little that the logs didn't show." },
-          { v: false, is: "No check-in anywhere: no Today card, no plus item, no Insights card and no reminder.", why: "The app asks less of people, and the week's logs already show what happened.", not: "Nothing asks how the week felt, so a hard week shows only as logs." }
+          { v: true, is: "The check-in on Today when it's due, an item in the plus menu every week, and its trend on Insights.", why: "It's the one place Florin asks how the week felt, not just what happened, and it gives people a reason to come back each week.", not: "It's one more task a week, and in a steady week the answers add little that the logs didn't show." },
+          { v: false, is: "No check-in anywhere: nothing on Today, no plus item, no Insights card and no reminder.", why: "The app asks less of people, and the week's logs already show what happened.", not: "Nothing asks how the week felt, so a hard week shows only as logs." }
         ],
         rec: { v: true, text: "We recommend On, free on both plans.", why: "It takes a minute and is the app's one weekly reason to come back." },
         open: "Should a person be able to turn it off themselves, in Profile?",
-        try: "With it on, tap Start on the Today card. With it off, it leaves every screen."
+        try: "With it on, tap the check-in on Today. With it off, it leaves every screen."
       })
     },
     {
