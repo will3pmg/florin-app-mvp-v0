@@ -824,7 +824,7 @@
      the page scroll up and down (touch-action: pan-y), and a swipe never also picks the day it started on */
   let swipe = null, swiped = 0;
   const inWeek = (t) => { const g = t && t.closest && t.closest(".vr-cpw-g"), api = EXT.api; return g && api && api.root && api.root.contains(g) ? g : null; };
-  document.addEventListener("pointerdown", (e) => { swipe = e.isPrimary && inWeek(e.target) ? { x: e.clientX, y: e.clientY, t: Date.now() } : null; }, true);
+  document.addEventListener("pointerdown", (e) => { swiped = 0; swipe = e.isPrimary && inWeek(e.target) ? { x: e.clientX, y: e.clientY, t: Date.now() } : null; }, true);
   document.addEventListener("pointercancel", () => { swipe = null; }, true);
   document.addEventListener("pointerup", (e) => {
     const s0 = swipe;
@@ -836,6 +836,7 @@
     try { cpStep(EXT.api, dx < 0 ? 1 : -1, null); } catch (err) { warn("a swipe in Compact's week", err); }
   }, true);
   document.addEventListener("click", (e) => {
+    /* only the click a mouse sends at the end of its own drag: the next press clears it */
     if (!swiped || Date.now() - swiped > 500 || !inWeek(e.target)) return;
     swiped = 0; e.preventDefault(); e.stopPropagation();
   }, true);

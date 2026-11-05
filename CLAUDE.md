@@ -10,7 +10,7 @@ Read these first, in order:
 2. `claude/Florin app refresh research.md`: Oura, Function Health, GI logging apps, weekly check-ins, licensing.
 3. `claude/Florin DESIGN.md`: the design system (v1.1). Spacing and radius scales, app colours, components, data vis, copy.
 4. `claude/Florin decisions.md`: the nine decisions, Ask Florin on Free and the demo controls, each in one shape. It is
-   the one source for every decision note and demo-control note on the page, and for the deck.
+   the one source for every decision note and demo-control note on the page.
 5. `claude/Florin data viz.md`: the marks (one set for every screen), the right set of charts, the week card and the
    FloraScore hero. A module that draws a day or a chart follows it.
 
@@ -33,8 +33,9 @@ prototype/js/refresh-looks.js     the Data style decision: Insights as a library
                               as its score and week cards, and one detail page of its own, Your days (i-days). It also
                               makes Today's week card the Rings look's week in every style (Will's pick, Nov 4)
 prototype/js/refresh-variants.js  Home Day first (the date with a small FloraScore chip, the glyph and the number, today's
-                              logs with the one that stood out marked, a row to log from), Home Compact (a short
-                              FloraScore strip, a week of day buttons with arrows, the day picked as History draws it)
+                              logs with the one that stood out marked, a row to log from), Home Compact, the default
+                              (a short FloraScore strip, a week of day buttons with arrows and swipe, the check-in as
+                              one row when it's due, the day picked as History draws it, its logs one line each)
                               and History Calendar (a month of day marks, RU.dayMark; a tapped day is drawn as the list
                               draws it)
 prototype/js/refresh-profile.js   Profile, from the Today avatar, and onboarding, Short or the Full survey (the shipping
@@ -80,7 +81,7 @@ The notes (Will, Oct 28: "Make it simple"). A decision's note takes the decision
 (`claude/Florin decisions.md`): the question in ten words or fewer, one sentence on what it decides, a block per option
 (its name, then What it is, Why do it and Why not, one sentence each, honest both ways), the recommended block marked
 Recommended, "We recommend <option>" with one sentence of why, at most one Still open, and Try it. Its top label
-numbers it as the deck does and says what we recommend ("Decision 1 of 9 · Consistency · We recommend C"; `rec.short`
+numbers it and says what we recommend ("Decision 1 of 9 · Consistency · We recommend C"; `rec.short`
 names a recommendation more shortly there), so the answer is in view before the options. The check-in's note answers
 Will's question first (`answer`), then says what the check-in is, as the sheet does. A note about something else opens
 at its top. A screen's note shows its claims line only when the screen fails a rule (no line is a pass, and every check
@@ -92,7 +93,9 @@ symptoms make everyday foods look linked to them) and the food check, with `L.ME
 screen's note is about 80 words or fewer: what the screen does and why, and at most one open question. Every note is
 plain: no badges (every option is drawn, so nothing says On the phone or Picked), no build status, no was and now, no
 research lists, no persona names or scores as evidence, and every figure from the model. A screen in the list that belongs to a
-decision sets that decision, and it stays: Home: Day first, Home: Compact, History: List and History: Calendar, the onboarding screens and the Easy
+decision sets that decision, and it stays: Home: Score first (the core's Today row; the page sets it, so the phone's own
+open("today") never changes Home), Home: Day first, Home: Compact, History: List and History: Calendar, Data style:
+Today (Score first, when Home is Compact, which draws no data style), the onboarding screens and the Easy
 version's, as the Membership screens set Plan to Free. So the phone and the left bar always agree, and a check that
 sweeps the list puts the decisions back after. Decisions are stored (`florin-refresh:<key>`); the demo controls
 aren't. The phone follows the page's theme (the system's, or the page's own) until something sets one that differs from
@@ -100,8 +103,8 @@ it; a set equal to the page's own clears that, so the phone goes back to followi
 giving it back leaves nothing stored). The arrow keys step through Screens from the list or with nothing focused, from the row the page opened while
 the phone is still on it (so a row that draws another row's screen, such as Log a BM, details filled in, never loops),
 and focus comes back to the lit row if a screen took it into the phone. A row picked from the list always shows that
-screen's note. The first Tab stop is Skip to the phone. The header links the decisions deck and the data looks
-library ("Every data style, side by side"); the footer says only "Prototype only. Not for patients." A decision whose option shows on another screen (Home, History, BM logging, Meal sheet) has Show it on the
+screen's note. The first Tab stop is Skip to the phone. The header links the data looks library ("Every data style,
+side by side"), with room in its links row for one more (the voting page, to come); the footer says only "Prototype only. Not for patients." A decision whose option shows on another screen (Home, History, BM logging, Meal sheet) has Show it on the
 phone in its note, which opens that screen and keeps the note up. With the Easy version on, the Home and Data style rows
 each get one plain line, "Easy has its own Today (charts). Turn Easy off to see this choice.", under the row and at the top
 of the note (`SHADOWED` in refresh-app.js). Under 760px the app is full screen and a slim bar at the top opens Toggles
@@ -114,7 +117,8 @@ areas are variables on `:root` (`--rx-sat`, `--rx-sab`), so behave.js stands in 
 border-box, so it is 48px plus the top inset, counted once, and the app's first line and avatar sit under it.
 Weekly check-in Off takes the check-in out of the whole app (`RU.ckOn(V)`), and its screens are disabled in the list.
 BM logging Full form only shows one Log a BM row on plus and no one-tap save. Home has three options, Score first (the
-core's), Day first and Compact (Will, Nov 4), and its toggle takes its own line. Home Day first and Compact, History
+core's), Day first and Compact (Will, Nov 4), and its toggle takes its own line. Compact is the default (Will, Nov 5:
+"Set the default to compact for home screen"); a viewer's stored pick still wins. Home Day first and Compact, History
 Calendar, Data style, Version Easy and Onboarding are stored and stamped on the phone, and drawn by their modules. Where
 they meet: Easy has its own Today (Home's Day first or Compact waits under it) and always draws Easy read (whatever Data style says), and
 keeps History as a calendar when that's picked; Profile's Larger text and simpler screens sets Version, its Logging
@@ -223,20 +227,32 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   `RU.historyNext(M, V)`, so a calendar shows a day the same way. Each day's header carries its day mark
   (`RU.dayMark`) and its `L.dayWhy` line (a flagged today, `RU.FLAG_DAY`); on Free, a day before the last
   `RU.FREE_DAYS` is only logged, never read (`RU.heldOnFree`), as the calendar holds it.
-- **Home** (`V.home`) is `score` (Score first, the core's Today), `day` (Day first) or `compact` (Compact), the last two
-  drawn by refresh-variants's wrap of `RU.today`. Compact is the `top` part without its date line, then a FloraScore
-  strip (`L.score` as a button to FloraScore's page, the paywall on Free; `RU.scoreRel` on a thin bar of the usual range;
-  `L.scoreMoved`'s `delta` as "Week average 5 above last week", never with no score today; Insights; Day 5 of 14 while
-  learning and `L.NO_SCORE` with no score, as the hero says them), Score first's Teal note on a flag or an alarm
-  (`RU.highlightOf`), a week of day tabs Monday to Sunday drawn with the Rings week card's own marks
-  (`FLOOKS` rings `.marks`: `ring`, `add`, `legend`, inside `.lk-rings .rg-marks`), each day's reading from the calendar's
-  `cellOf`, "+ Add" under a day with nothing logged (a tap picks it and opens plus for it), the legend of the marks on
-  show, arrows a week back and on between the first day's week and this one, and "This week" when off it; the day
-  picked through `RU.historyDay` with Add (the tabs' panel), then the `checkin` and `fine` parts. No week card and no
-  sentence on what stood out. The day picked is `S.vrCp` (`{ M, sel }`: a new model starts again on today); a log saved
-  to another day moves it there (`S.vrCpSeen`); acts `vr-cp-day`, `vr-cp-wk`, `vr-cp-now` and `vr-cp-ins` (Insights);
-  the Today tab, the Home: Compact row and a change of Home bring it back to today. The calendar's days are tabs too
-  (manual activation: the arrow keys move, Enter or Space picks).
+- **Home** (`V.home`) is `compact` (Compact, the default since Nov 5), `score` (Score first, the core's Today) or `day`
+  (Day first); Compact and Day first are drawn by refresh-variants's wrap of `RU.today`. Compact is the `top` part
+  without its date line, then a FloraScore strip (`L.score` as a button to FloraScore's page with a chevron, the paywall
+  on Free; "· Today" by the name while another day is picked; `L.scoreMoved`'s `delta` as a sentence, "This week's
+  average is 5 above last week's.", never with no score today; a thin bar of the usual range with today's dot, only
+  when there's a dot, its label "Your usual 74 to 82", and `RU.scoreRel`'s words in the number's name for a screen
+  reader, not on screen; Insights; Day 5 of 14 while learning and `L.NO_SCORE` with no score, as the hero says them; on
+  a flag, "Not read against your usual today" and no bar), Score first's Teal note on a flag or an alarm
+  (`RU.highlightOf`), a button (`vr-cp-flag`) to the flag sheet for that log (When to see a clinician, Make a report),
+  a week of day tabs Monday to Sunday drawn with the Rings week card's own marks (`FLOOKS` rings `.marks`: `ring`,
+  `add`, `legend`, inside `.lk-rings .rg-marks`), each day's reading from the calendar's `cellOf`, "+ Add" under a day
+  with nothing logged (a tap picks it, as any day; the day then offers Add), one header row (an arrow a week back, the
+  month short, "Oct 2026", a button to History's calendar on that day when History is Calendar, the legend's info
+  button, "Today" when off this week, an arrow a week on: nothing comes and goes on a row of its own), a swipe across
+  the row stepping a week, the legend of the marks on show (never "Nothing logged") folded behind the info button
+  (open before day 14), and on Free the calendar's membership line when a held day is on show; the check-in as one row
+  when it's due (Start, Skip); the day picked through `RU.historyDay` (the tabs' panel) with Add where the count was,
+  its `L.dayWhy` line across the width, its logs one line each (`RU.entryRow` while Compact draws: the word and what
+  was picked, never the stock line; a meal's words and a note keep theirs), the BM tiles on today with nothing logged
+  (the BM logging decision's way) and No BM today in the evening, as Score first offers it; then the check-in's result
+  when it's done, and `fine`. No week card and no sentence on what stood out. The day picked is `S.vrCp` (`{ M, sel }`:
+  a new model starts again on today); a log saved to another day moves it there (`S.vrCpSeen`); with a past day picked,
+  plus offers "Log for <that day>" in place of Log for an earlier day; acts `vr-cp-day`, `vr-cp-wk`, `vr-cp-now`,
+  `vr-cp-lg`, `vr-cp-cal`, `vr-cp-flag` and `vr-cp-ins` (Insights); the Today tab, the Home: Compact row and a change
+  of Home bring it back to today. The calendar's days are tabs too (manual activation: the arrow keys move, Enter or
+  Space picks).
 - **A day** is drawn one way everywhere (claude/Florin data viz.md, section 1): `RU.dayMark(f, o)` draws one day's
   circle, ring, date, symptom square and screen-reader words for the calendar, History's day headers, Your days and
   Easy, from one of `L.span(M, n, mode, end?)`'s facts. Never draw a day another way, with one exception until the
@@ -298,14 +314,17 @@ What each module registers (the file's header comment has the detail):
 ```
 refresh-looks     wraps RU.weekCard (Today's week is the Rings week; RU.core.weekCard keeps the core's), RU.insights,
                   RU.todayParts.hero and .week, RU.idetail (Your days), RU.askContext; acts idetail,
-                  iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style; keys tab:insights and
+                  iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style (Data style: Today
+                  puts Home on Score first while it's Compact, which draws no data style); keys tab:insights and
                   tab:today; notes, decisions.look; onSet (theme, look, a rebuild). Oura sets the phone
                   dark while it's drawn (through api.set, so the page follows) unless the viewer has picked a theme,
                   and gives the theme back when it stops; with Easy on it leaves the theme alone
-refresh-variants  wraps RU.today (Day first and Compact) and RU.history (Calendar), and the tab act (the Today tab puts
-                  Compact back on today); acts vr-quick, vr-cal-day, vr-cal-m, vr-cp-day, vr-cp-wk, vr-cp-now, vr-cp-ins; screens
+refresh-variants  wraps RU.today (Day first and Compact), RU.history (Calendar), RU.entryRow (Compact's one-line rows),
+                  RU.plus (the day picked on Compact) and RU.flagNote (its heading from Compact's Teal note), and the
+                  tab act (the Today tab puts Compact back on today); acts vr-quick, vr-cal-day, vr-cal-m, vr-cp-day,
+                  vr-cp-wk, vr-cp-now, vr-cp-lg, vr-cp-cal, vr-cp-flag, vr-cp-ins; a swipe on Compact's week; screens
                   home-day, home-compact and hist-cal in Tabs; opens home-compact; keys tab:today and tab:history;
-                  notes, decisions.home and .history; onSet (home); state S.vrCp and S.vrCpSeen
+                  notes, decisions.home and .history; onSet (home); state S.vrCp, S.vrCpSeen, S.vrCpLg, S.vrCpSlide
 refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
                   (the first name); screens Onboarding and profile; notes, decisions.onboard; onSet
 refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-*, ask-about and ask-clear (wrapped),

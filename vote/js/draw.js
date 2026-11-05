@@ -56,6 +56,24 @@
   /* ---------- a picture is still ---------- */
   const box = (html) => { const d = document.createElement("div"); d.innerHTML = html; return d; };
   const IDREF = ["aria-labelledby", "aria-describedby", "aria-controls", "aria-owns", "aria-details", "aria-activedescendant", "for", "list", "headers"];
+  /* ids made unique, their references (and url(#id) in a drawing) rewritten: a picture drawn twice, or shown again in
+     the bigger view, never repeats an id or a gradient */
+  function reid(el, pfx) {
+    const map = {};
+    el.querySelectorAll("[id]").forEach((e) => { map[e.id] = `${pfx}-${e.id}`; e.id = map[e.id]; });
+    const olds = Object.keys(map);
+    if (!olds.length) return el;
+    const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`#(${olds.map(reEsc).join("|")})(?![\\w-])`, "g");
+    el.querySelectorAll("*").forEach((e) => {
+      [...e.attributes].forEach((a) => {
+        if (IDREF.includes(a.name)) { e.setAttribute(a.name, a.value.split(/\s+/).map((t) => map[t] || t).join(" ")); return; }
+        if (a.value.indexOf("#") >= 0 && re.test(a.value)) { re.lastIndex = 0; e.setAttribute(a.name, a.value.replace(re, (s, id) => `#${map[id]}`)); }
+        re.lastIndex = 0;
+      });
+    });
+    return el;
+  }
   function still(el) {
     const pfx = `vt${++PIC}`;
     el.querySelectorAll("[data-count]").forEach((e) => { e.removeAttribute("data-count"); e.removeAttribute("data-dur"); e.removeAttribute("data-dec"); });
@@ -67,20 +85,7 @@
     el.querySelectorAll("[autofocus], [data-autofocus]").forEach((e) => { e.removeAttribute("autofocus"); e.removeAttribute("data-autofocus"); });
     el.querySelectorAll("[role='dialog']").forEach((e) => { e.removeAttribute("role"); e.removeAttribute("aria-modal"); });
     el.querySelectorAll("[aria-live]").forEach((e) => e.removeAttribute("aria-live"));
-    const map = {};
-    el.querySelectorAll("[id]").forEach((e) => { map[e.id] = `${pfx}-${e.id}`; e.id = map[e.id]; });
-    const olds = Object.keys(map);
-    if (olds.length) {
-      const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(`#(${olds.map(reEsc).join("|")})(?![\\w-])`, "g");
-      el.querySelectorAll("*").forEach((e) => {
-        [...e.attributes].forEach((a) => {
-          if (IDREF.includes(a.name)) { e.setAttribute(a.name, a.value.split(/\s+/).map((t) => map[t] || t).join(" ")); return; }
-          if (a.value.indexOf("#") >= 0 && re.test(a.value)) { re.lastIndex = 0; e.setAttribute(a.name, a.value.replace(re, (s, id) => `#${map[id]}`)); }
-          re.lastIndex = 0;
-        });
-      });
-    }
+    reid(el, pfx);
     /* every look and Easy box inside takes the page's theme (the modules read it from a phone this page doesn't have) */
     el.querySelectorAll("[data-theme]").forEach((e) => e.setAttribute("data-theme", THEME));
     return el;
@@ -450,5 +455,6 @@
   /* a question's lede: what the screen is, or the stretch the cards count */
   const lede = (q) => (q.part === 1 ? q.lede : spanOf(q.mod, "rings"));
 
-  W.VOTE_DRAW = { ready: true, setTheme, frames, sheet, lede, spanOf, ctx, demoLine, logsLabels, models };
+  const again = (el) => reid(el, `vt${++PIC}`);
+  W.VOTE_DRAW = { ready: true, setTheme, frames, sheet, lede, spanOf, ctx, demoLine, logsLabels, models, again };
 })();

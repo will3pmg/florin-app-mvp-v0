@@ -136,7 +136,7 @@ button.vr-cp-n:hover { background: color-mix(in srgb, var(--ray) 12%, transparen
 .vr-cpw { display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 12px; }
 .vr-cpw-h { display: flex; align-items: center; gap: 4px; margin-inline: -8px; }
 .vr-cpw-tw { flex: 1 1 auto; display: flex; align-items: center; min-width: 0; }
-.vr-cpw-t { min-width: 0; font-size: 15px; font-weight: 500 !important; line-height: 20px; letter-spacing: -.01em; white-space: nowrap; }
+.vr-cpw-t { flex: none; min-width: 0; font-size: 15px; font-weight: 500 !important; line-height: 20px; letter-spacing: -.01em; white-space: nowrap; }
 .vr-cpw-ts { display: block; padding: 0 4px; }
 /* the month, a button to History's calendar: underlined, as a link reads */
 .vr-cpw-tb { position: relative; display: inline-flex; align-items: center; min-height: 36px; padding: 0 4px; border-radius: 12px; font: inherit; color: var(--ap-ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ap-ink) 35%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
@@ -146,7 +146,7 @@ button.vr-cp-n:hover { background: color-mix(in srgb, var(--ray) 12%, transparen
 .vr-cpw-i::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
 .vr-cpw-i .ic { width: 18px; height: 18px; }
 .vr-cpw-i[aria-expanded="true"] { background: var(--ap-card2); color: var(--ap-ink); }
-.vr-cpw-now { position: relative; flex: none; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink); }
+.vr-cpw-now { position: relative; flex: none; display: inline-flex; align-items: center; min-height: 36px; padding: 0 8px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink); }
 .vr-cpw-now::after { content: ""; position: absolute; inset: -4px 0; }
 .vr-cpw-nav { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink); }
 .vr-cpw-nav::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
