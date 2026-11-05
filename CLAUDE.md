@@ -277,7 +277,8 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   4; data viz.md section 3 says where it departs from section 1). `L.tally(F, named)`
   counts a stretch the one way (within out of the days read; `left` says what was counted neither way);
   `L.dayWhy(M, f, mode, o)` is a day's reasons and its line; `L.symLine(F, o)` is the one symptom sentence (the week
-  card, Insights' Symptoms card and Ask Florin); `L.FLAG_DAY` (also `RU.FLAG_DAY`) is the flagged today's line.
+  card, Ask Florin, and the screen-reader words of Insights' Symptoms day strip, which says it in the card's
+  answer, its usual and its bars on screen); `L.FLAG_DAY` (also `RU.FLAG_DAY`) is the flagged today's line.
   `RU.weekCard(M, mode, o)` is Today's week card. refresh-looks wraps it to draw the Rings look's week (`week()` in
   look-rings.js, through FLD.build: `D.tally[7]`, each day's `L.score` under its ring, a day with nothing logged a
   button with Add that opens plus for that day) in every style that doesn't draw its own week; the core's card (the
