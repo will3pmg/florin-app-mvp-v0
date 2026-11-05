@@ -1154,9 +1154,11 @@
     test: "Eating earlier: a 7-day experiment",
     visit: "Bringing your data to your next appointment"
   };
-  const JR_OF = { report: "visit", clinician: "visit", redirect: "visit", test: "test", try: "test" };
   const JR_MSG = "This opens the article in the Florin journal, in the app. That comes in the next pass.";
-  const journalOf = (m) => (m.kind === "alarm" || m.intent === "ack" ? null : JOURNAL[JR_OF[m.intent] || (m.intent === "timing" && m.offers && m.offers.some(([, y]) => /later mornings/.test(y)) ? "test" : "usual")]);
+  /* a clinician or a report: bringing your data; an answer about later dinners: the 7-day experiment; else why Florin
+     compares you with you. The clinician answer to a sign has none (DESIGN.md: no sources) */
+  const journalOf = (m) => (m.kind === "alarm" || m.intent === "ack" ? null
+    : JOURNAL[["report", "clinician", "redirect"].includes(m.intent) ? "visit" : /\bdinners?\b/i.test(`${m.text || ""} ${(m.lines || []).join(" ")} ${m.try || ""}`) ? "test" : "usual"]);
 
   /* ---------- drawing ---------- */
   const REPORT_MSG = (ck) => `A report of your logs to bring to a clinician: dates, BMs, symptoms${ck ? ", meals and check-ins" : " and meals"}. That comes in the next pass.`;
@@ -1242,7 +1244,7 @@
       : `<button type="button" class="ap-askbar-b ap-askx-send" data-act="askx-send" aria-label="Send"${ch.draft.trim() ? "" : ' aria-disabled="true"'}>${svgIc(SEND)}</button>`;
     return `<div class="ap-scr ap-ask ap-askx">
       <header class="ap-askx-top" data-a>
-        <div class="ap-askx-th">${tok("ap-askt--lg")}<h1 class="ap-h1" tabindex="-1">Ask Florin</h1><span class="ap-askx-tools"><button type="button" class="ap-askx-ib" data-act="askx-mem" aria-label="What Ask Florin knows">${svgIc(MEM)}</button>${n && !ch.busy ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c ap-askx-new" data-act="askx-new">New chat</button>` : ""}</span></div>
+        <div class="ap-askx-th"><h1 class="ap-h1" tabindex="-1">Ask Florin</h1><span class="ap-askx-tools"><button type="button" class="ap-askx-ib" data-act="askx-mem" aria-label="What Ask Florin knows">${svgIc(MEM)}</button>${n && !ch.busy ? `<button type="button" class="ap-btn ap-btn--line ap-btn--c ap-askx-new" data-act="askx-new">New chat</button>` : ""}</span></div>
         <p class="ap-askx-src">${esc(srcLine())}</p>
       </header>
       ${n ? `<ol class="ap-askx-log" aria-label="Conversation with Ask Florin">${ch.msgs.map((m) => turn(m, { ck: R.ck })).join("")}</ol>` : opening(R)}

@@ -85,20 +85,22 @@
 
 /* ============================== COMPACT ============================== */
 /* 1. the FloraScore strip: the Forest of the FloraScore card (the card colour's step up on dark). The word FloraScore
-   small with Insights at the end of its row; under them the number (a button to FloraScore's page) and, beside it, where
-   it sits and the week's average against last week's; then a thin bar of the usual range: the band Ray at 16% with
-   today's dot in the card's ink, as on the hero. No count-up */
+   small ("· Today" beside it while another day is picked) with Insights at the end of its row; under them the number
+   (a button to FloraScore's page) and, beside it, this week's average against last week's as a plain sentence; then a
+   thin bar of the usual range: the band Ray at 16% with today's dot in the card's ink, as on the hero. No count-up */
 .vr-cp-sc { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "k k go" "n w w" "bar bar bar" "why why why"; align-items: center; gap: 4px 12px; padding: 12px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); }
 .vr-cp-k { grid-area: k; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .vr-cp-k .ap-k { font-weight: 400; }
+.vr-cp-today { color: var(--ap-hero-ink); }
 .vr-cp-n { grid-area: n; position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin-left: -4px; padding: 0 4px; border-radius: 12px; font-size: 40px; font-weight: 300; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ap-hero-ink); }
 .vr-cp-n .ic { width: 16px; height: 16px; flex: none; color: var(--ray); }
 button.vr-cp-n:hover { background: color-mix(in srgb, var(--ray) 12%, transparent); }
 .vr-cp-n small { font-size: 15px; letter-spacing: 0; color: color-mix(in srgb, var(--ap-hero-ink) 80%, transparent); }
 .vr-cp-n.is-none { font-size: 24px; letter-spacing: -.01em; }
 .vr-cp-sc.is-learn .vr-cp-n { margin-left: 0; padding: 0; font-size: 32px; }
-.vr-cp-w { grid-area: w; display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 13px; line-height: 1.3; text-wrap: pretty; }
-.vr-cp-mv { font-family: var(--mono); font-size: 11.5px; line-height: 1.3; letter-spacing: .02em; color: color-mix(in srgb, var(--ap-hero-ink) 80%, transparent); }
+.vr-cp-w { grid-area: w; display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 13px; line-height: 1.35; text-wrap: balance; }
+/* the week's change: a sentence, so it's set as one, in the sans */
+.vr-cp-mv { color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
 .vr-cp-go { grid-area: go; position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 8px 0 12px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ray) 45%, transparent); font-size: 13px; font-weight: 500; color: var(--ray); }
 .vr-cp-go::after { content: ""; position: absolute; inset: -4px 0; }
 .vr-cp-go .ic { width: 14px; height: 14px; }
@@ -116,42 +118,59 @@ button.vr-cp-n:hover { background: color-mix(in srgb, var(--ray) 12%, transparen
 .vr-cp-steps i { height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--ap-hero-ink) 20%, transparent); }
 .vr-cp-steps i.is-on { background: var(--ap-hero-ink); }
 
-/* a flag or an alarm feature today: Score first's Teal note, the sign and primary care, close under the strip. Teal is
-   context: never read, never red */
-.vr-cp-flag { display: flex; align-items: flex-start; gap: 8px; margin-top: -8px; padding: 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); font-size: 14px; line-height: 1.4; color: var(--ap-ink); }
-.vr-cp-flag .ic { width: 16px; height: 16px; transform: translateY(2px); color: var(--ap-info-ink); }
-.vr-cp-flag > span { min-width: 0; }
+/* a flag or an alarm feature today: Score first's Teal note, the sign and primary care, close under the strip, a
+   button to the When to see a clinician sheet. Teal is context: never read, never red */
+.vr-cp-flag { display: flex; align-items: flex-start; gap: 8px; width: 100%; min-height: 44px; margin-top: -8px; padding: 12px 12px 12px 16px; border-radius: 16px; background: var(--ap-info-bg); box-shadow: inset 3px 0 0 var(--ap-teal); font-size: 14px; line-height: 1.4; color: var(--ap-ink); text-align: left; }
+.vr-cp-flag .ic { width: 16px; height: 16px; flex: none; transform: translateY(2px); color: var(--ap-info-ink); }
+.vr-cp-flag > span { flex: 1; min-width: 0; }
+.vr-cp-flag .vr-cp-flag-go { align-self: center; transform: none; }
 
-/* 2. the week: the month over it with an arrow each side ("This week" under the month when the row is on another
-   week; the arrows sit at the top, so they don't move when it shows), then seven day tabs. Each holds the Rings week
-   card's own ring at 32px (library/js/look-rings.js marks.ring, styled by look-rings.css inside .lk-rings .rg-marks),
-   the date inside: Plum within (Ray on dark), Gold outside (a tint and a Shift Ink edge in light, a solid disc on
-   dark), Ink 3 not counted, a thin empty ring with "+ Add" under it for a day with nothing logged, a Teal ring for a
-   day noted for a clinician. The day picked sits on Card 2, as the calendar's does; today says Today over its mark.
-   Then the legend of the marks on show. Each tab is 44px or more each way */
+/* 2. the week: one header row (an arrow a week back, the month with the legend's info button, "Today" while the row
+   is on another week, an arrow a week on: nothing comes and goes on a row of its own, so the days never move), then
+   seven day tabs. Each holds the Rings week card's own ring at 32px (library/js/look-rings.js marks.ring, styled by
+   look-rings.css inside .lk-rings .rg-marks), the date inside: Plum within (Ray on dark), Gold outside (a tint and a
+   Shift Ink edge in light, a solid disc on dark), Ink 3 not counted, a thin empty ring with "+ Add" under it for a day
+   with nothing logged, a Teal ring for a day noted for a clinician. The day picked sits on Card 2 inside an Ink
+   edge, so it shows on dark too, where Card 2 is close to the card; never Plum or Ray, which mean "your usual". Then
+   the legend, when it's open. Each tab is 44px or more each way */
 .vr-cpw { display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 12px; }
-.vr-cpw-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-inline: -8px; }
-.vr-cpw-tw { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding-top: 8px; }
-.vr-cpw-t { min-width: 0; font-size: 15px; font-weight: 500 !important; line-height: 20px; letter-spacing: -.01em; text-align: center; }
-.vr-cpw-now { position: relative; display: inline-flex; align-items: center; min-height: 28px; padding: 0 12px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink); }
-.vr-cpw-now::after { content: ""; position: absolute; inset: -8px 0; }
+.vr-cpw-h { display: flex; align-items: center; gap: 4px; margin-inline: -8px; }
+.vr-cpw-tw { flex: 1 1 auto; display: flex; align-items: center; min-width: 0; }
+.vr-cpw-t { min-width: 0; font-size: 15px; font-weight: 500 !important; line-height: 20px; letter-spacing: -.01em; white-space: nowrap; }
+.vr-cpw-ts { display: block; padding: 0 8px; }
+/* the month, a button to History's calendar: underlined, as a link reads */
+.vr-cpw-tb { position: relative; display: inline-flex; align-items: center; min-height: 36px; padding: 0 8px; border-radius: 12px; font: inherit; color: var(--ap-ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ap-ink) 35%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.vr-cpw-tb::after { content: ""; position: absolute; inset: -4px 0; }
+.vr-cpw-tb:hover { text-decoration-color: currentColor; }
+.vr-cpw-i { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; color: var(--ap-ink2); }
+.vr-cpw-i::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
+.vr-cpw-i .ic { width: 18px; height: 18px; }
+.vr-cpw-i[aria-expanded="true"] { background: var(--ap-card2); color: var(--ap-ink); }
+.vr-cpw-now { position: relative; flex: none; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink); }
+.vr-cpw-now::after { content: ""; position: absolute; inset: -4px 0; }
 .vr-cpw-nav { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; background: var(--ap-card2); color: var(--ap-ink); }
 .vr-cpw-nav::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
 .vr-cpw-nav .ic { width: 18px; height: 18px; }
 .vr-cpw-nav[aria-disabled="true"] { background: transparent; color: var(--ap-ink3); cursor: default; }
 .vr-cpw-lk { min-width: 0; }
 .vr-cpw-lk .rg-marks { display: flex; flex-direction: column; gap: 8px; }
-/* the row runs 12px into the card's 16px padding, as the week card's does, so each day is 44px or more at 360 wide */
-.vr-cpw-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-inline: -12px; }
+/* the row runs 12px into the card's 16px padding, as the week card's does, so each day is 44px or more at 360 wide.
+   It scrolls the page up and down, and a swipe across it steps a week */
+.vr-cpw-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-inline: -12px; touch-action: pan-y; }
+.vr-cpw-g.is-in-next { animation: vr-cpw-in-next .2s ease-out; }
+.vr-cpw-g.is-in-prev { animation: vr-cpw-in-prev .2s ease-out; }
+@keyframes vr-cpw-in-next { from { opacity: .4; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes vr-cpw-in-prev { from { opacity: .4; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .vr-cpw-g.is-in-next, .vr-cpw-g.is-in-prev { animation: none; } }
 .vr-cpw-d { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 4px 0 8px; border-radius: 16px; color: var(--ap-ink); -webkit-tap-highlight-color: transparent; }
 button.vr-cpw-d:focus-visible { outline-offset: -2px; }
-/* the day picked sits on Card 2, drawn 4px in from its column each side, so the first and last keep 8px from the
-   card's edge while the tab keeps its full width */
-.vr-cpw-d[aria-selected="true"]::before { content: ""; position: absolute; inset: 0 4px; z-index: -1; border-radius: 12px; background: var(--ap-card2); }
-.vr-cpw-k { font-family: var(--mono); font-size: 10.5px; line-height: 16px; letter-spacing: .02em; color: var(--ap-ink2); white-space: nowrap; }
+/* the day picked sits on Card 2 inside an Ink edge, drawn 2px in from its column each side, so the first and last
+   keep 8px from the card's edge (the row runs 12px into the card's 16px padding) while the tab keeps its full width */
+.vr-cpw-d[aria-selected="true"]::before { content: ""; position: absolute; inset: 0 2px; z-index: -1; border-radius: 12px; background: var(--ap-card2); box-shadow: inset 0 0 0 1.5px var(--ap-ink); }
+.vr-cpw-k { font-family: var(--mono); font-size: 11.5px; line-height: 16px; letter-spacing: .02em; color: var(--ap-ink2); white-space: nowrap; }
 .vr-cpw-d.is-today .vr-cpw-k { color: var(--ap-ink); font-weight: 700; }
 .vr-cpw-r { position: relative; display: block; flex: none; width: 32px; height: 32px; }
-.vr-cpw-r b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+.vr-cpw-r b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; font-weight: 500; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .vr-cpw-d.is-open .vr-cpw-r b { font-weight: 400; color: var(--ap-ink2); }
 .vr-cpw-lk[data-theme="dark"] .vr-cpw-d.is-shift .vr-cpw-r b { color: var(--ap-card); }
 /* a day before the first log, or outside the logs, is its date alone, never a mark */
@@ -159,20 +178,51 @@ button.vr-cpw-d:focus-visible { outline-offset: -2px; }
 .vr-cpw-d.is-before .vr-cpw-k { color: var(--ap-ink3); }
 /* a day still to come steps back further than one before the first log, so the two never look alike */
 .vr-cpw-d.is-later > * { opacity: .45; }
-/* under the ring: the Teal square for symptoms, or "+ Add" (the week card's pill) for a day with nothing logged */
-.vr-cpw-s { display: grid; place-items: center; height: 16px; }
+/* under the ring: the Teal square for symptoms, or "+ Add" (the week card's pill) for a day with nothing logged, kept
+   inside its column */
+.vr-cpw-s { display: grid; place-items: center; max-width: 100%; height: 16px; }
 .vr-cpw-s > i { width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
-.vr-cpw-s .rg-wd-add { font-family: var(--mono); font-size: 10.5px; line-height: 1.2; }
+.vr-cpw-s .rg-wd-add { max-width: 100%; font-family: var(--mono); font-size: 10.5px; line-height: 1.2; }
 button.vr-cpw-d:hover .rg-wd-add { background: var(--ap-card); }
 /* a soft redraw (a day tapped) never draws the rings in again */
 .vr-cpw-lk .rg-draw { animation: none; }
-/* the legend: the week card's, at its size */
-.vr-cpw-lk .rg-legend { padding-top: 4px; }
+/* the legend: the week card's, at its size, when it's open */
+.vr-cpw-lgw .rg-legend { padding-top: 4px; }
+/* on Free, what membership adds to a week with days shown only as logged */
+.vr-cpw-pay { align-self: flex-start; margin-top: 4px; }
 
-/* 3. the day picked, as History draws it. Its mark is the row's above, so the heading carries the name and the line */
-.vr-cp-day { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.vr-cp-day > .ap-hd { align-self: stretch; }
-.vr-cp-day .ap-hd-h { grid-template-columns: minmax(0, 1fr) auto; }
+/* 3. the weekly check-in, due: the plus menu's row, with Skip */
+.vr-cp-ck { display: flex; align-items: center; gap: 4px; padding: 4px 8px 4px 4px; border-radius: 16px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.vr-cp-ck-b { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 8px 8px 12px; border-radius: 12px; text-align: left; }
+.vr-cp-ck-b .ap-read-ic { flex: none; color: var(--ap-ink); }
+.vr-cp-ck-b .ap-tl-go { width: 16px; height: 16px; flex: none; color: var(--ap-ink3); }
+.vr-cp-ck-x { position: relative; flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px 0 16px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ap-ink2); }
+/* a hairline between Start and Skip, so the row's chevron reads as its own */
+.vr-cp-ck-x::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1.5px; background: var(--ap-line); }
+.vr-cp-ck-x:hover { background: var(--ap-card2); }
+
+/* 4. the day picked, as History draws it. Its mark is the row's above, so the heading carries the name, Add where the
+   count was, and the line under both across the whole width */
+.vr-cp-day { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.vr-cp-day .ap-hd-h { grid-template-columns: minmax(0, 1fr) auto; align-items: center; row-gap: 4px; }
 .vr-cp-day .ap-hd-h > .ap-day { display: none; }
-.vr-cp-day .ap-hd-t { padding-top: 0; }
-.vr-cp-day .ap-hd-h > .ap-k { padding-top: 4px; }
+.vr-cp-day .ap-hd-t { display: contents; }
+.vr-cp-day .ap-hd-t h2 { grid-column: 1; grid-row: 1; }
+.vr-cp-day .ap-hd-why { grid-column: 1 / -1; grid-row: 2; text-wrap: pretty; }
+.vr-cp-add { grid-column: 2; grid-row: 1; position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px 0 8px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-line); font-size: 14px; font-weight: 500; color: var(--ap-ink); }
+.vr-cp-add::after { content: ""; position: absolute; inset: -4px 0; }
+.vr-cp-add .ic { width: 16px; height: 16px; }
+.vr-cp-add:hover { background: var(--ap-card2); }
+/* a log one line long: the time, the icon and the line centred on each other */
+.vr-cp-day .vr-dn .ap-tl-row { align-items: center; }
+.vr-cp-day .vr-dn .ap-tl-t, .vr-cp-day .vr-dn .ap-tl-m { padding-top: 0; }
+.vr-cp-day .vr-dn .ap-tl-go { align-self: center; }
+/* today with nothing logged: the BM tiles, as on Day first */
+.vr-cp-log { display: flex; flex-direction: column; gap: 12px; }
+.vr-cp-log-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.vr-cp-log-h b { font-size: 15px; font-weight: 500; }
+.vr-cp-log-h span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink2); }
+.vr-cp-log .ap-fm, .vr-cp-log .ap-fm-scale { margin-inline: -8px; }
+.vr-cp-log .ap-fm-scale { margin-top: -4px; }
+.vr-cp-log-more, .vr-cp-log--full { display: flex; flex-wrap: wrap; gap: 8px; }
+.vr-cp-log-more .ap-btn .ic, .vr-cp-log--full .ap-btn .ic, .vr-cp-log--full .ap-btn .ap-gl { width: 16px; height: 16px; }

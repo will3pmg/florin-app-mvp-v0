@@ -11,8 +11,8 @@
    Slack text is read before the Sheet's files, each kind in name order: that order breaks a tie between two ballots of
    one name made in the same second (the later read wins).
 
-   Writes results.json (vote/BALLOT.md) and, beside it, results.js (the same data for a page opened from a file, where
-   the browser won't fetch). Prints what it read, who counted, every ballot replaced, flagged or left out and why, and
+   Writes results.json (vote/BALLOT.md) and, beside it, results-data.js (the same data for the results page opened from
+   a file, where the browser won't fetch). Prints what it read, who counted, every ballot replaced, flagged or left out and why, and
    each question's counts. Exits 1 when nothing could be read. No network: fetch the Sheet's reply by hand first
    (vote/SETUP.md). The counting is vote/js/count.js on vote/js/ballot.js, the same code the results page runs. */
 "use strict";
@@ -101,7 +101,8 @@ function run(argv, log) {
   fs.mkdirSync(path.dirname(o.out), { recursive: true });
   const json = JSON.stringify(res, null, 2) + "\n";
   fs.writeFileSync(o.out, json);
-  fs.writeFileSync(o.out.replace(/\.json$/i, "") + ".js", "/* made by vote/tools/aggregate.js: the same data as results.json, for a page opened from a file */\nwindow.VOTE_RESULTS = " + json.trim() + ";\n");
+  const dataJs = path.join(path.dirname(o.out), "results-data.js");
+  fs.writeFileSync(dataJs, "/* made by vote/tools/aggregate.js: the same data as results.json, for the results page opened from a file */\nwindow.VOTE_RESULTS = " + json.trim() + ";\n");
 
   if (!o.quiet) {
     log(`Florin app vote ${vote}: ${res.ballots.length} ${res.ballots.length === 1 ? "voter" : "voters"} counted, the latest ballot from each name.`);
@@ -133,7 +134,7 @@ function run(argv, log) {
     log("Counts (each option, then the number who answered):");
     Q.QS.forEach((q) => log("  " + C.line(q, res.tallies[q.id])));
     log("");
-    log(`Wrote ${rel(o.out)} and ${rel(o.out.replace(/\.json$/i, "") + ".js")}.`);
+    log(`Wrote ${rel(o.out)} and ${rel(dataJs)}.`);
   }
   return { code: 0, results: res };
 }

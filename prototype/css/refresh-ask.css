@@ -48,8 +48,8 @@
 /* the header: the token, the name, What Ask Florin knows and New chat on one line, where the answers come from under it */
 .ap-askx-top { display: flex; flex-direction: column; gap: 4px; }
 .ap-askx-th { display: flex; align-items: center; gap: 8px; min-height: 44px; }
-.ap-askx-th .ap-h1 { flex: 1; min-width: 0; margin-top: 0 !important; font-size: 26px; line-height: 1.15; letter-spacing: -.02em; }
-.ap-askx-tools { display: flex; align-items: center; gap: 8px; flex: none; }
+.ap-askx-th .ap-h1 { min-width: 0; margin-top: 0 !important; font-size: 26px; line-height: 1.15; letter-spacing: -.02em; }
+.ap-askx-tools { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
 .ap-askx-ib { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); }
 .ap-askx-ib::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
 .ap-askx-ib .ic { width: 18px; height: 18px; }
