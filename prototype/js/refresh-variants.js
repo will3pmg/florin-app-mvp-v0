@@ -287,7 +287,7 @@
         thin empty ring with "+ Add" under it for a day with nothing logged, a Teal ring for a day noted for a
         clinician; Today over today, a Teal square under a day with symptoms. A tap picks a day, an empty one too (the
         day under the row then offers Add). The header: an arrow a week back, the month (a button to History's
-        calendar on that day, when History is Calendar; "Sep to Oct 2026" when a week spans two), the legend's info
+        calendar on that day, when History is Calendar: "Oct 2026", or "Sep to Oct 2026" when a week spans two), the legend's info
         button, "Today" when the row is on another week, and an arrow a week on. Nothing in the header comes and goes
         on a row of its own, so the days never move. A swipe across the row steps a week too. The legend (only the
         marks on show, in the shared words, never "Nothing logged", which "+ Add" says) folds behind the info button:
@@ -403,11 +403,11 @@
       return Object.assign(c, { ring: RING[c.out ? "out" : c.shown] || "is-quiet", mk: c.out ? null : MK[c.shown] || null, pick: !c.out && d === sel });
     });
   };
-  /* the week's month and year, in full for a screen reader and what's said; on the row, "Sep to Oct 2026" when the week
-     spans two, so the header keeps one line at 360 */
+  /* the week's month and year, in full for a screen reader and what's said; on the row, short ("Oct 2026", "Sep to Oct
+     2026" when the week spans two), so the header keeps one line at 360 with the legend's button and Today */
   const monthsOf = (ws, short) => {
-    const a = dateOf(ws), b = dateOf(ws + 6), N = short ? Ut.MON : Ut.MONL, A = Ut.MONL[a.getMonth()];
-    if (a.getMonth() === b.getMonth()) return `${A} ${a.getFullYear()}`;
+    const a = dateOf(ws), b = dateOf(ws + 6), N = short ? Ut.MON : Ut.MONL;
+    if (a.getMonth() === b.getMonth()) return `${N[a.getMonth()]} ${a.getFullYear()}`;
     return a.getFullYear() === b.getFullYear() ? `${N[a.getMonth()]} to ${N[b.getMonth()]} ${b.getFullYear()}` : `${N[a.getMonth()]} ${a.getFullYear()} to ${N[b.getMonth()]} ${b.getFullYear()}`;
   };
   /* the arrows: a week back while the week before has a day from the first day on, a week on while it has a day up to
@@ -450,7 +450,7 @@
     const short = monthsOf(ws, true), full = monthsOf(ws);
     const name = `<span id="${tid}">${short === full ? esc(full) : `<span aria-hidden="true">${esc(short)}</span><span class="sr">${esc(full)}</span>`}</span>`;
     const head = V.history === "calendar"
-      ? `<h2 class="vr-cpw-t"><button type="button" class="vr-cpw-tb" data-act="vr-cp-cal" aria-describedby="${tid}-d">${name}</button><span class="sr" id="${tid}-d">Opens History on this day</span></h2>`
+      ? `<h2 class="vr-cpw-t"><button type="button" class="vr-cpw-tb" data-act="vr-cp-cal" aria-describedby="${tid}-d">${name}</button></h2><span class="sr" id="${tid}-d">Opens History on this day</span>`
       : `<h2 class="vr-cpw-t"><span class="vr-cpw-ts">${name}</span></h2>`;
     /* on Free, a day before the last 7 is only logged: the calendar's own line says why, and what membership adds */
     const pay = days.some((c) => !c.out && c.held) ? `<button type="button" class="ap-link vr-cal-pay vr-cpw-pay" data-act="pay" data-pay="range">${ic("lock")}Every day against your usual, with Florin membership</button>` : "";
