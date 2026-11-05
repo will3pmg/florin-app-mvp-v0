@@ -2437,7 +2437,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const probe = (prop, val) => { const d = document.createElement("i"); d.style.cssText = `position:absolute;${prop}:${val}`; ph.appendChild(d); const c = getComputedStyle(d)[prop === "background" ? "backgroundColor" : "color"]; d.remove(); return px(c); };
         const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
         const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-        const btn = ph.querySelector(".ap-ins .ap-ask-b"), card = btn.closest(".ap-card"), tok = btn.querySelector(".ic"), tab = ph.querySelector('.ap-tb-b[data-tab="ask"] .ic');
+        /* the first Ask about this on a card (the Rings FloraScore card's sits under it, on the ground: Will, Nov 5) */
+        const btn = ph.querySelector(".ap-ins .ap-card .ap-ask-b"), card = btn.closest(".ap-card"), tok = btn.querySelector(".ic"), tab = ph.querySelector('.ap-tb-b[data-tab="ask"] .ic');
         const cs = getComputedStyle(btn), card0 = px(getComputedStyle(card).backgroundColor), bg = px(cs.backgroundColor), ink = px(cs.color), edge = probe("background", "var(--ap-ask-edge)");
         /* the edge is drawn over the Ray pill: where it's transparent (dark) the pill's own edge is Ray */
         const edgeOn = edge[3] < 8 ? bg : edge;
@@ -3425,7 +3426,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const t = document.querySelector(".rx-stage .ap-rx .ap-layer").innerText;
       return { t, w, k, flag: RU.FLAG_DAY, mor: F.filter((f) => f.first != null && !f.flag).length, inW: F.filter((f) => f.inWin).length };
     });
-    ok(/\d+, not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} days`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and the first BM in the window on ${ins.inW} of ${ins.mor} days without it, and says why`);
+    /* the score card: since Will's pick (Nov 5) the Rings hero, its number in the ring and the words under it */
+    ok(/\d+, not read against your usual today|\b\d+\s+Your usual \d+ to \d+\s+Not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} days`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and the first BM in the window on ${ins.inW} of ${ins.mor} days without it, and says why`);
     /* 4. every data style's 30-day cards leave today out of their counts */
     const lookBad = [];
     for (const look of ["rings", "journal", "bento", "oura", "easy"]) {
@@ -3840,7 +3842,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       out.mostly = lf === "4 BMs so far: 2 Formed, 1 Soft and 1 Firm."; out.lf = lf;
       /* C10: one Teal square per day per symptom, no strength in the mark */
       M = L.build("marcus", "est"); const sq = dom(RU.cardChart(M, V, "sym", 30).chart);
-      out.sq = sq.querySelectorAll(".dv-sq").length > 0 && [...sq.querySelectorAll(".dv-sq")].every((r) => r.getAttribute("class") === "dv-sq" && r.getAttribute("width") === "8") && /Any symptom/.test(sq.textContent);
+      out.sq = sq.querySelectorAll(".dv-sq").length > 0 && [...sq.querySelectorAll(".dv-sq")].every((r) => r.getAttribute("class") === "dv-sq" && r.getAttribute("width") === "8") && sq.querySelectorAll(".ap-sym-r").length > 0;
       /* C11: a pattern's two bars are as long as their shares, the counts written on them, never Plum or Gold */
       const PR = L.patterns(M, "C"), p = PR.found[0], sh = dom(RU.cardChart(M, V, "pattern:" + p.id, 90).chart);
       const ws = [...sh.querySelectorAll(".ap-share-t b")].map((x) => parseFloat(x.style.getPropertyValue("--w")));
@@ -3867,7 +3869,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(ins.seg7 && ins.seg30 && ins.seg90, "build-core: Insights' summary bar is the days read: its parts add up to its count, at 7, 30 and 90 days, with no percents");
     ok(ins.four && ins.avg, `build-core: How often's axis reaches a day with 4 BMs, and with a flagged today the average leaves it out, as Ask Florin's does (${ins.avgSaid})`);
     ok(ins.bars && ins.mostly, `build-core: the form bars' counts add up to the BMs read, and before a usual 2 of 4 is said as counts, never "mostly" (${ins.lf})`);
-    ok(ins.sq, "build-core: a symptom is one 8px Teal square a day, strength never in the mark, with an Any symptom row");
+    ok(ins.sq, "build-core: a symptom is one 8px Teal square a day, strength never in the mark, with a bar a symptom (symptoms-redo)");
     ok(ins.share, "build-core: a pattern's two bars are as long as their shares, with the counts on them");
     ok(!ins.qs.length, `build-core: Ask about this offers looser or busier only when the logs have them${ins.qs.length ? ": " + ins.qs.join(", ") : ""}`);
     ok(!ins.same.length, `build-core: RU.cardChart, the chart Ask draws, is each card's own chart at 7, 30 and 90 days${ins.same.length ? ": differs for " + ins.same.join(", ") : ""}`);
@@ -4211,7 +4213,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(pg.foot === "Prototype only. Not for patients." && pg.lede === "Each one changes the app on the phone." && pg.link === "Every data style, side by side" && pg.bm === "Quick tiles|Full form" && /the last 7 days/.test(pg.today), `fix-notes: the footer, the Decisions line, the header link, the BM logging toggle and Today's note in plain words (${pg.bm})`);
     const words = {};
     for (const k of KEYS) { await info(k); words[k] = await f.evaluate(() => document.querySelector("#rxNotes .rx-note").textContent); }
-    ok(/FloraScore as a small chip at the top/.test(words.home) && /a Plum circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone/.test(words.history) && !/week card/.test(words.history + words.look) && /a small ring for each part of the score/.test(words.look) && /the usual range as a bar, the week as a ring a day with its FloraScore under it/.test(words.look) && !/being redrawn|; the other four/.test(words.look) && /The app as the rest of this demo shows it/.test(words.easy) && /Every data style, side by side/.test(words.look), "fix-notes: Home, History, Data style and Version describe what the phone draws, with no build status");
+    ok(/FloraScore as a small chip at the top/.test(words.home) && /a Plum circle for a day within the person's usual, a Gold circle for a day outside it, and the date alone/.test(words.history) && !/week card/.test(words.history + words.look) && /a small ring for each part of the score/.test(words.look) && /the usual range as a bar on Today and on a big ring on Insights, the week as a ring a day with its FloraScore under it/.test(words.look) && !/being redrawn|; the other four/.test(words.look) && /The app as the rest of this demo shows it/.test(words.easy) && /Every data style, side by side/.test(words.look), "fix-notes: Home, History, Data style and Version describe what the phone draws, with no build status");
     await fclick('[data-rx="dclose"]');
     await f.evaluate(() => window.FLORIN_EXT.api.set("easy", true)); await fw(400);
     const sh = await f.evaluate(() => [...document.querySelectorAll("[data-shadow]")].map((x) => x.textContent).join("|"));
@@ -5176,6 +5178,190 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await wc.close();
   }
   /* ===== end wills-picks ===== */
+
+  /* ===== symptoms-redo (Will, Nov 5: "the Florin style design for Symptoms insights, and viewing more of symptoms, are
+     hard to read, light on data vis and jumbled"). The card answers how often symptoms came up (the days with symptoms
+     of the days logged), against the usual in words, over one mark a day and a bar a symptom; the detail adds each
+     symptom against its own usual and what came with them. Every count is checked against the model, worked out here
+     from L.span and L.facts, never through the screen's own helpers: the counts at 7, 30 and 90 days, the strip's marks,
+     what came with them and its gate, Free's lock and teaser, the flag rule, and day 5 and Just joined. Its own context,
+     so what it logs reaches no other check ===== */
+  {
+    const se = [];
+    const scx = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const s = await scx.newPage();
+    s.on("pageerror", (e) => se.push(e.message));
+    s.on("console", (m) => { if (m.type() === "error") se.push(m.text()); });
+    await s.goto(PAGE); await s.waitForSelector(".rx-stage .ap-rx"); await s.waitForTimeout(300);
+    const sw = (ms = 350) => s.waitForTimeout(ms);
+    /* the model's own read of a stretch: the days logged, a flagged today left out; each symptom once a day */
+    const MODEL = `
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI;
+      const V = (o = {}) => Object.assign({ form: "C", uid: 7, plan: "member", mealUI: "quick", bmUI: "quick", home: "score", history: "list", checkin: true, look: "built", easy: false, onboard: "short", persona: "sarah", data: "est", meals: "all" }, o);
+      const dom = (h) => new DOMParser().parseFromString("<div>" + h + "</div>", "text/html").body.firstChild;
+      const txt = (el) => (el ? el.textContent.replace(/\\s+/g, " ").trim() : "");
+      const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+      const read = (M, n) => { const F = L.span(M, n, "C"); const lg = F.filter((f) => f.logged && !f.flag); return { F, lg, sym: lg.filter((f) => Object.keys(f.sym).length > 0) }; };
+      const symCard = (h) => [...dom(h).querySelectorAll(".ap-ic")].find((c) => c.querySelector('[data-k="sym"]'));
+      /* what came with them, from the facts: days with symptoms against the other days read, each companion's pool */
+      const came = (M, n, sparse) => {
+        const R = read(M, n), C = [
+          ["A first BM outside your usual window", (f) => f.inWin != null, (f) => f.inWin === false],
+          ["A form outside your usual forms", (f) => f.formsIn != null, (f) => f.formsIn === false],
+          ["A dinner past 8 PM the night before", (f) => { const p = L.day(M, f.d - 1); return !!p && p.logged && p.entries.some((e) => e.kind === "meal" && e.meal === "dinner"); }, (f) => { const p = L.day(M, f.d - 1); return !!p && p.logged && p.entries.some((e) => e.kind === "meal" && e.meal === "dinner" && e.t >= 20); }],
+          ["A note on a BM or a meal", () => true, (f) => L.day(M, f.d).entries.some((e) => (e.kind === "bm" || e.kind === "meal") && (e.note || "").trim())]
+        ];
+        return C.filter((c, i) => !(i === 2 && sparse)).map(([label, pool, hit]) => {
+          const on = R.sym.filter(pool), off = R.lg.filter((f) => !Object.keys(f.sym).length && pool(f));
+          return { label, on: on.length, onHit: on.filter(hit).length, off: off.length, offHit: off.filter(hit).length, ok: on.length >= 5 && off.length >= 5 };
+        });
+      };`;
+    /* 1. the counts equal the model at 7, 30 and 90 days, for Sarah, Marcus and Alex: the card's answer, the detail's big
+       number, each symptom's days, and the words against the usual are one of the three */
+    const cnt = await s.evaluate(`(() => { ${MODEL}
+      const bad = [];
+      for (const who of ["sarah", "marcus", "alex"]) for (const n of [7, 30, 90]) {
+        const M = L.build(who, "est"), R = read(M, n), k = R.sym.length, m = R.lg.length;
+        const c = symCard(RU.insights(M, V({ persona: who }), { range: n }));
+        const head = txt(c.querySelector(".ap-ic-t b")), sum = txt(c.querySelector(".ap-ic-sum"));
+        if (head !== "Symptoms on " + k + " of " + plural(m, "day") + " you logged") bad.push(who + " " + n + " head: " + head);
+        if (!/^(About the same as usual|More often than usual|Less often than usual)(, which is| ?:)/.test(sum) || (M.usual.sym.every > 1 && !sum.includes("about 1 day in " + M.usual.sym.every))) bad.push(who + " " + n + " usual: " + sum);
+        const d = dom(RU.idetail(M, V({ persona: who }), { k: "sym", range: n }));
+        const big = txt(d.querySelector(".ap-sym-hero .ap-big"));
+        if (big !== k + "of " + plural(m, "day") + " you logged") bad.push(who + " " + n + " detail: " + big);
+        const by = {}; R.sym.forEach((f) => Object.keys(f.sym).forEach((nm) => (by[nm] = (by[nm] || 0) + 1)));
+        const rows = [...d.querySelectorAll(".ap-sym-r")].map((r) => [txt(r.querySelector(".ap-sym-rh b")), txt(r.querySelector(".ap-sym-rh span"))]);
+        if (rows.length !== Object.keys(by).length || rows.some(([nm, t]) => !t.startsWith(plural(by[nm] || -1, "day") + ","))) bad.push(who + " " + n + " rows: " + rows.map((r) => r.join(" ")).join("; "));
+        /* the card's bars: four at most, the rest named under it */
+        const cr = c.querySelectorAll(".ap-sym-r").length, more = Object.keys(by).length - cr;
+        if (cr !== Math.min(4, Object.keys(by).length) || (more > 0) !== /Also logged: /.test(txt(c))) bad.push(who + " " + n + " card bars " + cr);
+        /* each bar's length is its days of the days logged */
+        const w = [...c.querySelectorAll(".ap-sym-t b")].map((x) => parseFloat(x.style.getPropertyValue("--w")));
+        const names = [...c.querySelectorAll(".ap-sym-rh b")].map((x) => x.textContent);
+        if (w.some((v, i) => Math.abs(v - (by[names[i]] / m) * 100) > 0.11)) bad.push(who + " " + n + " bar lengths");
+      }
+      return bad; })()`);
+    ok(!cnt.length, `symptoms-redo: the card's answer ("Symptoms on 9 of 29 days you logged"), the detail's number and each symptom's days and bar equal the model at 7, 30 and 90 days for Sarah, Marcus and Alex, against the usual in words${cnt.length ? `: ${cnt.slice(0, 3).join(" | ")}` : ""}`);
+
+    /* 2. the strip's marks are the symptom days: a Teal square on each day with symptoms, a dot on each day logged with
+       none, nothing on a day with nothing logged; today ringed; 90 days as a grid of weeks, with the same marks */
+    const strip = await s.evaluate(`(() => { ${MODEL}
+      const bad = [];
+      for (const who of ["sarah", "marcus", "alex"]) for (const n of [7, 30, 90]) {
+        const M = L.build(who, "est"), R = read(M, n), ch = dom(RU.cardChart(M, V({ persona: who }), "sym", n).chart);
+        const ds = (sel) => [...ch.querySelectorAll(sel)].map((x) => +x.dataset.d).sort((a, b) => a - b).join(",");
+        const want = (a) => a.map((f) => f.d).sort((x, y) => x - y).join(",");
+        if (ds(".dv-sq") !== want(R.sym)) bad.push(who + " " + n + " squares");
+        if (ds(".dv-nosym") !== want(R.lg.filter((f) => !Object.keys(f.sym).length))) bad.push(who + " " + n + " dots");
+        if (ch.querySelectorAll("[data-d]").length !== R.lg.length) bad.push(who + " " + n + " a mark on a day with nothing logged");
+        if ([...ch.querySelectorAll(".dv-sq")].some((q) => q.getAttribute("class") !== "dv-sq")) bad.push(who + " " + n + " strength in a square");
+        const rows = new Set([...ch.querySelectorAll("[data-d]")].map((e) => (e.tagName === "rect" ? +e.getAttribute("y") + +e.getAttribute("height") / 2 : +e.getAttribute("cy")).toFixed(1))).size;
+        if ((rows > 1) !== (n > 31)) bad.push(who + " " + n + " rows " + rows);
+        const tday = R.F.find((f) => f.today);
+        if (tday && tday.logged && !ch.querySelector(".dv-ring")) bad.push(who + " " + n + " today not ringed");
+        if (!/Today/.test(txt(ch.querySelector("svg")))) bad.push(who + " " + n + " no Today on the axis");
+      }
+      return bad; })()`);
+    ok(!strip.length, `symptoms-redo: the strip's Teal squares are exactly the days with symptoms and its dots the days logged with none, nothing drawn on a gap, no strength in a mark, today ringed and on the axis, at 7, 30 and 90 days (a grid of weeks)${strip.length ? `: ${strip.slice(0, 3).join(" | ")}` : ""}`);
+
+    /* 3. what came with them equals the model, and waits for 5 days of each kind (the pattern gate); with meals only on
+       days with symptoms, dinners are left out */
+    const cw = await s.evaluate(`(() => { ${MODEL}
+      const bad = [], out = {};
+      for (const who of ["sarah", "marcus", "alex"]) for (const n of [7, 30, 90]) for (const meals of ["all", "rough"]) {
+        const M = L.build(who, "est", { meals }), sparse = L.patterns(M, "C").sparse, want = came(M, n, sparse).filter((r) => r.ok);
+        const d = dom(RU.idetail(M, V({ persona: who, meals }), { k: "sym", range: n }));
+        const got = [...d.querySelectorAll(".ap-sym-cr")].map((r) => ({ label: txt(r.querySelector("b")), v: [...r.querySelectorAll("strong")].map((x) => x.textContent) }));
+        const sect = txt(d.querySelector(".ap-sym-cs"));
+        if (got.length !== want.length || want.some((w, i) => got[i].label !== w.label || got[i].v[0] !== w.onHit + " of " + w.on || got[i].v[1] !== w.offHit + " of " + w.off)) bad.push(who + " " + n + " " + meals + ": " + JSON.stringify(got.slice(0, 2)) + " want " + JSON.stringify(want.slice(0, 2)));
+        if (!want.length && !/^What came with them ?Held back for now: Florin compares once 5 days with symptoms and 5 without can be read/.test(sect)) bad.push(who + " " + n + " " + meals + " not held: " + sect.slice(0, 80));
+        if (sparse && /dinner past 8 PM/.test(sect.replace("Dinners are left out", ""))) bad.push(who + " " + n + " rough: a dinner row");
+        if (!/These show what tends to happen together\\. They don't prove cause\\./.test(sect)) bad.push(who + " " + n + " no caveat");
+        if (n === 7) out.held7 = (out.held7 || 0) + (want.length ? 0 : 1);
+        if (n === 30 && meals === "all") out.shown30 = (out.shown30 || 0) + got.length;
+      }
+      return { bad, out }; })()`);
+    ok(!cw.bad.length && cw.out.held7 === 6 && cw.out.shown30 >= 9, `symptoms-redo: what came with them equals the model's counts (symptom days and other days, each companion's own pool), held back on thin data (every 7-day stretch: ${cw.out.held7} of 6), dinners left out when meals are logged only with symptoms, always with "they don't prove cause"${cw.bad.length ? `: ${cw.bad.slice(0, 2).join(" | ")}` : ""}`);
+
+    /* 4. Free: 7 days, the card's head and the 30 and 90 day tabs open the paywall, and what came with them is a teaser
+       of the person's own counts over 30 days, blurred and hidden from a screen reader */
+    await s.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("look", "built"); api.set("persona", "sarah"); api.set("data", "est"); api.set("plan", "free"); api.closeAll(); api.open("insights"); });
+    await sw(500);
+    const fr = await s.evaluate(`(() => { ${MODEL}
+      const api = window.FLORIN_EXT.api, M = api.M();
+      const c = [...document.querySelectorAll(".rx-stage .ap-rx .ap-ins .ap-ic")].find((x) => x.querySelector('[data-k="sym"]'));
+      const R = read(M, 7), w = came(M, 30, L.patterns(M, "C").sparse).filter((r) => r.ok)[0];
+      const tin = c.querySelector(".ap-tease-in"), tb = c.querySelector(".ap-tease-b");
+      const tabs = [...document.querySelectorAll('.rx-stage .ap-rx .ap-ins .ap-seg--range button')].map((x) => x.dataset.act + ":" + (x.dataset.v || x.dataset.pay));
+      return { head: txt(c.querySelector(".ap-ic-t b")), want: "Symptoms on " + R.sym.length + " of " + plural(R.lg.length, "day") + " you logged", act: c.querySelector(".ap-ic-h").dataset.act,
+        tabs, hidden: !!tin && tin.getAttribute("aria-hidden") === "true", blur: !!tin && getComputedStyle(tin).filter.includes("blur"),
+        tease: tin ? [...tin.querySelectorAll("strong")].map((x) => x.textContent).join(",") : "", wantTease: w ? w.onHit + " of " + w.on + "," + w.offHit + " of " + w.off : "", btn: tb ? tb.dataset.act + ":" + tb.dataset.pay : "" }; })()`);
+    await s.evaluate(() => document.querySelector('.rx-stage .ap-rx .ap-ins .ap-ic-h[data-k="sym"]').click()); await sw(500);
+    const fTop = await s.evaluate(() => { const t = window.FLORIN_EXT.api.top(); return t ? t.type : ""; });
+    ok(fr.head === fr.want && fr.act === "pay" && fTop === "pay" && fr.tabs.join(" ") === "irange:7 pay:range pay:range" && fr.hidden && fr.blur && fr.tease === fr.wantTease && fr.btn === "pay:sym", `symptoms-redo, Free: 7 days ("${fr.head}"), the card and the 30 and 90 day tabs open the paywall (${fTop}), and what came with them is the person's own 30-day counts, blurred and hidden (${fr.tease})`);
+    await s.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.set("plan", "member"); });
+    await sw();
+
+    /* 5. a flagged today is counted in nothing: a BM with blood and bloating today leave today out of the card's count,
+       its squares and what came with them; the strip draws it as a Teal ring and the card and detail say RU.FLAG_DAY */
+    const fl = await s.evaluate(`(() => { ${MODEL}
+      const M = L.build("sarah", "est");
+      L.add(M, { kind: "sym", d: L.TODAY, t: 15, items: [{ name: "Cramping", s: 3 }], last: 1, note: "" });
+      L.add(M, { kind: "bm", d: L.TODAY, t: 16.5, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" });
+      const out = { flag: L.facts(M, L.day(M, L.TODAY), "C").flag };
+      const sd = (d) => { const x = L.dateOf(d); return window.FLORIN_APP.util.MON[x.getMonth()] + " " + x.getDate(); };
+      for (const n of [7, 30]) {
+        const R = read(M, n), c = symCard(RU.insights(M, V(), { range: n })), ch = dom(RU.cardChart(M, V(), "sym", n).chart), d = dom(RU.idetail(M, V(), { k: "sym", range: n }));
+        const want = came(M, n, false).filter((r) => r.ok), got = [...d.querySelectorAll(".ap-sym-cr strong")].map((x) => x.textContent).join(",");
+        out[n] = txt(c.querySelector(".ap-ic-t b")) === "Symptoms on " + R.sym.length + " of " + plural(R.lg.length, "day") + " you logged" && !R.lg.some((f) => f.today)
+          && !ch.querySelector('.dv-sq[data-d="' + L.TODAY + '"]') && !!ch.querySelector('.dv-dot.is-flag[data-d="' + L.TODAY + '"]') && /Noted for a clinician/.test(txt(ch))
+          && txt(c.querySelector(".ap-ic-sum")).includes(L.FLAG_DAY) && txt(d.querySelector(".ap-sym-hero")).includes(L.FLAG_DAY)
+          && !/strong/i.test(txt(c.querySelector(".ap-sym-bars"))) && got === want.map((r) => r.onHit + " of " + r.on + "," + r.offHit + " of " + r.off).join(",")
+          && ![...d.querySelectorAll(".ap-table tr")].some((tr) => tr.firstChild && tr.firstChild.textContent === sd(L.TODAY));
+      }
+      return out; })()`);
+    ok(fl.flag && fl[7] && fl[30], `symptoms-redo: a flagged today (blood, and strong cramping) is in no count: not in the card's days or its bars, no square on the strip but a Teal ring named Noted for a clinician, not in what came with them or the table, and the card and detail say the flag line (7: ${fl[7]}, 30: ${fl[30]})`);
+
+    /* 6. day 5 and Just joined: no usual before day 14, so counts only, plainly, and nothing compared */
+    const ln = await s.evaluate(`(() => { ${MODEL}
+      const out = {};
+      for (const data of ["new", "fresh"]) {
+        const M = L.build("sarah", data), R = read(M, 7), c = symCard(RU.insights(M, V({ data }), { range: 7 })), d = dom(RU.idetail(M, V({ data }), { k: "sym", range: 7 }));
+        out[data] = { head: txt(c.querySelector(".ap-ic-t b")), want: R.lg.length ? "Symptoms on " + R.sym.length + " of " + plural(R.lg.length, "day") + " you logged" : "Nothing logged yet",
+          sum: txt(c.querySelector(".ap-ic-sum")), usualWords: /than usual|as usual|your usual is/.test(txt(c) + txt(d.querySelector(".ap-sym-hero"))), came: d.querySelectorAll(".ap-sym-cr").length,
+          wait: /From day 14, once Florin knows your usual/.test(txt(d.querySelector(".ap-sym-cs"))), chip: /Learning your usual · day \\d+ of 14/.test(txt(d.querySelector(".ap-sym-hero"))) };
+      }
+      return out; })()`);
+    const lnOk = ["new", "fresh"].every((k) => ln[k].head === ln[k].want && ln[k].sum === "Counts only until Florin knows your usual, on day 14." && !ln[k].usualWords && !ln[k].came && ln[k].wait && ln[k].chip);
+    ok(lnOk, `symptoms-redo: day 5 ("${ln.new.head}") and Just joined ("${ln.fresh.head}") are counts only, say Florin learns the usual by day 14, compare nothing with a usual, and hold what came with them`);
+
+    /* 7. on the phone, in both themes: the card and the detail at 390 wide, no sideways scroll, every text in text tokens
+       (never Teal), no dashes or exclamation points, no retired words, and Ask about this draws the card's own picture */
+    const vis = [];
+    for (const th of ["light", "dark"]) for (const n of [7, 30, 90]) {
+      await s.evaluate(([th, n]) => { const api = window.FLORIN_EXT.api; api.set("theme", th); api.closeAll(); api.open("insights"); }, [th, n]); await sw(400);
+      await s.evaluate((n) => { const bt = document.querySelector(`.rx-stage .ap-rx .ap-ins [data-act="irange"][data-v="${n}"]`); if (bt) bt.click(); }, n); await sw(300);
+      const card = await s.evaluate(() => {
+        const c = document.querySelector('.rx-stage .ap-rx .ap-ins .ap-ic:has([data-k="sym"])'), r = c.getBoundingClientRect();
+        const t = document.createElement("i"); t.style.color = "var(--ap-teal)"; c.appendChild(t); const teal = getComputedStyle(t).color; t.remove();
+        const over = [...c.querySelectorAll("*")].filter((e) => { const b2 = e.getBoundingClientRect(); return b2.width && (b2.right > r.right + 0.5 || b2.left < r.left - 0.5); }).length;
+        const tealText = [...c.querySelectorAll(".ap-sym-rh *, .ap-sym-read, .ap-legend span")].filter((e) => getComputedStyle(e).color === teal).length;
+        return { over, tealText, text: c.textContent, sq: [...c.querySelectorAll(".dv-sq")].every((q) => getComputedStyle(q).fill === teal) };
+      });
+      await s.evaluate(() => document.querySelector('.rx-stage .ap-rx .ap-ins .ap-ic-h[data-k="sym"]').click()); await sw(450);
+      const det = await s.evaluate(() => { const l = document.querySelector(".rx-stage .ap-rx .ap-layer"); return { side: l.scrollWidth > l.clientWidth + 1, text: l.textContent, k: window.FLORIN_EXT.api.S.ins.k }; });
+      const all = card.text + det.text;
+      if (card.over || card.tealText || !card.sq || det.side || det.k !== "sym" || /[—–!]/.test(all) || /\bshifted\b|\bnot logged\b|\boutside it\b|healthy|normal|improv|worsen/i.test(all)) vis.push(`${th} ${n}: ${JSON.stringify({ over: card.over, teal: card.tealText, sq: card.sq, side: det.side, k: det.k })}`);
+    }
+    await s.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("theme", "light"); api.closeAll(); api.open("insights"); }); await sw(400);
+    await s.evaluate(() => document.querySelector('.rx-stage .ap-rx .ap-ins .ap-ic:has([data-k="sym"]) [data-act="ask-about"]').click()); await sw(900);
+    const ask = await s.evaluate(() => { const RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, f = document.querySelector(".rx-stage .ap-rx .ap-askx-fig, .rx-stage .ap-rx .ap-ask-chart"); const want = RU.cardChart(api.M(), api.V(), "sym", api.S.ins.range).chart; const w = document.createElement("div"); w.innerHTML = want; return !!f && f.querySelectorAll(".dv-sq").length === w.querySelectorAll(".dv-sq").length && f.querySelectorAll(".ap-sym-r").length === w.querySelectorAll(".ap-sym-r").length; });
+    await s.evaluate(() => window.FLORIN_EXT.api.closeAll());
+    ok(!vis.length && ask, `symptoms-redo: on the phone at 390, light and dark, 7, 30 and 90 days, the card fits, its text never wears Teal, its squares are Teal, the detail has no sideways scroll, no dash, exclamation point, retired word or claim, and Ask about this draws the card's picture (${ask})${vis.length ? `: ${vis.slice(0, 2).join(" | ")}` : ""}`);
+    ok(!se.length, `symptoms-redo: no console or page errors${se.length ? ": " + se.slice(0, 3).join(" | ") : ""}`);
+    await scx.close();
+  }
+  /* ===== end symptoms-redo ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

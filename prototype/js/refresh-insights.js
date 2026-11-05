@@ -36,7 +36,6 @@
   const lg = (sw, text) => `<span><i class="sw ${sw}"></i>${esc(text)}</span>`;
   /* a symptom's strength in words; 0 is a symptom logged without one */
   const sWord = (s) => (s ? L.STRENGTH[s - 1].toLowerCase() : "strength not said");
-  const has = (f, name) => f.sym[name] != null;
   /* a flagged today's mark, named only when it's drawn */
   const clinLg = (on) => (on ? lg("sw--clin", "Noted for a clinician") : "");
 
@@ -190,7 +189,7 @@
 
   /* A bar a week, for 90 days of any measure: the days (or mornings) within your usual at the base in the reading
      colour, those outside it in Gold above, so the bar's top is the days read; a week with none read is nothing drawn.
-     The latest bar is labelled "5 of 6". o.ctx draws one Teal series instead (symptoms: days a week with any) */
+     The latest bar is labelled "5 of 6". (Symptoms at 90 days are a grid of weeks since Nov 5: symGrid) */
   function weekBars(o) {
     const w = o.w || 318, left = 24, right = 8, top = 22, plotH = o.h || 84, axisH = 20;
     const W = o.weeks, n = W.length, yMax = 7;
@@ -212,7 +211,6 @@
       lastI = i;
       const x0 = xc(i) - bw / 2, yi = y(wk.within), yt = y(read);
       const t = o.tip ? o.tip(wk) : `Week of ${short(wk.d0)}: ${wk.within} of ${read}`;
-      if (o.ctx) { marks += seg(x0, yt, base, "dv-wbar is-ctx", true, t); return; }
       /* within at the base; outside above, with a 2px surface gap between the two */
       if (wk.within) marks += seg(x0, yi, base, "dv-wbar", !wk.outside, t);
       if (wk.outside) marks += seg(x0, yt, wk.within ? yi - 2 : base, "dv-wbar is-shift", true, t);
@@ -263,29 +261,82 @@
     return svg(w, H, g + marks + labels, o);
   }
 
-  /* Symptom rows: one Teal square on each day a symptom came up, whatever its strength (strength is said in words and in
-     the table), then an Any symptom row with your usual written on it. Nothing logged is nothing drawn */
-  function symSquares(o) {
-    const w = o.w || 318, left = 92, right = 4, top = 4, rowH = 32;
-    const F = o.days, n = F.length, cw = (w - left - right) / n, s = 8;
-    const rows = o.rows.concat(o.any ? [Object.assign({ any: true }, o.any)] : []), bottom = top + rows.length * rowH;
-    const xm = (i) => left + cw * i + cw / 2;
-    let g = "", marks = "", labels = "";
-    rows.forEach((row, ri) => {
-      const cy = top + ri * rowH + rowH / 2;
-      if (row.any && ri) g += `<line class="dv-base" x1="0" x2="${w - right}" y1="${n1(cy - rowH / 2)}" y2="${n1(cy - rowH / 2)}"/>`;
-      g += `<line class="dv-grid" x1="${left}" x2="${w - right}" y1="${n1(cy)}" y2="${n1(cy)}"/>`;
-      labels += `<text class="dv-rowlbl" x="0" y="${n1(cy - 2)}">${esc(row.name)}</text><text class="dv-ax" x="0" y="${n1(cy + 11)}">${esc(row.sub || plural(row.n, "day"))}</text>`;
-      F.forEach((f, i) => {
-        const on = row.any ? f.logged && f.nsym > 0 : has(f, row.name);
-        if (!on) return;
-        const what = row.any ? Object.entries(f.sym).map(([nm, v]) => `${nm.toLowerCase()}, ${sWord(v)}`).join("; ") : `${row.name.toLowerCase()}, ${sWord(f.sym[row.name])}`;
-        marks += `<rect class="dv-sq" x="${n1(xm(i) - s / 2)}" y="${n1(cy - s / 2)}" width="${s}" height="${s}" rx="2">${tip(`${short(f.d)} · ${what}`)}</rect>`;
-      });
-    });
-    labels += xTicks(F, xm, bottom + 15, n);
-    return svg(w, bottom + 20, g + marks + labels, o);
+  /* ---------- Symptoms (symptoms-redo, Will, Nov 5: "hard to read, light on data vis and jumbled") ----------
+     One mark a day, at every range: a Teal square on a day with symptoms, whatever their strength (strength is said in
+     words, never in a mark's size), a small Ink 3 dot on a day logged with none, and nothing at all on a day with nothing
+     logged, so a gap stays a gap. A flagged today is a Teal ring with nothing inside, read against nothing and in no
+     count. Today's mark is ringed in Ink, on a card-colour square so it stays clear of yesterday's. Up to 31 days the
+     days run as one row (symStrip); 90 days are a grid of weeks, Monday to Sunday down each column (symGrid). Every
+     mark carries its day in data-d and its words in a title */
+  const symTip = (f) => `${short(f.d)} · ${f.flag ? "noted for a clinician, not read against your usual" : f.nsym ? Object.entries(f.sym).map(([nm, v]) => `${nm.toLowerCase()}, ${sWord(v)}`).join("; ") : "logged, no symptoms"}`;
+  const symMark = (f, cx, cy, s) => {
+    if (!f.logged) return "";
+    const rx = s >= 16 ? 4 : 2, t = tip(symTip(f)), today = f.today && !f.flag;
+    /* the ring sits 2px out from a large mark, 1px out from an 8px one, whose neighbours are 2.6px away at 30 days */
+    const gap = s >= 16 ? 2 : 1, ro = gap + 1, so = gap + 3;
+    let out = "";
+    /* a card-colour square under today's mark, so its ring never runs into yesterday's */
+    if (today && f.nsym) out += `<rect class="dv-sym-sp" x="${n1(cx - s / 2 - so)}" y="${n1(cy - s / 2 - so)}" width="${n1(s + 2 * so)}" height="${n1(s + 2 * so)}" rx="${rx + so}"/>`;
+    if (f.flag) out += `<circle class="dv-dot is-flag" cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(Math.max(4, s / 2 - 1))}" data-d="${f.d}">${t}</circle>`;
+    else if (f.nsym) out += `<rect class="dv-sq" x="${n1(cx - s / 2)}" y="${n1(cy - s / 2)}" width="${s}" height="${s}" rx="${rx}" data-d="${f.d}">${t}</rect>`;
+    else out += `<circle class="dv-nosym" cx="${n1(cx)}" cy="${n1(cy)}" r="${s >= 16 ? 2.5 : 1.5}" data-d="${f.d}">${t}</circle>`;
+    if (today) out += f.nsym ? `<rect class="dv-ring" x="${n1(cx - s / 2 - ro)}" y="${n1(cy - s / 2 - ro)}" width="${n1(s + 2 * ro)}" height="${n1(s + 2 * ro)}" rx="${rx + ro}"/>` : ringAt(cx, cy, s >= 16 ? 6 : 4.5);
+    return out;
+  };
+  /* the days of a stretch as one row, the x axis ending on Today (seven days: every day named) */
+  function symStrip(o) {
+    /* inset 4px each side, so today's ring at the right end is never cut by the chart's edge */
+    const w = o.w || 318, F = o.days, n = F.length, cw = (w - 8) / n;
+    const s = Math.max(8, Math.min(24, Math.floor(cw - 4))), top = 6, cy = top + s / 2;
+    const xm = (i) => 4 + cw * i + cw / 2;
+    const marks = F.map((f, i) => symMark(f, xm(i), cy, s)).join("");
+    return svg(w, top + s + 26, marks + xTicks(F, xm, top + s + 19, n), Object.assign({ cls: "dv-sym" }, o));
   }
+  /* 90 days as a grid of weeks: a column a week, Monday at the top, the first day's week at the left and this week at
+     the right; days before the first or after today are nothing drawn */
+  function symGrid(o) {
+    const w = o.w || 318, F = o.days, left = 32, top = 6;
+    const mon = (d) => d - ((L.dateOf(d).getDay() + 6) % 7);
+    const wk0 = mon(F[0].d), nw = Math.floor((F[F.length - 1].d - wk0) / 7) + 1;
+    const pw = (w - left - 8) / nw, s = Math.max(8, Math.min(14, Math.floor(pw - 6))), ph = s + 6;
+    const xm = (c) => left + pw * c + pw / 2, ym = (r) => top + ph * r + ph / 2;
+    const at = (f) => [Math.floor((f.d - wk0) / 7), (L.dateOf(f.d).getDay() + 6) % 7];
+    const marks = F.map((f) => { const [c, r] = at(f); return symMark(f, xm(c), ym(r), s); }).join("");
+    const base = top + ph * 7;
+    let labels = [[0, "Mon"], [3, "Thu"], [6, "Sun"]].map(([r, t]) => `<text class="dv-ax" x="0" y="${n1(ym(r) + 3.5)}">${t}</text>`).join("");
+    const last = F[F.length - 1], lastRow = at(last)[1], mid = Math.floor((nw - 1) / 2);
+    labels += `<text class="dv-ax" x="${n1(xm(0) - s / 2)}" y="${base + 14}">${esc(short(F[0].d))}</text>`;
+    labels += `<text class="dv-ax" x="${n1(xm(mid))}" y="${base + 14}" text-anchor="middle">${esc(short(wk0 + mid * 7))}</text>`;
+    labels += `<text class="dv-ax" x="${n1(xm(nw - 1) + s / 2)}" y="${base + 14}" text-anchor="end">${last.today && lastRow === 6 ? "Today" : "This week"}</text>`;
+    return svg(w, base + 20, marks + labels, Object.assign({ cls: "dv-sym" }, o));
+  }
+  /* the picture for a stretch: a row of days up to 31, else the grid of weeks. Its words for a screen reader are the
+     answer and the one symptom sentence (L.symLine), over the days read */
+  const symPic = (F, n, w, sy) => {
+    const said = L.symLine(sy.logged, { named: n <= 7, of: sy.logged.length });
+    const aria = `Each day, ${F.length > 31 ? "week by week, " : ""}${n === 7 && F.length < 7 ? "so far" : RANGE_NAME[n].toLowerCase()}. ${said || `${symHead(sy)}.`}${sy.flag ? ` ${RU.FLAG_DAY}` : ""}`;
+    return F.length > 31 ? symGrid({ w, days: F, aria }) : symStrip({ w, days: F, aria });
+  };
+  /* the marks' words, only for the marks drawn */
+  const symLegend = (F) => [
+    F.some((f) => f.logged && f.nsym && !f.flag) && lg("sw--sym", "Symptoms"),
+    F.some((f) => f.logged && !f.nsym && !f.flag) && lg("sw--nosym", "Logged, no symptoms"),
+    F.some((f) => !f.logged && !f.pending) && `<span>${esc("Blank: nothing logged")}</span>`,
+    F.some((f) => f.flag) && clinLg(true)
+  ].filter(Boolean).join("");
+  /* a bar a symptom: the days it came up, of the days logged (the track), the count and the strength in words above it */
+  const symBars = (rows, of, o = {}) => `<ul class="ap-sym-bars" aria-label="${esc(o.aria || "Each symptom, the days it came up")}">${rows.map((r) => `<li class="ap-sym-r">
+      <div class="ap-sym-rh"><b>${esc(r.name)}</b><span>${esc(`${plural(r.n, "day")}, ${lower1(strengthSaid(r))}`)}</span></div>
+      <i class="ap-sym-t" aria-hidden="true"><b style="--w:${n1((r.n / Math.max(1, of)) * 100)}%"></b></i>${o.extra ? o.extra(r) : ""}
+    </li>`).join("")}</ul><p class="ap-sym-ax" aria-hidden="true"><span>0</span><span>${esc(`${plural(of, "day")} logged`)}</span></p>`;
+  /* two shares side by side, for what came with the days with symptoms: each bar as long as its share, the count on it */
+  const symPair = (label, k, n) => `<div class="ap-sym-cb"><span>${esc(label)}</span><i class="ap-share-t" aria-hidden="true"><b style="--w:${n1((k / Math.max(1, n)) * 100)}%"></b></i><strong>${esc(`${k} of ${n}`)}</strong></div>`;
+  const cameRows = (rows) => `<div class="ap-sym-came" role="list">${rows.map((r) => `<div class="ap-sym-cr" role="listitem"><b>${esc(r.c.label)}</b>${symPair("Symptom days", r.onHit, r.on)}${symPair("Other days", r.offHit, r.off)}</div>`).join("")}</div>`;
+  /* the widest gap between the two shares, in counts, or that none came up more often with symptoms */
+  const cameGap = (cw) => {
+    const g = cw.shown.map((r) => ({ r, d: r.onHit / r.on - r.offHit / r.off })).filter((x) => x.d > 0).sort((a, b) => b.d - a.d)[0];
+    return g ? `The widest gap: ${lower1(g.r.c.label)}, on ${g.r.onHit} of ${plural(g.r.on, "symptom day")} and ${g.r.offHit} of ${plural(g.r.off, "other day")}.` : "None of these came up more often on symptom days than on other days.";
+  };
 
   /* Each BM, day by day, newest at the top: the first BM in the reading colour (Gold outside your usual window, a
      Teal ring on a flagged today), later BMs in Ink 3, all round dots on one time axis, your usual window as the
@@ -534,18 +585,112 @@
     const ws = join([...new Set(fm.split.map((o) => L.WORDS[L.wordKey(o.b)].word))]), k = fm.split.length;
     return `${plural(k, "BM")} logged as ${ws} ${k === 1 ? "covers" : "cover"} two steps, so ${k === 1 ? "it isn't" : "they aren't"} in the bars.`;
   };
+  /* ---------- symptoms: one read of a stretch (symptoms-redo, Nov 5), for the card, its detail, Ask Florin's facts and
+     the chart Ask draws. The days read are the days logged, a flagged today left out (it is counted in nothing,
+     RU.FLAG_DAY); a day with nothing logged is a gap, never a day without symptoms. Each symptom is counted once a day it
+     came up, at that day's strongest, s: [not said, mild, moderate, strong] in days. A day with any log of it that gave
+     no strength is "strength not said" (as L.symLine reads it), never mild ---------- */
+  const symAt = (nm) => { const i = L.SYMPTOMS.indexOf(nm); return i < 0 ? 99 : i; };
   const symOf = (M, F) => {
-    const logged = F.filter((f) => f.logged), withSym = logged.filter((f) => f.nsym);
-    const names = {};
-    withSym.forEach((f) => Object.keys(f.sym).forEach((k) => (names[k] = (names[k] || 0) + 1)));
-    const rows = Object.entries(names).sort((a, b) => b[1] - a[1] || L.SYMPTOMS.indexOf(a[0]) - L.SYMPTOMS.indexOf(b[0])).map(([name, n]) => ({ name, n }));
-    return { logged, withSym, rows };
+    const logged = F.filter((f) => f.logged && !f.flag), withSym = logged.filter((f) => f.nsym), by = {};
+    withSym.forEach((f) => Object.keys(f.sym).forEach((nm) => {
+      const r = (by[nm] = by[nm] || { name: nm, n: 0, s: [0, 0, 0, 0], days: [] });
+      r.n++; r.s[f.unrated && f.unrated[nm] ? 0 : f.sym[nm] || 0]++; r.days.push(f);
+    }));
+    const rows = Object.values(by).sort((a, b) => b.n - a.n || symAt(a.name) - symAt(b.name));
+    return { logged, withSym, rows, flag: F.some((f) => f.flag) };
+  };
+  const S_WORD = ["strength not said", "mild", "moderate", "strong"];
+  /* a symptom's strength in words, over the days it came up: "Mild", "All mild", or the split, "5 mild and 2 moderate" */
+  const strengthSaid = (r) => {
+    const ks = [1, 2, 3, 0].filter((s) => r.s[s]);
+    if (ks.length === 1) return ks[0] === 0 ? "Strength not said" : r.n === 1 ? upper1(S_WORD[ks[0]]) : `${r.n === 2 ? "Both" : "All"} ${S_WORD[ks[0]]}`;
+    return upper1(join(ks.map((s) => `${r.s[s]} ${S_WORD[s]}`)));
   };
   const symUsualText = (u) => (!u || !u.sym ? null : u.sym.every == null ? "Rarely" : u.sym.every <= 1 ? "Most days" : `About 1 day in ${u.sym.every}`);
-  /* the usual, short enough for a chart row's label */
-  const symUsualShort = (u) => (!u || !u.sym ? "" : u.sym.every == null ? "usually rare" : u.sym.every <= 1 ? "usually most days" : `usually 1 in ${u.sym.every}`);
-  /* against the stretch before, never against the usual: a plain chip, since Plum means your usual and Gold outside it */
-  const trendWord = (c, p) => (c + 1 < p ? { text: "Less often", tone: "plain" } : c > p + 1 ? { text: "More often", tone: "plain" } : { text: "About the same", tone: "plain" });
+  /* the usual for any symptom, said whole ("your usual is about 1 day in 3"), and as a clause after a comparison
+     ("About the same as usual, which is about 1 day in 3") */
+  const symUsualIs = (u) => (u.sym.every == null ? "symptoms are usually rare" : u.sym.every <= 1 ? "your usual is most days" : `your usual is about 1 day in ${u.sym.every}`);
+  const symUsualAfter = (u) => (u.sym.every == null ? ": symptoms are usually rare" : u.sym.every <= 1 ? ", which is most days" : `, which is about 1 day in ${u.sym.every}`);
+  /* each symptom's usual, from the weeks the usual for any symptom comes from (days 28 to 83, the days logged) */
+  const symBase = (M) => {
+    const base = M.days.filter((x) => x.d >= 28 && x.d <= 83 && x.logged), by = {};
+    base.forEach((x) => new Set(x.entries.filter((e) => e.kind === "sym").flatMap((e) => e.items.map((i) => i.name))).forEach((nm) => (by[nm] = (by[nm] || 0) + 1)));
+    return { of: base.length, by };
+  };
+  /* a usual share in words: "about 1 day in 4", "most days", or "rare" (under 1 day in 10) */
+  const shareWords = (p) => { const e = p ? Math.max(1, Math.round(1 / p)) : null; return e == null || e > 10 ? "rare" : e <= 1 ? "most days" : `about 1 day in ${e}`; };
+  /* days with a symptom against a usual share, in words only: Teal is context and never changes colour. Over a few days a
+     day or two either way is chance, so a stretch reads as more or less often only past one and a half standard
+     deviations, and more than a day, from what the usual share gives over the same days logged */
+  const symCmp = (p, k, m) => {
+    if (p == null || !m) return null;
+    const e = p * m, t = Math.max(1, 1.5 * Math.sqrt(m * p * (1 - p)));
+    return k > e + t ? "more" : k < e - t ? "less" : "same";
+  };
+  const CMP = { same: "About the same as usual", more: "More often than usual", less: "Less often than usual" };
+  /* the answer, in one line: "Symptoms on 9 of 29 days you logged" */
+  const symHead = (sy) => (!sy.logged.length ? (sy.flag ? "No days counted yet" : "Nothing logged yet")
+    : sy.withSym.length ? `Symptoms on ${sy.withSym.length} of ${plural(sy.logged.length, "day")} you logged` : `No symptoms on the ${plural(sy.logged.length, "day")} you logged`);
+  /* against the usual, in words: "About the same as usual, which is about 1 day in 3." Before day 14, counts only */
+  const symVs = (M, sy) => {
+    const u = M.usual;
+    if (!u) return { c: null, text: `Counts only until Florin knows your usual, on day ${L.LEARN_DAYS}.` };
+    if (!sy.logged.length) return { c: null, text: `${upper1(symUsualIs(u))}.` };
+    const c = symCmp(u.sym.share, sy.withSym.length, sy.logged.length);
+    return { c, text: `${CMP[c]}${symUsualAfter(u)}.` };
+  };
+  /* a day's name in a symptom sentence: its weekday over 7 days, its date over longer */
+  const symWhen = (f, n) => (f.today ? "today" : n <= 7 ? L.dayName(f.d) : short(f.d));
+  /* what stood out among the days with symptoms, in one sentence: the symptom on most of them, a tie, or the one day.
+     Its strength is on its bar, so the sentence leaves it out */
+  const symStandout = (sy, n) => {
+    const k = sy.withSym.length, r = sy.rows;
+    if (!k) return "";
+    if (k === 1) {
+      const f = sy.withSym[0];
+      return `The one day was ${symWhen(f, n)}: ${join(Object.keys(f.sym).sort((a, b) => symAt(a) - symAt(b)).map((nm) => { const s = f.unrated && f.unrated[nm] ? 0 : f.sym[nm]; return s ? `${S_WORD[s]} ${nm.toLowerCase()}` : `${nm.toLowerCase()}, strength not said`; }))}.`;
+    }
+    const top = r.filter((x) => x.n === r[0].n);
+    if (top.length > 1) return `${upper1(join(top.map((x) => x.name.toLowerCase())))} came up most, ${plural(r[0].n, "day")} each.`;
+    const t = r[0];
+    return t.n === k ? `${upper1(t.name)} came up on ${k === 2 ? "both days" : `all ${k} days`}.` : `${upper1(t.name)} came up on ${t.n} of those ${k} days.`;
+  };
+  /* any symptom logged as strong, by name: "Logged as strong: cramping on 1 day." */
+  const symStrong = (sy) => { const st = sy.rows.filter((r) => r.s[3]); return st.length ? `Logged as strong: ${join(st.map((r) => `${r.name.toLowerCase()} on ${plural(r.s[3], "day")}`))}.` : ""; };
+  /* the stretch before, in counts (never against the usual): "In the week before, symptoms came up on 3 of 7 days you
+     logged." 90 days compares your first 30 with your last 30 */
+  const symBefore = (M, n, mode) => {
+    const P2 = L.prevSpan(M, n, mode), a = symOf(M, P2.cur), b = symOf(M, P2.prev);
+    if (!b.logged.length) return "";
+    const said = (s) => `${s.withSym.length} of ${plural(s.logged.length, "day")} you logged`;
+    return P2.cur30 ? `In your first 30 days, symptoms came up on ${said(b)}; in your last 30, on ${said(a)}.` : `In ${P2.label}, symptoms came up on ${said(b)}.`;
+  };
+  /* What came with them: how often each of these was logged too on the days with symptoms, next to the other days read.
+     Co-occurrence only, said as Insights says patterns. Each is held back until 5 days of each kind can be read for it
+     (L.PATTERN_BAR.n, the pattern gate); a dinner is read only when meals are logged on enough days (L.patterns' sparse),
+     and only on days whose evening before has a dinner logged; nothing is read before Florin knows the usual */
+  const CAME = [
+    { k: "win", label: "A first BM outside your usual window", pool: (M, f) => f.inWin != null, hit: (M, f) => f.inWin === false },
+    { k: "form", label: "A form outside your usual forms", pool: (M, f) => f.formsIn != null, hit: (M, f) => f.formsIn === false },
+    { k: "late", label: "A dinner past 8 PM the night before", meals: true, pool: (M, f) => { const p = L.day(M, f.d - 1); return !!p && p.logged && p.entries.some((e) => e.kind === "meal" && e.meal === "dinner"); }, hit: (M, f) => L.lateDinner(M, f.d - 1) },
+    { k: "note", label: "A note on a BM or a meal", pool: () => true, hit: (M, f) => f.bms.concat(f.meals).some((e) => !!(e.note || "").trim()) }
+  ];
+  const cameWith = (M, F, mode) => {
+    const sy = symOf(M, F), need = L.PATTERN_BAR.n, k = sy.withSym.length, m = sy.logged.length;
+    if (!M.usual) return { rows: [], shown: [], note: "", need, learning: true };
+    const sparse = L.patterns(M, mode).sparse;
+    const rows = CAME.map((c) => {
+      if (c.meals && sparse) return { c, sparse: true, ok: false };
+      const on = sy.withSym.filter((f) => c.pool(M, f)), off = sy.logged.filter((f) => !f.nsym && c.pool(M, f));
+      return { c, on: on.length, onHit: on.filter((f) => c.hit(M, f)).length, off: off.length, offHit: off.filter((f) => c.hit(M, f)).length, ok: on.length >= need && off.length >= need };
+    });
+    const shown = rows.filter((r) => r.ok), thin = rows.filter((r) => !r.ok && !r.sparse);
+    const note = !shown.length
+      ? `Held back for now: Florin compares once ${need} days with symptoms and ${need} without can be read. This stretch has ${plural(k, "day")} with symptoms and ${m - k} without.`
+      : [thin.length ? `Not enough days yet to compare ${join(thin.map((r) => lower1(r.c.label)))}.` : "", rows.some((r) => r.sparse) ? "Dinners are left out: meals are logged on too few days to compare them." : ""].filter(Boolean).join(" ");
+    return { rows, shown, note, need };
+  };
   const ckOf = (M) => {
     const b = L.baseline(M), done = M.checkins.filter((c) => c.answers);
     const cur = M.checkin.status === "done" ? Object.assign({ w: 12, ws: 84 }, M.checkin) : null;
@@ -710,11 +855,15 @@
       return { chart: formBars({ w, bins: fm.bins, h: w > 320 ? 96 : 64, usualLabel: u ? `Your usual, ${L.usualFormsText(M, mode)}` : null, aria: `Forms, ${rn}: ${fm.bins.filter((b) => b.count).map((b) => `${b.label} ${b.count}`).join(", ")}` }), legend: u && fm.out.length ? `${lg("sw--bar", "In your usual forms")}${lg("sw--bar sw--shift", "Outside your usual forms")}` : "" };
     }
     if (key === "sym") {
+      /* the days, one mark a day (a grid of weeks at 90 days) with the words for the marks drawn, then a bar a symptom
+         (four on the card, the rest named under it), so Ask Florin draws the card's own picture */
+      if (!live.some((f) => f.logged)) return { chart: "", legend: "" };
       const sy = symOf(M, F);
-      if (!sy.rows.length) return { chart: "", legend: "" };
-      if (n >= 90) return { chart: weekBars({ w, ctx: true, weeks: weeksOf(M, mode).map((wk) => ({ d0: wk[0].d, within: 0, outside: 0, read: wk.filter((f) => f.logged && f.nsym).length })), lastLabel: (wk) => plural(wk.read, "day"), tip: (wk) => `Week of ${short(wk.d0)}: symptoms on ${plural(wk.read, "day")}`, aria: "Days a week with any symptom" }), legend: u ? `<span>${esc(`Your usual: ${lower1(symUsualText(u))}.`)}</span>` : "" };
       const rows = w > 320 ? sy.rows : sy.rows.slice(0, 4), more = sy.rows.slice(rows.length);
-      return { chart: symSquares({ w, days: F, rows, any: { name: "Any symptom", n: sy.withSym.length, sub: u ? symUsualShort(u) : plural(sy.withSym.length, "day") }, aria: `Symptoms by day, ${rn}` }), legend: more.length ? `<span>${esc(`Also logged: ${join(more.map((r) => `${r.name.toLowerCase()} on ${plural(r.n, "day")}`))}.`)}</span>` : "" };
+      return {
+        chart: `<div class="ap-sym-v">${symPic(F, n, w, sy)}<div class="ap-legend">${symLegend(F)}</div>${rows.length ? `<p class="ap-k">Each symptom</p>${symBars(rows, sy.logged.length)}` : ""}</div>`,
+        legend: more.length ? `<span>${esc(`Also logged: ${join(more.map((r) => `${r.name.toLowerCase()} on ${plural(r.n, "day")}`))}.`)}</span>` : ""
+      };
     }
     if (key.indexOf("pattern:") === 0) {
       const p = L.patterns(M, mode).tests.find((x) => x.id === key.slice(8));
@@ -829,13 +978,18 @@
       body: formSplit(fm) ? `<p class="ap-ic-note">${esc(formSplit(fm))}</p>` : ""
     });
 
-    /* symptoms: how often did they come up? Strength in words, never in the mark */
-    const sy = symOf(M, F), Yc = chartOf(M, V, "sym", n, 318);
+    /* symptoms (symptoms-redo, Will, Nov 5): how often did they come up? The answer, your usual in words, the days, a bar
+       a symptom with its strength in words, and one line on what stood out. A flagged today is in no count. On Free, what
+       came with them (the detail's, over 30 days) is the person's own counts, blurred */
+    const sy = symOf(M, F), Yc = chartOf(M, V, "sym", n, 318), sv = symVs(M, sy), so = symStandout(sy, n);
+    const cw30 = free && u ? cameWith(M, L.span(M, 30, mode), mode) : null;
+    const symTease = cw30 && cw30.shown.length ? `<div class="ap-tease ap-sym-tease"><div class="ap-tease-in" aria-hidden="true"><p class="ap-k">What came with them · last 30 days</p>${cameRows(cw30.shown.slice(0, 1))}</div><button type="button" class="ap-btn ap-btn--2 ap-btn--c ap-tease-b" data-act="pay" data-pay="sym">${icon("lock")}See what came with them</button></div>` : "";
     const symptoms = card(V, {
       k: "sym", icon: "sym", kicker: "Symptoms",
-      head: u ? `Usually ${lower1(symUsualText(u))}` : "Symptoms so far",
-      sum: sy.withSym.length ? esc(L.symLine(F, { named: n <= 7, of: sy.logged.length })) : sy.logged.length ? `None logged on the ${plural(sy.logged.length, "day")} you logged.` : "Nothing logged yet.",
-      chart: Yc.chart, legend: Yc.legend
+      head: symHead(sy),
+      sum: `${esc(sv.text)}${sy.flag ? ` ${esc(RU.FLAG_DAY)}` : ""}`,
+      chart: Yc.chart, legend: Yc.legend,
+      after: `${so ? `<p class="ap-sym-read">${esc(so)}</p>` : ""}${symTease}`
     });
 
     /* the weekly check-in, unless it's off for the whole app: each question with this week's answer and one chip (the
@@ -1042,31 +1196,50 @@
     }
 
     if (k === "sym") {
-      const sy = symOf(M, F), Yc = chartOf(M, V, "sym", n, W);
-      const P2 = L.prevSpan(M, n, mode);
-      const cur = symOf(M, P2.cur), prev = symOf(M, P2.prev);
-      const names = [...new Set(cur.rows.map((r) => r.name).concat(prev.rows.map((r) => r.name)))];
-      const trows = names.map((name) => { const c = (cur.rows.find((r) => r.name === name) || { n: 0 }).n, p = (prev.rows.find((r) => r.name === name) || { n: 0 }).n; return { name, c, p, w: trendWord(c, p) }; });
-      const all = trendWord(cur.withSym.length, prev.withSym.length);
-      const ts = today && today.nsym ? today : null;
+      /* symptoms-redo (Will, Nov 5): the answer and two or three sentences of analysis; the days, one mark a day; a row a
+         symptom with its days, its strength split in words and how that sits against its own usual; what came with
+         them, as co-occurrence only and held back on thin data; then the clinician note and the table twin. A flagged
+         today is in no count, and before day 14 it is counts only */
+      const sy = symOf(M, F), sv = symVs(M, sy), m = sy.logged.length, kk = sy.withSym.length;
+      const live = F.filter((f) => !f.pending);
+      /* the chips carry the usual; the sentences say what stood out, any strong day and the stretch before */
+      const lede = [learning ? sv.text : "", symStandout(sy, n), symStrong(sy), learning ? "" : symBefore(M, n, mode)].filter(Boolean).join(" ");
+      const ts = today && today.nsym && !today.flag ? today : null;
       const now = ts ? nowRow("Today", L.symLine([ts]).replace(/^Symptoms today: /, "").replace(/\.$/, "").replace(/^./, (c) => c.toUpperCase()), "plain", "", "") : "";
+      /* each symptom against its own usual, in words (a plain line, never Plum or Gold) */
+      const SB = u ? symBase(M) : null;
+      const perRow = (r) => { if (!SB || !SB.of) return ""; const p = (SB.by[r.name] || 0) / SB.of; return `<p class="ap-sym-rw">${esc(`${CMP[symCmp(p, r.n, m)]}: usually ${shareWords(p)}.`)}</p>`; };
+      const cw = cameWith(M, F, mode);
+      const cameBody = learning ? `<p>${esc(`From day ${L.LEARN_DAYS}, once Florin knows your usual, this compares the days with symptoms with the other days you logged.`)}</p>`
+        : cw.shown.length ? `<p>${esc(`On the days with symptoms, how often each of these was logged too, next to the other days you logged. ${cameGap(cw)}`)}</p>${cameRows(cw.shown)}${cw.note ? `<p class="ap-sym-held">${esc(cw.note)}</p>` : ""}`
+          : `<p>${esc(cw.note)}</p>`;
       const PR = L.patterns(M, mode);
       const bloatP = PR.found.filter((p) => p.kind === "bloat");
       const lines = [
-        sy.rows.length ? `${sy.rows[0].name} came up most, on ${plural(sy.rows[0].n, "day")}.` : "",
+        u ? `Your usual comes from your weeks from ${short(28)} to ${short(83)}: symptoms on ${u.sym.n} of the ${u.sym.of} days you logged. Each symptom's usual comes from the same weeks.` : "",
+        u ? "More often or less often than usual takes a clear difference: over a few days, a day or two either way still reads as about the same." : "",
+        "A day with nothing logged is left out, never counted as a day without symptoms.",
         ...bloatP.map((p) => `Bloating came the day after ${lower1(foodName(p.food)[0])} ${p.hit} of ${p.n} times in the last ${L.PATTERN_DAYS} days. It's on Possible patterns.`),
-        u ? `Your usual comes from your weeks from ${short(28)} to ${short(83)}: symptoms on ${u.sym.n} of the ${u.sym.of} days you logged.` : "",
-        P2.prev.length && !learning ? `Compared with ${P2.label}${P2.cur30 ? ", using your last 30" : ""}.` : ""
+        sy.flag ? RU.FLAG_DAY : ""
       ];
+      const strengthCell = (f, nm) => { const s = f.sym[nm]; return f.unrated && f.unrated[nm] ? (s ? `${upper1(S_WORD[s])}, and a log with no strength` : "Strength not said") : upper1(sWord(s)); };
       return page(M, V, st, "Symptoms", `
-        ${hero("Days with symptoms", sy.logged.length ? `${sy.withSym.length}<small>of ${plural(sy.logged.length, "day")}</small>` : "None yet", learning ? learnChip(M) : `${chip(`Your usual: ${lower1(symUsualText(u))}`, "plain")}${P2.prev.length ? chip(`${all.text} than ${P2.label}`.replace("About the same than", "About the same as"), all.tone) : ""}`, now)}
+        <div class="ap-dhero ap-sym-hero" data-a>
+          <span class="ap-k">Days with symptoms · ${esc(learning ? "So far" : RANGE_NAME[n])}</span>
+          <b class="ap-big">${m ? `${kk}<small>of ${plural(m, "day")} you logged</small>` : "None yet"}</b>
+          <div class="ap-chips">${learning ? learnChip(M) : `${sv.c ? chip(CMP[sv.c], "plain") : ""}${chip(`Your usual: ${lower1(symUsualText(u))}`, "plain")}`}</div>
+          ${lede ? `<p class="ap-sym-lede">${esc(lede)}</p>` : ""}
+          ${sy.flag ? `<p class="ap-info ap-dhero-flag">${icon("info")}<span>${esc(RU.FLAG_DAY)}</span></p>` : ""}
+          ${now}
+        </div>
         ${tabs}
-        ${fig(sy.withSym.length ? (n >= 90 ? "Days a week with any symptom" : L.symLine(F, { named: n <= 7, of: sy.logged.length })) : "No symptoms logged", n >= 90 ? "13 weeks" : RANGE_NAME[n], Yc.chart, Yc.legend)}
-        ${trows.length && P2.prev.length ? `<div class="ap-trows" data-a>${trows.map((r) => `<div class="ap-trow"><b>${esc(r.name)}</b><span>${esc(plural(r.c, "day"))}<em>${esc(`${r.p} before`)}</em></span>${chip(r.w.text, r.w.tone)}</div>`).join("")}</div>` : ""}
+        ${live.some((f) => f.logged) ? fig("Each day", F.length > 31 ? "13 weeks" : learning ? "So far" : RANGE_NAME[n], symPic(F, n, W, sy), symLegend(F)) : ""}
+        ${sy.rows.length ? fig("Each symptom", u ? "Against its usual" : "Days it came up", symBars(sy.rows, m, { extra: perRow })) : ""}
+        <section class="ap-sect ap-sect--proof ap-sym-cs" data-a><h3>What came with them</h3>${cameBody}<p class="ap-sym-held">These show what tends to happen together. They don't prove cause.</p></section>
         <section class="ap-sect ap-sect--care" data-a><h3>When to talk to a clinician</h3><p>Some changes need a person, not an app. Blood, a black stool, a fever, vomiting that won't stop, weight loss you can't explain or waking at night to go: start with primary care soon.</p></section>
         ${shaped(lines)}
         ${askBtn("sym")}
-        ${tableOf(["Day", "Symptom", "Strength"], F.slice().reverse().filter((f) => f.nsym).flatMap((f) => Object.entries(f.sym).map(([nm, s]) => [short(f.d), nm, upper1(sWord(s))])))}
+        ${tableOf(["Day", "Symptom", "Strength"], sy.logged.slice().reverse().filter((f) => f.nsym).flatMap((f) => Object.keys(f.sym).sort((a, b) => symAt(a) - symAt(b)).map((nm) => [short(f.d), nm, strengthCell(f, nm)])))}
         ${nextBtn("sym", V)}`);
     }
 
@@ -1177,7 +1350,9 @@
     if (k === "sym") {
       const sy = symOf(M, F);
       if (!u && !sy.logged.length) return { title: `Symptoms · ${rn}`, facts: [dayN, "Nothing logged yet"], qs: ["How do I log symptoms well?", "How does Florin learn my usual?", "When should I talk to a clinician?"] };
-      return { title: `Symptoms · ${rn}`, facts: [u ? `Your usual: ${lower1(symUsualText(u))}` : dayN, sy.logged.length ? `Symptoms on ${sy.withSym.length} of ${plural(sy.logged.length, "day")} you logged` : "No days logged in this stretch", sy.rows.length ? L.symLine(F, { named: n <= 7 }) : "None logged"], qs: [sy.rows.length ? `What tends to come before my ${sy.rows[0].name.toLowerCase()}?` : "What should I note when a symptom comes up?", "When should I talk to a clinician?", "How do I log symptoms well?"] };
+      /* the card's own read: a flagged today in no count, against the usual in words */
+      const sv = symVs(M, sy);
+      return { title: `Symptoms · ${rn}`, facts: [u ? `Your usual: ${lower1(symUsualText(u))}` : dayN, sy.logged.length ? `${symHead(sy)}${sv.c ? `, ${lower1(CMP[sv.c])}` : ""}` : "No days logged in this stretch", sy.rows.length ? L.symLine(sy.logged, { named: n <= 7 }) : "None logged"], qs:[sy.rows.length ? `What tends to come before my ${sy.rows[0].name.toLowerCase()}?` : "What should I note when a symptom comes up?", "When should I talk to a clinician?", "How do I log symptoms well?"] };
     }
     if (k === "ck" && !RU.ckOn(V)) return null;
     if (k === "ck") { const K = ckOf(M); return { title: "Weekly check-in", facts: K.b ? [ckHead(K), `Compared with ${RU.spanText(K.done[0].ws, K.done[2].ws + 6)}`, `${plural(K.done.length + (K.cur ? 1 : 0), "check-in")} so far`] : ["Your first check-ins set your starting point"], qs: ["What changed since I started?", "How is my starting point set?", "What should I note this week?"] }; }

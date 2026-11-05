@@ -4,7 +4,8 @@ October 28, 2026, revised the same day after a review, again after the fix pass 
 (finish-viz): this file now says what is built. November 4: Will picked the Rings week card for Today, and Home gained
 Compact; section 3 says what both draw and where they depart from section 1. November 5: Insights' FloraScore card is
 the Rings hero (Will's pick), and Will's picks, a Data style option, draws each card he picked in its style (section
-5, "Will's picks"). The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
+5, "Will's picks"). Also November 5: the Symptoms card and its detail are redrawn (symptoms-redo, rows 11 and 22, and
+section 1's symptom marks), after Will found them "hard to read, light on data vis and jumbled". The one list of what the Florin app draws, and how. It comes from two audits of the prototype: one of every
 chart's design (both themes, all six data styles, 390 and 1440 wide) and one of every number against the model. It sits
 under DESIGN.md's Data Visualization rules. Where it asks DESIGN.md to change, it says so and leaves the change to the
 studio.
@@ -59,7 +60,7 @@ review settles which mark the app keeps.
 | Nothing logged | Nothing drawn: no dot, no bar, the line breaks, the date label stays in Ink 3 |
 | Today | Today's point ringed in Ink and labelled Today, only when today has a reading: no other point is ever ringed or labelled. The x axis ends on Today, with nothing drawn above it when today has no reading yet |
 | Today, flagged | A Teal ring at its place with nothing inside, labelled Noted for a clinician, in no count |
-| A symptom | One Teal square on each day it came up, at 7 and 30 days; at 90 days, Teal bars of days a week. Strength in words and in the table, never in the mark's size |
+| A symptom | One Teal square on each day with symptoms, whatever the strength: a row of days at 7 and 30 days, a grid of weeks (a column a week, Monday at the top) at 90 days; a small Ink 3 dot on a day logged with none; nothing on a day with nothing logged; today ringed in Ink, a flagged today a Teal ring in no count. A bar a symptom in Teal over a track of the days logged. Strength in words and in the table, never in a mark's size |
 | A meal or a late dinner | A Teal tick in its own labelled row or column, never a dot that could be read as a BM |
 
 **The tokens.** Code names the token for each role, never a hex. The values are the resolved colours, for checking.
@@ -97,7 +98,10 @@ Ink 3 would be 3.8:1, so the library takes refresh.css's darker Ink 3 too.
   its usual range on a day that was within your usual. Drawn in the reading colour with its words, it never looks like
   it disagrees with the day.
 - **Teal is context and the clinician note:** shown, never read against your usual and never changing colour.
-  Symptoms are compared with your usual in words only ("Symptoms on 2 of 7 days; your usual is about 1 day in 3").
+  Symptoms are compared with your usual in words only ("Symptoms on 2 of 6 days you logged. About the same as usual,
+  which is about 1 day in 3"). "More often" or "less often than usual" only past one and a half standard deviations
+  of what the usual gives over the same days logged, and more than a day, so a day or two in a week reads as about the
+  same.
 - **The reading colour is for charts.** It never sits next to Plum as a second state: the validator puts Plum and
   Forest 13.3 apart for full colour vision and 4.5 for red-weak vision, too close to tell apart without a cue. So the
   words carry it: a Plum legend counts days ("<n> days within your usual", "Days in your window", "Days with a usual
@@ -162,7 +166,7 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 8 | Insights, Timing | Did my first BM come in my usual window? | Dots on a straight time axis, your window as a band; today's label above the band, with a lead down to its dot | Keep | Gold under 3:1. The flag ring and the today ring differed only by hue |
 | 9 | Insights, How often | Did I go my usual number of times? | One dot per day on a count line from 0, your usual count as a band | Change | Thin bars at 1 or 2 read as a barcode. No BM was a ring. Today wasn't marked. The average counted the flagged day. A fixed 0 to 3 axis would clip the first person with 4 |
 | 10 | Insights, Form | Were my BMs my usual forms? | Bars by form with their counts, your usual forms bracketed | Change | Outside your usual was grey here and Gold everywhere else, under the same words. Percents added up to 102 |
-| 11 | Insights, Symptoms | How often did symptoms come up? | One row per symptom, a Teal square on each day it came up (four rows on the card, the rest named under it: "Also logged: cramping on 1 day"); an Any symptom row with your usual written at its end; strength in the sentence | Change | Square size meant strength at 7 days and frequency at 90, so one chart asked two questions. Mild failed contrast. Strength not said drew as mild. Four colours for one fact |
+| 11 | Insights, Symptoms | How often did symptoms come up? | The answer as the head ("Symptoms on 9 of 29 days you logged", a flagged today in no count); the usual in words with one of three comparisons ("About the same as usual, which is about 1 day in 3"); one mark a day (section 1), a grid of weeks at 90 days; a bar a symptom, its days of the days logged, with the count and strength in words ("7 days, all mild"; four on the card, the rest named under it: "Also logged: cramping on 1 day"); one line on what stood out ("Bloating came up on 7 of those 9 days"). On Free, What came with them is a blurred teaser of the person's own counts over 30 days. Ask Florin draws the same picture (`RU.cardChart`) | Built (Nov 5, symptoms-redo) | Will, Nov 5: "hard to read, light on data vis and jumbled". Rows of squares asked the reader to count marks; the answer, the usual and the strength sat in one long sentence; at 90 days the picture turned into weekly bars |
 | 12 | Insights, Weekly check-in | Are my answers like my first weeks? | Each question with this week's answer and one chip; the trends stay on the detail | Change | Strips with no scale words and 5px dots. See "The weekly check-in" under this table |
 | 13 | Insights, Possible patterns | Does something tend to come before a change? | Title, tier, "20 of 22 times" | Change | Plum dots meant "it held", and repeated the count beside them |
 | 14 | FloraScore detail, today | Where is today against its usual range? | The hero's block: the number, the sentence, the range bar with the last 90 days' Lowest and Highest named (the hero's bar names only the band); the week as a neutral chip of averages | Change | Today was drawn twice, as a ring and as a range bar. The usual arc was unlabelled. The week chip was Gold, which means outside your usual |
@@ -173,7 +177,7 @@ Every visual in the app. Question is the title the chart would carry. Call: keep
 | 19 | Timing detail, 90 days | Week by week, how many mornings came in my window? | A bar a week: in your window at the base in Plum (it counts days), outside it in Gold above, the bar's top at the mornings read; the latest labelled "5 of 6" | Change | A percent of 4 to 7 mornings isn't a number anyone logged |
 | 20 | How often detail | As 9 | As 9; today's range bar on the same count axis, padded half a step; at 90 days the weekly bars of 19, for a usual count. "How your days split" is cut: a fourth picture of the same counts, with no usual marked | Change | As 9. The today bar's axis was fixed at 0 to 4. A dot a week at its average put decimals on the scale |
 | 21 | Form detail | Which forms, and when was one outside my usual? | The card's bars (a line under them names a word that covers two steps), then a dot per BM by day with your usual forms as a band; today's bar draws a two-step word as a span over both steps, Ink 3 when it could be either side of the usual; at 90 days the weekly bars of 19, for usual forms ("Every BM in your usual forms", "A BM outside your usual forms") | Change | Grey above, Gold below, same words. Three of seven forms labelled. A dot a day at 90 days ran into dashes (90 days at 8px is 720px on a 300px plot) |
-| 22 | Symptoms detail | As 11, and has it changed? | As 11; at 90 days, Teal bars of days a week with any symptom; each symptom against the weeks before, in words, its chip plain (it compares with the stretch before, not with your usual) | Change | As 11 |
+| 22 | Symptoms detail | As 11, and what came with them? | As 11, then two or three sentences in counts (what stood out, any day logged as strong, the stretch before); a row a symptom with its strength split in words and its own usual, from the same weeks ("About the same as usual: usually about 1 day in 4"); What came with them: a first BM outside the window, a form outside the usual forms, a dinner past 8 PM the night before and a note on a BM or a meal, each as two share bars in the reading colour (symptom days, other days) with "3 of 8" on them, the widest gap in a sentence, and "These show what tends to happen together. They don't prove cause."; each held back until 5 days of each kind can be read (the pattern gate), dinners only when meals pass `L.MEAL_COVER`, nothing before day 14; the table twin (Day, Symptom, Strength) | Built (Nov 5, symptoms-redo) | The trend chips compared with the stretch before, never with the usual, and nothing said what came with the days with symptoms |
 | 23 | Check-in detail and Saved | How does each answer compare with my first weeks? | A strip per question with its steps written in the answers' own words ("Mostly settled"), the first weeks as a band, the latest week answered ringed and named "Latest week" in the legend | Keep | 6px dots: made 8px. The steps are the answers' own words, with a gutter wide enough for "5 or more days" |
 | 24 | One pattern | How often did the change follow, against other days? | Two bars whose length is the share (from none to every time), "20 of 22" and "26 of 52" written on them, in the reading colour; for late dinners, the two-group strip of first BM times after each kind of dinner | Change | Plum for "held", and 52 dots to say 26 of 52. A bar as long as its count would draw 26 of 52 longer than 20 of 22. The 90-day day-by-day rows for foods couldn't fit their marks; the table lists the days instead |
 | 25 | Patterns with few meals | Why no patterns yet? | Text, no chart | Keep | The picked tier was outlined in Plum: use Ink |
@@ -770,7 +774,11 @@ as it stands on Oct 28, after finish-viz; the new says what the screens draw now
 - `i-sym`. Old: "A row per symptom, with a dot on each day it came up, larger when stronger. One logged without a
   strength reads as strength not said." New: "A row per symptom, with a Teal square on each day it came up, and an Any
   symptom row with the usual written at its end; how strong is said in words, and one logged without a strength reads
-  as strength not said. Over 90 days, Teal bars of the days a week with any symptom." (The rest as now.)
+  as strength not said. Over 90 days, Teal bars of the days a week with any symptom." (The rest as now.) Nov 5
+  (symptoms-redo): "The answer first: days with symptoms of the days logged, against the person's usual in words, and
+  what stood out. Each day is one mark, a Teal square with symptoms, a dot with none, a gap when nothing was logged; 90
+  days are a grid of weeks. A bar a symptom gives its days, its strength in words and its own usual. What came with
+  them counts what was logged on the same days, together, not cause, and waits for enough days."
 - `i-pattern`. Old: "One dot for each time the food came up, filled when the symptom followed, next to the same count
   for every other day. Then the pattern over time, and a way to test it." New: "Two bars: how often the change followed
   the food, and how often it came on other days, with the counts written on. Late dinners add the first BM times after

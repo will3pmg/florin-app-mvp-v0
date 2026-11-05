@@ -888,7 +888,7 @@
   };
   /* Will's picks (Nov 5), in the sheet's shape, from the table, so the note follows when he picks more */
   const picksOpt = (M, P) => ({
-    is: `Florin charts, with each Insights card Will has picked on the data modules page drawn in his style: ${picksSaid(picksAt(M, Object.assign({}, P, { checkin: true }), 30)).join("; ")}.`,
+    is: `Florin charts, with each Insights card Will has picked on the data modules page drawn in his style: ${picksSaid(picksAt(M, P, 30)).join("; ")}.`,
     why: "It lays his picks out one by one, in Insights' own order, from the same logs as every other style.",
     not: "Styles mix on one screen, and Oura's cards draw only 30 days, so at 7 and 90 days those cards are Florin charts'."
   });

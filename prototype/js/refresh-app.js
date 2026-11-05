@@ -973,7 +973,7 @@
     }),
     "i-sym": () => ({
       t: "Symptoms, the detail",
-      lede: "A row per symptom, with a Teal square on each day it came up, and an Any symptom row with the usual written at its end; how strong is said in words, and one logged without a strength reads as strength not said. Over 90 days, Teal bars of the days a week with any symptom. Then each symptom against the weeks before, and when to see a clinician."
+      lede: "The answer first: days with symptoms of the days logged, against the person's usual in words, and what stood out. Each day is one mark, a Teal square with symptoms, a dot with none, a gap when nothing was logged; 90 days are a grid of weeks. A bar a symptom gives its days, its strength in words and its own usual. What came with them counts what was logged on the same days, together, not cause, and waits for enough days."
     }),
     "i-ck": (M) => ({
       t: "Weekly check-in, the detail",
