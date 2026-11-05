@@ -774,6 +774,45 @@
 .ap-share-t { display: block; height: 12px; border-radius: 2px; background: var(--ap-card2); overflow: hidden; }
 .ap-share-t b { display: block; height: 100%; width: var(--w); border-radius: 2px; background: var(--ap-chart); }
 .ap-share-ax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
+/* Symptoms (symptoms-redo, Nov 5): the days, one mark a day (a Teal square with symptoms, a small Ink 3 dot logged with
+   none, nothing on a day with nothing logged); a bar a symptom, the days it came up over a track of the days logged, its
+   count and strength in words above it; on the detail, each against its own usual and what came with them. Teal is
+   context: it never changes colour, and strength is never in a mark's size. The text wears text tokens */
+.ap-sym-v { display: flex; flex-direction: column; gap: 12px; }
+.ap-sym-v .ap-legend { margin-top: 0; }
+.ap-rx .dv-chart .dv-nosym { fill: var(--ap-ink3); }
+.ap-rx .dv-chart .dv-sym-sp { fill: var(--ap-card); }
+.ap-rx .dv-chart.dv-sym .dv-ring { fill: none; }
+.ap-rx .ap-legend .sw--sym { width: 9px; height: 9px; border-radius: 2px; background: var(--ap-teal); }
+.ap-rx .ap-legend .sw--nosym { width: 4px; height: 4px; background: var(--ap-ink3); }
+.ap-sym-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ap-sym-r { display: flex; flex-direction: column; gap: 4px; }
+.ap-sym-rh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ap-sym-rh b { font-size: 14px; font-weight: 500; line-height: 1.3; }
+.ap-sym-rh span { font-size: 12.5px; line-height: 1.35; text-align: right; color: var(--ap-ink2); }
+.ap-sym-t { display: block; height: 8px; border-radius: 2px; background: var(--ap-card2); }
+.ap-sym-t b { display: block; width: var(--w); min-width: 4px; height: 100%; border-radius: 2px; background: var(--ap-teal); }
+.ap-sym-ax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ap-ink3); }
+.ap-sym-rw { font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); }
+.ap-sym-read { font-size: 14px; line-height: 1.45; color: var(--ap-ink); }
+.ap-sym-tease { min-height: 96px; }
+.ap-sym-tease .ap-tease-in { display: flex; flex-direction: column; gap: 8px; }
+.ap-fig .ap-sym-bars, .ap-fig .ap-sym-ax { padding-inline: 4px; }
+.ap-sym-hero .ap-chips { margin-top: 4px; }
+.ap-sym-lede { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ap-ink2); }
+.ap-sym-came { display: flex; flex-direction: column; gap: 16px; }
+.ap-sym-cr { display: flex; flex-direction: column; gap: 8px; }
+.ap-sym-cr > b { font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+.ap-sym-cb { display: grid; grid-template-columns: 112px minmax(0, 1fr) 56px; gap: 8px; align-items: center; }
+.ap-sym-cb span { font-size: 12.5px; color: var(--ap-ink2); }
+.ap-sym-cb strong { font-family: var(--mono); font-size: 11px; font-weight: 400; text-align: right; white-space: nowrap; color: var(--ap-ink); }
+.ap-rx .ap-sect .ap-sym-held { font-family: var(--sans); font-size: 12.5px; line-height: 1.45; color: var(--ap-ink2); }
+/* the Easy version: larger text on the symptom rows and what came with them, as Easy sets its other rows */
+.ap.ap--easy :is(.ap-sym-rh b, .ap-sym-cr > b) { font-size: 18px; }
+.ap.ap--easy :is(.ap-sym-rh span, .ap-sym-rw, .ap-sym-read, .ap-sym-cb span, .ap-sym-lede) { font-size: 16px; color: var(--ap-ink); }
+.ap.ap--easy .ap-sect .ap-sym-held { font-size: 16px; color: var(--ap-ink); }
+.ap.ap--easy .ap-sym-cb { grid-template-columns: 120px minmax(0, 1fr) 64px; }
+.ap.ap--easy .ap-sym-cb strong { font-family: var(--sans); font-size: 16px; }
 /* the check-in card: each question, this week's answer and one chip */
 .ap-ic-ck li { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--ap-line); }
 .ap-ic-ck-m { display: flex; flex-direction: column; gap: 4px; min-width: 0; }

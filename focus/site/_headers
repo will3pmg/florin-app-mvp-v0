@@ -1,4 +1,4 @@
-# Netlify headers for the Florin focus group site, written by focus/build.js (build fg.20261105.83215bd7)
+# Netlify headers for the Florin focus group site, written by focus/build.js (build fg.20261105.e803cd1f)
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self' https://script.google.com https://script.googleusercontent.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; manifest-src 'self' data:; frame-src 'self'; frame-ancestors 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'
   Referrer-Policy: no-referrer
