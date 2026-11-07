@@ -210,8 +210,6 @@
     const row = h.parentElement, said = [];
     if (row && row !== r) {
       row.querySelectorAll(`:scope > :is(${META})`).forEach((m) => { if (m.textContent.trim()) said.push(m.textContent.trim()); m.remove(); });
-      /* the range is the tabs' at the top, so a card's own range switch goes (Oura's trend) */
-      row.querySelectorAll(":scope > .ou-seg").forEach((m) => m.remove());
       /* Timing's usual window is under the dial already: the pill beside the name goes */
       if (k === "timing") row.querySelectorAll(":scope > :is(.rg-chip--usual, .ou-chip.is-usual)").forEach((m) => m.remove());
     }

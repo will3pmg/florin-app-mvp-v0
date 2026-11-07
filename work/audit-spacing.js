@@ -60,6 +60,7 @@ const PRODUCT = [
   { f: 'css/refresh-looks.css', scope: () => true },
   { f: 'css/refresh-variants.css', scope: () => true },
   { f: 'css/refresh-profile.css', scope: () => true },
+  { f: 'css/refresh-photo.css', scope: () => true },
   { f: 'css/refresh-ask.css', scope: () => true },
   { f: 'css/refresh-detail.css', scope: () => true },
   { f: 'css/refresh-easy.css', scope: () => true },

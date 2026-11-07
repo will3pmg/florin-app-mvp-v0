@@ -474,6 +474,16 @@ deck isn't needed. can kill that."
   state word and a Lora headline, contributors on tracks against the person's usual (FloraScore's four parts open their
   pages), a day by day chart with a scrubber whose picked day shows its reading and reasons, and what moved against the
   stretch before, in the phone's theme at 7, 30 and 90 days (data viz.md, section 8).
+- **A photo of a meal, membership only** (Will, Nov 7: "add in an option to load an image for food analysis (only a
+  paid feature)"). Both meal sheets have Add a photo; the foods it sees are chips to check, the meal follows the time
+  until picked, and nothing is saved before Save, which saves it as any meal so its foods count the same way. Claude
+  reads the photo where the page can send images (the next publish declares `{ sample: { images: true } }`), its reply
+  kept to plain food names; otherwise the demo plays that day's meal. The photo is never kept. On Free the row carries
+  the lock and opens the paywall, which now lists the photo.
+- **Easy view settings** (Will, Nov 7: "Page for 'easy view' settings?"). Profile's Larger text and simpler screens row
+  opens a page: the on and off switch first, then text size (Large or Larger), fewer cards on Today, What I ate
+  listening as it opens and less motion, with a preview at the top. Left out: simpler screens on their own (a third
+  version to check), bigger buttons on their own (Easy's are 56 to 64px, and Larger grows them) and numbers as words.
 
 ## The calls for Will
 
@@ -540,6 +550,9 @@ line says so.
 - FloraScore on Easy's Today at all?
 - "Something feels off" and "What I ate" as the words?
 - Auto-advance after a pick, or a Next button? The nearest hour, or minutes?
+- Easy view (Nov 7): offer Larger without the simpler screens, for someone who wants every chart but bigger? And Easy
+  writes "two BMs" in its sentences but digits on its cards, where plain-language guides favour digits: switch the
+  sentences to digits for everyone?
 - Easy leaves out straining, didn't feel finished, burning, how long and the note: enough?
 - Easy's Today drops the next step card, since its three buttons are the next step: right?
 
@@ -609,6 +622,9 @@ line says so.
 - The first check-in is due on the first Sunday evening, even on the day someone joins: or after their first full week?
 - A skipped check-in stays skipped, and stays in plus: or should it move to the next day?
 - A weekly report, Oura style, beyond the check-in's own result?
+- A photo of a meal (Nov 7): keep the photo with the log, for the person's own record, or never keep it, as the demo
+  does? Take the meal's time from when the photo was taken? Read typed meal words through the alarm net too, as the
+  photo's are (today a typed meal's words aren't)?
 
 *Insights and FloraScore*
 - A day is within your usual when the first BM landed in the window, the count was usual and every form was within the

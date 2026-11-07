@@ -600,7 +600,8 @@ simplified ie 'TIMING' 'FREQUENCY' and the date range is toggled at very top, no
   says which in `D.range`; the library page still draws 30. On Free it is 7 days; while Florin learns, the days so far.
   Patterns alone read 90 days whatever the tabs say, and its card says so in one line.
 - A card's head is its name, a word or two: FloraScore, Trend, Your days, Timing, Frequency, Form, Symptoms, Check-in,
-  Patterns. No range, no date, no range switch, no pill beside it (Timing's usual window is under the dial already).
+  Patterns. No range, no date, no pill beside it (Timing's usual window is under the dial already). Oura's trend keeps
+  its 30 and 90 day switch when the whole screen is the Oura style, which has no range tabs.
   The range is said in words a screen reader hears with the name ("Timing, first BM, last 30 days").
 - Ask about this and the detail link sit inside the card, at its foot, on a hairline in the card's own ink (so they
   read on Rings' dark green hero and an Oura card in either theme). A Bento board has no card around its tiles: the foot

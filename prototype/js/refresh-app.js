@@ -1137,7 +1137,7 @@
           { v: "detailed", is: "Pick Breakfast, Lunch, Dinner or Other, type what you had, and set the time.", why: "Each meal keeps its time, so Florin can look at what tends to follow a late dinner.", not: "It's more steps for every meal, so people log fewer of them." }
         ],
         rec: { v: "quick", text: `We recommend Quick, with a one-tap "Dinner after 8 PM?" button when the person mentions dinner, and a free ${L.FOOD_CHECK_DAYS}-day food check: log every meal for ${foodSpan()}, ordinary days included.`, why: "People tend to write meals down only on days with symptoms, which can make everyday foods look linked to them, so logging has to be easy enough for every day." },
-        try: "Switch it, then tap plus and the meal row. The microphone plays a sample, since the demo can't use one. The dinner button isn't in the demo yet."
+        try: "Switch it, then tap plus and the meal row: either sheet also takes a photo of the meal, with membership. The microphone plays a sample, since the demo can't use one. The dinner button isn't in the demo yet."
       })
     },
     {

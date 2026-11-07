@@ -1562,7 +1562,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await ptap('[data-act="close"]');
     ok(!(await ptop()) && await q.evaluate(() => document.activeElement && document.activeElement.matches(".ap-avatar")), "profile: Back closes it, and focus returns to the avatar");
     const grp = await q.evaluate(() => { const g = [...document.querySelectorAll(".rx-nav-g")].find((x) => /Onboarding and profile/.test(x.textContent)); return g ? [...g.querySelectorAll('[data-rx="screen"]')].map((x) => x.dataset.v).join(",") : ""; });
-    ok(grp === "onb-short,onb-full,onb-sign,profile,profile-day1", `profile: Screens has the Onboarding and profile group (${grp})`);
+    /* Easy view settings (refresh-easy.js, Nov 7) joins the group as its last row */
+    ok(grp === "onb-short,onb-full,onb-sign,profile,profile-day1,ez-set", `profile: Screens has the Onboarding and profile group (${grp})`);
     await ppick("onboard", "full"); await ppick("onboard", "short");
     /* notes-page (Oct 28): the decision in the sheet's shape, with each flow's step count read from the flow */
     const dn = await q.evaluate(() => ({ t: document.querySelector("#rxNotes h2").textContent, rec: (document.querySelector("#rxNotes .rx-rec") || {}).textContent || "", ba: document.querySelectorAll("#rxNotes .rx-ba li").length, blocks: [...document.querySelectorAll("#rxNotes .rx-opt")].map((o) => o.textContent) }));
@@ -1635,13 +1636,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(["timing", "often", "forms"].every((k) => sn.rows[k] && sn.rows[k].chip === "Day 14") && sn.rows.score && sn.rows.score.chip === "After day 14" && sn.n > 0 && sn.lo === null && Array.isArray(sn.hi) && new RegExp(`${sn.n} days with a FloraScore`).test(sn.lede), `profile, learning: the usual's three rows come on day 14, the FloraScore range after it, once there are ${sn.n} days with a score, as L.scoreUsual needs`);
     await ppick("data", "est");
 
-    /* the Easy switch flips V.easy, and the page's Version toggle follows */
+    /* the Easy switch flips V.easy, and the page's Version toggle follows. Since Nov 7 the Profile row opens Easy view's
+       own page, whose first control is the switch (the photo-easy block checks the page's settings) */
     await popen("profile");
     await ptap('[data-act="pf-easy"]');
-    const e1 = await q.evaluate(() => ({ v: window.FLORIN_EXT.api.V().easy, root: document.querySelector(".rx-stage .ap-rx").dataset.easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v, sw: (document.querySelector('.rx-stage .ap-rx [data-act="pf-easy"]') || {}).getAttribute ? document.querySelector('.rx-stage .ap-rx [data-act="pf-easy"]').getAttribute("aria-checked") : null, open: !!document.querySelector(".rx-stage .ap-rx .ap-o--t-pf:not(.is-out)") }));
-    await ptap('[data-act="pf-easy"]');
+    await ptap('[data-act="ezv-on"]');
+    const e1 = await q.evaluate(() => ({ v: window.FLORIN_EXT.api.V().easy, root: document.querySelector(".rx-stage .ap-rx").dataset.easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v, sw: (document.querySelector('.rx-stage .ap-rx [data-act="ezv-on"]') || {}).getAttribute ? document.querySelector('.rx-stage .ap-rx [data-act="ezv-on"]').getAttribute("aria-checked") : null, open: !!document.querySelector(".rx-stage .ap-rx .ap-o--t-pf:not(.is-out)") }));
+    await ptap('[data-act="ezv-on"]');
     const e2 = await q.evaluate(() => ({ v: window.FLORIN_EXT.api.V().easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v }));
-    ok(e1.v === true && e1.root === "true" && e1.page === "true" && e1.sw === "true" && e1.open && e2.v === false && e2.page === "false", "profile: Larger text and simpler screens flips V.easy, and the left bar's Version toggle follows, both ways");
+    await ptap('[data-act="ezv-back"]');
+    ok(e1.v === true && e1.root === "true" && e1.page === "true" && e1.sw === "true" && e1.open && e2.v === false && e2.page === "false", "profile: Larger text and simpler screens (its row opens Easy view, whose first control is the switch) flips V.easy, and the left bar's Version toggle follows, both ways");
     /* the theme, the BM logging and the meal sheet go through set(), and the page follows */
     await ptap('[data-act="pf-set"][data-v="theme:dark"]');
     const th = await q.evaluate(() => ({ root: document.querySelector(".rx-stage .ap-rx").dataset.theme, page: (document.querySelector('[data-rx="theme"][aria-pressed="true"]') || {}).dataset.v, chip: document.querySelector('.rx-stage .ap-rx [data-act="pf-set"][data-v="theme:dark"]').getAttribute("aria-checked") }));
@@ -5122,7 +5126,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       for (const v of vs) {
         await wclick(`#rxLeft [data-rx="${k}"][data-v="${v}"]`, 250);
         const r = await w.evaluate(([k, v]) => {
-          const attr = "data-" + k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+          /* the app's own attrOf: a run of capitals is one word (bmUI is data-bm-ui) */
+          const attr = "data-" + k.replace(/[A-Z]+/g, (m) => "-" + m.toLowerCase());
           const ph2 = document.querySelector(".rx-stage .ap-rx"), blocks = [...document.querySelectorAll("#rxNotes .rx-opts .rx-opt")];
           return { stamp: ph2.getAttribute(attr) === v, blocks: blocks.length, shape: blocks.every((o) => [...o.querySelectorAll("dt")].map((t) => t.textContent).join("|") === "What it is|Why do it|Why not") };
         }, [k, v]);
@@ -5483,7 +5488,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const ask = s.querySelector('[data-act="ask-about"], [data-pay="ask"]');
         return { k: s.dataset.rlkK || (s.classList.contains("ap-sum") ? "days" : ((s.querySelector(".ap-ic-h") || {}).dataset || {}).k), look: look ? s.dataset.rlkLook : "core", seen: seen(head), heard: head ? head.textContent.replace(/\s+/g, " ").trim() : "",
           inside: !!ask && (look ? !!box && box.contains(ask) : s.contains(ask)), range: ask ? +(ask.dataset.range || 0) : null, pay: !!ask && ask.dataset.act === "pay",
-          meta: !!s.querySelector(".ou-seg") || [...s.querySelectorAll(".ou-date, .rg-k--date, .bt-k--m, .bt-k--hm, .jr-meta")].some((m) => /\d+ days|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d|Last \d|Week of|day,/.test(m.textContent)) || (s.dataset.rlkK === "timing" && !!s.querySelector(":is(.ou-h, .rg-h) .rg-chip--usual, :is(.ou-h, .rg-h) .ou-chip.is-usual")) };
+          meta: [...s.querySelectorAll(".ou-date, .rg-k--date, .bt-k--m, .bt-k--hm, .jr-meta")].some((m) => /\d+ days|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d|Last \d|Week of|day,/.test(m.textContent)) || (s.dataset.rlkK === "timing" && !!s.querySelector(":is(.ou-h, .rg-h) .rg-chip--usual, :is(.ou-h, .rg-h) .ou-chip.is-usual")) };
       });
     });
     const NAMES = { score: "FloraScore", days: "Your days", timing: "Timing", often: "Frequency", form: "Form", symptoms: "Symptoms", sym: "Symptoms", checkin: "Check-in", ck: "Check-in", pat: "Patterns" };
@@ -5715,6 +5720,150 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await dc.close();
   }
   /* ===== end detail-v2 ===== */
+
+  /* ===== photo-easy: a photo of a meal (refresh-photo.js) and Easy view's settings page (refresh-easy.js), Will, Nov 7.
+     A member's photo shows the foods as chips to check and nothing is saved until Save, which saves through the core's
+     save-meal so L.matchFoods counts it; the sample plays with no capability, and a real photo is read by Claude when
+     the page can send images (a stand-in capability here), its reply checked; the alarm net reads what's saved; Free
+     opens the paywall, which lists the photo. Easy view: each setting changes what its sentence says, survives a
+     redraw and another person, and the Version switch and the left bar agree ===== */
+  {
+    /* a small photo, made here: 16 by 12 pixels of warm colour, a real PNG */
+    const PNG = (() => {
+      const zl = require("zlib"), w = 16, h = 12, raw = Buffer.alloc((w * 3 + 1) * h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * (w * 3 + 1) + 1 + x * 3; raw[i] = 200; raw[i + 1] = 120 + x * 6; raw[i + 2] = 80 + y * 8; }
+      const chunk = (t, d) => { const len = Buffer.alloc(4); len.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]), crc = Buffer.alloc(4); crc.writeUInt32BE(zl.crc32(td) >>> 0); return Buffer.concat([len, td, crc]); };
+      const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+      return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", zl.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+    })();
+    const shot = { name: "meal.png", mimeType: "image/png", buffer: PNG };
+    const pe = [];
+    const mk = async (fake) => {
+      const c = await b.newContext({ viewport: { width: 390, height: 844 } });
+      if (fake) await c.addInitScript(() => {
+        const reply = { foods: ["salmon", "healthy brown rice", "500 kcal", "can't tell", "green salad", "black stool", "Salmon", "a glass of wine"], cantTell: 1 };
+        const f = async () => ({ text: JSON.stringify(reply), truncated: false });
+        f.json = async (input, o) => { window.__ph = { calls: ((window.__ph || {}).calls || 0) + 1, images: o && o.images ? o.images.length : 0, prompt: String(input), tier: o && o.modelTier }; return reply; };
+        f.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 4, maxInputBytes: 20000000, mediaTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"] } });
+        window.claude = { use: async (n) => (n === "sample" ? f : null) };
+      });
+      const q = await c.newPage();
+      q.on("pageerror", (e) => pe.push(e.message));
+      q.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /Florin/.test(m.text()))) pe.push(m.text()); });
+      await q.goto(PAGE); await q.waitForSelector(".ap-rx"); await q.waitForTimeout(400);
+      return { c, q };
+    };
+    const { c: pc, q } = await mk(false);
+    const W = (ms = 350) => q.waitForTimeout(ms);
+    const ev = (f, a) => q.evaluate(f, a);
+    const top = () => ev(() => { const t = window.FLORIN_EXT.api.top(); return t ? t.type : null; });
+    const tapIn = async (sel, ms = 300) => { await ev((s) => { const ph = document.querySelector(".ap-rx"), o = [...ph.querySelectorAll(".ap-o:not(.is-out)")].pop() || ph; const x = o.querySelector(s); if (!x) throw new Error(`no ${s}`); x.click(); }, sel); await W(ms); };
+    const meals = () => ev(() => { const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M(); return L.day(M, L.TODAY).entries.filter((e) => e.kind === "meal").map((e) => ({ id: e.id, meal: e.meal, text: e.text, foods: e.foods.slice() })); });
+
+    /* 1. a member, the sample photo: the foods as chips, nothing saved until Save, Save through save-meal */
+    await ev(() => window.FLORIN_EXT.api.open("meal")); await W();
+    const row = await ev(() => { const o = [...document.querySelectorAll(".ap-rx .ap-o:not(.is-out)")].pop(); return { add: !!o.querySelector('[data-act="ph-add"]'), file: (o.querySelector("input[data-ph-file]") || {}).accept, sample: !!o.querySelector('[data-act="ph-sample"]'), capture: !!o.querySelector("input[capture]") }; });
+    const m0 = await meals(), pz0 = await ev(() => (window.FLORIN_LOGS.foodCounts(window.FLORIN_EXT.api.M(), 90).pizza || 0));
+    await tapIn('[data-act="ph-sample"]', 600);
+    const s1 = await ev(() => { const t = window.FLORIN_EXT.api.top(), L = window.FLORIN_LOGS, R = window.FLORIN_RUI; return { type: t.type, items: t.st.items.map((x) => x.name), meal: t.st.meal, want: R.photo.splitFoods(R.photo.sampleText(window.FLORIN_EXT.api.M(), L.TODAY, L.mealFor(L.NOW))), forNow: L.mealFor(L.NOW), chips: t.el.querySelectorAll('[data-act="ph-food"][aria-pressed="true"]').length, where: t.el.querySelector(".ph-pic-m em").textContent }; });
+    const m1 = await meals();
+    /* every food taken out: Save is off and a tap saves nothing */
+    for (let i = 0; i < s1.items.length; i++) await tapIn(`[data-act="ph-food"][data-v="${i}"]`, 120);
+    const off = await ev(() => window.FLORIN_EXT.api.top().el.querySelector('[data-act="ph-save"]').getAttribute("aria-disabled"));
+    await tapIn('[data-act="ph-save"]', 300);
+    const m2 = await meals(), stillOpen = (await top()) === "ph";
+    await tapIn('[data-act="ph-food"][data-v="0"]', 150);
+    await tapIn('[data-act="ph-other"]', 150);
+    await q.fill('.ap-rx .ap-o:last-child [data-ph-in="new"]', "Rice");
+    await q.press('.ap-rx .ap-o:last-child [data-ph-in="new"]', "Enter"); await W(200);
+    const s2 = await ev(() => window.FLORIN_EXT.api.top().st.items.filter((x) => x.on).map((x) => x.name));
+    await tapIn('[data-act="ph-save"]', 700);
+    const m3 = await meals(), after = await ev(() => ({ ovl: window.FLORIN_EXT.api.S.ovl.length, toast: (document.querySelector(".ap-rx .ap-tst") || {}).textContent || "", focus: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id : null, pz: window.FLORIN_LOGS.foodCounts(window.FLORIN_EXT.api.M(), 90).pizza || 0 }));
+    const nw = m3.find((e) => !m0.some((x) => x.id === e.id)) || {};
+    const counted = await ev((t) => window.FLORIN_LOGS.matchFoods(t), nw.text || "");
+    ok(row.add && row.sample && /image/.test(row.file || "") && !row.capture, `photo-easy: a member's meal sheet has Add a photo (the phone's picker, accept ${row.file}, camera or library) and Use a sample photo`);
+    ok(s1.type === "ph" && s1.items.length > 0 && JSON.stringify(s1.items) === JSON.stringify(s1.want) && s1.meal === s1.forNow && s1.chips === s1.items.length && m1.length === m0.length && /only the foods you confirm are saved/i.test(s1.where), `photo-easy: the sample photo plays that slot's meal as the microphone plays the day (${s1.items.join(", ")}, ${s1.meal}, from the time), as chips to check, and nothing is saved yet`);
+    ok(off === "true" && m2.length === m0.length && stillOpen, "photo-easy: with every food taken out, Save is off and a tap saves nothing");
+    ok(nw.meal === s1.forNow && s2.includes("rice") && JSON.stringify(nw.foods) === JSON.stringify(counted) && counted.includes("rice") && after.ovl === 0 && /saved/.test(after.toast) && after.focus === nw.id && after.pz === pz0 + 1, `photo-easy: Save goes through save-meal: one ${nw.meal} ("${nw.text}") whose foods L.matchFoods counts (${counted.join(", ")}), the meal sheet closes with it, the toast says so and focus lands on the new row`);
+
+    /* 2. the alarm net reads what's saved: a sign typed as a food opens the primary care sheet */
+    await ev(() => window.FLORIN_EXT.api.open("meal")); await W();
+    await tapIn('[data-act="ph-sample"]', 500);
+    await tapIn('[data-act="ph-other"]', 150);
+    await q.fill('.ap-rx .ap-o:last-child [data-ph-in="new"]', "threw up after");
+    await tapIn('[data-act="ph-add-food"]', 150);
+    await tapIn('[data-act="ph-save"]', 700);
+    const fl = await ev(() => { const t = window.FLORIN_EXT.api.top(); return { type: t && t.type, txt: t ? t.el.textContent : "" }; });
+    const cl = await ev(() => window.FLORIN_RUI.photo.clean({ foods: ["rice", "blood in it", "black stool", "toast"], cantTell: 0 }).names);
+    ok(fl.type === "flag" && /Vomiting/i.test(fl.txt) && JSON.stringify(cl) === JSON.stringify(["rice", "toast"]), `photo-easy: the alarm net reads a photo's words: a sign typed as a food opens the primary care sheet, and a reply naming one is left out (${cl.join(", ")})`);
+    await ev(() => window.FLORIN_EXT.api.closeAll());
+
+    /* 3. a real photo with no capability (a local file): shown from memory, the sample said plainly, let go on close */
+    await ev(() => window.FLORIN_EXT.api.open("meal")); await W();
+    await q.setInputFiles('.ap-rx .ap-o:last-child input[data-ph-file]', shot); await W(700);
+    const lf = await ev(() => { const t = window.FLORIN_EXT.api.top(); return { type: t && t.type, src: (t.el.querySelector("img.ph-img") || {}).src || "", status: t.el.querySelector(".ph-status").textContent, where: t.el.querySelector(".ph-pic-m em").textContent, n: t.st.items.length, held: window.FLORIN_RUI.photo.held() }; });
+    await tapIn('[data-act="ph-close"]', 400);
+    const gone = await ev(() => window.FLORIN_RUI.photo.held() === 0);
+    const stored = await ev(() => { try { return Object.keys(localStorage).filter((k) => /photo|ph-|blob/i.test(k) || /blob:/.test(localStorage.getItem(k) || "")).length; } catch (e) { return 0; } });
+    ok(lf.type === "ph" && /^blob:/.test(lf.src) && /can't read photos here/.test(lf.status) && /stays on this phone/.test(lf.where) && lf.n > 0 && lf.held === 1 && gone && !stored, `photo-easy: a real photo with no capability shows from memory (a blob URL), says the foods are a sample and that the photo stays on the phone; closing lets it go, and nothing is stored`);
+
+    /* 4. Free: the row carries the lock and opens the paywall, which lists the photo; the free row sets Plan to Free */
+    await ev(() => document.querySelector('[data-rx="screen"][data-v="meal-photo-free"]').click()); await W(500);
+    const fr = await ev(() => { const o = [...document.querySelectorAll(".ap-rx .ap-o:not(.is-out)")].pop(); const b2 = o.querySelector(".ph-add"); return { plan: window.FLORIN_EXT.api.V().plan, page: (document.querySelector('[data-rx="plan"][aria-pressed="true"]') || {}).dataset.v, act: b2 && b2.dataset.act, pay: b2 && b2.dataset.pay, lock: !!(b2 && b2.querySelector(".ph-add-go")), file: !!o.querySelector("input[data-ph-file]"), lit: (document.querySelector('[data-rx="screen"][aria-current="true"]') || { dataset: {} }).dataset.v, note: (document.querySelector("#rxNoteH") || {}).textContent || "" }; });
+    await tapIn('[data-act="pay"][data-pay="photo"]', 500);
+    const pw = await ev(() => { const t = window.FLORIN_EXT.api.top(); return { type: t && t.type, h: (t.el.querySelector("h2") || {}).textContent, list: [...t.el.querySelectorAll(".ap-pay-list b")].map((x) => x.textContent) }; });
+    ok(fr.plan === "free" && fr.page === "free" && fr.act === "pay" && fr.pay === "photo" && fr.lock && !fr.file && fr.lit === "meal-photo-free" && /free plan/i.test(fr.note) && pw.type === "pay" && pw.h === "Log a meal from a photo" && pw.list.includes("A photo of a meal"), `photo-easy: on Free, Add a photo carries the lock and opens the paywall ("${pw.h}"), which lists the photo with what membership adds; the free row sets Plan to Free and the left bar follows`);
+    await ev(() => { const api = window.FLORIN_EXT.api; api.closeAll(); document.querySelector('[data-rx="plan"][data-v="member"]').click(); });
+    await W(300);
+
+    /* 5. Easy view: the row opens the page, the switch and the left bar agree, every setting does what it says and
+       survives a redraw and another person */
+    await ev(() => document.querySelector('[data-rx="screen"][data-v="ez-set"]').click()); await W(500);
+    const z0 = await ev(() => ({ top: window.FLORIN_EXT.api.top().type, under: window.FLORIN_EXT.api.S.ovl.map((o) => o.type).join(","), first: window.FLORIN_EXT.api.top().el.querySelector(".ap-ck-b [role=switch]").dataset.act, lit: (document.querySelector('[data-rx="screen"][aria-current="true"]') || { dataset: {} }).dataset.v, note: (document.querySelector("#rxNoteH") || {}).textContent || "" }));
+    await tapIn('[data-act="ezv-on"]', 400);
+    const pageLine = () => ev(() => [...window.FLORIN_EXT.api.top().el.querySelectorAll(".ap-ck-b .ap-f-h, .ap-ck-b .ap-ea-m em")].map((x) => x.textContent).join(" | "));
+    const z1 = await ev(() => ({ easy: window.FLORIN_EXT.api.V().easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v, sw: document.querySelector('.ap-rx [data-act="ezv-on"]').getAttribute("aria-checked") }));
+    const l0 = await pageLine();
+    await tapIn('[data-act="ezv-size"][data-v="larger"]', 300);
+    await tapIn('[data-act="ezv-fewer"]', 300);
+    await tapIn('[data-act="ezv-voice"]', 300);
+    await tapIn('[data-act="ezv-motion"]', 300);
+    const l1 = await pageLine();
+    const st1 = await ev(() => { const api = window.FLORIN_EXT.api, r = api.root; const scr = r.querySelector(".ap-layer > .ap-scr"), tr = r.querySelector(".ap-tb-b"); return { ez: Object.assign({}, api.S.pf.ez), size: r.dataset.ezSize, motion: r.dataset.ezMotion, zoom: scr ? getComputedStyle(scr).zoom : "", reduced: window.FL.reduced(), trans: tr ? getComputedStyle(tr).transitionDuration : "0s", week: !!r.querySelector(".ap-layer .ap-ez-lk .ez-week, .ap-layer .ap-ez-sec .lk-easy"), weeks: !!r.querySelector('.ap-layer [data-act="tab"][data-tab="insights"]') }; });
+    /* a redraw and another person keep them */
+    await ev(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.set("theme", "dark"); api.set("persona", "marcus"); });
+    await W(400);
+    const st2 = await ev(() => { const api = window.FLORIN_EXT.api, r = api.root; return { ez: Object.assign({}, api.S.pf.ez), size: r.dataset.ezSize, motion: r.dataset.ezMotion, reduced: window.FL.reduced(), weeks: !!r.querySelector('.ap-layer [data-act="tab"][data-tab="insights"]'), week: !!r.querySelector(".ap-layer .ap-ez-sec .lk-easy") }; });
+    /* voice first: What I ate starts listening as it opens */
+    await ev(() => { const api = window.FLORIN_EXT.api; api.act("open-meal", document.createElement("button")); });
+    await W(300);
+    const vo = await ev(() => { const t = window.FLORIN_EXT.api.top(); return { type: t && t.type, voice: t && t.st.voice, text: t && t.st.text }; });
+    await ev(() => window.FLORIN_EXT.api.closeAll());
+    /* Profile's row says it's on; Easy off takes every stamp away and gives motion back to the phone */
+    await ev(() => window.FLORIN_EXT.api.open("profile")); await W(400);
+    const pr = await ev(() => { const r = document.querySelector('.ap-rx .ap-o:last-child [data-act="pf-easy"]'); return r ? r.textContent : ""; });
+    await tapIn('[data-act="pf-easy"]', 400);
+    await tapIn('[data-act="ezv-on"]', 400);
+    const st3 = await ev(() => { const api = window.FLORIN_EXT.api, r = api.root; return { easy: api.V().easy, page: (document.querySelector('[data-rx="easy"][aria-pressed="true"]') || {}).dataset.v, size: r.dataset.ezSize || "", motion: r.dataset.ezMotion || "", reduced: window.FL.reduced(), kept: Object.assign({}, api.S.pf.ez) }; });
+    await tapIn('[data-act="ezv-back"]', 400);
+    const back = await ev(() => ({ top: window.FLORIN_EXT.api.top().type, focus: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.act : null }));
+    ok(z0.top === "ez-set" && z0.under === "pf,ez-set" && z0.first === "ezv-on" && z0.lit === "ez-set" && z0.note === "Easy view settings" && z1.easy === true && z1.page === "true" && z1.sw === "true" && st3.easy === false && st3.page === "false" && back.top === "pf" && back.focus === "pf-easy", `photo-easy: Easy view opens over Profile from its row, its first control is the switch, the Version toggle on the left follows it both ways, and Back lands on the row`);
+    ok(l0 !== l1 && st1.size === "larger" && st1.zoom === "1.12" && st1.ez.fewer && !st1.week && st1.weeks && st1.motion === "less" && st1.reduced && st1.trans === "0s" && vo.type === "meal" && ["listening", "done"].includes(vo.voice) && (vo.text || "").length > 0, `photo-easy: each setting does what its sentence says: Larger draws the screen bigger (zoom ${st1.zoom}), fewer cards leaves the week off Today with Your weeks one tap away, What I ate starts listening as it opens (${vo.voice}), and less motion stops the motion`);
+    ok(st2.size === "larger" && st2.motion === "less" && st2.reduced && st2.weeks && !st2.week && JSON.stringify(st2.ez) === JSON.stringify(st1.ez) && /^Larger text and simpler screens\s*On\./.test(pr.trim()) && !st3.size && !st3.motion && !st3.reduced && JSON.stringify(st3.kept) === JSON.stringify(st1.ez), `photo-easy: the settings survive a redraw and another person (kept with the profile), Profile's row says On, and with Easy off no stamp is left and motion follows the phone again`);
+    await pc.close();
+
+    /* 6. Claude reads a real photo where the page can send images (a stand-in capability): one call with the image,
+       a strict prompt, and the reply checked before anything is shown */
+    const { c: cc, q: q2 } = await mk(true);
+    await q2.evaluate(() => window.FLORIN_EXT.api.open("meal")); await q2.waitForTimeout(400);
+    const acc = await q2.evaluate(() => [...document.querySelectorAll(".ap-rx .ap-o:not(.is-out)")].pop().querySelector("input[data-ph-file]").accept);
+    await q2.setInputFiles('.ap-rx .ap-o:last-child input[data-ph-file]', shot); await q2.waitForTimeout(700);
+    const cr = await q2.evaluate(() => { const t = window.FLORIN_EXT.api.top(); return { calls: (window.__ph || {}).calls, images: (window.__ph || {}).images, tier: (window.__ph || {}).tier, prompt: (window.__ph || {}).prompt || "", items: t.st.items.map((x) => x.name), unsure: t.st.unsure, status: t.el.querySelector(".ph-status").textContent, where: t.el.querySelector(".ph-pic-m em").textContent, txt: t.el.textContent }; });
+    ok(acc === "image/jpeg,image/png,image/webp,image/gif" && cr.calls === 1 && cr.images === 1 && cr.tier === "quick" && /can't tell/.test(cr.prompt) && /No words about health/.test(cr.prompt) && JSON.stringify(cr.items) === JSON.stringify(["salmon", "brown rice", "green salad", "wine"]) && cr.unsure === 1 && /Read from your photo/.test(cr.status) && /sends the photo once/.test(cr.where) && !/kcal|healthy|stool/i.test(cr.txt), `photo-easy: where the page can send images, Claude reads the photo once (quick tier, a strict prompt), and the reply is checked: plain food names only (${cr.items.join(", ")}), an amount and a sign left out, a judgement word taken out, "can't tell" counted once (${cr.unsure}), and the line says the photo is sent once and not kept`);
+    await cc.close();
+    ok(!pe.length, `photo-easy: no console errors or module warnings${pe.length ? ": " + pe.slice(0, 3).join(" | ") : ""}`);
+  }
+  /* ===== end photo-easy ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

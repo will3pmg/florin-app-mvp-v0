@@ -42,6 +42,9 @@ prototype/js/refresh-variants.js  Home Day first (the date with a small FloraSco
                               draws it)
 prototype/js/refresh-profile.js   Profile, from the Today avatar, and onboarding, Short or the Full survey (the shipping
                               survey reworded), with the primary care note on a sign
+prototype/js/refresh-photo.js     a photo of a meal (Will, Nov 7, membership only): Add a photo on both meal sheets, the
+                              foods it sees as chips to check, which meal and when, then the core's save-meal. Claude
+                              reads the photo where the page can send images; otherwise the demo plays a sample
 prototype/js/refresh-ask.js       Ask Florin as a chat: alarm words first (L.alarmsIn), a fixed redirect for diagnose,
                               dose or predict, then Claude through the sample capability, checked, with answers computed
                               from the logs as the floor; Make a report on the flag note opens it on the clinician path.
@@ -52,8 +55,9 @@ prototype/js/refresh-detail.js    the detail pages with Oura's depth in Florin's
                               chart with a scrubber (the day picked shows its reading and L.dayWhy), and what moved
                               against the stretch before. It follows the phone's theme, never forced dark
 prototype/js/refresh-easy.js      the Easy version: larger text and simpler screens. Its own Today, plus, a BM in four
-                              steps, symptoms, Your weeks in place of Insights; History and Ask drawn bigger
-prototype/css/refresh-{looks,variants,profile,ask,detail,easy}.css   each module's styles, scoped to what it draws
+                              steps, symptoms, Your weeks in place of Insights; History and Ask drawn bigger; Easy view,
+                              its settings page from Profile (Will, Nov 7: text size, fewer cards, voice first, motion)
+prototype/css/refresh-{looks,variants,profile,photo,ask,detail,easy}.css   each module's styles, scoped to what it draws
                               Each module registers into FLORIN_EXT and wraps RU; it never edits a core file
 prototype/js/refresh-app.js   the page: the one phone (Phone, phone.set), the decisions, notes per screen and decision
 library/                       Florin data looks: the same numbers drawn in five looks, the start of a component library
@@ -71,7 +75,7 @@ work/                          QA and screenshot scripts (work/shots-library.js 
 
 Load order (both pages): lib.js, claims-rules.js, data-app.js, app-charts.js, refresh-data.js, refresh-ui.js,
 refresh-insights.js, then the library's looks-data.js and look-rings, journal, bento, oura and easy, then the modules
-in this order: looks, variants, profile, ask, detail, easy, and refresh-app.js last. The css follows the same order (app.css,
+in this order: looks, variants, profile, photo, ask, detail, easy, and refresh-app.js last. The css follows the same order (app.css,
 refresh.css, look-*.css, refresh-<module>.css). A later module wraps what an earlier one drew: Easy wraps Day first's
 Today and the look's Insights, and draws its own in their place.
 
@@ -136,7 +140,8 @@ core's), Day first and Compact (Will, Nov 4), and its toggle takes its own line.
 "Set the default to compact for home screen"); a viewer's stored pick still wins. Home Day first and Compact, History
 Calendar, Data style, Version Easy and Onboarding are stored and stamped on the phone, and drawn by their modules. Where
 they meet: Easy has its own Today (Home's Day first or Compact waits under it) and always draws Easy read (whatever Data style says), and
-keeps History as a calendar when that's picked; Profile's Larger text and simpler screens sets Version, its Logging
+keeps History as a calendar when that's picked; Profile's Larger text and simpler screens opens Easy view, whose first
+switch sets Version, its Logging
 rows set BM logging and Meal sheet, and its theme row sets the theme, all through phone.set, so the left bar follows.
 
 **Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"; Nov 7:
@@ -148,8 +153,8 @@ toggled at very top, not labeled within"), and every card draws it, picked or no
 through `FLD.build(..., { range })` (7, 30 or 90; 7 on Free; the days so far while learning), whose `D.range` the
 range cards say. Every Insights card, in Florin charts, Will's picks and each library look the phone draws (Easy read
 excepted), is named in a word or two (FloraScore, Trend, Your days, Timing, Frequency, Form, Symptoms, Check-in,
-Patterns; a look's head is rewritten by refresh-looks's `plainHead`, which drops its date, range switch and Timing's
-pill), with the range said only in words a screen reader hears, and carries Ask about this and its detail link inside
+Patterns; a look's head is rewritten by refresh-looks's `plainHead`, which drops its date and Timing's pill; Oura's
+trend keeps its 30 and 90 switch in the Oura style, which has no range tabs), with the range said only in words a screen reader hears, and carries Ask about this and its detail link inside
 the card at its foot (`.rlk-foot--in`; on a Bento board in its full-width first tile, else a tile of its own). Today,
 the detail pages and the theme don't change (an Oura card takes the phone's theme). In every view but a library look
 and Easy, Insights' FloraScore card is the Rings look's hero, "the large green big circle" (Will, Nov 5), drawn by its
@@ -196,17 +201,22 @@ meals) is the demo person's history, never a design option, so nothing on the pa
 of logged days with a meal (`L.MEAL_COVER`), `L.patterns` holds every meal pattern back (`sparse`), because logs kept
 only on days with symptoms name ordinary foods by selection. The quick log (`RU.mealQuick`) is one box
 for the day with a voice button; the prototype plays `L.mealSay` in place of the microphone (that day's meals not
-logged yet, so saying the day never counts a food twice).
+logged yet, so saying the day never counts a food twice). With membership, both meal sheets also take a photo of a
+meal (refresh-photo.js, Will, Nov 7): the foods it sees are chips the person checks, nothing is saved before Save, and
+Save is the core's save-meal, so the foods are counted through `L.matchFoods` like any meal's. Claude reads the photo
+through the sample capability when the page can send images, its reply kept to plain food names (no amounts, no
+judgement or health words, nothing the claims rules or `L.alarmsIn` catch, "can't tell" counted, never guessed);
+otherwise the photo plays that slot's meal from `L.mealSay`, and says so.
 
 The page has a Plan switch. Free keeps logging, Today, FloraScore, the check-in, History and 7 days of Insights;
-Florin membership adds why the score moved, 30 and 90 days, details, patterns, the food check, Ask Florin and the
-clinician report (`RU.paywall`). Teasers blur the person's own counts; never show made-up content.
+Florin membership adds why the score moved, 30 and 90 days, details, patterns, the food check, Ask Florin, the
+clinician report and a photo of a meal (`RU.paywall`; refresh-photo.js adds the photo to its list). Teasers blur the person's own counts; never show made-up content.
 
 ## Extension hooks
 
 A feature module is a file pair, `prototype/js/refresh-<name>.js` and `css/refresh-<name>.css`, loaded after
-refresh-insights.js and the library looks and before refresh-app.js, in this order: looks, variants, profile, ask, detail,
-easy.
+refresh-insights.js and the library looks and before refresh-app.js, in this order: looks, variants, profile, photo, ask,
+detail, easy.
 It never edits a core file: it registers into `window.FLORIN_EXT` (made by refresh-data.js) and wraps `RU` functions.
 
 ```
@@ -386,7 +396,16 @@ refresh-variants  wraps RU.today (Day first and Compact), RU.history (Calendar),
                   home-day, home-compact and hist-cal in Tabs; opens home-compact; keys tab:today and tab:history;
                   notes, decisions.home and .history; onSet (home); state S.vrCp, S.vrCpSeen, S.vrCpLg, S.vrCpSlide
 refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
-                  (the first name); screens Onboarding and profile; notes, decisions.onboard; onSet
+                  (the first name); screens Onboarding and profile; notes, decisions.onboard; onSet. pf-easy (the
+                  Larger text row) opens Easy's ez-set when it's there, else switches Version
+refresh-photo     wraps RU.mealQuick and RU.meal (the Add a photo row before the box for the words: a file input,
+                  data-ph-file, and Use a sample photo; on Free the lock and the paywall, data-pay="photo") and
+                  RU.paywall (the photo in its list, its title when the photo opened it); overlay ph (full); acts
+                  ph-add, ph-sample, ph-food, ph-other, ph-add-food, ph-meal, ph-stop, ph-close, ph-save (the core's
+                  save-meal on the sheet's state, then L.alarmsIn on the words saved); screens meal-photo (Logging)
+                  and meal-photo-free (Membership, sets Plan to Free); keys meal (the free row's sheet); notes;
+                  RU.photo (clean, the reply check; sampleText; held). The photo is a blob URL in memory, let go when
+                  its sheet closes, sent nowhere but the one Claude call
 refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-* (send, ask, stop, new, rate, mem,
                   forget, keep, reach), ask-about and ask-clear (wrapped), flag-report; overlay askx-mem; screens
                   ask-chat, ask-alarm and ask-mem; opens ask-chat, ask-alarm, ask-mem and ask (Screens > Ask Florin is
@@ -399,7 +418,12 @@ refresh-detail    wraps RU.idetail (score, timing, often, form, sym, ck, pat; Me
                   for i-score to i-pat. Your days and one pattern stay as they are
 refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idetail under V.easy; acts ez-* and plus-day
                   (wrapped); screens ez-today and ez-bm (which set Version to Easy); keys tab:today, tab:insights, bm;
-                  notes (its screens, plus and sym in Easy), decisions.easy; onSet (easy, theme)
+                  notes (its screens, plus and sym in Easy), decisions.easy; onSet (easy, theme). Easy view (Nov 7):
+                  overlay ez-set (from Profile, first control the Version switch) and acts ezv-*; its settings kept in
+                  S.pf.ez (size, fewer, voice, motion; Reset clears them with the profile), stamped on the root while
+                  Easy is on (data-ez-size="larger": zoom on each screen's content; data-ez-motion="less"); wraps
+                  FL.reduced (less motion) and the open-meal act (voice first: the quick sheet starts listening);
+                  screens ez-set in Onboarding and profile
 ```
 - A hook that throws is logged and skipped, never allowed to take the page down. A wrapped screen that throws is drawn
   the core's way instead (`RU.core` keeps every core screen from before the modules loaded), and so is a Today part
@@ -444,10 +468,13 @@ screen on a phone, and `--limit 20` is a quick look.
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
 page and every `prototype/css` and `prototype/js` file at the same relative path (`css/app.css`, `js/refresh-app.js`,
-the six modules and their css included, `js/refresh-detail.js` and `css/refresh-detail.css` among them). The library's look files `index.html` loads go under `js/` and `css/` too,
+the seven modules and their css included, `js/refresh-detail.js`, `css/refresh-detail.css`, `js/refresh-photo.js` and
+`css/refresh-photo.css` among them). The library's look files `index.html` loads go under `js/` and `css/` too,
 from `library/`: `css/look-*.css`, and `js/looks-data.js` with `js/look-*.js`. The page declares the capabilities
-`{ sample: {} }`, so Ask Florin can ask Claude on the viewer's own account (the first question in a view asks the viewer
-to allow it); without it, or on a local file, every answer is computed from the logs. Keep the capability on every
+`{ sample: { images: true } }`, so Ask Florin can ask Claude on the viewer's own account (the first question in a view
+asks the viewer to allow it) and a member's photo of a meal is read by Claude (images: true; since Nov 7, so the next
+publish passes it once, which asks viewers again at their next use); without it, or on a local file, every answer is
+computed from the logs and a photo plays the sample. Keep the capability on every
 republish (omit `capabilities` on a redeploy to keep what's there, or pass it again).
 
 ```

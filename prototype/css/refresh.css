@@ -1053,7 +1053,7 @@
 .ap-askc--lock > b { font-size: 20px; }
 .ap-askq { display: inline-flex; align-items: center; gap: 8px; }
 .ap-pay { display: flex; flex-direction: column; gap: 16px; }
-.ap-pay-hero { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
+.ap-pay-hero { position: relative; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
 .ap-pay-hero h2 { font-size: 26px; font-weight: 300; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; max-width: 15ch; }
 .ap-pay-hero p { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
 .ap-pay-ring { position: absolute; right: 16px; top: 16px; color: var(--ray); opacity: .9; }

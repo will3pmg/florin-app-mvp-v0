@@ -221,8 +221,8 @@ box at the top explains the trap it shows.
 food check (log every meal for 14 days, ordinary days included).** People tend to write meals down only on days with
 symptoms, which can make everyday foods look linked to them, so logging has to be easy enough for every day.
 
-**Try it:** Decisions, Meal sheet, then tap plus and the meal row. The microphone plays a sample, since the demo can't
-use one. The dinner button isn't in the demo yet.
+**Try it:** Decisions, Meal sheet, then tap plus and the meal row: either sheet also takes a photo of the meal, with
+membership. The microphone plays a sample, since the demo can't use one. The dinner button isn't in the demo yet.
 
 ## 7. Data style
 
@@ -310,7 +310,8 @@ nothing.
 large?
 
 **Try it:** Decisions, Version, Easy. With Easy on, Home and Data style don't apply, because Easy has its own Today and
-charts. Set-up offers it on its first and last steps, and it's in Profile, from the avatar on Today.
+charts. Set-up offers it on its first and last steps, and it's in Profile, from the avatar on Today, on a page of its own
+with text size, fewer cards on Today, voice first and less motion.
 
 ## 9. Onboarding
 
