@@ -241,12 +241,12 @@ compare.
 - Why do it: Each card says the person's usual in words before the chart, and every card works the same way.
 - Why not: It's the most text of the six, with small charts on every card.
 
-**Will's picks** (Will, Nov 5)
+**Will's picks** (Will, Nov 5 and Nov 7)
 - What it is: Florin charts, with each Insights card Will has picked on the data modules page drawn in his style:
-  Timing, Symptoms and the check-in in Oura's cards; Form as Rings' count over Oura's bars.
-- Why do it: It lays his picks out one by one, in Insights' own order, from the same logs as every other style.
-- Why not: Styles mix on one screen, and Oura's cards draw only 30 days, so at 7 and 90 days those cards are Florin
-  charts'.
+  Timing, Form, Symptoms and the check-in in Oura's cards; Frequency in Bento's stacked chart.
+- Why do it: It lays his picks out one by one, in Insights' own order, from the same logs as every other style, with
+  the range picked once at the top.
+- Why not: Styles mix on one screen, so cards that answer the same kind of question are drawn in different ways.
 
 **Oura**
 - What it is: A dark screen with FloraScore as a large round gauge and a small ring for each part of the score.

@@ -19,9 +19,14 @@
 
   /* o.mode is the consistency option (A, B or C). o.M, when given, is a model the caller already holds (the prototype
      passes its own live one, with whatever has been logged on the phone), so the looks draw it instead of a fresh
-     seeded build; the persona, the logs scenario and the meal logs then come from that model */
+     seeded build; the persona, the logs scenario and the meal logs then come from that model.
+     o.range (Nov 7) is the stretch a card reads: 30 by default, as the library page draws every look, or 7 or 90 for the
+     app's Insights, whose range tabs every card follows (Will: "the date range is toggled at very top"). Every "30"
+     below is that stretch: days[30], tally[30], symLine[30] and each ...30 count read the last o.range days, and D.range
+     says how many, so a look can name it. days[7] and days[90] stay the week and the 90 days */
   function build(persona, o = {}) {
     const mode = o.mode || "C";
+    const RN = [7, 30, 90].includes(+o.range) ? +o.range : 30;
     const M = o.M || L.build(persona, o.data || "est", { meals: o.meals || "all" });
     const u = M.usual;
     /* today, with a flag or an alarm feature logged, is noted for a clinician and never read against the usual, as
@@ -96,7 +101,7 @@
     };
 
     /* the cards' numbers */
-    const R7 = L.span(M, 7, mode), R30 = L.span(M, 30, mode);
+    const R7 = L.span(M, 7, mode), R30 = L.span(M, RN, mode);
     const F7 = R7.map(day), F30 = R30.map(day), F90 = span(90);
     /* a stretch's days, counted the one way every screen counts them (L.tally, in refresh-ui.js): the days within your
        usual out of the days read either way; a day that could be either, or one logged with nothing about BMs, is
@@ -172,16 +177,16 @@
     };
 
     return {
-      persona: { id: M.P.id, name: M.P.name }, mode, modeName: L.MODES[mode], data: o.M ? M.mode : o.data || "est", meals: M.meals,
+      persona: { id: M.P.id, name: M.P.name }, mode, range: RN, modeName: L.MODES[mode], data: o.M ? M.mode : o.data || "est", meals: M.meals,
       today: todayLine,
       todayLabel: (() => { const t = L.dateOf(L.TODAY); return `${Ut.DOWL[t.getDay()]}, ${Ut.MONL[t.getMonth()]} ${t.getDate()}`; })(),
       highlight: RU && RU.highlight ? RU.highlight(M) : "",
       learning: !u ? { day: L.learnDay(M), of: L.LEARN_DAYS } : null,
       score,
       days: { 7: F7, 30: F30, 90: F90 },
-      tally: { 7: L.tally(R7, true), 30: L.tally(R30, false) },
+      tally: { 7: L.tally(R7, true), 30: L.tally(R30, RN <= 7) },
       /* the one symptom sentence (L.symLine): the week names its days, the month counts them. "" with none logged */
-      symLine: { 7: L.symLine ? L.symLine(R7) : "", 30: L.symLine ? L.symLine(R30, { named: false }) : "" },
+      symLine: { 7: L.symLine ? L.symLine(R7) : "", 30: L.symLine ? (RN <= 7 ? L.symLine(R30) : L.symLine(R30, { named: false })) : "" },
       /* the sentence for today with a flag (RU.FLAG_DAY), or "" */
       flagLine: flagT && RU.FLAG_DAY ? RU.FLAG_DAY : "",
       /* flagToday: today has a log noted for a clinician, so the mornings and days counted against the usual leave it out

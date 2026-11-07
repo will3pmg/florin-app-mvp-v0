@@ -10,8 +10,15 @@
 .rlk-look { min-width: 0; }
 .ap-rx .rlk-go { align-self: flex-end; justify-content: flex-end; gap: 4px; padding: 0 8px; margin-right: -8px; text-align: right; }
 .ap-rx .rlk-go .ic { width: 14px; height: 14px; }
-/* a card's foot: Ask about this, then the way into its detail (Will, Nov 5) */
+/* a card's foot: Ask about this, then the way into its detail (Will, Nov 5), inside the card at its foot (Will, Nov 7),
+   on a hairline as the core's cards draw theirs */
 .ap-rx .rlk-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+/* inside a look's card the hairline and the link take the card's own ink, so they read on Rings' dark green hero and
+   on an Oura card in either theme alike */
+.ap-rx .rlk-foot--in { margin-top: 16px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent); }
+.ap-rx .rlk-foot--in .rlk-go { color: inherit; }
+/* a Bento board whose first tile is narrow: the foot is a tile of its own, so it needs no hairline */
+.ap-rx .rlk-foot-t > .rlk-foot--in { margin-top: 0; padding-top: 0; border-top: 0; }
 .ap-rx .rlk-foot > .rlk-go { margin-left: auto; }
 .ap-rx .rlk-go[data-act="pay"] .ic { color: var(--ap-ink3); }
 .ap-rx .rlk-today .rlk-go { margin-top: -4px; }
@@ -58,26 +65,3 @@
    dot before its sentence stay the reading colour, and the words say "a little above" or "a little below" */
 .rpk-score .lk-rings .rg-end.is-shift { fill: var(--rg-read); }
 .rpk-score .lk-rings .rg-rel.is-shift i { background: var(--rg-read); }
-
-/* Form, the mix: Rings' count over Oura's bars, a bar a stretch, split from firmer to looser in the app's marks: a BM
-   in the usual forms the reading colour, one outside them Gold with its edge, could be either and logged before day
-   14 Ink 3. The bars sit on the card's track, a 2px gap of the card between parts */
-.lk-rings .rpk-hbs { display: flex; flex-direction: column; gap: 16px; }
-.lk-rings .rpk-hb-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.3; color: var(--rg-ink2); }
-.lk-rings .rpk-hb-top b { font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--rg-ink); white-space: nowrap; }
-.lk-rings .rpk-hb-t { position: relative; display: block; height: 8px; border-radius: 999px; background: var(--rg-trk); }
-.lk-rings .rpk-hb-f { position: absolute; top: 0; bottom: 0; left: var(--x); width: var(--w); border-radius: 999px; background: var(--rg-read); }
-.lk-rings .rpk-hb-f + .rpk-hb-f { border-left: 2px solid var(--rg-ground); }
-.lk-rings .rpk-hb-f.is-shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
-.lk-rings :is(.rpk-hb-f.is-either, .rpk-hb-f.is-learn) { background: var(--ap-ink3); }
-.lk-rings .rpk-hb-sub { margin-top: 8px; font-size: 11.5px; line-height: 1.35; color: var(--rg-ink2); }
-.lk-rings .rpk-dir { display: flex; justify-content: space-between; margin-top: -8px; font-family: var(--mono); font-size: 10.5px; color: var(--rg-ink3); }
-.lk-rings .rpk-dir span:first-child::before { content: "\2190  "; }
-.lk-rings .rpk-dir span:last-child::after { content: "  \2192"; }
-.lk-rings .rpk-sw { flex: none; display: inline-block; width: 16px; height: 4px; border-radius: 999px; background: var(--rg-read); }
-.lk-rings .rpk-sw--shift { background: var(--ap-shift); box-shadow: 0 0 0 1px var(--ap-chart-edge); }
-.lk-rings :is(.rpk-sw--either, .rpk-sw--learn) { background: var(--ap-ink3); }
-@media (prefers-reduced-motion: no-preference) {
-  .lk-rings .rpk-hb-f { transform-origin: left center; animation: rpkGrow .9s .3s var(--ap-ease) both; }
-}
-@keyframes rpkGrow { from { transform: scaleX(0); } }

@@ -32,6 +32,97 @@
 .ap-rx.ap--easy :is(.ap-ask-b, .ap-idt-ask) { padding: 0 24px 0 8px; color: var(--forest); }
 .ap-rx.ap--easy :is(.ap-ask-b, .ap-idt-ask, .ap-ez-ask) > .ic:first-child { width: 40px; height: 40px; padding: 8px; }
 
+/* ---------- Ask button: six styles for Ask about this (Will, Nov 7: "I don't know if we need as big a bubble every
+   time"). One setting, stamped on the root as data-ask-ui, draws every Ask about this in one style: Insights cards in
+   every data style and Will's picks, the detail pages, Your days and Easy. refresh-ask.js gives each button the same
+   parts (.ap-askw: the token, "Ask" and " about this", the card's first question for E, a chevron for F); each style
+   shows the parts it needs. Every style keeps the token, and Ray where there is a fill: they are Ask Florin's mark.
+   Every target is 44px or more, whatever the drawing: a smaller drawing takes an invisible frame (::after).
+   A pill (the default): the Ray pill above.  B compact: a small Ray-tinted pill, the token and "Ask", in the corner.
+   C link: the token and the words, no fill, in the corner.  D icon: the token alone in the corner; its name says
+   the card, and focus shows the words.  E chip: the token and the card's own first question, the question Ask opens
+   with.  F bar: a slim row across the card's foot, a line above it, the token, the words and a chevron. */
+.ap-askw-q, .ap-askw-go { display: none; }
+.ap-askw-t { min-width: 0; }
+.ap-rx .ap-askw { position: relative; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) {
+  .ap-rx:is([data-ask-ui="pill"], [data-ask-ui="chip"]) .ap-askw:hover { background: color-mix(in srgb, var(--ray) 86%, var(--forest)); }
+  .ap-rx[data-theme="dark"]:is([data-ask-ui="pill"], [data-ask-ui="chip"]) .ap-askw:hover { background: color-mix(in srgb, var(--ray) 86%, var(--cream)); }
+}
+/* the token on the card's own ground (C, D, F, and B in dark): Forest with a Ray glyph in light, Ray with a Forest glyph in dark */
+.ap-rx[data-theme="dark"]:is([data-ask-ui="link"], [data-ask-ui="icon"], [data-ask-ui="bar"], [data-ask-ui="compact"]) .ap-askw > .ic:first-child { background: var(--ray); color: var(--forest); }
+
+/* B compact */
+.ap.ap-rx[data-ask-ui="compact"] .ap-askw { display: inline-flex; align-items: center; gap: 4px; width: auto; min-height: 32px; margin-left: auto; padding: 0 12px 0 4px; border-radius: 999px; background: color-mix(in srgb, var(--ray) 70%, var(--ap-card)); color: var(--forest); font-size: 13px; font-weight: 500; line-height: 1; box-shadow: inset 0 0 0 1px var(--ap-ask-edge); }
+.ap.ap-rx[data-ask-ui="compact"] .ap-askw > .ic:first-child { width: 24px; height: 24px; padding: 4px; }
+.ap.ap-rx[data-ask-ui="compact"] .ap-askw .ap-askw-b { display: none; }
+.ap.ap-rx[data-ask-ui="compact"] .ap-askw::after { content: ""; position: absolute; inset: -8px -4px; }
+.ap.ap-rx[data-theme="dark"][data-ask-ui="compact"] .ap-askw { background: color-mix(in srgb, var(--ray) 16%, transparent); color: var(--ray); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ray) 40%, transparent); }
+@media (hover: hover) {
+  .ap.ap-rx[data-ask-ui="compact"] .ap-askw:hover { background: var(--ray); }
+  .ap.ap-rx[data-theme="dark"][data-ask-ui="compact"] .ap-askw:hover { background: color-mix(in srgb, var(--ray) 26%, transparent); }
+}
+
+/* C link */
+.ap.ap-rx[data-ask-ui="link"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; min-height: 44px; margin-left: auto; padding: 0 4px; border-radius: 12px; background: none; box-shadow: none; color: var(--ap-ink); font-size: 14px; font-weight: 500; line-height: 1.2; }
+.ap.ap-rx[data-ask-ui="link"] .ap-askw > .ic:first-child { width: 24px; height: 24px; padding: 4px; }
+.ap.ap-rx[data-ask-ui="link"] .ap-askw .ap-askw-t { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; text-decoration-color: var(--ap-line); }
+@media (hover: hover) { .ap.ap-rx[data-ask-ui="link"] .ap-askw:hover .ap-askw-t { text-decoration-color: currentColor; } }
+.ap.ap-rx[data-ask-ui="link"] .ap-askw::after { display: none; }
+
+/* D icon: the token alone. The words stay in its name, and show beside it on keyboard focus */
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; min-width: 36px; min-height: 36px; margin-left: auto; padding: 0; border-radius: 999px; background: none; box-shadow: none; color: var(--ap-ink); font-size: 14px; font-weight: 500; line-height: 1; }
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw > .ic:first-child { width: 36px; height: 36px; padding: 8px; box-shadow: var(--ap-ask-drop); }
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw .ap-askw-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw:focus-visible { padding-right: 12px; background: var(--ray); color: var(--forest); }
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw:focus-visible .ap-askw-t { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
+@media (hover: hover) { .ap.ap-rx[data-ask-ui="icon"] .ap-askw:hover > .ic:first-child { box-shadow: 0 0 0 4px color-mix(in srgb, var(--ray) 70%, transparent); } }
+
+/* E chip: the card's own first question, the one Ask opens with in the box. Left, under the card's words */
+.ap.ap-rx[data-ask-ui="chip"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; max-width: 100%; min-height: 44px; margin-right: auto; padding: 8px 16px 8px 8px; border-radius: 16px; background: var(--ray); color: var(--forest); font-size: 14px; font-weight: 500; line-height: 1.3; text-align: left; justify-content: flex-start; box-shadow: inset 0 0 0 1px var(--ap-ask-edge); }
+.ap.ap-rx[data-ask-ui="chip"] .ap-askw > .ic:first-child { width: 24px; height: 24px; padding: 4px; }
+.ap.ap-rx[data-ask-ui="chip"] .ap-askw:has(.ap-askw-q) .ap-askw-t { display: none; }
+.ap.ap-rx[data-ask-ui="chip"] .ap-askw .ap-askw-q { display: block; min-width: 0; }
+.ap.ap-rx[data-ask-ui="chip"] .ap-askw::after { display: none; }
+
+/* F bar: a slim row across the foot of the card, a line above it (the core card's foot already draws one) */
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; flex-basis: 100%; min-height: 48px; margin: 0; padding: 4px 0 0; border-radius: 0; background: none; box-shadow: inset 0 1px 0 var(--ap-line); color: var(--ap-ink); font-size: 15px; font-weight: 500; line-height: 1.2; text-align: left; }
+.ap.ap-rx[data-ask-ui="bar"] .ap-ic-f > .ap-askw { padding-top: 0; box-shadow: none; }
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw > .ic:first-child { width: 24px; height: 24px; padding: 4px; }
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw .ap-askw-go { display: block; flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--ap-ink2); transition: transform .2s var(--ap-ease); }
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw::after { display: none; }
+@media (hover: hover) { .ap.ap-rx[data-ask-ui="bar"] .ap-askw:hover .ap-askw-go { transform: translateX(4px); color: var(--ap-ink); } }
+
+/* in a look's card foot, beside the way into its detail: a small Ask (B, C, D) takes the corner and the detail link the
+   start; E keeps the start and the link the corner; F runs last, across the foot, under the link */
+.ap.ap-rx:is([data-ask-ui="compact"], [data-ask-ui="link"], [data-ask-ui="icon"]) .rlk-foot > .ap-askw { order: 2; }
+.ap.ap-rx:is([data-ask-ui="compact"], [data-ask-ui="link"], [data-ask-ui="icon"]) .rlk-foot > .rlk-go { margin-left: -8px; margin-right: auto; }
+.ap.ap-rx[data-ask-ui="bar"] .rlk-foot > .ap-askw { order: 2; }
+.ap.ap-rx[data-ask-ui="bar"] .rlk-foot > .rlk-go { margin-left: auto; }
+
+/* pressed, every style */
+.ap.ap-rx .ap-askw:active { transform: scale(.97); }
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw:active { transform: none; background: var(--ap-card2); }
+@media (prefers-reduced-motion: reduce) { .ap.ap-rx .ap-askw:active { transform: none; } .ap.ap-rx[data-ask-ui="bar"] .ap-askw .ap-askw-go { transition: none; } }
+
+/* Easy: every style a step larger */
+.ap.ap-rx.ap--easy[data-ask-ui="compact"] .ap-askw { min-height: 48px; padding: 0 20px 0 8px; gap: 8px; font-size: 18px; }
+.ap.ap-rx.ap--easy[data-ask-ui="compact"] .ap-askw > .ic:first-child { width: 32px; height: 32px; padding: 4px; }
+.ap.ap-rx.ap--easy[data-ask-ui="link"] .ap-askw { min-height: 56px; gap: 12px; font-size: 18px; }
+.ap.ap-rx.ap--easy[data-ask-ui="link"] .ap-askw > .ic:first-child { width: 32px; height: 32px; padding: 4px; }
+.ap.ap-rx.ap--easy[data-ask-ui="icon"] .ap-askw { min-width: 56px; min-height: 56px; font-size: 18px; }
+.ap.ap-rx.ap--easy[data-ask-ui="icon"] .ap-askw > .ic:first-child { width: 56px; height: 56px; padding: 12px; }
+.ap.ap-rx.ap--easy[data-ask-ui="chip"] .ap-askw { min-height: 64px; padding: 12px 20px 12px 12px; gap: 12px; font-size: 18px; }
+.ap.ap-rx.ap--easy[data-ask-ui="chip"] .ap-askw > .ic:first-child { width: 32px; height: 32px; padding: 4px; }
+.ap.ap-rx.ap--easy[data-ask-ui="bar"] .ap-askw { min-height: 64px; gap: 12px; font-size: 18px; }
+.ap.ap-rx.ap--easy[data-ask-ui="bar"] .ap-askw > .ic:first-child { width: 32px; height: 32px; padding: 4px; }
+.ap.ap-rx.ap--easy[data-ask-ui="bar"] .ap-askw .ap-askw-go { width: 20px; height: 20px; }
+
+/* the page: Ask button, the second row of View */
+.rx-askui { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.rx-askui .rx-view-l { margin-top: 0; }
+
 /* the Ask tab: the token in place of the plain icon, the same height in the bar as the other icons, so every label
    sits on one line */
 .ap-rx .ap-tb-b[data-tab="ask"] .ic { box-sizing: border-box; width: 28px; height: 28px; margin: -4px 0; padding: 4px; border-radius: 999px; background: var(--forest); color: var(--ray); stroke-width: 1.8; }

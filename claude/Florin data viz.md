@@ -587,31 +587,50 @@ journal for the detail pages" was never built: the detail pages stay As built in
   - The parts said as moves in points.
   - No count-up on the big numbers.
 
-**Will's picks (Nov 5).** Will picks a style module by module on the data modules page; Data style's seventh option,
-Will's picks, lays his picks out in the app, and View at the top of the left bar switches to it and back to the
-default. It is the core's Insights, in its own order and range tabs, with each picked card in its style (the table is
-`WILL_PICKS` in `refresh-looks.js`):
+**Will's picks (Nov 5, Nov 7).** Will picks a style module by module on the data modules page; Data style's seventh
+option, Will's picks, lays his picks out in the app, and View at the top of the left bar switches to it and back to the
+default. It is the core's Insights, in its own order (Nov 7: "I think FLORIN CHARTS for insights tab has the best
+flow"), with each picked card in its style (the table is `WILL_PICKS` in `refresh-looks.js`).
 
+**Every Insights card (Nov 7), in the default and Will's picks alike.** Will: "All of them need to have the headings
+simplified ie 'TIMING' 'FREQUENCY' and the date range is toggled at very top, not labeled within", and "I like the
+'ask about this' inside rather than below a card."
+- The range (7D, 30D, 90D) is picked once, in the tabs at the top of Insights, and every card draws it, picked or not.
+  A library look's card reads it through `FLD.build(..., { range })`, which makes the 30-day stretch 7 or 90 days and
+  says which in `D.range`; the library page still draws 30. On Free it is 7 days; while Florin learns, the days so far.
+  Patterns alone read 90 days whatever the tabs say, and its card says so in one line.
+- A card's head is its name, a word or two: FloraScore, Trend, Your days, Timing, Frequency, Form, Symptoms, Check-in,
+  Patterns. No range, no date, no range switch, no pill beside it (Timing's usual window is under the dial already).
+  The range is said in words a screen reader hears with the name ("Timing, first BM, last 30 days").
+- Ask about this and the detail link sit inside the card, at its foot, on a hairline in the card's own ink (so they
+  read on Rings' dark green hero and an Oura card in either theme). A Bento board has no card around its tiles: the foot
+  goes in its full-width first tile, else in a tile of its own.
+
+The cards, top to bottom:
 - **FloraScore today:** the Rings look's hero ("the large green big circle like in the Score first visual"), in the
   default too. It is the Rings renderer's own card, with one change in the app: outside its usual range the ring's end
   and the dot before its sentence stay the reading colour, since FloraScore is never Gold (section 1). It keeps the
   flag rule (the number stays, "Not read against your usual today") and the learning one (Day 5 of 14 on a ring of 14
-  steps). FloraScore over time and what moved it aren't picked, so the Florin charts card stays under it, its head the
-  count FloraScore's page gives ("In its usual range on 15 of 29 days"). Where it departs from row 1 and section 4: a
-  ring that fills toward 100, which section 2 warned reads as a grade. Today's hero keeps its range bar.
-- **Timing, Symptoms, the weekly check-in:** Oura's cards. A look's card reads the last 30 days (the days so far while
-  Florin learns), so at 7 and 90 days, and on Free, Timing and Symptoms are Florin charts' cards, and the screen's note
-  says so. The check-in has no range.
-- **Form:** a mix, Rings' count over Oura's bars, at 7, 30 and 90 days. Rings' head, its big number ("37 of 39 BMs in
-  your usual forms") and its sentence; then one bar for each stretch up to the range (the last 7 days, 30, 90) and one
-  for the weeks that set the usual, each split from firmer to looser, with its count written beside it. Every count is
-  the Form card's (L.span over the range, a flagged today left out, L.inForms for each BM), so the big number, the
-  range's own bar and the Florin charts card agree. The marks are section 1's for a reading: in the usual forms the
-  reading colour, outside them Gold with its edge, could be either (or logged before day 14) Ink 3; a part is never
-  narrower than 4% of its bar, so one BM in 120 still shows, and the legend names only the marks drawn.
-- **Everything else** (How often, Possible patterns, the summary, every detail page, Today) stays Florin charts. The
-  last 7 days is Rings already, as Today's week card. The theme is the phone's: an Oura card takes its light or dark
-  form from it.
+  steps). Where it departs from row 1 and section 4: a ring that fills toward 100, which section 2 warned reads as a
+  grade. Today's hero keeps its range bar.
+- **Trend** (Florin charts): Will, Nov 7: "i'm having a hard time understanding the two cards (20 of 27; 12 of 27?)
+  the data isn't clear." Two "N of 27" headlines that meant different things sat one over the other. The first is now
+  named Trend and its line names FloraScore ("FloraScore in its usual range on 16 of 29 days", the count FloraScore's
+  page gives), over the line on its usual band and what moved it this week.
+- **Your days** (Florin charts): about the logs. The one big number ("18 of 29 days within your usual"), what that means
+  in one line ("A day within your usual has all three: a first BM in your window, a usual count and your usual
+  forms."), the bar of the days read, then what the days outside it had, a row each with a short Gold bar and its count
+  (First BM outside your window, More BMs than usual, Fewer BMs than usual, No BM, A form outside your usual forms; "A
+  day can have more than one." when the rows add up to more than the days), in place of the paragraph that said it.
+- **Timing, Form, Symptoms, the weekly check-in:** Oura's cards (Form was a mix of Rings' count and Oura's bars until
+  Nov 7: "our has the best FORM analysis visualizer", Oura). Oura's Form names the range's row "Last 90 days", and at 7
+  days draws this week and your usual only. The check-in has no range.
+- **Frequency:** Bento's stacked chart, a capsule a BM, a column a day (Nov 7: "cleaner visually"). Past a month its
+  columns thin to fit 90 days. Will asked to see a day with 5 ("maybe goes to red on 5?"): there is no red in the app, so
+  a day over the usual count is Gold, as every shift is, and each demo person has one 5-BM day in the last 30 days
+  (refresh-data.js, `BUSY`).
+- **Patterns** stays Florin charts, as does every detail page and Today. The last 7 days is Rings already, as Today's
+  week card. The theme is the phone's: an Oura card takes its light or dark form from it.
 
 **Until Will decides,** the six options stay as they are, so the comparison stays live. After the call, stored values
 fall back safely: the page already drops a stored value that isn't one of the options.
@@ -845,6 +864,25 @@ library is republished together with the prototype.
 - for a yes or no outcome under two conditions, the two-group strip is two bars of shares (row 24);
 - on dark, the reading is Cream, so Ray means only your usual;
 - the darker light Ink 3 (already asked for) also carries the date inside a filled circle.
+
+---
+
+## 8. The detail pages (Nov 7)
+
+Will, Nov 7: "When you click in you get more OURA ring style data behind each insight, but in the current florin
+design (not fixed to dark mode)". `prototype/js/refresh-detail.js` wraps `RU.idetail` and keeps the core's page,
+adding Oura's detail pattern in the marks above, in the phone's theme. In order down the page:
+
+| Block | What it draws | Rules |
+|---|---|---|
+| Headline | The core's big reading, then a state word in small caps (In your usual window, Within your usual count, In your usual forms; FloraScore's own words) and one sentence in Lora that answers the page for the stretch | The word is Plum (Ray on dark) within the usual, Gold outside, Ink 2 for could be either; FloraScore's words never Gold |
+| Contributors | A row a part: name, word, the reading, a track with the usual as the band and a marker for now, the usual and a note under it. FloraScore: its four parts (today's blend, weighted 30/25/25/20), each against its own usual range (the middle 70% of that part in the weeks the usual comes from), each opening its page. Timing: mornings in the window, earliest, latest. How often: the average, the days with a usual count, the busiest day, the No BM days. Form: BMs in the usual forms, the firmest and the loosest. Possible patterns: the days with a meal logged against the line patterns need, and the foods checked. Symptoms' rows are the core's Each symptom, moved up; the check-in's are its four strips | A count of days is a split track (Plum within, Gold outside); a reading is the reading colour within, Gold with its edge outside; FloraScore's parts are always the reading colour |
+| Day by day | One chart a page with a scrubber (`.dt-scrub`, a slider: a tap, a drag or the arrow keys). A hairline marks the column picked, and under the chart the day picked shows its reading, a word and its reasons (`L.dayWhy`). FloraScore: the line on its usual band. Timing: the first BM by day on a time axis with the window as the band. How often: a dot a day on a count line, the busiest labelled. Form: each BM by day on the steps, a two-step word a span. Symptoms: one mark a day. The check-in: a dot an answer a week. At 90 days Timing, How often and Form are a bar a week and Symptoms a grid of weeks, and the scrubber picks a week | Today ringed and labelled, a flagged today a Teal ring in no count and its line when picked, nothing drawn for nothing logged, before day 14 every reading Ink 3 and no band. The hairline is not a ring |
+| What moved, and what stayed the same | Two or three sentences against the stretch before (`L.prevSpan`): the counts then and now, the typical time, the busiest day, the most common form, a day of the week only when every weekday has 3 mornings and they sit 20 minutes apart | Counts and the person's own times, never better or worse |
+
+Then the core's figures (Where today sits, What moved it this week, Every BM day by day, the form mix, What came with
+them), What shaped this, Ask about this, the table twin and Next. Free keeps the paywall; the Easy version draws its
+own; Your days and one pattern are as they were. behave.js checks it in the block "detail-v2".
 
 ---
 

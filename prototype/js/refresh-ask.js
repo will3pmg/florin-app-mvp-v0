@@ -1491,6 +1491,56 @@
     } catch (e) { warn("following a change to the phone", e); }
   });
 
+  /* ---------- Ask button: how Ask about this looks (Will, Nov 7: "I don't know if we need as big a bubble every
+     time"). A design-system option, not one of the decisions: the page puts it under View (refresh-app.js reads
+     EXT.askUI), sets it through phone.set ("askUI") and stamps it on the root as data-ask-ui; refresh-ask.css draws each
+     style. The markup stays the core's, the looks' and Easy's, wherever they put the button: as each one lands in the
+     phone, this pass gives it the same parts (the token, "Ask" and " about this", the card's first question for the
+     Question style, a chevron for the Bar) and a name that says which card. Every style keeps the token and Ray ---------- */
+  const ASKUI = [
+    ["pill", "A Pill", "The Ray pill with the token and Ask about this, as the app has it now."],
+    ["compact", "B Compact", "A small Ray pill in the card's corner: the token and Ask."],
+    ["link", "C Link", "A quiet link in the card's corner: the token and Ask about this, no fill."],
+    ["icon", "D Token", "The token alone in the card's corner. Its name says Ask about this and the card."],
+    ["chip", "E Question", "The token and the card's own first question, the one Ask opens with in the box."],
+    ["bar", "F Bar", "A slim row across the card's foot: a line above, the token, Ask about this and a chevron."]
+  ];
+  EXT.askUI = { def: "pill", opts: ASKUI, name: (v) => (ASKUI.find(([o]) => o === v) || ASKUI[0])[1] };
+  const CARD_NAME = { score: "FloraScore", days: "Your days", timing: "Timing", often: "How often", form: "Form", sym: "Symptoms", ck: "Weekly check-in", pat: "Possible patterns" };
+  const ASK_SEL = ".ap-ask-b, .ap-idt-ask, .ap-ez-ask";
+  /* the card's first question, as Ask about this puts it in the box (RU.askContext, at the range Ask will read) */
+  const firstQ = (api, k, range) => {
+    try { const c = RU.askContext(api.M(), api.V(), { k, range: range || api.S.ins.range }); return c && c.qs && c.qs[0] ? c.qs[0] : ""; } catch (e) { warn("the card's first question", e); return ""; }
+  };
+  const cardName = (api, k) => {
+    if (CARD_NAME[k]) return CARD_NAME[k];
+    if (k.indexOf("pattern:") === 0 && api) { try { const c = RU.askContext(api.M(), api.V(), { k, range: api.S.ins.range }); if (c) return c.title; } catch (e) { /* no name: the words alone */ } }
+    return "";
+  };
+  function askWidget(b) {
+    if (b.dataset.askw) return;
+    const root = b.closest(".ap-rx");
+    if (!root) return;
+    const api = EXT.api && EXT.api.root === root ? EXT.api : null;
+    const ui = root.getAttribute("data-ask-ui") || "pill", k = b.dataset.k || "", free = b.dataset.act === "pay";
+    const glyph = [...b.children].find((c) => c.classList && c.classList.contains("ic")) || null;
+    const q = ui === "chip" && api && k ? firstQ(api, k, +(b.dataset.range || 0)) : "";
+    const nm = cardName(api, k), lock = free ? ", with Florin membership" : "";
+    b.dataset.askw = ui;
+    b.classList.add("ap-askw");
+    b.innerHTML = `${glyph ? glyph.outerHTML : RU.icon(free ? "lock" : "chat")}<span class="ap-askw-t"><span class="ap-askw-a">Ask</span><span class="ap-askw-b"> about this</span></span>${q ? `<span class="ap-askw-q">${esc(q)}</span>` : ""}${ui === "bar" ? RU.icon("chev", "ap-askw-go") : ""}`;
+    b.setAttribute("aria-label", q ? `Ask Florin: ${q}${lock}` : `Ask about this${nm ? `: ${nm}` : ""}${lock}`);
+  }
+  const askScan = (n) => {
+    if (!n || n.nodeType !== 1) return;
+    if (n.matches(ASK_SEL)) askWidget(n);
+    n.querySelectorAll(ASK_SEL).forEach(askWidget);
+  };
+  try {
+    new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { try { askScan(n); } catch (e) { warn("drawing Ask about this in its style", e); } })))
+      .observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) { warn("no MutationObserver: Ask about this keeps the pill", e); }
+
   /* ---------- notes for Will. Oct 28: plain, about 80 words at most, with at most one open question ---------- */
   const engineNow = () => (ASK.state === "ready" && !ASK.off ? "In this view, answers come from Claude on your own account, checked before they show." : "In this view, every answer is worked out from the logs.");
   const ASK_WAYS = "A warning sign gets the see-a-clinician answer, and a request to diagnose, dose or predict gets a fixed reply.";
@@ -1509,7 +1559,7 @@
   });
   EXT.notes["ask-about"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask about this",
-    lede: "Every Insights card and detail has Ask about this: a Ray button with the Ask token, the same token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart."
+    lede: `Every Insights card and detail has Ask about this, with the Ask token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart. Ask button, under View on the left, sets how it looks on every card: ${EXT.askUI.name(EXT.api ? EXT.api.S.askUI : "pill")} now.`
   });
   EXT.notes["ask-mem"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, what it knows",

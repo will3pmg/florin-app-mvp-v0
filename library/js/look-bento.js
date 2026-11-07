@@ -475,14 +475,16 @@
     const w = TW[6], left = 18, top = 8, axis = 22, uh = 14, ug = 4;
     const mx = Math.max(3, ...M.filter((f) => f.count != null).map((f) => f.count), U ? U[1] + 1 : 0);
     const ph = mx * (uh + ug) + 4, H = top + ph + axis, base = top + ph;
-    const nSlots = Math.max(14, M.length), off = nSlots - M.length;
-    const slot = (w - left) / nSlots, bw = Math.min(8, slot - 3);
+    /* a week in the app's 7-day Insights (D.range, Nov 7) spans the chart; a short run while learning keeps 14 slots */
+    const nSlots = D.range === 7 && !D.learning ? M.length : Math.max(14, M.length), off = nSlots - M.length;
+    /* past a month (the app's 90 days, Nov 7) the slots are too narrow for the 3px gap: a thinner bar, 1px apart */
+    const slot = (w - left) / nSlots, bw = M.length > 31 ? Math.max(1.6, slot - 1) : Math.min(8, slot - 3);
     const cx = (i) => left + slot * (i + off) + slot / 2;
     const yU = (k) => base - k * (uh + ug); /* the top edge of unit k (1-based) is yU(k) + ug */
     const units = M.map((f, i) => {
       if (f.count == null) return f.pending ? "" : `<line class="bt-gapmark" x1="${r1(cx(i) - bw / 2)}" x2="${r1(cx(i) + bw / 2)}" y1="${r1(base + 3)}" y2="${r1(base + 3)}"/>`;
       const out = U && !f.flag && (f.count < U[0] || f.count > U[1]);
-      if (f.count === 0) return `<circle class="bt-zero bt-pop${out ? " is-s" : ""}" cx="${r1(cx(i))}" cy="${r1(base - 5)}" r="3.5" style="--j:${jn(i, M.length)}"/>`;
+      if (f.count === 0) return `<circle class="bt-zero bt-pop${out ? " is-s" : ""}" cx="${r1(cx(i))}" cy="${r1(base - 5)}" r="${M.length > 31 ? r1(Math.max(1.4, bw / 2 + 0.4)) : 3.5}" style="--j:${jn(i, M.length)}"/>`;
       return Array.from({ length: f.count }, (_, k) => `<rect class="bt-unit bt-pop${out ? " is-s" : ""}" x="${r1(cx(i) - bw / 2)}" y="${r1(yU(k + 1) + ug)}" width="${r1(bw)}" height="${uh}" rx="${r1(bw / 2)}" style="--j:${jn(i, M.length) + k}"/>`).join("");
     }).join("");
     const ti = M.length - 1, tf = M[ti];

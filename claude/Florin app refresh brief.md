@@ -443,6 +443,38 @@ deck isn't needed. can kill that."
   the range and what moved the score. Today's hero keeps its range bar. One change from the library's card: outside
   its usual range the ring's end stays the reading colour, since FloraScore is never Gold.
 
+## Will's notes (Nov 7) and what they changed
+
+- **Ask button, six styles** (Will, Nov 7: "I don't know if we need as big a bubble every time"). Ask about this can
+  be drawn six ways, A Pill (today's), B Compact, C Link, D Token, E Question (the card's own first question) and F
+  Bar, set by Ask button under View on the left bar, for every card, detail page and Easy at once. Every style keeps
+  the token, a 44px target and the Free lock. `options/ask/` shows each on two real cards for Will to pick; we
+  recommend B, Compact.
+- **Insights: Florin charts' flow, plainer cards, the range at the top** (Will, Nov 7: "I think FLORIN CHARTS for
+  insights tab has the best flow"). Insights keeps the core's order in the default and in Will's picks. Every card is
+  named in a word or two (FloraScore, Trend, Your days, Timing, Frequency, Form, Symptoms, Check-in, Patterns; "All of
+  them need to have the headings simplified"), with no range, date or pill in its head: the range is picked once, in
+  the tabs at the top ("the date range is toggled at very top, not labeled within"), and every card draws it, Will's
+  picked styles included (they used to fall back to Florin charts at 7 and 90 days). Ask about this and the detail link
+  sit inside every card, at its foot ("I like the 'ask about this' inside rather than below a card").
+- **The two "N of 27" cards** ("i'm having a hard time understanding the two cards (20 of 27; 12 of 27?) the data isn't
+  clear"). The card under the big ring is now the Trend, its line naming FloraScore ("FloraScore in its usual range on
+  16 of 29 days"); the next is Your days, about the logs: its count, what "within your usual" means in one line, and what
+  the days outside it had as a small breakdown (first BM outside the window, more BMs than usual, No BM, a form outside
+  the usual forms), in place of a paragraph. We kept two cards rather than merging them: one is a score, one is the logs.
+- **Will's picks, Nov 7.** Frequency is Bento's stacked chart ("cleaner visually"), Form is Oura's ("our has the best
+  FORM analysis visualizer"; the Rings and Oura mix is gone), Timing stays Oura ("torn between oura and rings"), and
+  Symptoms and the check-in stay Oura.
+- **A day with 5 BMs** ("We should show a day with 5 (maybe goes to red on 5?)"). Each demo person now has one, Monday
+  Sep 21, in the last 30 days but not this week, an ordinary day with nothing flagged. It is Gold, not red: red is out of
+  the app's palette, and a day over the usual count is a shift, which is always Gold. Nothing else the demo says changed
+  with it: the usuals, FloraScore's usual range, today's score and this week against last are as they were.
+- **Detail pages with Oura's depth** (Will, Nov 7: "When you click in you get more OURA ring style data behind each
+  insight, but in the current florin design (not fixed to dark mode)"). `refresh-detail.js` adds to each detail page a
+  state word and a Lora headline, contributors on tracks against the person's usual (FloraScore's four parts open their
+  pages), a day by day chart with a scrubber whose picked day shows its reading and reasons, and what moved against the
+  stretch before, in the phone's theme at 7, 30 and 90 days (data viz.md, section 8).
+
 ## The calls for Will
 
 One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the
@@ -493,9 +525,10 @@ line says so.
 - Rings says "1 of 3 check-ins saved" before the first three: is that the way to put it?
 - Bento's usual days now have a Plum edge on light, so a usual month looks busier: acceptable?
 - Rings and Oura lead with a big 0 ("0 of 4 like your first weeks") when every answer moved: follow Easy read?
-- Will's picks (Nov 5): Oura's Timing and Symptoms draw only 30 days, so at 7 and 90 days they are Florin charts'. Build
-  Oura's cards at every range, or keep the switch? And the Insights FloraScore ring fills toward 100, which data viz.md
-  warned can read as a grade: keep it, with its end never Gold?
+- Will's picks (Nov 7): every picked card now draws 7, 30 and 90 days. Timing: Oura or Rings ("torn")? Frequency
+  draws Bento's whole board (the stacked chart, then Average and Day by day tiles): keep the two small tiles, or the
+  chart alone? And the Insights FloraScore ring fills toward 100, which data viz.md warned can read as a grade: keep it,
+  with its end never Gold?
 
 *Easy version*
 - A setting in Profile (recommended), or a version of its own?
@@ -591,6 +624,10 @@ line says so.
 - A Next button through the detail pages, or swipe like Oura?
 - A flagged today is now left out of every count, on Today, Insights, the styles and Ask, and said once on each card:
   keep that, or name it once per screen?
+
+*Ask Florin*
+- Ask button: which of the six styles in `options/ask/`? We recommend B, Compact. And should the FloraScore card alone
+  carry E, its own question?
 
 *For the studio (from `claude/Florin data viz.md`)*
 - On dark, draw a reading in Cream, so Ray means only the usual?

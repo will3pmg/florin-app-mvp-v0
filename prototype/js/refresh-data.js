@@ -277,6 +277,14 @@
   const CRAFT_FORMS = { 84: [4], 85: [4, 6], 86: [5], 88: [3, 4], 89: [4] };
   const CRAFT_GAP = { 87: true };
   const CRAFT_SYM = { 86: { t: 10.33, items: [{ name: "Bloating", s: 1 }], last: 1, note: "" } };
+  /* one busy day (Will, Nov 7: "We should show a day with 5"): Monday, Sep 21, 20 days back, so it sits in the last
+     30 days but not in this week or in last week's average, and Today's card and week are as before. Each person logged
+     BMs through the day until there were 5, every one after the seeded first (so the first BM, its time and its form
+     stay as seeded) and half an hour or more from any other, in forms 4 and 5, which sit in every demo person's usual
+     forms. No notes, no flags: an ordinary day with more BMs than usual, which every screen reads as a shift (Gold),
+     never as a sign. On this day the usual forms and window, FloraScore's usual range, today's score, this week against
+     last and the patterns are what they were before it, for all three people in A, B and C (checked Nov 7) */
+  const BUSY = { d: 70, n: 5, at: [10.55, 13.2, 16.05, 19.35], forms: [5, 4, 5, 5] };
   const TODAY_ENTRIES = (mode) => (mode === "new" || mode === "fresh" ? [] : [
     { kind: "bm", t: null /* the seeded first visit */, form: 4, how: {}, dur: null, flags: {}, note: "" },
     { kind: "meal", t: 8.08, meal: "breakfast", text: "Oatmeal with berries, coffee", note: "" },
@@ -358,6 +366,10 @@
       }
       day.entries.push(bm);
     });
+    if (d === BUSY.d && x.visits.length) {
+      const ts = x.visits.map((v) => v.t), first = Math.min(...ts);
+      BUSY.at.filter((t) => t > first + 0.5 && ts.every((v) => Math.abs(t - v) > 0.5)).slice(0, Math.max(0, BUSY.n - x.visits.length)).forEach((t, i) => day.entries.push({ id: nid("bm"), d, kind: "bm", t, form: BUSY.forms[i], how: {}, dur: null, flags: {}, note: "" }));
+    }
     if (!x.visits.length) day.entries.push({ id: nid("nobm"), d, kind: "nobm", t: between(r, 20.75, 21.75) });
 
     /* symptoms: from the seeded check-ins. Urgency is a BM detail now; low energy logs in the morning (its own

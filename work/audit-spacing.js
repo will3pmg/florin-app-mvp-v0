@@ -61,6 +61,7 @@ const PRODUCT = [
   { f: 'css/refresh-variants.css', scope: () => true },
   { f: 'css/refresh-profile.css', scope: () => true },
   { f: 'css/refresh-ask.css', scope: () => true },
+  { f: 'css/refresh-detail.css', scope: () => true },
   { f: 'css/refresh-easy.css', scope: () => true },
   // the data looks: the library page and each look, all of it on the scale
   { f: '../library/css/library.css', scope: () => true },

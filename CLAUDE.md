@@ -47,15 +47,21 @@ prototype/js/refresh-ask.js       Ask Florin as a chat: alarm words first (L.ala
                               from the logs as the floor; Make a report on the flag note opens it on the clinician path.
                               Built to DESIGN.md's coach spec (Will, Nov 5): an opening read, compact turns ending on one
                               bold question, options about one turn in three, thumbs, What Ask Florin knows
+prototype/js/refresh-detail.js    the detail pages with Oura's depth in Florin's design (Will, Nov 7): the core's page plus
+                              a state word and a Lora headline, contributors on tracks against the usual, a day by day
+                              chart with a scrubber (the day picked shows its reading and L.dayWhy), and what moved
+                              against the stretch before. It follows the phone's theme, never forced dark
 prototype/js/refresh-easy.js      the Easy version: larger text and simpler screens. Its own Today, plus, a BM in four
                               steps, symptoms, Your weeks in place of Insights; History and Ask drawn bigger
-prototype/css/refresh-{looks,variants,profile,ask,easy}.css   each module's styles, scoped to what it draws
+prototype/css/refresh-{looks,variants,profile,ask,detail,easy}.css   each module's styles, scoped to what it draws
                               Each module registers into FLORIN_EXT and wraps RU; it never edits a core file
 prototype/js/refresh-app.js   the page: the one phone (Phone, phone.set), the decisions, notes per screen and decision
 library/                       Florin data looks: the same numbers drawn in five looks, the start of a component library
 library/js/looks-data.js       the one data object (FLD.build) every look draws from, built on refresh-data.js. A look's
                               day counts come from D.tally[7] and [30] (within, shifted, unsure, nocount, flag, known,
-                              and left, the sentence naming the days counted neither way), so every look counts alike
+                              and left, the sentence naming the days counted neither way), so every look counts alike.
+                              Its range option (Nov 7) makes the "30" stretch 7 or 90 days for the app's Insights tabs;
+                              the library page draws 30, unchanged
 library/js/look-*.js, css/look-*.css   one look each, registered on window.FLOOKS, every rule scoped under .lk-<id>
 reference/shipping-app/       the app that ships today: Log a visit, History, the onboarding survey and profile
 reference/oura.md              what Oura's screens do, and how each idea translates under Florin's rules
@@ -65,13 +71,16 @@ work/                          QA and screenshot scripts (work/shots-library.js 
 
 Load order (both pages): lib.js, claims-rules.js, data-app.js, app-charts.js, refresh-data.js, refresh-ui.js,
 refresh-insights.js, then the library's looks-data.js and look-rings, journal, bento, oura and easy, then the modules
-in this order: looks, variants, profile, ask, easy, and refresh-app.js last. The css follows the same order (app.css,
+in this order: looks, variants, profile, ask, detail, easy, and refresh-app.js last. The css follows the same order (app.css,
 refresh.css, look-*.css, refresh-<module>.css). A later module wraps what an earlier one drew: Easy wraps Day first's
 Today and the look's Insights, and draws its own in their place.
 
 The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar opens with **View**
 (Default or Will's picks, Will, Nov 5), which sets Data style through phone.set (Default is its default; Will's picks
-opens Insights), with one plain line under it. Then it holds **Decisions**
+opens Insights), with one plain line under it, and a second row, **Ask button** (A Pill, B Compact, C Link, D Token,
+E Question, F Bar; Will, Nov 7), how Ask about this looks everywhere, with its own plain line: a design-system option,
+not a decision, set through phone.set (`askUI`), stored per viewer (`florin-refresh:askUI`), Pill by default, and a
+change opens Insights (options/ask is the page Will picks from). Then it holds **Decisions**
 (Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), one line each,
 then **Demo** (Person; Logs: 12 weeks, New, day 5 or Just joined; Demo person's meals: Every day, Only with symptoms or
 Never; Plan; Theme; Reset), under one plain line, "These change the demo person, not the app", which folds to a
@@ -130,16 +139,24 @@ they meet: Easy has its own Today (Home's Day first or Compact waits under it) a
 keeps History as a calendar when that's picked; Profile's Larger text and simpler screens sets Version, its Logging
 rows set BM logging and Meal sheet, and its theme row sets the theme, all through phone.set, so the left bar follows.
 
-**Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"), Data
-style's `picks`: the core's Insights in its own order and range tabs, each card Will picked on the data modules page
-(`WILL_PICKS` in refresh-looks.js, his saved picks as read Nov 5; change the table when he picks more) in his style:
-Timing, Symptoms and the check-in in Oura's cards, Form as the mix (Rings' count over Oura's bars, one bar a stretch up
-to the range and one for the weeks that set the usual; `RU.picksForm` is the count, the Form card's own), the rest in
-Florin charts. A look's card reads 30 days (or the days so far while learning), so at 7 and 90 days, and on Free, Oura's
-cards are Florin charts' and the screen's note says so. Each keeps Ask about this and opens Florin charts' detail.
-Today, the detail pages and the theme don't change (an Oura card takes the phone's theme). In every view but a library
-look and Easy, Insights' FloraScore card is the Rings look's hero, "the large green big circle" (Will, Nov 5), drawn
-by its own renderer with the core's card under it for the range and what moved it; FloraScore stays out of Gold there.
+**Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"; Nov 7:
+"I think FLORIN CHARTS for insights tab has the best flow"), Data style's `picks`: the core's Insights in its own order
+and range tabs, each card Will picked (`WILL_PICKS` in refresh-looks.js, read Nov 7; change the table when he picks
+more) in his style: Timing, Form, Symptoms and the check-in in Oura's cards, Frequency in Bento's stacked chart, the
+rest in Florin charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
+toggled at very top, not labeled within"), and every card draws it, picked or not: a look's card reads the range
+through `FLD.build(..., { range })` (7, 30 or 90; 7 on Free; the days so far while learning), whose `D.range` the
+range cards say. Every Insights card, in Florin charts, Will's picks and each library look the phone draws (Easy read
+excepted), is named in a word or two (FloraScore, Trend, Your days, Timing, Frequency, Form, Symptoms, Check-in,
+Patterns; a look's head is rewritten by refresh-looks's `plainHead`, which drops its date, range switch and Timing's
+pill), with the range said only in words a screen reader hears, and carries Ask about this and its detail link inside
+the card at its foot (`.rlk-foot--in`; on a Bento board in its full-width first tile, else a tile of its own). Today,
+the detail pages and the theme don't change (an Oura card takes the phone's theme). In every view but a library look
+and Easy, Insights' FloraScore card is the Rings look's hero, "the large green big circle" (Will, Nov 5), drawn by its
+own renderer; under it the core's card is the Trend ("FloraScore in its usual range on 16 of 29 days", with what moved
+it), then Your days (the logs: the count within your usual, what that means in one line, and what the days outside it
+had, a row each). FloraScore stays out of Gold there. Each demo person has one day with 5 BMs (refresh-data.js, `BUSY`,
+Sep 21), in the last 30 days and outside this week and last, so Frequency shows one; it is Gold, as every shift is.
 
 The prototype loads the library's looks (looks-data.js, look-*.js and their css, never library.js, which mounts the
 library page) before the modules: `_local.html` from `../library/`, `index.html` from `js/` and `css/`, so publish them
@@ -188,7 +205,8 @@ clinician report (`RU.paywall`). Teasers blur the person's own counts; never sho
 ## Extension hooks
 
 A feature module is a file pair, `prototype/js/refresh-<name>.js` and `css/refresh-<name>.css`, loaded after
-refresh-insights.js and the library looks and before refresh-app.js, in this order: looks, variants, profile, ask, easy.
+refresh-insights.js and the library looks and before refresh-app.js, in this order: looks, variants, profile, ask, detail,
+easy.
 It never edits a core file: it registers into `window.FLORIN_EXT` (made by refresh-data.js) and wraps `RU` functions.
 
 ```
@@ -222,17 +240,17 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   (returns an undo), `commit(st, kind, fields)`, `key()`, `act(name, button)` (a module's act, else the core's),
   `core(name, button)` (always the core's, for an act that wraps one).
 - **set(key, value)** is the one way to change the phone: the decisions (`form`, `bmUI`, `home`, `history`, `checkin`,
-  `mealUI`, `look`, `easy`, `onboard`), `plan`, `persona`, `data` and `meals` (these rebuild the model and go to Today),
+  `mealUI`, `look`, `easy`, `onboard`), `askUI` (Ask button, under View), `plan`, `persona`, `data` and `meals` (these rebuild the model and go to Today),
   `theme`, `full`. The page follows every set, whoever makes it: the toggles, the stored decision, the Screens list and
   the notes (so a Profile screen can turn the check-in off). Each decision is stamped on the phone's `.ap` root
-  (`data-bm-ui="full"`, `data-look="rings"`, `data-easy="true"`) for a module's CSS; an overlay's element carries
+  (`data-bm-ui="full"`, `data-look="rings"`, `data-easy="true"`, and `data-ask-ui`) for a module's CSS; an overlay's element carries
   `.ap-o--t-<type>`.
 - **decisions**: every option is drawn, so a note has no badge. The core writes the notes of form, bmUI, checkin and
   mealUI; the modules write the rest: looks `look`, variants `home` and `history`, profile `onboard`, easy `easy`. The
   page gives each its question (`q`) and what it decides (`what`) from `DECISIONS`, and if a module's note throws, the
   note falls back to those and the options' names. behave.js and sweep.js check every option of every decision for the
   sheet's shape.
-- **V()** = `{ form, uid, mealUI, plan, bmUI, home, history, checkin, look, easy, onboard, persona, data, meals }`.
+- **V()** = `{ form, uid, mealUI, plan, bmUI, home, history, checkin, look, easy, onboard, askUI, persona, data, meals }`.
 - **Wrap, don't edit.** Render functions are looked up when called, so `const base = RU.plus; RU.plus = (M, V, st) =>
   V.easy ? mine(M, V, st) : base(M, V, st)` works for `RU.today`, `RU.history`, `RU.insights`, `RU.idetail`, `RU.ask`,
   `RU.plus`, `RU.bm` and the parts below.
@@ -340,12 +358,21 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   (`splitQ`), and the computed answer's question stands in when Claude asks none. What Ask Florin knows (`askx-mem`)
   lists what every answer reads and what can be left out of this chat (`ch.forget`: name, today, ck, chat), and the
   opt-in "Let Ask Florin start a conversation" (`S.askReach`, off by default).
+- **Ask button** (Will, Nov 7: "I don't know if we need as big a bubble every time"): one setting, `V.askUI`, stamped as
+  `data-ask-ui` (pill, compact, link, icon, chip, bar), draws every Ask about this (`.ap-ask-b`, `.ap-idt-ask`,
+  `.ap-ez-ask`, a look's `.rlk-ask`, and any later module's that uses those classes) in one style. The markup stays
+  each module's; refresh-ask.js gives each button, as it lands in the phone, the same parts (`.ap-askw`: the token,
+  "Ask" and " about this", the card's first question from `RU.askContext` for chip, a chevron for bar) and a name that
+  says the card ("Ask about this: Timing", "Ask Florin: <question>", ", with Florin membership" on Free); refresh-ask.css
+  draws each style. Every style keeps the token, a 44px target and the Free lock; the styles are listed once, in
+  `EXT.askUI`.
 
 What each module registers (the file's header comment has the detail):
 
 ```
 refresh-looks     wraps RU.weekCard (Today's week is the Rings week; RU.core.weekCard keeps the core's), RU.insights
-                  (a look's cards; else the core's with the Rings FloraScore hero, and Will's picks' cards), adds RU.picksForm,
+                  (a look's cards; else the core's with the Rings FloraScore hero and the Trend, and Will's picks' cards,
+                  at the tabs' range, each head plain and its Ask inside),
                   RU.todayParts.hero and .week, RU.idetail (Your days), RU.askContext; acts idetail,
                   iback, ck-start and ck-tag (wrapped), rlk-week, rlk-voice; screens Data style (Data style: Today
                   puts Home on Score first while it's Compact, which draws no data style); keys tab:insights and
@@ -363,7 +390,13 @@ refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*
 refresh-ask       wraps RU.ask (Member; Free keeps the core's lock); acts askx-* (send, ask, stop, new, rate, mem,
                   forget, keep, reach), ask-about and ask-clear (wrapped), flag-report; overlay askx-mem; screens
                   ask-chat, ask-alarm and ask-mem; opens ask-chat, ask-alarm, ask-mem and ask (Screens > Ask Florin is
-                  a fresh chat); keys tab:ask; notes; onSet (form, check-in, meals, plan)
+                  a fresh chat); keys tab:ask; notes; onSet (form, check-in, meals, plan); EXT.askUI (the Ask button
+                  styles) and the pass that draws every Ask about this in the one picked
+refresh-detail    wraps RU.idetail (score, timing, often, form, sym, ck, pat; Member, not Easy; the core's page as
+                  RU.core.idetailPlain): the headline's state word and sentence, contributors (FloraScore's four
+                  parts open their pages), a day by day chart with a scrubber (.dt-scrub, role slider: a tap, a
+                  drag or the arrow keys), What moved, and what stayed the same; a column a week at 90 days; notes
+                  for i-score to i-pat. Your days and one pattern stay as they are
 refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idetail under V.easy; acts ez-* and plus-day
                   (wrapped); screens ez-today and ez-bm (which set Version to Easy); keys tab:today, tab:insights, bm;
                   notes (its screens, plus and sym in Easy), decisions.easy; onSet (easy, theme)
@@ -411,7 +444,7 @@ screen on a phone, and `--limit 20` is a quick look.
 
 The prototype is the artifact https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Publish `prototype/index.html` as the
 page and every `prototype/css` and `prototype/js` file at the same relative path (`css/app.css`, `js/refresh-app.js`,
-the five modules and their css included). The library's look files `index.html` loads go under `js/` and `css/` too,
+the six modules and their css included, `js/refresh-detail.js` and `css/refresh-detail.css` among them). The library's look files `index.html` loads go under `js/` and `css/` too,
 from `library/`: `css/look-*.css`, and `js/looks-data.js` with `js/look-*.js`. The page declares the capabilities
 `{ sample: {} }`, so Ask Florin can ask Claude on the viewer's own account (the first question in a view asks the viewer
 to allow it); without it, or on a local file, every answer is computed from the logs. Keep the capability on every

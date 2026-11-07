@@ -855,10 +855,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       /* the theme follows without a redraw */
       await lpick("theme", "light");
       ok((await ins()).theme === "light", `data style ${id}: the cards follow the theme`);
-      /* a BM logged on the phone redraws the look's cards from the live model */
-      const t0 = await q.evaluate(() => ({ all: document.querySelector(".rlk-ins").textContent, often: document.querySelector('[data-rlk-k="often"]').textContent }));
+      /* a BM logged on the phone redraws the look's cards from the live model. How often is read by its words and its marks:
+         with the 5-BM day in the month (Nov 7, refresh-data.js BUSY), one more BM can leave Bento's rounded average as
+         it was, while its chart gains a capsule */
+      const t0 = await q.evaluate(() => ({ all: document.querySelector(".rlk-ins").textContent, often: (() => { const c = document.querySelector('[data-rlk-k="often"]'); return `${c.textContent}|${c.querySelectorAll("svg rect, svg circle").length}`; })() }));
       await q.evaluate(() => { const b2 = document.createElement("button"); b2.dataset.form = "4"; window.FLORIN_EXT.api.act("quick-bm", b2); }); await lw();
-      const t1 = await q.evaluate(() => ({ all: document.querySelector(".rlk-ins").textContent, often: document.querySelector('[data-rlk-k="often"]').textContent, n: window.FLORIN_LOGS.day(window.FLORIN_EXT.api.M(), window.FLORIN_LOGS.TODAY).entries.filter((e) => e.kind === "bm").length }));
+      const t1 = await q.evaluate(() => ({ all: document.querySelector(".rlk-ins").textContent, often: (() => { const c = document.querySelector('[data-rlk-k="often"]'); return `${c.textContent}|${c.querySelectorAll("svg rect, svg circle").length}`; })(), n: window.FLORIN_LOGS.day(window.FLORIN_EXT.api.M(), window.FLORIN_LOGS.TODAY).entries.filter((e) => e.kind === "bm").length }));
       ok(t1.all !== t0.all && t1.often !== t0.often && !/\bNaN\b|\bundefined\b/.test(t1.all), `data style ${id}: a BM logged on the phone changes the look's cards (${t1.n} BMs today)`);
       await lpick("data", "new"); await lpick("data", "est");
       /* the first card opens its detail, and back returns to the cards */
@@ -5001,8 +5003,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return {
         rpk: !!r && r.classList.contains("rpk-ins"), picks: !!r && r.dataset.rpk === "picks",
         cards: r ? [...r.querySelectorAll(":scope > section")].map((s) => (s.dataset.rlkK ? `${s.dataset.rlkK}:${s.dataset.rlkLook}` : s.classList.contains("ap-sum") ? "sum" : `${((s.querySelector(".ap-ic-h") || {}).dataset || {}).k}:core`)) : [],
-        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-oura .ou-timing'), form: q('[data-rlk-k="form"] .lk-rings .rpk-mix'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
-        foot: [...l.querySelectorAll(".rpk-card")].map((c) => { const a = c.querySelector(':scope > .rlk-foot [data-act="ask-about"], :scope > .rlk-foot [data-pay="ask"]'), g = c.querySelector(":scope > .rlk-foot .rlk-go"); return `${c.dataset.rlkK}:${a ? (a.dataset.act === "pay" ? "pay" : `ask=${a.dataset.k}`) : "none"}:${g ? `${g.dataset.act}=${g.dataset.k || g.dataset.pay}` : "none"}`; }),
+        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-oura .ou-timing'), often: q('[data-rlk-k="often"] .lk-bento .bt'), form: q('[data-rlk-k="form"] .lk-oura .ou-form'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
+        /* Nov 7: the foot sits inside the look's card */
+        foot: [...l.querySelectorAll(".rpk-card")].map((c) => { const a = c.querySelector('.rlk-look .rlk-foot [data-act="ask-about"], .rlk-look .rlk-foot [data-pay="ask"]'), g = c.querySelector(".rlk-look .rlk-foot .rlk-go"); return `${c.dataset.rlkK}:${a ? (a.dataset.act === "pay" ? "pay" : `ask=${a.dataset.k}`) : "none"}:${g ? `${g.dataset.act}=${g.dataset.k || g.dataset.pay}` : "none"}`; }),
         theme: [...new Set([...l.querySelectorAll(".rpk-card .rlk-look")].map((n) => n.dataset.theme))].join(","),
         bad: /\bNaN\b|\bundefined\b/.test(l.textContent),
         note: (document.querySelector("#rxNotes") || {}).textContent || ""
@@ -5022,7 +5025,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const det = await w.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), cap: [...document.querySelectorAll(".rx-stage .ap-rx .ap-figcap b")].map((x) => x.textContent).find((t) => /^In its usual range on|^Not scored/.test(t)) || "", look: !!document.querySelector(".rx-stage .ap-rx .ap-layer .rlk-look") }));
     await wclick(`${ph} .ap-back`);
     const back0 = await w.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('.rpk-score') && a.matches(".rlk-go"); });
-    ok(det.key === "i-score" && !det.look && hero.trend === det.cap && hero.kick === "FloraScore · last 30 days" && await wkey() === "insights" && back0, `wills-picks: the Rings card opens FloraScore's page (Florin charts), whose count the card under it says ("${hero.trend}"), and Back lands on the Rings card's link`);
+    /* Nov 7: the card under it is the Trend, its line naming FloraScore ("FloraScore in its usual range on 16 of 29 days") */
+    ok(det.key === "i-score" && !det.look && hero.trend === `FloraScore ${det.cap.charAt(0).toLowerCase()}${det.cap.slice(1)}` && /^Trend, FloraScore, last 30 days$/.test(hero.kick) && await wkey() === "insights" && back0, `wills-picks: the Rings card opens FloraScore's page (Florin charts), whose count the Trend card under it says ("${hero.trend}"), and Back lands on the Rings card's link`);
     ok(/Rings style's big ring/.test(d0.note), "wills-picks: the default Insights note says FloraScore is the Rings style's big ring");
 
     /* 2. the switch: Will's picks sets Data style through phone.set, opens Insights in the picks, with its note */
@@ -5032,21 +5036,22 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(a0.view === "built" && a0.look === "built" && a1.view === "picks" && a1.look === "picks" && a1.phone === "picks" && a1.stored === "picks" && k1 === "look-insights" && /Will picked/.test(a1.line), `wills-picks: View's Will's picks presses Data style's Will's picks, stamps the phone, is stored, and opens Insights (${a1.view}, ${a1.look}, ${a1.phone}, ${k1})`);
     ok(/^\s*This screen\s*Insights, in Will's picks/i.test(p30.note.replace(/\s+/g, " ")) && /data modules page/.test(p30.note) && !/[–—!]/.test(p30.note), "wills-picks: the screen's note is Insights, in Will's picks, plain");
 
-    /* 3. each picked card in its style, in Insights' own order, at 7, 30 and 90 days; where Oura draws no card (7 and
-       90) it is Florin charts', and the note says so. Every picked card keeps Ask about this and opens its detail */
-    const EXP = { 30: "score:rings,score:core,sum,timing:oura,often:core,form:rings,symptoms:oura,checkin:oura,pat:core", 7: "score:rings,score:core,sum,timing:core,often:core,form:rings,sym:core,checkin:oura,pat:core", 90: "score:rings,score:core,sum,timing:core,often:core,form:rings,sym:core,checkin:oura,pat:core" };
-    const FOOT = { score: "ask=score:idetail=score", timing: "ask=timing:idetail=timing", form: "ask=form:idetail=form", symptoms: "ask=sym:idetail=sym", checkin: "ask=ck:idetail=ck" };
+    /* 3. each picked card in its style, in Insights' own order, at 7, 30 and 90 days (Nov 7: every card draws the range
+       the tabs say, so no style falls back to Florin charts). Every picked card keeps Ask about this and opens its detail */
+    const EXP1 = "score:rings,score:core,sum,timing:oura,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
+    const EXP = { 30: EXP1, 7: EXP1, 90: EXP1 };
+    const FOOT = { score: "ask=score:idetail=score", timing: "ask=timing:idetail=timing", often: "ask=often:idetail=often", form: "ask=form:idetail=form", symptoms: "ask=sym:idetail=sym", checkin: "ask=ck:idetail=ck" };
     for (const n of [7, 30, 90]) {
       await range(n);
       const r = await insOf();
       const feet = r.foot.every((f) => { const [k] = f.split(":"); return f === `${k}:${FOOT[k]}`; });
-      ok(r.picks && r.cards.join(",") === EXP[n] && r.looks.score && r.looks.form && r.looks.checkin && r.looks.timing === (n === 30) && r.looks.symptoms === (n === 30) && feet && !r.bad, `wills-picks, ${n} days: ${n === 30 ? "FloraScore in Rings, Timing, Symptoms and the check-in in Oura, Form as the mix" : "FloraScore in Rings, the check-in in Oura, Form as the mix, Timing and Symptoms Florin charts'"}, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
-      ok(n === 30 ? !/draws 30 days/.test(r.note) : new RegExp(`Oura draws 30 days, so at ${n} days Timing and Symptoms are Florin charts'`).test(r.note), `wills-picks, ${n} days: the note ${n === 30 ? "names no fallback" : "says Timing and Symptoms are Florin charts' at this range"}`);
+      ok(r.picks && r.cards.join(",") === EXP[n] && Object.values(r.looks).every(Boolean) && feet && !r.bad, `wills-picks, ${n} days: FloraScore in Rings, Timing, Form, Symptoms and the check-in in Oura, Frequency in Bento, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
+      ok(!/draws 30 days|Florin charts' here/.test(r.note) && /picked once, at the top/.test(r.note), `wills-picks, ${n} days: the note says the range at the top is every card's, and names no fallback`);
     }
 
-    /* 4. the mix's count is the model's: L.span over the range, a flagged today left out, L.inForms per BM, and the
-       same as Insights' Form card in the default (Rings' big number, the range's own bar, and the core's card), for
-       each person, A, B and C */
+    /* 4. Oura's Form card counts the range the tabs say (Nov 7; it was Rings' count over Oura's bars, "the mix", Nov 5):
+       its range row, "This week" at 7 days, is the model's (L.span over the range, a flagged today left out, L.inForms
+       per BM) and the same as Insights' Form card in the default, for each person, A, B and C */
     const mixBad = [];
     for (const [who, form] of [["sarah", "C"], ["marcus", "C"], ["alex", "C"], ["sarah", "A"], ["sarah", "B"]]) {
       await wset("form", form); await wset("persona", who); await wopen("look-insights");
@@ -5056,17 +5061,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
           const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form;
           const bms = L.span(M, n, mode).filter((f) => !f.flag).flatMap((f) => f.bms), st = bms.map((x) => L.inForms(M, x, mode));
           const model = { in: st.filter((s) => s === true).length, read: st.filter((s) => s !== null).length, out: st.filter((s) => s === false).length, n: bms.length };
-          const c = document.querySelector(".rx-stage .ap-rx .rpk-mix"), rows = [...c.querySelectorAll(".rpk-hb")];
-          const own = rows.filter((x) => !/Your usual/.test(x.querySelector(".rpk-hb-top span").textContent)).pop();
+          const c = document.querySelector(".rx-stage .ap-rx .ou-form"), rows = [...c.querySelectorAll(".ou-habits li")];
+          const own = rows.find((x) => x.querySelector(".ou-hb-top span").textContent === (n <= 7 ? "This week" : `Last ${n} days`));
           const core = RU.core.insights(M, Object.assign({}, api.V(), { look: "built" }), { range: n }).replace(/<[^>]+>/g, "").match(/(\d+) of (\d+) BMs? in your usual forms/);
-          const pf = RU.picksForm(M, mode, n);
-          return { model, big: +c.querySelector(".rg-n").textContent, of: (c.querySelector(".rg-of").textContent.match(/of (\d+)/) || [])[1], bar: own ? own.querySelector(".rpk-hb-top b").textContent : "", core: core ? `${core[1]} of ${core[2]}` : "", parts: pf.fi + pf.el + pf.in + pf.eh + pf.lo === pf.n && pf.out === model.out };
+          return { model, bar: own ? own.querySelector(".ou-hb-top b").textContent : "", core: core ? `${core[1]} of ${core[2]}` : "", gone: typeof RU.picksForm === "undefined" && !c.closest(".lk-rings") };
         }, n);
         const want = `${m.model.in} of ${m.model.read}`;
-        if (!(m.big === m.model.in && +m.of === m.model.read && m.bar === want && m.core === want && m.parts)) mixBad.push(`${who} ${form} ${n}: model ${want}, card ${m.big} of ${m.of}, bar ${m.bar}, Form card ${m.core}`);
+        if (!(m.bar === `${want} within` && m.core === want && m.gone)) mixBad.push(`${who} ${form} ${n}: model ${want}, Oura's row ${m.bar}, Form card ${m.core}`);
       }
     }
-    ok(!mixBad.length, `wills-picks: the mix's count equals the model at 7, 30 and 90 days, for each person and in A, B and C: Rings' number, the range's own bar and Insights' Form card agree (${mixBad.slice(0, 2).join("; ") || "15 counts"})`);
+    ok(!mixBad.length, `wills-picks: Oura's Form card counts the range: its row equals the model and Insights' Form card at 7, 30 and 90 days, for each person and in A, B and C (${mixBad.slice(0, 2).join("; ") || "15 counts"})`);
     await wset("form", "C"); await wset("persona", "sarah"); await wopen("look-insights");
 
     /* 5. a picked card's detail is Florin charts', and Back lands on that card; Ask about this reads the card's range */
@@ -5079,7 +5083,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await range(90);
     await wclick(`${ph} [data-rlk-k="form"] [data-act="ask-about"]`, 600);
     const ak = await w.evaluate(() => ({ tab: window.FLORIN_EXT.api.S.tab, ctx: window.FLORIN_EXT.api.S.askCtx }));
-    ok(ak.tab === "ask" && ak.ctx && ak.ctx.k === "form" && ak.ctx.range === 90, `wills-picks: the mix's Ask about this opens Ask Florin on Form at 90 days (${ak.ctx ? `${ak.ctx.k}, ${ak.ctx.range}` : "none"})`);
+    ok(ak.tab === "ask" && ak.ctx && ak.ctx.k === "form" && ak.ctx.range === 90, `wills-picks: Form's Ask about this opens Ask Florin on Form at 90 days (${ak.ctx ? `${ak.ctx.k}, ${ak.ctx.range}` : "none"})`);
     await wopen("look-insights"); await range(30);
 
     /* 6. the theme is the phone's: Will's picks never sets it, and each card follows it light and dark. From Oura,
@@ -5128,12 +5132,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     }
     ok(!optBad.length && decs.length === 9 && decs.find(([k]) => k === "look")[1].includes("picks"), `wills-picks: every option of every decision is drawn on the phone, Will's picks among Data style's, each with a block in the sheet's shape (${optBad.slice(0, 3).join("; ") || `${decs.reduce((s, [, vs]) => s + vs.length, 0)} options`})`);
 
-    /* 9. Free: the same paywall rules. Insights is 7 days, so Oura's cards are Florin charts' there; the check-in and the
-       mix keep their style, and their details and Ask open the paywall */
+    /* 9. Free: the same paywall rules. Insights is 7 days, and every picked card draws it in its style; their details
+       and Ask open the paywall */
     await wclick('#rxLeft [data-rx="view"][data-v="picks"]', 500);
     await wset("plan", "free"); await wopen("look-insights");
     const fr = await insOf();
-    ok(fr.cards.join(",") === EXP[7] && fr.foot.every((f) => /:pay:pay=/.test(f)) && /On Free, Insights is 7 days and Oura draws 30/.test(fr.note), `wills-picks, Free: 7 days, the check-in in Oura, Form as the mix, FloraScore in Rings, each card's Ask and detail opening the paywall (${fr.foot.join(" ")})`);
+    ok(fr.cards.join(",") === EXP[7] && fr.foot.every((f) => /:pay:pay=/.test(f)) && /On Free that's 7 days/.test(fr.note), `wills-picks, Free: 7 days, every pick in its style, each card's Ask and detail opening the paywall (${fr.foot.join(" ")})`);
     await wclick(`${ph} [data-rlk-k="checkin"] .rlk-go`);
     const fp = await w.evaluate(() => { const t = window.FLORIN_EXT.api.top(); return t ? t.type : null; });
     await w.keyboard.press("Escape"); await ww();
@@ -5145,7 +5149,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const lb = [];
     for (const data of ["new", "fresh"]) {
       await wset("data", data); await wopen("look-insights");
-      const r = await insOf(), t = await w.evaluate(() => ({ learn: !!document.querySelector(".rx-stage .ap-rx .rpk-score .rg-learn"), day: (document.querySelector(".rx-stage .ap-rx .rpk-score") || {}).textContent || "", mix: (document.querySelector(".rx-stage .ap-rx .rpk-mix") || {}).textContent || "" }));
+      const r = await insOf(), t = await w.evaluate(() => ({ learn: !!document.querySelector(".rx-stage .ap-rx .rpk-score .rg-learn"), day: (document.querySelector(".rx-stage .ap-rx .rpk-score") || {}).textContent || "", mix: (document.querySelector(".rx-stage .ap-rx .ou-form") || {}).textContent || "" }));
       if (!(t.learn && /Day\s*\d+\s*of 14/.test(t.day.replace(/\s+/g, " ")) && r.looks.timing && r.looks.form && !r.bad && /so far/i.test(t.mix) && r.cards[0] === "score:rings" && r.cards[1] === "sum")) lb.push(`${data}: ${r.cards.join(",")}`);
     }
     await wset("data", "est"); await wopen("look-insights");
@@ -5362,6 +5366,355 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await scx.close();
   }
   /* ===== end symptoms-redo ===== */
+
+  /* ===== ask-widget: Ask button, the six styles of Ask about this (Will, Nov 7). One setting under View, stored per
+     viewer, set through phone.set, stamped on the root as data-ask-ui; every button keeps the token and a 44px
+     target, says its card in its name, and on Free still opens the paywall ===== */
+  {
+    const aw = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+    const awe = [];
+    aw.on("pageerror", (e) => awe.push(e.message)); aw.on("console", (m) => { if (m.type() === "error") awe.push(m.text()); });
+    await aw.goto(PAGE); await aw.waitForSelector(".ap-rx");
+    const aww = (ms = 450) => aw.waitForTimeout(ms);
+    const awph = ".rx-stage .ap-rx";
+    const STY = await aw.evaluate(() => window.FLORIN_EXT.askUI.opts.map(([v]) => v));
+    ok(STY.join(",") === "pill,compact,link,icon,chip,bar" && await aw.evaluate(() => document.querySelector(`.rx-stage .ap-rx`).dataset.askUi === "pill" && document.querySelector('[data-rx="askUI"][aria-pressed="true"]').dataset.v === "pill"), `ask-widget: six styles (${STY.join(", ")}), the pill by default, page and phone agree`);
+    ok(await aw.evaluate(() => !document.querySelector('.rx-panel--dec [data-rx="askUI"]') && !!document.querySelector('.rx-panel--view [data-rx="askUI"]')), "ask-widget: Ask button sits under View, not among the decisions");
+    /* each button as drawn: the token first, its target, its name and the words it shows */
+    const look = () => aw.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer :is(.ap-ask-b, .ap-idt-ask, .ap-ez-ask)")].filter((x) => x.getClientRects().length).map((x) => {
+      const r = x.getBoundingClientRect(), a = getComputedStyle(x, "::after");
+      let w = r.width, h = r.height;
+      if (a.content !== "none" && a.display !== "none" && a.position === "absolute") { w = r.width - parseFloat(a.left) - parseFloat(a.right); h = r.height - parseFloat(a.top) - parseFloat(a.bottom); }
+      const t = x.firstElementChild, tr = t ? t.getBoundingClientRect() : { width: 0 };
+      const shown = [...x.querySelectorAll(".ap-askw-t, .ap-askw-q")].filter((s) => s.getClientRects().length && getComputedStyle(s).clipPath === "none" && s.getBoundingClientRect().width > 2).map((s) => s.textContent.trim()).join(" ");
+      return { k: x.dataset.k, act: x.dataset.act, w: Math.round(w), h: Math.round(h), tok: !!t && t.classList.contains("ic") && getComputedStyle(t).borderRadius !== "0px" && tr.width >= 20, name: x.getAttribute("aria-label") || "", shown, q: (x.querySelector(".ap-askw-q") || {}).textContent || "" };
+    }));
+    const bad = [];
+    for (const th of ["light", "dark"]) for (const st of STY) {
+      await aw.evaluate((th) => window.FLORIN_EXT.api.set("theme", th), th);
+      await aw.click(`[data-rx="askUI"][data-v="${st}"]`); await aww(300);
+      const B = await look();
+      const ag = await aw.evaluate(() => ({ ui: document.querySelector(".rx-stage .ap-rx").dataset.askUi, tab: window.FLORIN_EXT.api.S.tab, stored: localStorage.getItem("florin-refresh:askUI"), pressed: document.querySelector('[data-rx="askUI"][aria-pressed="true"]').dataset.v }));
+      if (ag.ui !== st || ag.tab !== "insights" || ag.stored !== JSON.stringify(st) || ag.pressed !== st) bad.push(`${th} ${st}: ${JSON.stringify(ag)}`);
+      if (B.length < 5) bad.push(`${th} ${st}: ${B.length} buttons`);
+      B.forEach((x) => { if (!x.tok || x.h < 44 || x.w < 44 || !/^Ask/.test(x.name) || (x.shown && !x.name.includes(x.shown.replace(/ about this$/, " about this"))) || (st === "chip" && !x.q) || (st === "icon" && x.shown)) bad.push(`${th} ${st} ${x.k}: ${JSON.stringify(x)}`); });
+    }
+    ok(!bad.length, `ask-widget: in light and dark, every style draws each Insights Ask about this with the token, a target of 44px or more and a name that starts with Ask and holds the words it shows${bad.length ? `: ${bad.slice(0, 3).join(" | ")}` : ""}`);
+    /* E: the question it shows is the one Ask opens with in the box */
+    await aw.evaluate(() => window.FLORIN_EXT.api.set("theme", "light"));
+    await aw.click('[data-rx="askUI"][data-v="chip"]'); await aww(300);
+    const cq = await aw.evaluate(() => { const x = document.querySelector('.rx-stage .ap-rx .ap-ins .ap-askw[data-k="timing"]'); return x ? x.querySelector(".ap-askw-q").textContent : ""; });
+    await aw.click(`${awph} .ap-ins .ap-askw[data-k="timing"]`); await aww(600);
+    const box = await aw.evaluate(() => (document.querySelector(".rx-stage .ap-rx .ap-askx-in") || {}).value || "");
+    ok(cq && cq === box, `ask-widget: the Question style shows the card's first question, and Ask opens with it in the box (${cq} / ${box})`);
+    /* the detail page and Your weeks in Easy pick the style up */
+    const dt = [];
+    for (const st of ["compact", "bar"]) {
+      await aw.click(`[data-rx="askUI"][data-v="${st}"]`); await aww(300);
+      await aw.evaluate(() => window.FLORIN_EXT.api.open("i-timing")); await aww(500);
+      dt.push(...(await look()).map((x) => `${st}:${x.tok && x.h >= 44 ? "ok" : JSON.stringify(x)}`));
+    }
+    await aw.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("easy", true); api.go("insights"); }); await aww(500);
+    const ez = await look();
+    await aw.evaluate(() => window.FLORIN_EXT.api.set("easy", false)); await aww(300);
+    ok(dt.length >= 2 && dt.every((x) => /:ok$/.test(x)) && ez.length >= 5 && ez.every((x) => x.tok && x.h >= 48), `ask-widget: a detail page's Ask about this and Easy's take the style (${dt.join(", ")}; Easy ${ez.length} at ${ez.length ? Math.min(...ez.map((x) => x.h)) : 0}px or more)`);
+    /* Free: the lock in the token, and the paywall */
+    await aw.click('[data-rx="plan"][data-v="free"]').catch(() => aw.evaluate(() => window.FLORIN_EXT.api.set("plan", "free"))); await aww(300);
+    const fr = [];
+    for (const st of ["icon", "chip"]) {
+      await aw.click(`[data-rx="askUI"][data-v="${st}"]`); await aww(300);
+      const B = await look();
+      await aw.click(`${awph} .ap-ins .ap-askw[data-act="pay"]`); await aww(500);
+      const pay = await aw.evaluate(() => !!document.querySelector(".rx-stage .ap-rx .ap-o--t-pay"));
+      await aw.evaluate(() => window.FLORIN_EXT.api.closeAll()); await aww(300);
+      fr.push(`${st}:${B.length && B.every((x) => x.act === "pay" && x.tok && /with Florin membership$/.test(x.name)) && pay ? "ok" : "no"}`);
+    }
+    await aw.evaluate(() => window.FLORIN_EXT.api.set("plan", "member")); await aww(300);
+    ok(fr.every((x) => /:ok$/.test(x)), `ask-widget: on Free every style keeps the lock in its token, says membership in its name and opens the paywall (${fr.join(", ")})`);
+    /* stored per viewer: a reload keeps it, page and phone agree */
+    await aw.click('[data-rx="askUI"][data-v="link"]'); await aww(300);
+    await aw.reload(); await aw.waitForSelector(".ap-rx"); await aww(500);
+    const rl = await aw.evaluate(() => ({ s: window.FLORIN_EXT.api.S.askUI, ui: document.querySelector(".rx-stage .ap-rx").dataset.askUi, p: document.querySelector('[data-rx="askUI"][aria-pressed="true"]').dataset.v, line: document.querySelector("[data-askui-line]").textContent }));
+    ok(rl.s === "link" && rl.ui === "link" && rl.p === "link" && rl.line.length > 10, `ask-widget: the style survives a reload, page and phone agree (${JSON.stringify(rl)})`);
+    /* the note for Ask about this says what the setting does */
+    await aw.click('[data-rx="screen"][data-v="ask-about"]'); await aww(500);
+    const nt = await aw.evaluate(() => document.querySelector("#rxNotes").textContent);
+    ok(/Ask button, under View/.test(nt) && !/—|!/.test(nt), "ask-widget: the Ask about this note says what Ask button does");
+    /* under 760px: the Toggles sheet carries the row */
+    const am = await b.newPage({ viewport: { width: 390, height: 844 } });
+    await am.goto(PAGE); await am.waitForSelector(".ap-rx");
+    await am.click('[data-rx="sheet"][data-v="toggles"]'); await am.waitForTimeout(400);
+    await am.click('#rxSheet-toggles [data-rx="askUI"][data-v="bar"]'); await am.waitForTimeout(400);
+    const mm = await am.evaluate(() => ({ ui: document.querySelector(".rx-stage .ap-rx").dataset.askUi, tab: window.FLORIN_EXT.api.S.tab, tap: [...document.querySelectorAll('#rxSheet-toggles [data-rx="askUI"]')].every((x) => x.getBoundingClientRect().height >= 44) }));
+    ok(mm.ui === "bar" && mm.tab === "insights" && mm.tap, `ask-widget: under 760px the Toggles sheet sets it, with 44px buttons (${JSON.stringify(mm)})`);
+    await am.close();
+    ok(!awe.length, `ask-widget: no console or page errors${awe.length ? ": " + awe.slice(0, 3).join(" | ") : ""}`);
+    await aw.close();
+  }
+  /* ===== end ask-widget ===== */
+
+  /* ===== insights-v2 (Will, Nov 7, on the demo's Insights: "FLORIN CHARTS for insights tab has the best flow"; the
+     trend and the days card read alike, "the data isn't clear"; Frequency in Bento's stack, "a day with 5"; Form in
+     Oura's; "I like the 'ask about this' inside rather than below a card"; "the headings simplified ie 'TIMING'
+     'FREQUENCY' and the date range is toggled at very top, not labeled within"). Its own context, so the decisions it
+     picks reach no other check ===== */
+  {
+    const vc = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+    const v = await vc.newPage();
+    const ve = [];
+    v.on("pageerror", (e) => ve.push(e.message));
+    v.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /refresh-/.test(m.text()))) ve.push(m.text()); });
+    await v.goto(PAGE); await v.waitForSelector(".rx-stage .ap-rx"); await v.waitForTimeout(400);
+    const vw = (ms = 400) => v.waitForTimeout(ms);
+    const vset = async (k, val) => { await v.evaluate(([k, val]) => window.FLORIN_EXT.api.set(k, val), [k, val]); await vw(300); };
+    const vins = async (n) => {
+      await v.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.S.tab = "insights"; api.S.ins.k = null; api.renderTab(true); }); await vw(250);
+      if (n) { await v.evaluate((n) => { const x = document.querySelector(`.rx-stage .ap-rx [data-act="irange"][data-v="${n}"]`); if (x) x.click(); }, n); await vw(350); }
+    };
+    /* every card on Insights: its key, its head as seen (screen-reader words left out) and as heard, whether Ask about
+       this sits inside the card's own box (the core's card, or the look's own card inside the section), its range,
+       and anything in a head that names a range or a date */
+    const cardsOf = () => v.evaluate(() => {
+      const r = document.querySelector(".rx-stage .ap-rx .ap-layer .ap-ins");
+      const seen = (el) => { if (!el) return ""; const c = el.cloneNode(true); c.querySelectorAll(".sr").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
+      return [...r.querySelectorAll(":scope > section")].map((s) => {
+        const look = s.querySelector(":scope > .rlk-look"), box = look ? look.firstElementChild : s;
+        const head = look ? box.querySelector("h2") : s.querySelector(".ap-ic-t .ap-k, :scope > .ap-k");
+        const ask = s.querySelector('[data-act="ask-about"], [data-pay="ask"]');
+        return { k: s.dataset.rlkK || (s.classList.contains("ap-sum") ? "days" : ((s.querySelector(".ap-ic-h") || {}).dataset || {}).k), look: look ? s.dataset.rlkLook : "core", seen: seen(head), heard: head ? head.textContent.replace(/\s+/g, " ").trim() : "",
+          inside: !!ask && (look ? !!box && box.contains(ask) : s.contains(ask)), range: ask ? +(ask.dataset.range || 0) : null, pay: !!ask && ask.dataset.act === "pay",
+          meta: !!s.querySelector(".ou-seg") || [...s.querySelectorAll(".ou-date, .rg-k--date, .bt-k--m, .bt-k--hm, .jr-meta")].some((m) => /\d+ days|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d|Last \d|Week of|day,/.test(m.textContent)) || (s.dataset.rlkK === "timing" && !!s.querySelector(":is(.ou-h, .rg-h) .rg-chip--usual, :is(.ou-h, .rg-h) .ou-chip.is-usual")) };
+      });
+    });
+    const NAMES = { score: "FloraScore", days: "Your days", timing: "Timing", often: "Frequency", form: "Form", symptoms: "Symptoms", sym: "Symptoms", checkin: "Check-in", ck: "Check-in", pat: "Patterns" };
+    const ORDER = "score:rings,score:core,days:core,timing:oura,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
+    const bad = [];
+    const judge = (tag, cs, n, free) => {
+      cs.forEach((c, i) => {
+        const want = c.k === "score" && i === 1 ? "Trend" : NAMES[c.k];
+        if (c.seen !== want) bad.push(`${tag} ${c.k}: head "${c.seen}"`);
+        if (c.seen.split(" ").length > 2 || /\d|·/.test(c.seen)) bad.push(`${tag} ${c.k}: head not one or two words`);
+        if (c.meta) bad.push(`${tag} ${c.k}: a range, date or pill in its head`);
+        if (!c.inside) bad.push(`${tag} ${c.k}: Ask about this not inside the card`);
+        if (free ? !c.pay : (c.k === "pat" ? c.range !== 90 : c.k === "checkin" || c.k === "ck" ? !(c.range === n || c.range === 0) : c.k === "score" && i === 0 ? c.range !== n : c.range !== n)) bad.push(`${tag} ${c.k}: Ask's range ${c.range}${free ? ", not the paywall" : ""}`);
+        if (["timing", "often", "form", "symptoms", "sym", "days"].includes(c.k) || (c.k === "score" && i === 1)) { if (!new RegExp(`last ${n} days`).test(c.heard)) bad.push(`${tag} ${c.k}: a screen reader doesn't hear the range ("${c.heard}")`); }
+      });
+    };
+
+    /* 1. Will's picks, at 7, 30 and 90 days, light and dark, and the default: the picked cards in his styles, every card
+       named in a word or two with the range only in the tabs (and in the words a screen reader hears), Ask about this
+       inside each card at the range the tabs say */
+    await v.click('#rxLeft [data-rx="view"][data-v="picks"]'); await vw(600);
+    const tabs = [];
+    for (const theme of ["light", "dark"]) {
+      await vset("theme", theme);
+      for (const n of [7, 30, 90]) {
+        await vins(n);
+        const cs = await cardsOf();
+        const order = cs.map((c) => `${c.k}:${c.look}`).join(",");
+        if (order !== ORDER) bad.push(`picks ${theme} ${n}: ${order}`);
+        judge(`picks ${theme} ${n}`, cs, n, false);
+        tabs.push(await v.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-ins [data-act='irange']").length));
+      }
+    }
+    await vset("theme", "light");
+    ok(!bad.length && tabs.every((t) => t === 3), `insights-v2: Will's picks at 7, 30 and 90 days, light and dark: Rings, the Trend, Your days, Oura's Timing, Bento's Frequency, Oura's Form, Symptoms and check-in, Patterns; each card named in a word or two, the range only in the tabs at the top and in the words a screen reader hears, Ask about this inside each card at that range (${bad.slice(0, 4).join("; ") || "54 cards"})`);
+    bad.length = 0;
+    await v.click('#rxLeft [data-rx="view"][data-v="built"]'); await vw(600);
+    for (const n of [7, 30, 90]) { await vins(n); judge(`default ${n}`, await cardsOf(), n, false); }
+    const dflt = (await cardsOf()).map((c) => `${c.k}:${c.look}`).join(",");
+    ok(!bad.length && dflt === "score:rings,score:core,days:core,timing:core,often:core,form:core,sym:core,ck:core,pat:core", `insights-v2: the default, Florin charts, has the same plain heads, the range only at the top, and Ask about this inside every card (${bad.slice(0, 4).join("; ") || dflt})`);
+    bad.length = 0;
+
+    /* 2. the picked cards read the range: Oura's Timing and Bento's Frequency count the same days the model does */
+    await v.click('#rxLeft [data-rx="view"][data-v="picks"]'); await vw(600);
+    const cnt = [];
+    for (const who of ["sarah", "marcus", "alex"]) {
+      await vset("persona", who);
+      for (const n of [7, 30, 90]) {
+        await vins(n);
+        const m = await v.evaluate((n) => {
+          const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), F = L.span(M, n, api.V().form).filter((f) => !f.flag);
+          const morn = F.filter((f) => f.first != null), known = F.filter((f) => f.count != null), u = M.usual;
+          const ph = document.querySelector(".rx-stage .ap-rx"), tm = ph.querySelector('[data-rlk-k="timing"] .ou-stats dd'), fq = ph.querySelector('[data-rlk-k="often"] .bt-a');
+          return { tm: tm ? tm.textContent : "", want: `${morn.filter((f) => f.inWin).length} of ${morn.length}`, fq: fq ? fq.textContent : "", fwant: `Within your usual ${u.nLo} to ${u.nHi} a day on ${known.filter((f) => f.count >= u.nLo && f.count <= u.nHi).length} of ${known.length} day` };
+        }, n);
+        if (m.tm !== m.want || m.fq.indexOf(m.fwant) !== 0) cnt.push(`${who} ${n}: timing ${m.tm} (model ${m.want}); frequency "${m.fq}" (model "${m.fwant}")`);
+      }
+    }
+    await vset("persona", "sarah");
+    ok(!cnt.length, `insights-v2: Oura's Timing and Bento's Frequency count the range the tabs say, as the model does, at 7, 30 and 90 days for each person (${cnt.slice(0, 2).join("; ") || "18 counts"})`);
+
+    /* 3. the busy day (refresh-data.js, BUSY): one day with 5 BMs in each person's last 30 days, not in the last 7, an
+       ordinary day (no flag, no note, no alarm word), read as a shift of the count; on Bento's Frequency it is Gold at
+       30 and 90 days, and not there at 7 */
+    const busy = await v.evaluate(() => {
+      const L = window.FLORIN_LOGS, out = [];
+      for (const who of ["sarah", "marcus", "alex"]) for (const mode of ["A", "B", "C"]) {
+        const M = L.build(who, "est", {}), five = M.days.filter((x) => L.bms(x).length === 5), max = Math.max(...M.days.map((x) => L.bms(x).length));
+        const d = five[0], f = d && L.facts(M, d, mode), bm = d ? L.bms(d) : [];
+        const ok2 = five.length === 1 && max === 5 && d.d > L.TODAY - 30 && d.d <= L.TODAY - 7 && f.state === "shifted" && f.inCount === false && bm.every((e) => !e.note && !Object.keys(e.flags || {}).length && !L.alarmOf(e)) && bm.slice(1).every((e) => L.inForms(M, e, mode) !== false);
+        if (!ok2) out.push(`${who} ${mode}: ${five.length} days of 5, max ${max}${d ? `, day ${d.d}, ${f.state}` : ""}`);
+      }
+      return out;
+    });
+    const gold = [];
+    for (const n of [7, 30, 90]) {
+      await vins(n);
+      gold.push(await v.evaluate(() => { const c = document.querySelector('.rx-stage .ap-rx [data-rlk-k="often"] .bt-chart'), byX = {}; c.querySelectorAll(".bt-unit").forEach((u) => { const x = u.getAttribute("x"); (byX[x] = byX[x] || []).push(u.classList.contains("is-s")); }); const five = Object.values(byX).filter((a) => a.length === 5); return five.length === 1 && five[0].every(Boolean) ? "gold5" : five.length ? "five, not gold" : "none"; }));
+    }
+    ok(!busy.length && gold.join(",") === "none,gold5,gold5", `insights-v2: each person has one ordinary day with 5 BMs in the last 30 days but not the last 7, read as more BMs than usual, and Bento's Frequency draws it Gold at 30 and 90 days (${busy.slice(0, 2).join("; ") || gold.join(", ")})`);
+
+    /* 4. the Trend says it is FloraScore, and Your days says what "within your usual" means and what each day outside
+       it had: every count from the model */
+    await vins(30);
+    const td = await v.evaluate(() => {
+      const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, F = L.span(M, 30, mode), T = L.tally(F, false), u = M.usual;
+      const su = L.scoreUsual(M, mode), sc = L.scoreSeries(M, 30, mode).filter((s) => s.value != null && !(L.flagToday(M) && s.d === L.TODAY));
+      const ph = document.querySelector(".rx-stage .ap-rx .ap-ins"), tr = ph.querySelector('.ap-ic-h[data-k="score"] .ap-ic-t b').textContent, yd = ph.querySelector(".ap-sum");
+      const sh = F.filter((f) => f.state === "shifted");
+      const want = { "First BM outside your window": sh.filter((f) => f.inWin === false).length, "More BMs than usual": sh.filter((f) => f.inCount === false && f.count > u.nHi).length, "No BM": sh.filter((f) => f.count === 0).length, "A form outside your usual forms": sh.filter((f) => f.formsIn === false).length };
+      const rows = Object.fromEntries([...yd.querySelectorAll(".ap-yd-why li")].map((li) => [li.querySelector("span").textContent, parseInt(li.querySelector("strong").textContent, 10)]));
+      return { tr, trWant: `FloraScore in its usual range on ${sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length} of ${sc.length} days`, big: yd.querySelector(".ap-big").textContent.replace(/\s+/g, " "), bigWant: `${T.within}of ${T.known} days`, def: (yd.querySelector(".ap-yd-def") || {}).textContent || "", rows, ok: Object.entries(want).every(([k, n]) => (n ? rows[k] === n : !(k in rows))), h: (yd.querySelector(".ap-yd-out-h") || {}).textContent || "", hWant: `What the ${sh.length} days outside your usual had`, para: /Of the \d+ days outside/.test(yd.textContent) };
+    });
+    ok(td.tr === td.trWant && td.big === td.bigWant && /all three: a first BM in your window, a usual count and your usual forms/.test(td.def) && td.ok && td.h === td.hWant && !td.para, `insights-v2: the Trend reads "${td.tr}" and Your days "${td.big}", says what within your usual means, and breaks the days outside it down a row each, as the model counts them (${JSON.stringify(td.rows)})`);
+
+    /* 5. Free: 7 days only (30 and 90 open membership), every card in its style with Ask inside opening the paywall */
+    await vset("plan", "free"); await vins();
+    const fcs = await cardsOf();
+    judge("free", fcs, 7, true);
+    const fpay = await v.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-ins [data-v='30'], .rx-stage .ap-rx .ap-ins [data-v='90']")].every((x) => x.dataset.act === "pay"));
+    ok(!bad.length && fpay && fcs.map((c) => `${c.k}:${c.look}`).join(",") === ORDER, `insights-v2: on Free, Will's picks is 7 days with 30 and 90 behind membership, and every card's Ask inside it opens the paywall (${bad.slice(0, 3).join("; ") || "ok"})`);
+    bad.length = 0;
+    await vset("plan", "member");
+
+    /* 6. a library look on the phone (Data style): its cards' heads plain, and Ask about this inside each card, except
+       Easy read's, whose large links stay under the card */
+    const lk = [];
+    for (const id of ["rings", "journal", "bento", "oura"]) {
+      await vset("look", id); await vins();
+      const cs = await cardsOf();
+      cs.forEach((c) => { if (!c.inside || c.meta || c.seen.split(" ").length > 2 || /\d|·/.test(c.seen)) lk.push(`${id} ${c.k}: "${c.seen}"${c.inside ? "" : ", Ask outside"}${c.meta ? ", a range or date" : ""}`); });
+    }
+    await vset("look", "built");
+    ok(!lk.length, `insights-v2: in every data style the phone draws, each Insights card has a plain head and Ask about this inside it (${lk.slice(0, 3).join("; ") || "4 styles"})`);
+
+    ok(!ve.length, `insights-v2: no console errors or module warnings${ve.length ? ": " + ve.slice(0, 3).join(" | ") : ""}`);
+    await vc.close();
+  }
+  /* ===== end insights-v2 ===== */
+
+  /* ===== detail-v2: the detail pages with Oura's depth in Florin's design (prototype/js/refresh-detail.js, Will, Nov 7).
+     Every detail page draws in both themes at 7, 30 and 90 days with no error; its numbers equal the model (the
+     headline, the contributors, the chart's caption); the day picked says its reasons and moves with the keys and a
+     tap; a flagged today is in no count and says the flag line; the theme is the phone's, never forced dark; Free
+     keeps the paywall ===== */
+  {
+    const dc = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const q = await dc.newPage();
+    const qe = [];
+    q.on("pageerror", (e) => qe.push(e.message));
+    q.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /Florin/.test(m.text()))) qe.push(m.text()); });
+    await q.goto(PAGE); await q.waitForSelector(".ap-rx"); await q.waitForTimeout(400);
+    /* 1. the numbers, off the page: every person, consistency option and range */
+    const num = await q.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, Ut = window.FLORIN_APP.util, T = Ut.fmtTime, bad = [];
+      const V = (o = {}) => Object.assign({ form: "C", uid: 3, plan: "member", mealUI: "quick", bmUI: "quick", home: "score", history: "list", checkin: true, look: "built", easy: false, onboard: "short", persona: "sarah", data: "est", meals: "all" }, o);
+      const dom = (h) => new DOMParser().parseFromString("<div>" + h + "</div>", "text/html").body.firstChild;
+      const txt = (el) => (el ? el.textContent.replace(/\s+/g, " ").trim() : "");
+      for (const who of ["sarah", "marcus", "alex"]) for (const form of ["A", "B", "C"]) for (const n of [7, 30, 90]) {
+        const M = L.build(who, "est"), F = L.span(M, n, form), tag = `${who} ${form} ${n}`;
+        for (const k of ["score", "timing", "often", "form", "sym", "ck", "pat"]) {
+          const d = dom(RU.idetail(M, V({ persona: who, form }), { k, range: n }));
+          if (!d.querySelector(".dt-page")) bad.push(`${tag} ${k}: not drawn`);
+          if (k !== "pat" && !d.querySelector(".dt-fig .dt-scrub[role=slider]")) bad.push(`${tag} ${k}: no chart with a scrubber`);
+          if (/[—–!]/.test(txt(d)) || /\b(healthy|normal|improving|worsening)\b/i.test(txt(d)) || /undefined|NaN|\[object/.test(txt(d))) bad.push(`${tag} ${k}: copy`);
+        }
+        /* FloraScore: the four parts are today's (L.score), against their usual, each opening its page; the chart's
+           caption counts the days in the usual range as the model does */
+        const s = L.score(M, L.TODAY, form), su = L.scoreUsual(M, form), sd = dom(RU.idetail(M, V({ persona: who, form }), { k: "score", range: n }));
+        const parts = [...sd.querySelectorAll(".dt-con .dt-cr")].map((r) => [r.dataset.k, +txt(r.querySelector(".dt-cr-v"))]);
+        const wantP = L.SCORE_PARTS.map(([pk]) => [{ timing: "timing", often: "often", form: "form", comfort: "sym" }[pk], Math.round(s.parts[pk])]);
+        if (JSON.stringify(parts) !== JSON.stringify(wantP)) bad.push(`${tag} score parts ${JSON.stringify(parts)}`);
+        const ser = L.scoreSeries(M, n, form).filter((x) => x.value != null), kIn = ser.filter((x) => x.value >= su[0] && x.value <= su[1]).length;
+        if (!txt(sd.querySelector(".dt-fig .ap-figcap b")).startsWith(`In its usual range on ${kIn} of ${ser.length} day`)) bad.push(`${tag} score caption`);
+        /* Timing: mornings in the window and outside add up to the mornings read; the headline time is the median */
+        const rd = F.filter((f) => f.first != null && !f.flag), u = M.usual, inW = rd.filter((f) => f.inWin).length;
+        const td = dom(RU.idetail(M, V({ persona: who, form }), { k: "timing", range: n }));
+        const tr = td.querySelector(".dt-con .dt-cr");
+        if (txt(tr.querySelector(".dt-cr-v")) !== `${inW}of ${rd.length}`) bad.push(`${tag} timing window ${txt(tr.querySelector(".dt-cr-v"))}`);
+        if (!txt(td.querySelector(".dt-hl")).startsWith(`${inW} of ${rd.length} mornings`) && !/^Every first BM/.test(txt(td.querySelector(".dt-hl")))) bad.push(`${tag} timing headline`);
+        if (txt(td.querySelector(".ap-dhero .ap-big")) !== T(Ut.median(rd.map((f) => f.first)))) bad.push(`${tag} timing median`);
+        /* How often: the average over the days read, and the busiest day */
+        const od = dom(RU.idetail(M, V({ persona: who, form }), { k: "often", range: n })), ro = F.filter((f) => f.count != null && !f.flag);
+        const avg = (ro.reduce((a, f) => a + f.count, 0) / ro.length).toFixed(1), ob = [...od.querySelectorAll(".dt-con .dt-cr")];
+        if (txt(ob[0].querySelector(".dt-cr-v")) !== `${avg}a day` || txt(ob[2].querySelector(".dt-cr-v")) !== `${Math.max(...ro.map((f) => f.count))}${Math.max(...ro.map((f) => f.count)) === 1 ? "BM" : "BMs"}`) bad.push(`${tag} often ${txt(ob[0].querySelector(".dt-cr-v"))} ${txt(ob[2].querySelector(".dt-cr-v"))}`);
+        /* Form: in, firmer, looser and could be either add up to the BMs read (L.inForms, three-valued) */
+        const fb = F.filter((f) => !f.flag).flatMap((f) => f.bms), st = fb.map((x) => L.inForms(M, x, form)), fd = dom(RU.idetail(M, V({ persona: who, form }), { k: "form", range: n }));
+        const fr = fd.querySelector(".dt-con .dt-cr"), nIn = st.filter((x) => x === true).length, nUn = st.filter((x) => x === null).length;
+        if (txt(fr.querySelector(".dt-cr-v")) !== `${nIn}of ${fb.length - nUn}`) bad.push(`${tag} form ${txt(fr.querySelector(".dt-cr-v"))}`);
+        const fo = fb.filter((x, i) => st[i] === false), firm = fo.filter((x) => (form === "B" ? L.wordKey(x) < u.wLo : Math.max(...L.stepsOf(x)) < u.fLo)).length;
+        if (!txt(fr.querySelector(".dt-cr-f")).startsWith(`${firm} firmer, ${fo.length - firm} looser`)) bad.push(`${tag} form split ${txt(fr.querySelector(".dt-cr-f"))}`);
+        if (n === 90 && !["timing", "often", "form"].every((k) => dom(RU.idetail(M, V({ persona: who, form }), { k, range: 90 })).querySelector(".dt-fig .dv-wbar"))) bad.push(`${tag}: 90 days isn't a bar a week`);
+      }
+      /* the check-in's week chart: a dot an answer, nothing for a skipped week */
+      const M = L.build("sarah", "est"), cd = dom(RU.idetail(M, V(), { k: "ck", range: 30 }));
+      const ans = M.checkins.filter((c) => c.answers).length + (M.checkin.status === "done" ? 1 : 0);
+      if (cd.querySelectorAll(".dt-fig .dt-ckd").length !== ans * 4) bad.push(`ck dots ${cd.querySelectorAll(".dt-fig .dt-ckd").length} of ${ans * 4}`);
+      /* a flagged today: in no count, a Teal ring on the chart, and the day picked says the flag line */
+      const Mf = L.build("sarah", "est"); L.add(Mf, { kind: "bm", d: L.TODAY, t: 19.6, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" });
+      for (const k of ["timing", "often", "form", "sym"]) {
+        const d = dom(RU.idetail(Mf, V(), { k, range: 7 }));
+        if (!d.querySelector(".dt-fig .is-flag") || !txt(d.querySelector(".dt-pick")).includes(L.FLAG_DAY)) bad.push(`flag ${k}: ring or line`);
+      }
+      const rdF = L.span(Mf, 7, "C").filter((f) => f.first != null && !f.flag);
+      if (txt(dom(RU.idetail(Mf, V(), { k: "timing", range: 7 })).querySelector(".dt-con .dt-cr .dt-cr-v")) !== `${rdF.filter((f) => f.inWin).length}of ${rdF.length}`) bad.push("flag: today counted on Timing");
+      /* before day 14: drawn in Ink 3, nothing compared, no contributors */
+      const Mn = L.build("sarah", "new"), nd = dom(RU.idetail(Mn, V({ data: "new" }), { k: "timing", range: 7 }));
+      if (nd.querySelector(".dt-con") || !nd.querySelector(".dt-fig .is-learn") || nd.querySelector(".dt-fig .c-band")) bad.push("learning timing");
+      return bad;
+    });
+    ok(!num.length, `detail-v2: every detail page draws its added blocks for Sarah, Marcus and Alex in A, B and C at 7, 30 and 90 days, and its headline, contributors and caption equal the model (FloraScore's parts, the mornings in the window, the average and busiest day, the forms in, firmer, looser and could be either); 90 days is a bar a week; a flagged today is in no count with its Teal ring and line; before day 14 nothing is compared${num.length ? `: ${num.slice(0, 4).join(" | ")}` : ""}`);
+
+    /* 2. on the phone, light and dark, each page at each range: no sideways scroll, the theme is the phone's, and the
+       scrubber moves with the keys and with a tap */
+    const live = [];
+    for (const th of ["light", "dark"]) {
+      await q.evaluate((th) => { const api = window.FLORIN_EXT.api; api.set("look", "built"); api.set("plan", "member"); api.set("theme", th); }, th);
+      for (const k of ["score", "timing", "often", "form", "sym", "ck", "pat"]) for (const n of [7, 30, 90]) {
+        await q.evaluate(([k, n]) => { const api = window.FLORIN_EXT.api; api.closeAll(); api.S.ins.range = n; api.open("i-" + k); }, [k, n]); await q.waitForTimeout(250);
+        const r = await q.evaluate(([th]) => {
+          const ph = document.querySelector(".rx-stage .ap-rx"), lay = ph.querySelector(".ap-layer"), pg = lay.querySelector(".dt-page");
+          const probe = document.createElement("i"); probe.style.color = "var(--ap-card)"; ph.appendChild(probe); const card = getComputedStyle(probe).color; probe.remove();
+          const con = pg && pg.querySelector(".dt-con-l");
+          return { pg: !!pg, theme: ph.dataset.theme === th, wide: lay.scrollWidth > lay.clientWidth + 1, card: !con || getComputedStyle(con).backgroundColor === card };
+        }, [th]);
+        if (!r.pg || !r.theme || r.wide || !r.card) live.push(`${th} ${k} ${n}: ${JSON.stringify(r)}`);
+      }
+    }
+    await q.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("theme", "light"); api.closeAll(); api.S.ins.range = 30; api.open("i-timing"); }); await q.waitForTimeout(300);
+    const sc = q.locator(".rx-stage .ap-rx .dt-fig .dt-scrub").first();
+    await sc.focus();
+    const before = await q.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .dt-scrub"); return { i: s.getAttribute("aria-valuenow"), pick: document.querySelector(".rx-stage .ap-rx .dt-pick").textContent }; });
+    await q.keyboard.press("ArrowLeft"); await q.keyboard.press("ArrowLeft"); await q.waitForTimeout(150);
+    const after = await q.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .dt-scrub"); return { i: s.getAttribute("aria-valuenow"), pick: document.querySelector(".rx-stage .ap-rx .dt-pick").textContent, focus: document.activeElement === s }; });
+    const box = await sc.boundingBox();
+    await q.mouse.click(box.x + 2, box.y + box.height / 2); await q.waitForTimeout(150);
+    const tap = await q.evaluate(() => { const L = window.FLORIN_LOGS, s = document.querySelector(".rx-stage .ap-rx .dt-scrub"), F = L.span(window.FLORIN_EXT.api.M(), 30, "C"); return { i: s.getAttribute("aria-valuenow"), head: document.querySelector(".rx-stage .ap-rx .dt-pick-h b").textContent, d0: F[0].d }; });
+    const keys = +after.i === +before.i - 2 && after.pick !== before.pick && after.focus && tap.i === "1";
+    ok(!live.length && keys, `detail-v2: on the phone, light and dark, every detail page at 7, 30 and 90 days follows the phone's theme with no sideways scroll; the arrow keys and a tap pick a day and its words follow (${live.slice(0, 2).join("; ") || `${before.i} to ${after.i}, tap ${tap.i} ${tap.head}`})`);
+
+    /* 3. the range tabs on a detail stay in step with Insights; Free keeps the paywall */
+    await q.evaluate(() => { const b2 = document.querySelector('.rx-stage .ap-rx .ap-layer [data-act="irange"][data-v="90"]'); if (b2) b2.click(); }); await q.waitForTimeout(300);
+    const step = await q.evaluate(() => ({ r: window.FLORIN_EXT.api.S.ins.range, n: document.querySelector(".rx-stage .ap-rx .dt-fig").dataset.dtN }));
+    await q.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("plan", "free"); api.closeAll(); api.open("i-timing"); }); await q.waitForTimeout(400);
+    const free = await q.evaluate(() => { const api = window.FLORIN_EXT.api, t = api.top(); return { top: t ? t.type : "", dt: !!document.querySelector(".rx-stage .ap-rx .ap-layer .dt-page") }; });
+    await q.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.set("plan", "member"); });
+    ok(step.r === 90 && step.n === "90" && free.top === "pay" && !free.dt, `detail-v2: a detail's range tab moves Insights' range with it (${step.r}), and on Free a detail opens the paywall, never the page (${free.top})`);
+    ok(!qe.length, `detail-v2: no console errors or module warnings${qe.length ? ": " + qe.slice(0, 3).join(" | ") : ""}`);
+    await dc.close();
+  }
+  /* ===== end detail-v2 ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();
