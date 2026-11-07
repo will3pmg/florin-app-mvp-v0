@@ -127,6 +127,7 @@
 .lk-rings .rg-svg .rg-xt.is-today { fill: var(--rg-ink); font-weight: 700; }
 .lk-rings .rg-now-halo { fill: color-mix(in srgb, var(--rg-read) 14%, transparent); stroke: color-mix(in srgb, var(--rg-read) 55%, transparent); stroke-width: 1.2; }
 .lk-rings .rg-now-halo.is-shift { fill: color-mix(in srgb, var(--rg-shift) 18%, transparent); stroke: var(--rg-shift); }
+.lk-rings .rg-now-halo.is-flag { fill: color-mix(in srgb, var(--ap-teal) 14%, transparent); stroke: var(--ap-teal); }
 .lk-rings .rg-now { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 2; }
 .lk-rings .rg-now.is-shift { fill: var(--rg-shift); }
 .lk-rings .rg-svg .rg-now-lbl { font-family: var(--sans); font-size: 12px; font-weight: 500; fill: var(--rg-ink); paint-order: stroke; stroke: var(--rg-ground); stroke-width: 3px; stroke-linejoin: round; }
@@ -254,6 +255,8 @@
 .lk-rings .rg-vt { stroke: var(--ap-ink3); stroke-width: 1; }
 .lk-rings .rg-mdot { fill: var(--rg-read); stroke: var(--rg-ground); stroke-width: 1; }
 .lk-rings .rg-mdot.is-shift { fill: var(--rg-shift); }
+/* a flagged today's first BM: a Teal ring, read against nothing (the app's flag mark) */
+.lk-rings .rg-mdot.is-flag { fill: var(--rg-ground); stroke: var(--ap-teal); stroke-width: 1.6; }
 .lk-rings .rg-mdial .rg-band { fill: color-mix(in srgb, var(--ap-band) 80%, transparent); }
 
 /* ---------- how often: the 30-day ring ---------- */

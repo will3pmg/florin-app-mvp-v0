@@ -463,8 +463,9 @@ deck isn't needed. can kill that."
   the days outside it had as a small breakdown (first BM outside the window, more BMs than usual, No BM, a form outside
   the usual forms), in place of a paragraph. We kept two cards rather than merging them: one is a score, one is the logs.
 - **Will's picks, Nov 7.** Frequency is Bento's stacked chart ("cleaner visually"), Form is Oura's ("our has the best
-  FORM analysis visualizer"; the Rings and Oura mix is gone), Timing stays Oura ("torn between oura and rings"), and
-  Symptoms and the check-in stay Oura.
+  FORM analysis visualizer"; the Rings and Oura mix is gone), and Symptoms and the check-in stay Oura. Timing ("torn
+  between oura and rings"): the screenshot of the Timing card he likes was the Rings morning dial, so his picks now draw
+  it, at the range picked at the top; Oura's card stays one switch away (`WILL_PICKS.timing`).
 - **A day with 5 BMs** ("We should show a day with 5 (maybe goes to red on 5?)"). Each demo person now has one, Monday
   Sep 21, in the last 30 days but not this week, an ordinary day with nothing flagged. It is Gold, not red: red is out of
   the app's palette, and a day over the usual count is a shift, which is always Gold. Nothing else the demo says changed
@@ -535,7 +536,8 @@ line says so.
 - Rings says "1 of 3 check-ins saved" before the first three: is that the way to put it?
 - Bento's usual days now have a Plum edge on light, so a usual month looks busier: acceptable?
 - Rings and Oura lead with a big 0 ("0 of 4 like your first weeks") when every answer moved: follow Easy read?
-- Will's picks (Nov 7): every picked card now draws 7, 30 and 90 days. Timing: Oura or Rings ("torn")? Frequency
+- Will's picks (Nov 7): every picked card now draws 7, 30 and 90 days. Timing is the Rings dial from his screenshot:
+  right, or Oura's? At 90 days its dot columns pack tight: keep, or a bar a slot? Frequency
   draws Bento's whole board (the stacked chart, then Average and Day by day tiles): keep the two small tiles, or the
   chart alone? And the Insights FloraScore ring fills toward 100, which data viz.md warned can read as a grade: keep it,
   with its end never Gold?

@@ -5007,7 +5007,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return {
         rpk: !!r && r.classList.contains("rpk-ins"), picks: !!r && r.dataset.rpk === "picks",
         cards: r ? [...r.querySelectorAll(":scope > section")].map((s) => (s.dataset.rlkK ? `${s.dataset.rlkK}:${s.dataset.rlkLook}` : s.classList.contains("ap-sum") ? "sum" : `${((s.querySelector(".ap-ic-h") || {}).dataset || {}).k}:core`)) : [],
-        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-oura .ou-timing'), often: q('[data-rlk-k="often"] .lk-bento .bt'), form: q('[data-rlk-k="form"] .lk-oura .ou-form'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
+        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-rings .rg-timing'), often: q('[data-rlk-k="often"] .lk-bento .bt'), form: q('[data-rlk-k="form"] .lk-oura .ou-form'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
         /* Nov 7: the foot sits inside the look's card */
         foot: [...l.querySelectorAll(".rpk-card")].map((c) => { const a = c.querySelector('.rlk-look .rlk-foot [data-act="ask-about"], .rlk-look .rlk-foot [data-pay="ask"]'), g = c.querySelector(".rlk-look .rlk-foot .rlk-go"); return `${c.dataset.rlkK}:${a ? (a.dataset.act === "pay" ? "pay" : `ask=${a.dataset.k}`) : "none"}:${g ? `${g.dataset.act}=${g.dataset.k || g.dataset.pay}` : "none"}`; }),
         theme: [...new Set([...l.querySelectorAll(".rpk-card .rlk-look")].map((n) => n.dataset.theme))].join(","),
@@ -5042,15 +5042,17 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
 
     /* 3. each picked card in its style, in Insights' own order, at 7, 30 and 90 days (Nov 7: every card draws the range
        the tabs say, so no style falls back to Florin charts). Every picked card keeps Ask about this and opens its detail */
-    const EXP1 = "score:rings,score:core,sum,timing:oura,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
+    /* Nov 7: Timing is the Rings morning dial (Will's screenshot of the Timing card he likes was Rings', though he
+       called it "the oura") */
+    const EXP1 = "score:rings,score:core,sum,timing:rings,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
     const EXP = { 30: EXP1, 7: EXP1, 90: EXP1 };
     const FOOT = { score: "ask=score:idetail=score", timing: "ask=timing:idetail=timing", often: "ask=often:idetail=often", form: "ask=form:idetail=form", symptoms: "ask=sym:idetail=sym", checkin: "ask=ck:idetail=ck" };
     for (const n of [7, 30, 90]) {
       await range(n);
       const r = await insOf();
       const feet = r.foot.every((f) => { const [k] = f.split(":"); return f === `${k}:${FOOT[k]}`; });
-      ok(r.picks && r.cards.join(",") === EXP[n] && Object.values(r.looks).every(Boolean) && feet && !r.bad, `wills-picks, ${n} days: FloraScore in Rings, Timing, Form, Symptoms and the check-in in Oura, Frequency in Bento, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
-      ok(!/draws 30 days|Florin charts' here/.test(r.note) && /picked once, at the top/.test(r.note), `wills-picks, ${n} days: the note says the range at the top is every card's, and names no fallback`);
+      ok(r.picks && r.cards.join(",") === EXP[n] && Object.values(r.looks).every(Boolean) && feet && !r.bad, `wills-picks, ${n} days: FloraScore in Rings, Timing in the Rings morning dial, Form, Symptoms and the check-in in Oura, Frequency in Bento, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
+      ok(!/draws 30 days|Florin charts' here/.test(r.note) && /picked once, at the top/.test(r.note) && /Timing in the Rings morning dial/.test(r.note) && !/Timing[^;.]*in Oura's cards/.test(r.note), `wills-picks, ${n} days: the note says the range at the top is every card's, names no fallback, and says Timing is the Rings morning dial`);
     }
 
     /* 4. Oura's Form card counts the range the tabs say (Nov 7; it was Rings' count over Oura's bars, "the mix", Nov 5):
@@ -5083,7 +5085,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const td = await w.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), look: !!document.querySelector(".rx-stage .ap-rx .ap-layer .rlk-look"), core: !!document.querySelector(".rx-stage .ap-rx .ap-layer .ap-idt") }));
     await wclick(`${ph} .ap-back`, 600);
     const tb0 = await w.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('[data-rlk-k="timing"]') && a.matches(".rlk-go"); });
-    ok(td.key === "i-timing" && !td.look && td.core && tb0 && await wkey() === "look-insights", `wills-picks: Oura's Timing card opens Florin charts' Timing page, and Back lands on the card (${td.key})`);
+    ok(td.key === "i-timing" && !td.look && td.core && tb0 && await wkey() === "look-insights", `wills-picks: the Rings Timing dial opens Florin charts' Timing page, and Back lands on the card (${td.key})`);
     await range(90);
     await wclick(`${ph} [data-rlk-k="form"] [data-act="ask-about"]`, 600);
     const ak = await w.evaluate(() => ({ tab: window.FLORIN_EXT.api.S.tab, ctx: window.FLORIN_EXT.api.S.askCtx }));
@@ -5161,6 +5163,21 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await w.evaluate(() => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M(); L.add(M, { kind: "bm", d: L.TODAY, t: 19.7, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" }); api.renderTab(true); }); await ww();
     const fl = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"); return { text: s.textContent.replace(/\s+/g, " "), num: !!s.querySelector(".rg-dial-n") && /\d/.test(s.querySelector(".rg-dial-n").textContent), gold: !!s.querySelector(".rg-end.is-shift") }; });
     ok(!lb.length && /Not read against your usual today/.test(fl.text) && fl.num && !fl.gold, `wills-picks: while Florin learns, the Rings card is Day 5 of 14 and the picked cards show the days so far; on a flagged today it keeps the number and says Not read against your usual today${lb.length ? ` (${lb.join("; ")})` : ""}`);
+    /* the Timing dial on a flagged today: today's first BM a Teal ring (is-flag), never a dot in or out of the window,
+       in none of the counts (the centre is the model's mornings read, the flagged today left out), and its line and
+       legend say why (RU.FLAG_DAY), at 7, 30 and 90 days */
+    const flt = [];
+    for (const n of [7, 30, 90]) {
+      await range(n);
+      const t = await w.evaluate((n) => {
+        const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), F = L.span(M, n, api.V().form);
+        const morn = F.filter((f) => f.first != null && !f.flag), c = document.querySelector('.rx-stage .ap-rx [data-rlk-k="timing"]');
+        const fd = c.querySelectorAll(".rg-mdot.is-flag"), num = c.querySelector(".rg-mdial-n").textContent.trim(), of = c.querySelector(".rg-mdial-s").textContent.trim();
+        return { n, flagDots: fd.length, newest: fd.length === 1 && fd[0].classList.contains("is-new") && !fd[0].classList.contains("is-shift"), halo: !!c.querySelector(".rg-now-halo.is-flag"), count: `${num} ${of}`, want: `${morn.filter((f) => f.inWin).length} of ${morn.length} mornings`, line: c.textContent.includes(RU.FLAG_DAY), legend: /Today, noted for a clinician/.test((c.querySelector(".rg-legend") || {}).textContent || ""), read: /inside your window|in your usual window\.|later than your window\.|earlier than your window\./.test((c.querySelector(".rg-ans") || {}).textContent || "") };
+      }, n);
+      if (!(t.flagDots === 1 && t.newest && t.halo && t.count === t.want && t.line && t.legend && !t.read)) flt.push(JSON.stringify(t));
+    }
+    ok(!flt.length, `wills-picks: on a flagged today the Timing dial draws today's first BM as a Teal ring read against nothing, in none of its counts, and says why, at 7, 30 and 90 days${flt.length ? ` (${flt.slice(0, 2).join("; ")})` : ""}`);
     await wset("data", "est");
 
     /* 11. the Easy version keeps its own screens; View says so under the switch */
@@ -5492,7 +5509,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       });
     });
     const NAMES = { score: "FloraScore", days: "Your days", timing: "Timing", often: "Frequency", form: "Form", symptoms: "Symptoms", sym: "Symptoms", checkin: "Check-in", ck: "Check-in", pat: "Patterns" };
-    const ORDER = "score:rings,score:core,days:core,timing:oura,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
+    const ORDER = "score:rings,score:core,days:core,timing:rings,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
     const bad = [];
     const judge = (tag, cs, n, free) => {
       cs.forEach((c, i) => {
@@ -5523,7 +5540,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       }
     }
     await vset("theme", "light");
-    ok(!bad.length && tabs.every((t) => t === 3), `insights-v2: Will's picks at 7, 30 and 90 days, light and dark: Rings, the Trend, Your days, Oura's Timing, Bento's Frequency, Oura's Form, Symptoms and check-in, Patterns; each card named in a word or two, the range only in the tabs at the top and in the words a screen reader hears, Ask about this inside each card at that range (${bad.slice(0, 4).join("; ") || "54 cards"})`);
+    ok(!bad.length && tabs.every((t) => t === 3), `insights-v2: Will's picks at 7, 30 and 90 days, light and dark: Rings, the Trend, Your days, the Rings Timing dial, Bento's Frequency, Oura's Form, Symptoms and check-in, Patterns; each card named in a word or two, the range only in the tabs at the top and in the words a screen reader hears, Ask about this inside each card at that range (${bad.slice(0, 4).join("; ") || "54 cards"})`);
     bad.length = 0;
     await v.click('#rxLeft [data-rx="view"][data-v="built"]'); await vw(600);
     for (const n of [7, 30, 90]) { await vins(n); judge(`default ${n}`, await cardsOf(), n, false); }
@@ -5531,7 +5548,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(!bad.length && dflt === "score:rings,score:core,days:core,timing:core,often:core,form:core,sym:core,ck:core,pat:core", `insights-v2: the default, Florin charts, has the same plain heads, the range only at the top, and Ask about this inside every card (${bad.slice(0, 4).join("; ") || dflt})`);
     bad.length = 0;
 
-    /* 2. the picked cards read the range: Oura's Timing and Bento's Frequency count the same days the model does */
+    /* 2. the picked cards read the range: the Rings Timing dial and Bento's Frequency count the same days the model
+       does. The dial's centre is the mornings in the window of the mornings read, it draws a dot for each first BM in
+       the range, Gold for each outside the window, and its chart's words name the range */
     await v.click('#rxLeft [data-rx="view"][data-v="picks"]'); await vw(600);
     const cnt = [];
     for (const who of ["sarah", "marcus", "alex"]) {
@@ -5541,14 +5560,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const m = await v.evaluate((n) => {
           const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), F = L.span(M, n, api.V().form).filter((f) => !f.flag);
           const morn = F.filter((f) => f.first != null), known = F.filter((f) => f.count != null), u = M.usual;
-          const ph = document.querySelector(".rx-stage .ap-rx"), tm = ph.querySelector('[data-rlk-k="timing"] .ou-stats dd'), fq = ph.querySelector('[data-rlk-k="often"] .bt-a');
-          return { tm: tm ? tm.textContent : "", want: `${morn.filter((f) => f.inWin).length} of ${morn.length}`, fq: fq ? fq.textContent : "", fwant: `Within your usual ${u.nLo} to ${u.nHi} a day on ${known.filter((f) => f.count >= u.nLo && f.count <= u.nHi).length} of ${known.length} day` };
+          const ph = document.querySelector(".rx-stage .ap-rx"), tc = ph.querySelector('[data-rlk-k="timing"] .rg-mdial'), fq = ph.querySelector('[data-rlk-k="often"] .bt-a');
+          const tn = tc && tc.querySelector(".rg-mdial-n"), ts = tc && tc.querySelector(".rg-mdial-s");
+          return { tm: tn && ts ? `${tn.textContent.trim()} ${ts.textContent.trim().replace(/ mornings?$/, "")}` : "", want: `${morn.filter((f) => f.inWin).length} of ${morn.length}`, dots: tc ? `${tc.querySelectorAll(".rg-mdot").length}/${tc.querySelectorAll(".rg-mdot.is-shift").length}` : "", dwant: `${morn.length}/${morn.filter((f) => f.inWin === false).length}`, aria: tc ? new RegExp(`^First BM each morning, last ${n} days\\.`).test(tc.getAttribute("aria-label")) : false, fq: fq ? fq.textContent : "", fwant: `Within your usual ${u.nLo} to ${u.nHi} a day on ${known.filter((f) => f.count >= u.nLo && f.count <= u.nHi).length} of ${known.length} day` };
         }, n);
-        if (m.tm !== m.want || m.fq.indexOf(m.fwant) !== 0) cnt.push(`${who} ${n}: timing ${m.tm} (model ${m.want}); frequency "${m.fq}" (model "${m.fwant}")`);
+        if (m.tm !== m.want || m.dots !== m.dwant || !m.aria || m.fq.indexOf(m.fwant) !== 0) cnt.push(`${who} ${n}: timing ${m.tm} (model ${m.want}), dots ${m.dots} (model ${m.dwant})${m.aria ? "" : ", aria not the range"}; frequency "${m.fq}" (model "${m.fwant}")`);
       }
     }
     await vset("persona", "sarah");
-    ok(!cnt.length, `insights-v2: Oura's Timing and Bento's Frequency count the range the tabs say, as the model does, at 7, 30 and 90 days for each person (${cnt.slice(0, 2).join("; ") || "18 counts"})`);
+    ok(!cnt.length, `insights-v2: the Rings Timing dial (its count, its dots and its words) and Bento's Frequency read the range the tabs say, as the model does, at 7, 30 and 90 days for each person (${cnt.slice(0, 2).join("; ") || "18 counts"})`);
 
     /* 3. the busy day (refresh-data.js, BUSY): one day with 5 BMs in each person's last 30 days, not in the last 7, an
        ordinary day (no flag, no note, no alarm word), read as a shift of the count; on Bento's Frequency it is Gold at

@@ -147,8 +147,9 @@ rows set BM logging and Meal sheet, and its theme row sets the theme, all throug
 **Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"; Nov 7:
 "I think FLORIN CHARTS for insights tab has the best flow"), Data style's `picks`: the core's Insights in its own order
 and range tabs, each card Will picked (`WILL_PICKS` in refresh-looks.js, read Nov 7; change the table when he picks
-more) in his style: Timing, Form, Symptoms and the check-in in Oura's cards, Frequency in Bento's stacked chart, the
-rest in Florin charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
+more) in his style: Timing in the Rings look's morning dial (the screenshot of the Timing card he likes was Rings',
+though he called it "the oura"; Oura's card is one table edit away), Form, Symptoms and the check-in in Oura's cards,
+Frequency in Bento's stacked chart, the rest in Florin charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
 toggled at very top, not labeled within"), and every card draws it, picked or not: a look's card reads the range
 through `FLD.build(..., { range })` (7, 30 or 90; 7 on Free; the days so far while learning), whose `D.range` the
 range cards say. Every Insights card, in Florin charts, Will's picks and each library look the phone draws (Easy read

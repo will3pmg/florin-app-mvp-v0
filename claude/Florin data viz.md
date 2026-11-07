@@ -623,7 +623,14 @@ The cards, top to bottom:
   forms."), the bar of the days read, then what the days outside it had, a row each with a short Gold bar and its count
   (First BM outside your window, More BMs than usual, Fewer BMs than usual, No BM, A form outside your usual forms; "A
   day can have more than one." when the rows add up to more than the days), in place of the paragraph that said it.
-- **Timing, Form, Symptoms, the weekly check-in:** Oura's cards (Form was a mix of Rings' count and Oura's bars until
+- **Timing:** the Rings look's morning dial (Nov 7: "i like TIMING selected ... torn between oura and rings"; he called
+  it "the oura", but his screenshot was Rings' dial, so his picks draw it; Oura's thin-arc card is one table edit away).
+  A column of dots per 15-minute slot, the usual window as a band on the outer track, the mornings in the window of the
+  mornings read in its centre, all over the range the tabs say (`D.days[30]` and `D.timing` hold it; the dial's words
+  name it through `D.range`; the library page's 30 days are byte for byte as they were). At 90 days the columns pack
+  tighter. A flagged today's first BM is a Teal ring (`.rg-mdot.is-flag`) in none of the counts, with `RU.FLAG_DAY` as
+  its line and "Today, noted for a clinician" in the legend.
+- **Form, Symptoms, the weekly check-in:** Oura's cards (Form was a mix of Rings' count and Oura's bars until
   Nov 7: "our has the best FORM analysis visualizer", Oura). Oura's Form names the range's row "Last 90 days", and at 7
   days draws this week and your usual only. The check-in has no range.
 - **Frequency:** Bento's stacked chart, a capsule a BM, a column a day (Nov 7: "cleaner visually"). Past a month its

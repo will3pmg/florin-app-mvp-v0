@@ -243,7 +243,8 @@ compare.
 
 **Will's picks** (Will, Nov 5 and Nov 7)
 - What it is: Florin charts, with each Insights card Will has picked on the data modules page drawn in his style:
-  Timing, Form, Symptoms and the check-in in Oura's cards; Frequency in Bento's stacked chart.
+  Timing in the Rings morning dial; Frequency in Bento's stacked chart; Form, Symptoms and the check-in in Oura's
+  cards.
 - Why do it: It lays his picks out one by one, in Insights' own order, from the same logs as every other style, with
   the range picked once at the top.
 - Why not: Styles mix on one screen, so cards that answer the same kind of question are drawn in different ways.

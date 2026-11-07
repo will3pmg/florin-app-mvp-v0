@@ -502,7 +502,11 @@
   const WILL_PICKS = {
     score: "rings", /* FloraScore today: Rings' hero, "the large green big circle like in the Score first visual" (Nov 5),
                        on the default demo too (heroInto, below). Nov 7: "Large FloraScore: keep" */
-    timing: "oura", /* Nov 5, "let's take this one too"; Nov 7, "torn between oura and rings": Oura stays */
+    timing: "rings", /* Nov 5, "let's take this one too"; Nov 7, "i like TIMING selected ... needs the ask about this chat
+                       widget inside. torn between oura and rings actually". He called it "the oura", but the screenshot
+                       he sent is the Rings look's morning dial (a column of dots per time, "19 of 26 mornings in your
+                       window" in its centre), so his picks draw that dial. Oura's thin-arc card is one edit away:
+                       timing: "oura" */
     often: "bento", /* Nov 7, Frequency: "i think i like the Bento stack chart, cleaner visually. We should show a day
                        with 5 (maybe goes to red on 5?)". There's no red in the app: a day over the usual count is Gold,
                        as every shift is, and each demo person has one 5-BM day in the last 30 days (refresh-data.js, BUSY) */
@@ -524,12 +528,14 @@
   const lookRange = (M, n) => (M.usual ? n : 30);
   /* each picked card */
   const picksAt = (M, V) => Object.keys(WILL_PICKS).filter((k) => WILL_PICKS[k] && (k !== "ck" || RU.ckOn(V))).map((k) => ({ k, style: WILL_PICKS[k] }));
-  /* what each style draws, in a sentence: "Timing, Form, Symptoms and the check-in in Oura's cards" */
+  /* what each style draws, in a sentence: "Form, Symptoms and the check-in in Oura's cards". A card with a drawing of
+     its own says it by name: Timing in Rings is the morning dial */
   const STYLE_SAID = { oura: "in Oura's cards", rings: "in the Rings cards", bento: "in Bento's stacked chart" };
+  const CARD_SAID = { "rings:timing": "Timing in the Rings morning dial" };
   const picksSaid = (list) => {
-    const by = {};
-    list.filter((x) => x.k !== "score").forEach((x) => (by[x.style] = by[x.style] || []).push(CARD_NAME[x.k]));
-    return Object.entries(by).map(([s, names]) => `${join(names)} ${STYLE_SAID[s] || `in ${nameOf(s)}`}`);
+    const by = {}, own = [];
+    list.filter((x) => x.k !== "score").forEach((x) => { const c = CARD_SAID[`${x.style}:${x.k}`]; if (c) own.push(c); else (by[x.style] = by[x.style] || []).push(CARD_NAME[x.k]); });
+    return own.concat(Object.entries(by).map(([s, names]) => `${join(names)} ${STYLE_SAID[s] || `in ${nameOf(s)}`}`));
   };
 
   /* ---------- the foot every picked card carries inside it: Ask about this, at the range it draws, and its detail
