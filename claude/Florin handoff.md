@@ -636,29 +636,36 @@ flows, notifications themselves (the reminder and the check-in), and the clinici
 
 ## 7. Decisions, and what waits on which
 
-Locked: **not yet** for every row. The caller is asking Will now.
+Will answered on Nov 7. The calls below are locked on our recommendations, except Data style, which his answer didn't
+name (Insights is being rebuilt; ask again when it lands).
 
-| # | Decision | Options | We recommend | Locked | Screens it changes |
+| # | Decision | Options | Locked as | Locked | Screens it changes |
 |---|---|---|---|---|---|
-| 1 | Consistency | A 1 to 7 (licence); B five words; C seven words | C, once counsel reads it; drop B | Not yet | BM tiles (plus, the form, How to pick, Easy step 1, onboarding's form step), every BM row's word, Profile's words, Insights' Form |
-| 2 | BM logging | Quick tiles and form; Full form only | Quick, plus time buttons in the toast (not built) | Not yet | Plus menu's BM block, the one-tap toast, Today's tiles on an empty day, Easy's Add, Profile's Logging |
-| 3 | Home | Score first; Day first; Compact | Compact (Will's default, Nov 5) | Not yet | The whole Today tab: strip or hero or chip, week row or week card |
-| 4 | History | List; Calendar | Calendar | Not yet | The History tab, Compact's month link |
-| 5 | Weekly check-in | On; Off | On, free for everyone | Not yet | Today's row, plus, the check-in flow, Insights' card, History's report, the paywall's free list, onboarding's reminders, Profile |
-| 6 | Meal sheet | Quick, voice or text; One meal at a time | Quick, with "Dinner after 8 PM?" (not built) and a free 14-day food check | Not yet | Plus's meal row, the meal sheet, the photo log, Profile's Logging |
-| 7 | Data style | Florin charts, Will's picks, Rings, Field journal, Bento, Oura, Easy read | Florin charts everywhere, Easy read only in Easy | Not yet | Insights' cards (last), Score first's hero and week only |
-| 8 | Version | Standard; Easy | Easy as a setting anyone can turn on | Not yet | Every Easy screen, Profile's Display, onboarding's Welcome and Ready, the Easy settings page |
-| 9 | Onboarding | Short; Full survey | Short; ask the rest when it matters | Not yet | The onboarding flow, Profile's About you |
-| 10 | Ask Florin on Free | Members only (built); one free answer a week | One free answer a week; questions about seeing a doctor always answered | Not yet | Ask on Free, Make a report on Free, the paywall's Ask entry |
+| 1 | Consistency | A 1 to 7 (licence); B five words; C seven words | C, our seven words, pending counsel's read; B dropped, A out | Locked Nov 7 | BM tiles (plus, the form, How to pick, Easy step 1, onboarding's form step), every BM row's word, Profile's words, Insights' Form |
+| 2 | BM logging | Quick tiles and form; Full form only | Quick tiles and form, with time buttons on "BM saved" (Just now, 30 min ago, 1 hr ago, Earlier; not built on the prototype yet) | Locked Nov 7 | Plus menu's BM block, the one-tap toast, Today's tiles on an empty day, Easy's Add, Profile's Logging |
+| 3 | Home | Score first; Day first; Compact | Compact | Locked Nov 7 | The whole Today tab: the strip, the week row, the day picked |
+| 4 | History | List; Calendar | Calendar | Locked Nov 7 | The History tab, Compact's month link |
+| 5 | Weekly check-in | On; Off | On, free on both plans | Locked Nov 7 | Today's row, plus, the check-in flow, Insights' card, History's report, the paywall's free list, onboarding's reminders, Profile |
+| 6 | Meal sheet | Quick, voice or text; One meal at a time | Quick (with the photo log, in for v1) | Locked Nov 7 | Plus's meal row, the meal sheet, the photo log, Profile's Logging |
+| 7 | Data style | Florin charts, Will's picks, Rings, Field journal, Bento, Oura, Easy read | We recommend Florin charts everywhere, Easy read only in Easy | Not yet (not named on Nov 7; Insights is being rebuilt) | Insights' cards (built last) |
+| 8 | Version | Standard; Easy | Easy as a setting anyone can turn on (with the Easy view settings page, in for v1) | Locked Nov 7 | Every Easy screen, Profile's Display, onboarding's Welcome and Ready, the Easy settings page |
+| 9 | Onboarding | Short; Full survey | Short | Locked Nov 7 | The onboarding flow, Profile's About you |
+| 10 | Ask Florin on Free | Members only (built); one free answer a week | One answer a week; questions about seeing a doctor always answered (the prototype still shows the lock) | Locked Nov 7 | Ask on Free, Make a report on Free, the paywall's Ask entry |
 
-**Two design calls that also gate components:** the Ask button style (A to F; we recommend B, Compact) and the day mark
-(a ring, as on Today's week and Compact, or a filled circle, as on the calendar, History and Easy).
+**Still open, drawn as they stand:**
+- **Ask about this.** The six styles are built (`refresh-ask.css`, `data-ask-ui`; specs in `options/ask/`). One component
+  set with all six variants; its description says we recommend B, Compact. Will hasn't picked.
+- **The day mark.** Both are drawn as the app has them now: section 1's day mark (`RU.dayMark`) for the calendar, History
+  and Your days, and the Rings ring for Today's week card and Compact's week. The note on both components names the open
+  call.
+- **The developer's platform** is unknown; the variables carry the `--ap-*` CSS names as their code syntax for now.
 
-**What the build does before the locks:** it draws the recommended option of each decision in the flow pages and puts
-the other options on an **Alternatives** page (section 9.1), so a lock moves frames between pages rather than redrawing
-them. Decisions 3 and 7 shape the most frames; decision 1 changes the tile component only.
+**Alternatives** (Score first, Day first, History list, Full survey, One meal at a time, Consistency A and B, Full form
+only) go on the Reference page only, as screenshots from the captures, not as built frames.
 
----
+**Ask on Free, as locked, isn't on the prototype yet** (it still shows the lock). The Figma frames draw the locked
+behaviour: the Ask tab on Free with one answer a week (the count left, then the lock with the paywall), and a question
+about seeing a doctor answered on any plan.
 
 ## 8. The capture tool
 
@@ -732,8 +739,7 @@ written to Figma.
 | 9 Membership | 5.9 |
 | 10 Insights (after the rebuild) | A placeholder frame until then |
 | --- Reference --- | Separator |
-| Alternatives | The options we don't recommend, drawn from the same components: Score first, Day first, History list, Full survey, One meal at a time, Consistency A and B tiles, Full form only |
-| Prototype captures | The PNGs as a reference column per flow (light, Member, base states), clearly labelled as reference |
+| Reference | The alternatives as screenshots only (Score first, Day first, History list, Full survey, One meal at a time, Consistency A and B tiles, Full form only), and the captures as a reference column per flow (light, Member, base states), clearly labelled as reference |
 
 **A flow page** is a row of Figma sections, one per screen, in the flow's order. Inside a section: the steps strip (the
 screens in tap order with a numbered label for each tap), then the state grid (columns are states; rows are Light, Dark,
@@ -788,9 +794,11 @@ its fonts are asserted to be DM Sans, Lora and Space Mono, not a fallback. Text 
 2. Foundations: the five collections, text and effect styles; validate counts, modes, aliases, scopes and code syntax.
 3. Brand page.
 4. Icons and glyphs, then atoms, controls, composites; a screenshot per component family.
-5. Flows in Will's order: Home, Logging, History, Weekly check-in, Ask Florin, Onboarding, Profile and settings, Easy,
-   Membership.
-6. Alternatives page and the Prototype captures page.
+5. Flows, in the order agreed on Nov 7: Home, History, Weekly check-in, Ask Florin, Onboarding, Membership; then
+   Logging and Profile with the Easy view settings once the photo log and Easy settings land; Easy; Insights last. The
+   meal-photo and Easy-settings components, and Insights' card components, wait for the same. Each flow's captures are
+   rerun right before it is built.
+6. The Reference page (alternatives and captures, as screenshots).
 7. Insights, after its rebuild, with a fresh capture run.
 8. QA: every fill and text bound (an audit script lists raw values), naming, descriptions, a contrast spot check of the
    faintest pairs, the copy rules over every text node (no em dashes, no medical words), and a final screenshot of each
@@ -834,8 +842,9 @@ more calls than the average. Writes run one at a time, so the calls set the pace
   pattern test, auto-advance, focus order. The prototype and `prototype/js/refresh-data.js` stay the behaviour spec, and
   the notes frames point to them.
 - **Rate limits:** a Full seat on a Professional team gets per-minute limits (Figma's page,
-  https://developers.figma.com/docs/figma-mcp-server/rate-limits-access/); our one-at-a-time pace sits under them, to be
-  rechecked against that page before Phase 2.
+  https://developers.figma.com/docs/figma-mcp-server/rate-limits-access/). This cloud session can't reach that host
+  (developers.figma.com isn't in its allowed network), so the exact numbers aren't read yet; until they are, the build
+  runs one write at a time and backs off on the first rate-limit answer (calling `whoami`, as the tool asks).
 - **The account:** the connector is signed in as will@itsundone.com (Undone-US). The brief (Oct 12) says the studio's
   Florin Figma files (Florin, Product, Decks) belong to will@snifr.ai, which this connector can't open, so the build can't
   reuse the studio's Figma library and makes its own foundations from the prototype; if the file belongs with the
@@ -845,18 +854,21 @@ more calls than the average. Writes run one at a time, so the calls set the pace
 
 ## 10. What we need from Will
 
-1. **Where the file goes:** the Undone-US team (what the connector has), or the snifr.ai account with the studio's Florin
-   files (the connector would need that sign-in); and its name.
-2. **Lock the decisions** in section 7, or say which wait (we'll draw the recommendation and keep the rest on
-   Alternatives).
-3. **The Ask button style** (A to F; we recommend B, Compact).
-4. **The day mark** for every screen: the ring (Today's week, Compact) or the filled circle (calendar, History, Easy).
-5. **Alternatives in the file or not** (Score first, Day first, History list, Full survey, One meal at a time,
-   Consistency A and B).
-6. **The developer's platform** (iOS, Android, React Native, web), so the variables carry its code syntax as well as the
+1. **Where the file goes.** Will picked https://www.figma.com/design/rGN6vIjAJpWoJdcRp3iZXk (Nov 7), but the connector
+   (will@itsundone.com) has no edit access to it: `create_session` and `get_metadata` both answer "you don't have edit
+   access to this file". The file's owner has to share it with will@itsundone.com as an editor (or move it into the
+   Undone-US team), or the connector has to sign in as the account that owns it.
+2. **Data style:** his Nov 7 locks didn't name it; we recommend Florin charts everywhere, Easy read only in Easy. Needed
+   before Insights is built.
+3. **The Ask button style** (A to F; we recommend B, Compact). Drawn as one component set with all six until he picks.
+4. **The day mark** for every screen: the ring (Today's week, Compact) or the filled circle (calendar, History, Your
+   days). Both drawn as they are until he picks.
+5. **The developer's platform** (iOS, Android, React Native, web), so the variables carry its code syntax as well as the
    CSS names.
-7. **In or out for v1:** the photo meal log and the Easy view settings page (both in progress now), and when Insights'
-   rebuild is due.
+6. **When the Insights rebuild lands**, so it can be captured and built last.
+
+Answered on Nov 7: the locks (section 7), alternatives on the Reference page as screenshots only, and the photo meal log
+and Easy view settings page in for v1.
 
 ## 11. What the developer gets
 
