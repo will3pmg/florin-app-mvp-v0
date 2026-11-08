@@ -83,8 +83,9 @@ The page (Will, Oct 27): one phone, live, in the middle, under a slim header. Th
 (Default or Will's picks, Will, Nov 5), which sets Data style through phone.set (Default is its default; Will's picks
 opens Insights), with one plain line under it, and a second row, **Ask button** (A Pill, B Compact, C Link, D Token,
 E Question, F Bar; Will, Nov 7), how Ask about this looks everywhere, with its own plain line: a design-system option,
-not a decision, set through phone.set (`askUI`), stored per viewer (`florin-refresh:askUI`), Pill by default, and a
-change opens Insights (options/ask is the page Will picks from). Then it holds **Decisions**
+not a decision, set through phone.set (`askUI`), stored per viewer (`florin-refresh:askUI`), Compact by default (Will's
+pick, Nov 8: "let's do B for the ask buttons"; a viewer's stored pick still wins, and the other five stay to compare),
+and a change opens Insights (options/ask is the page he picked from). Then it holds **Decisions**
 (Consistency, BM logging, Home, History, Weekly check-in, Meal sheet, Data style, Version, Onboarding), one line each,
 then **Demo** (Person; Logs: 12 weeks, New, day 5 or Just joined; Demo person's meals: Every day, Only with symptoms or
 Never; Plan; Theme; Reset), under one plain line, "These change the demo person, not the app", which folds to a
@@ -371,8 +372,9 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   (`splitQ`), and the computed answer's question stands in when Claude asks none. What Ask Florin knows (`askx-mem`)
   lists what every answer reads and what can be left out of this chat (`ch.forget`: name, today, ck, chat), and the
   opt-in "Let Ask Florin start a conversation" (`S.askReach`, off by default).
-- **Ask button** (Will, Nov 7: "I don't know if we need as big a bubble every time"): one setting, `V.askUI`, stamped as
-  `data-ask-ui` (pill, compact, link, icon, chip, bar), draws every Ask about this (`.ap-ask-b`, `.ap-idt-ask`,
+- **Ask button** (Will, Nov 7: "I don't know if we need as big a bubble every time"; Nov 8: "let's do B for the ask
+  buttons"): one setting, `V.askUI`, `compact` by default (`EXT.askUI.def`; B is the component in DESIGN.md, the other
+  five are alternatives), stamped as `data-ask-ui` (pill, compact, link, icon, chip, bar), draws every Ask about this (`.ap-ask-b`, `.ap-idt-ask`,
   `.ap-ez-ask`, a look's `.rlk-ask`, and any later module's that uses those classes) in one style. The markup stays
   each module's; refresh-ask.js gives each button, as it lands in the phone, the same parts (`.ap-askw`: the token,
   "Ask" and " about this", the card's first question from `RU.askContext` for chip, a chevron for bar) and a name that

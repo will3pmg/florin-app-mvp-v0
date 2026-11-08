@@ -530,14 +530,15 @@ https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9.
   - one bold question that hands the turn back (DM Sans 600). It is never repeated in the body.
 - **Options:** up to three, offered about one turn in three. They are never a statement about how someone feels. Each is an option row: 12px by 16px padding, 16px corners.
 - Thumbs up and down under each turn. The composer is pinned at the bottom.
-- **Ask about this (a card's way into Ask):** one component in six variants, picked once for the whole app (Ask button, Nov 7; Will picks from `options/ask/`). Every variant starts with the Ask token (the Ask glyph on a disc: Forest with a Ray glyph on light grounds and on Ray, Ray with a Forest glyph on dark), keeps Ray wherever there is a fill, has a 44px target however small it looks, says its card in its accessible name ("Ask about this: Timing"), shows a lock in the token on Free and opens membership, scales to 97% when pressed (not with reduced motion) and takes the Teal focus ring.
-  - **A Pill** (today's): Ray pill 36px tall, token 28px, words 14px medium in Forest; in light a Forest and Ray hairline edges it at 3:1.
-  - **B Compact:** Ray pill 32px tall in the card's corner, token 24px, "Ask" 13px medium. Light: Ray at 70% over the card, edged at 3:1; dark: Ray at 16% with Ray words.
+- **Ask about this (a card's way into Ask):** one component, **B Compact** (Will, Nov 8: "let's do B for the ask buttons"), the same on every card, detail page and Easy screen. The other five variants (A, C to F) are alternatives kept for comparison (Ask button under View in the prototype, `options/ask/`); they are not the component. Every variant starts with the Ask token (the Ask glyph on a disc: Forest with a Ray glyph on light grounds and on Ray, Ray with a Forest glyph on dark), keeps Ray wherever there is a fill, has a 44px target however small it looks, says its card in its accessible name ("Ask about this: Timing"), shows a lock in the token on Free and opens membership, scales to 97% when pressed (not with reduced motion) and takes the Teal focus ring.
+  - **B Compact (the component):** Ray pill 32px tall in the card's corner, token 24px, "Ask" 13px medium, on a 48px target. Light: Ray at 70% over the card, edged at 3:1; dark: Ray at 16% with Ray words. The card's name is in its accessible name only ("Ask about this: Timing").
+  - Alternatives, for comparison only:
+  - **A Pill:** Ray pill 36px tall, token 28px, words 14px medium in Forest; in light a Forest and Ray hairline edges it at 3:1.
   - **C Link:** no fill, token 24px, "Ask about this" 14px medium in Ink with a hairline underline, in the card's corner, on a 44px row.
   - **D Token:** the token alone at 36px in the card's corner; keyboard focus opens it into a Ray pill with the words.
   - **E Question:** a Ray chip with 16px corners, token 24px and the card's own first question (the one Ask opens with in the box) at 14px medium; it wraps, never truncates.
   - **F Bar:** a 48px row across the card's foot under a 1px line, token 24px, "Ask about this" 15px medium in Ink, a 16px chevron at the end.
-  - In the Easy version each variant is a step larger (48 to 64px targets, 18px words).
+  - In the Easy version each variant is a step larger (48 to 64px targets, 18px words); B is 48px tall with 18px words.
 - **Name:** always "Ask Florin". It never takes a doctor's title.
 
 **Alarm banner (Ask Florin).**
