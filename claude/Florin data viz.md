@@ -625,13 +625,28 @@ The cards, top to bottom:
   forms."), the bar of the days read, then what the days outside it had, a row each with a short Gold bar and its count
   (First BM outside your window, More BMs than usual, Fewer BMs than usual, No BM, A form outside your usual forms; "A
   day can have more than one." when the rows add up to more than the days), in place of the paragraph that said it.
-- **Timing:** the Rings look's morning dial (Nov 7: "i like TIMING selected ... torn between oura and rings"; he called
-  it "the oura", but his screenshot was Rings' dial, so his picks draw it; Oura's thin-arc card is one table edit away).
-  A column of dots per 15-minute slot, the usual window as a band on the outer track, the mornings in the window of the
-  mornings read in its centre, all over the range the tabs say (`D.days[30]` and `D.timing` hold it; the dial's words
-  name it through `D.range`; the library page's 30 days are byte for byte as they were). At 90 days the columns pack
-  tighter. A flagged today's first BM is a Teal ring (`.rg-mdot.is-flag`) in none of the counts, with `RU.FLAG_DAY` as
-  its line and "Today, noted for a clinician" in the legend.
+- **Timing:** Oura's card (Nov 8: "TIMING: I Like OURA"; on Nov 7 his picks drew the Rings morning dial from his
+  screenshot, still one table edit away, `WILL_PICKS.timing`). The morning as a wide curved clock, the usual window as a
+  band on its track, each morning of the range picked at the top as a tick (Gold outside the window, the usual's colour
+  in it), today as a dot, then the Lora headline, a sentence, the stats row (mornings in your window, your usual window,
+  today) and the legend. A flagged today's sentence carries `RU.FLAG_DAY`, and it is in none of the counts.
+- **The note of what fell outside the usual** (Nov 8: "can we make sure on the main insights tab to flag a note about
+  the number of poops OUTSIDE regular windows/cadence ... it's already on the clickthrough detail"). Timing, in Oura's
+  card (under the stats row) and in Florin charts' (under the legend), carries one or two lines set apart on the card's
+  quiet ground, led by the chart's own Gold mark (Oura's Gold tick, Florin charts' Gold dot; the usual's mark when none
+  were outside): "7 of 28 mornings were outside your window: 5 later, 2 earlier. Mornings like these came about as
+  often as usual." at 30 days,
+  "1 of 6 mornings was later than your window." at 7, "No mornings outside your window in the last 7 days." with none.
+  Frequency, in Bento's main tile and in Florin charts', says the days outside the usual count the same way: "2 of 29
+  days were outside your usual count: 1 with more BMs and 1 No BM day. Days like these came about as often as usual."
+  (the comparison names what it compares, so on a card about how often it never reads as how often the person went;
+  Bento's Day by day tile names its days the same way, with more BMs, with fewer, No BM days). The counts are the
+  model's (`L.windowOut`, `L.countOut`) and the words are one sentence each (`L.outLine`, `L.countLine`), so the card and
+  the Timing and How often pages' contributors always agree; the comparison is the pages' own (the days in the usual
+  against the usual share of days 28 to 83, fixed when the usual is set, past one and a half binomial spreads and more
+  than a day, said of the days outside). A flagged today is in no count and the card's own clinician line stays. Before day 14 there is no usual and
+  no note. The usual window is the person's own: the 10th to 75th percentile of their logged first BMs, to the quarter
+  hour; never a standard deviation, and the copy never says one.
 - **Form, Symptoms, the weekly check-in:** Oura's cards (Form was a mix of Rings' count and Oura's bars until
   Nov 7: "our has the best FORM analysis visualizer", Oura). Oura's Form names the range's row "Last 90 days", and at 7
   days draws this week and your usual only. The check-in has no range.

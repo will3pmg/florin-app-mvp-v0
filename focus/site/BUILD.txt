@@ -1,45 +1,45 @@
-Florin focus group site, build fg.20261108.419db433
-Built 2026-11-08T00:50:17.693Z by focus/build.js. Endpoint: (none: answers wait on the phone).
+Florin focus group site, build fg.20261108.b452f652
+Built 2026-11-08T20:34:29.397Z by focus/build.js. Endpoint: (none: answers wait on the phone).
 Every file, where it came from, and its SHA-1 at build time:
 
 proto/css/app.css  <-  prototype/css/app.css  7e6e83424016
 proto/js/lib.js  <-  prototype/js/lib.js  8f6b6acc8f36
 proto/js/data-app.js  <-  prototype/js/data-app.js  80439a3f11bd
-proto/js/refresh-data.js  <-  prototype/js/refresh-data.js  a2a6ce0f85bb
+proto/js/refresh-data.js  <-  prototype/js/refresh-data.js  ac3ec3f75732
 index.html  <-  focus/index.html (paths rewritten)  73b0a42dba93
-proto/css/refresh.css  <-  prototype/css/refresh.css  51c8a0bb1acd
+proto/css/refresh.css  <-  prototype/css/refresh.css  e318f5e72011
 proto/css/look-rings.css  <-  library/css/look-rings.css  fe8519e243d0
 proto/css/look-journal.css  <-  library/css/look-journal.css  99f2a7ea482a
-proto/css/look-bento.css  <-  library/css/look-bento.css  3f262b2b0c39
-proto/css/look-oura.css  <-  library/css/look-oura.css  33e4905f674e
+proto/css/look-bento.css  <-  library/css/look-bento.css  208e3164c25a
+proto/css/look-oura.css  <-  library/css/look-oura.css  fc870717ae71
 proto/css/look-easy.css  <-  library/css/look-easy.css  30d0284a0bf9
 proto/css/refresh-looks.css  <-  prototype/css/refresh-looks.css  53969d1f17ca
 proto/css/refresh-variants.css  <-  prototype/css/refresh-variants.css  a84aef97b238
 proto/css/refresh-profile.css  <-  prototype/css/refresh-profile.css  b55c6f9fe826
 proto/css/refresh-photo.css  <-  prototype/css/refresh-photo.css  46e10b358611
-proto/css/refresh-ask.css  <-  prototype/css/refresh-ask.css  e6acde5678bb
+proto/css/refresh-ask.css  <-  prototype/css/refresh-ask.css  4b6c159b26a3
 proto/css/refresh-detail.css  <-  prototype/css/refresh-detail.css  62807e1d9ea6
 proto/css/refresh-easy.css  <-  prototype/css/refresh-easy.css  b6f53aa08df5
 proto/css/home-options.css  <-  options/home/css/home-options.css  5cac499a3dcf
 proto/js/claims-rules.js  <-  prototype/js/claims-rules.js  cdb8e958c728
 proto/js/app-charts.js  <-  prototype/js/app-charts.js  87869a607bc9
-proto/js/refresh-ui.js  <-  prototype/js/refresh-ui.js  331b7e7997e9
-proto/js/refresh-insights.js  <-  prototype/js/refresh-insights.js  0bd673249d6e
-proto/js/looks-data.js  <-  library/js/looks-data.js  9a4bc6b34e28
+proto/js/refresh-ui.js  <-  prototype/js/refresh-ui.js  180f53c95390
+proto/js/refresh-insights.js  <-  prototype/js/refresh-insights.js  dbd66671ed25
+proto/js/looks-data.js  <-  library/js/looks-data.js  a5147402154b
 proto/js/look-rings.js  <-  library/js/look-rings.js  2c4f7008005d
 proto/js/look-journal.js  <-  library/js/look-journal.js  b0166f864176
-proto/js/look-bento.js  <-  library/js/look-bento.js  063ca2278cfb
-proto/js/look-oura.js  <-  library/js/look-oura.js  84eaf2c438a9
+proto/js/look-bento.js  <-  library/js/look-bento.js  4c7d319b4179
+proto/js/look-oura.js  <-  library/js/look-oura.js  d4222cb799e9
 proto/js/look-easy.js  <-  library/js/look-easy.js  091b38500dd1
-proto/js/refresh-looks.js  <-  prototype/js/refresh-looks.js  2b97a1ffaa98
+proto/js/refresh-looks.js  <-  prototype/js/refresh-looks.js  e5cb7cd0e599
 proto/js/refresh-variants.js  <-  prototype/js/refresh-variants.js  323e3ab051bf
 proto/js/refresh-profile.js  <-  prototype/js/refresh-profile.js  9558ababbad8
 proto/js/refresh-photo.js  <-  prototype/js/refresh-photo.js  ec5c7bd192b1
-proto/js/refresh-ask.js  <-  prototype/js/refresh-ask.js  983a826baa31
-proto/js/refresh-detail.js  <-  prototype/js/refresh-detail.js  1921860b740e
+proto/js/refresh-ask.js  <-  prototype/js/refresh-ask.js  7df587de851f
+proto/js/refresh-detail.js  <-  prototype/js/refresh-detail.js  b1a56007f1c7
 proto/js/refresh-easy.js  <-  prototype/js/refresh-easy.js  4811ae4e69cc
 proto/js/home-options.js  <-  options/home/js/home-options.js  fa1d1a1273d9
-proto/js/refresh-app.js  <-  prototype/js/refresh-app.js  9cc6a4d01be6
+proto/js/refresh-app.js  <-  prototype/js/refresh-app.js  abfd12d3b1eb
 app.html  <-  focus/app.html (paths rewritten)  e296fddeacb4
 config.js  <-  focus/config.js  d443a7c72959
 manifest.webmanifest  <-  focus/manifest.webmanifest  5f1db88dd146

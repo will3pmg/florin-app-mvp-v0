@@ -632,6 +632,12 @@
 .ap-ask-b { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--ap-card2); font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
 .ap-ask-b .ic { width: 15px; height: 15px; }
 .ap-ic-note { font-size: 12.5px; line-height: 1.45; color: var(--ap-ink3); }
+/* what fell outside the usual, on the card (Timing, Will, Nov 8: "flag a note about the number of poops OUTSIDE regular
+   windows"): set apart on the card's quiet ground, led by the chart's own mark, Gold when any did, the usual's when none */
+.ap-ic-out { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 12px; border-radius: 12px; background: var(--ap-card2); font-size: 13.5px; line-height: 1.45; color: var(--ap-ink); text-wrap: pretty; }
+.ap-rx .ap-ic-out .sw { margin-top: 4px; }
+.ap-rx .ap-ic-out .sw--shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
+.ap-rx .ap-ic-out .sw--usual { background: var(--ap-signal); }
 .ap-ic-ck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .ap-ic-ck li { display: flex; flex-direction: column; gap: 4px; }
 .ap-ckt--mini { margin-top: 0; }

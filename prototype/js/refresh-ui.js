@@ -242,6 +242,33 @@
     };
     return `${head}: ${lead}${strong ? `, and ${strongAt(strong)}` : ""}.`;
   };
+  /* the one sentence on the mornings outside the usual window over the last n days (L.windowOut), for Insights' Timing
+     card in Florin charts and in every look (Will, Nov 8: "flag a note about the number of poops OUTSIDE regular
+     windows"), worded as the Timing page's contributors say it: "7 of 28 mornings were outside your window: 5 later, 2
+     earlier. Mornings like these came about as often as usual." "" before the usual (day 14) or with no first BM read; a
+     flagged today is in no count, so the card's own clinician line says it. OUT_CMP is the detail page's state words,
+     said of the row they sit on (Mornings in your window); OUT_SAID is the note's, said of the mornings or days outside,
+     with what is compared named first, so a bare "More often than usual" never reads as how often the person went */
+  L.OUT_CMP = { same: "About as often as usual", more: "More often than usual", less: "Less often than usual" };
+  L.OUT_SAID = { same: "came about as often as usual", more: "came more often than usual", less: "came less often than usual" };
+  L.outLine = (W, n) => {
+    if (!W || !W.read) return "";
+    if (!W.out) return `No mornings outside your window in the last ${n} days.`;
+    const where = W.later && W.earlier ? `outside your window: ${W.later} later, ${W.earlier} earlier` : `${W.later ? "later" : "earlier"} than your window`;
+    return `${W.out} of ${plural(W.read, "morning")} ${W.out === 1 ? "was" : "were"} ${where}.${W.cOut ? ` Mornings like these ${L.OUT_SAID[W.cOut]}.` : ""}`;
+  };
+  /* the one sentence on the days outside the usual count over the last n days (L.countOut), for Insights' Frequency card
+     in Florin charts and Bento (Will, Nov 8, "cadence"), counted as the How often page counts them: "2 of 29 days were
+     outside your usual count: 1 with more BMs and 1 No BM day. Days like these came about as often as usual." "" before
+     the usual. A No BM day is named only where it is outside the usual count (below - fewer), never when the usual
+     count starts at 0 */
+  L.countLine = (C, n) => {
+    if (!C || !C.read) return "";
+    if (!C.out) return `No days outside your usual count in the last ${n} days.`;
+    const zOut = C.below - C.fewer;
+    const parts = [C.above && `${C.above} with more BMs`, C.fewer && `${C.fewer} with fewer`, zOut && plural(zOut, "No BM day")].filter(Boolean);
+    return `${C.out} of ${plural(C.read, "day")} ${C.out === 1 ? "was" : "were"} outside your usual count: ${andJoin(parts)}.${C.cOut ? ` Days like these ${L.OUT_SAID[C.cOut]}.` : ""}`;
+  };
   /* what moved FloraScore, in whole points: each part's change rounded by largest remainder so the four add up to the
      change shown (delta), a part that didn't move staying 0. Added to L.scoreMoved's parts as pts */
   if (!L.scoreMoved.whole) {

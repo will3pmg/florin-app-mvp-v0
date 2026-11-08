@@ -471,6 +471,10 @@
     const inN = U ? known.filter((f) => f.count >= U[0] && f.count <= U[1]).length : null;
     const more = U ? known.filter((f) => f.count > U[1]).length : 0, fewer = U ? known.filter((f) => f.count < U[0]).length : 0;
     const zeros = known.filter((f) => f.count === 0).length;
+    /* the days under the usual count in the note's words (L.countLine): No BM days apart from the days with fewer, a No BM
+       day named only where it is under the usual count, so the tile and the note on the same card say one thing */
+    const zOut = U && U[0] > 0 ? zeros : 0, fewerOnly = fewer - zOut;
+    const outWords = [more && ["s", `${more} with more BMs`], fewerOnly && ["s", `${fewerOnly} with fewer`], zOut && ["s", pl(zOut, "No BM day")]].filter(Boolean);
     const gaps = M.filter((f) => f.count == null && !f.pending).length;
     const answer = U ? `Within your usual ${O.usualText} on ${inN} of ${pl(known.length, "day")}.${fl && D.flagLine ? ` ${D.flagLine}` : ""}` : `${known.length ? `${pl(known.length, "day")} with BMs logged so far.` : "Nothing logged yet."} Florin learns your usual by day ${D.learning ? D.learning.of : ""}.`;
     const w = TW[6], left = 18, top = 8, axis = 22, uh = 14, ug = 4;
@@ -497,7 +501,7 @@
     const todayMark = tf.count != null ? `<rect class="bt-todaycol${tFlag ? " is-flag" : ""}" x="${r1(tx)}" y="${r1(tTop)}" width="${r1(tw)}" height="${r1(base + 3 - tTop)}" rx="${r1(tw / 2)}"/>` : "";
     /* the first day's date, only where it can't run into Today at the right (a one-day run is Today alone) */
     const firstLbl = M.length > 1 && cx(0) - bw / 2 < w - 48 ? `<text class="bt-tick" x="${r1(cx(0) - bw / 2)}" y="${H - 4}">${E(M[0].label)}</text>` : "";
-    const chart = `<svg class="bt-chart" viewBox="0 0 ${w} ${H}" role="img" aria-label="${E(`${answer} ${more ? `More often on ${pl(more, "day")}. ` : ""}${fewer ? `Less often on ${pl(fewer, "day")}. ` : ""}${gaps ? `${pl(gaps, "day")} with nothing logged. ` : ""}Today ${tf.count == null ? "has no BM logged yet" : pl(tf.count, "BM")}.`)}">
+    const chart = `<svg class="bt-chart" viewBox="0 0 ${w} ${H}" role="img" aria-label="${E(`${answer} ${more ? `More BMs than your usual count on ${pl(more, "day")}. ` : ""}${fewerOnly ? `Fewer on ${pl(fewerOnly, "day")}. ` : ""}${zOut ? `No BM on ${pl(zOut, "day")}. ` : ""}${gaps ? `${pl(gaps, "day")} with nothing logged. ` : ""}Today ${tf.count == null ? "has no BM logged yet" : pl(tf.count, "BM")}.`)}">
       ${U ? `<rect class="bt-band bt-fade" x="${left}" y="${r1(yU(U[1]) + ug / 2)}" width="${w - left}" height="${r1((U[1] - U[0] + 1) * (uh + ug))}" rx="4"/>` : ""}
       ${todayMark}
       ${Array.from({ length: mx }, (_, k) => `<text class="bt-tick" x="${left - 8}" y="${r1(yU(k + 1) + ug + uh / 2 + 3.5)}" text-anchor="end">${k + 1}</text>`).join("")}
@@ -506,12 +510,15 @@
       ${firstLbl}
       <text class="bt-tick" x="${w}" y="${H - 4}" text-anchor="end">Today</text>
     </svg>`;
+    /* the days outside your usual count (Will, Nov 8, "OUTSIDE regular windows/cadence"): set apart under the legend, led
+       by the chart's Gold mark (the usual's when none were), in the one sentence Florin charts' card says (D.often.outLine) */
+    const outNote = O.outLine ? `<p class="bt-out${O.out && O.out.out ? " is-s" : ""}"><i class="bt-sw bt-sw--${O.out && O.out.out ? "s" : "u"}" aria-hidden="true"></i><span>${E(O.outLine)}</span></p>` : "";
     const main = tile({ s: 6, i: 0 }, `${kickH(x, `BMs a day · ${per(D, M)}`, spanOf(M))}${ans(x, answer)}${chart}
-      ${legend(x, [M.some((f) => f.count > 0) && ["unit", "One BM"], U && ["band", `Your usual, ${O.usualText}`], (more || fewer) && ["s", "Outside your usual"], zeros && ["zero", "No BM"], tf.count != null && (tFlag ? ST.flag : ["today", "Today"])])}`);
+      ${legend(x, [M.some((f) => f.count > 0) && ["unit", "One BM"], U && ["band", `Your usual, ${O.usualText}`], (more || fewer) && ["s", "Outside your usual"], zeros && ["zero", "No BM"], tf.count != null && (tFlag ? ST.flag : ["today", "Today"])])}${outNote}`);
     const avgT = O.avg30 != null ? tile({ s: 3, i: 1 }, `${kick(x, "Average")}${big(x, O.avg30, "a day", { dec: 1, size: "md" })}${sub(x, U ? `Your usual ${O.usualText}` : `Over ${pl(known.length, "day")}`)}`) : "";
     const splitT = U ? tile({ s: 3, i: 2 }, `${kick(x, "Day by day")}
-      <div class="bt-seg" role="img" aria-label="${E(`${inN} ${inN === 1 ? "day" : "days"} with a usual count, ${more} more often, ${fewer} less often${gaps ? `, ${gaps} with nothing logged` : ""}.`)}">${[["u", inN], ["s", more + fewer], ["x", gaps]].filter(([, n]) => n).map(([c, n], k) => `<i class="bt-seg--${c}" style="flex:${n};--k:${k}"></i>`).join("")}</div>
-      ${legend(x, [["u", `${inN} with a usual count`], more && ["s", `${more} more often`], fewer && ["s", `${fewer} less often`], gaps && ["x", `${gaps} nothing logged`]])}`) : learnTile(x, D, { s: 3, i: 2, k: "Your usual", a: "Learning your usual count.", acls: "bt-a--md" });
+      <div class="bt-seg" role="img" aria-label="${E(`${inN} ${inN === 1 ? "day" : "days"} with a usual count${outWords.map(([, t]) => `, ${t}`).join("")}${gaps ? `, ${gaps} with nothing logged` : ""}.`)}">${[["u", inN], ["s", more + fewer], ["x", gaps]].filter(([, n]) => n).map(([c, n], k) => `<i class="bt-seg--${c}" style="flex:${n};--k:${k}"></i>`).join("")}</div>
+      ${legend(x, [["u", `${inN} with a usual count`], ...outWords, gaps && ["x", `${gaps} nothing logged`]])}`) : learnTile(x, D, { s: 3, i: 2, k: "Your usual", a: "Learning your usual count.", acls: "bt-a--md" });
     return board(x, `How often. ${answer}`, [main, avgT, splitT]);
   }
 

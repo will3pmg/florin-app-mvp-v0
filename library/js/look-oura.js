@@ -508,7 +508,8 @@
     const fromWin = (d) => (!u || d.flag ? "" : d.inWin === true ? (Math.round((d.first - u[0]) * 60) === 0 ? ", just as your window opened" : `, ${mins(d.first - u[0])} after your window opened`) : d.first > u[1] ? `, ${mins(d.first - u[1])} after your window closed` : `, ${mins(u[0] - d.first)} before your window opened`);
     /* a flagged today: its time, and why it isn't read */
     const sentence = tf ? `Today at ${tf.firstText}${fromWin(tf)}.${tf.flag && D.flagLine ? ` ${D.flagLine}` : ""}` : `Latest, ${newest.label}, at ${newest.firstText}${fromWin(newest)}.`;
-    const later = u ? pts.filter((d) => d.inWin === false && d.first > u[1]).length : 0, earlier = u ? pts.filter((d) => d.inWin === false && d.first < u[0]).length : 0;
+    /* later and earlier: the model's one count (D.timing.out, L.windowOut), as Insights' Timing card and its detail count them */
+    const later = u && tm.out ? tm.out.later : 0, earlier = u && tm.out ? tm.out.earlier : 0;
     const aria = `First BM each morning, ${D.learning ? "so far" : `the last ${nOf(D)} days`}, on a curved clock from ${hourLbl(t0)} to ${hourLbl(t1)}. ${u ? `${tm.inWin30} of ${tm.mornings30} mornings in your usual window, ${tm.usualText}${later || earlier ? `; ${andList([later && `${later} later`, earlier && `${earlier} earlier`].filter(Boolean))}` : ""}. ` : ""}${big}. ${sentence}`;
     const svg = `<svg class="ou-svg ou-clock" viewBox="0 0 ${W} 128" role="img" aria-label="${esc(aria)}">
       <path class="ou-ck-trk" d="${arc(cx, cy, R, -half, half)}"/>
@@ -518,6 +519,10 @@
       <circle class="ou-now-halo${nOut ? " is-shift" : ""}" cx="${nx}" cy="${ny}" r="11"/>
       <circle class="ou-now${nOut ? " is-shift" : ""}" cx="${nx}" cy="${ny}" r="6"/>
     </svg>`;
+    /* the mornings outside your window (Will, Nov 8: "flag a note about the number of poops OUTSIDE regular windows"):
+       set apart under the stats, led by the Gold tick the clock draws them with (the usual's tick when none were),
+       in the one sentence the Florin charts card says (D.timing.outLine). None while Florin learns the usual */
+    const outNote = tm.outLine ? `<p class="ou-out${tm.out && tm.out.out ? " is-shift" : ""}"><i class="ou-sw ou-sw--tick-${tm.out && tm.out.out ? "shift" : "usual"}" aria-hidden="true"></i><span>${esc(tm.outLine)}</span></p>` : "";
     const stats = [
       u ? [`${tm.inWin30} of ${tm.mornings30}`, "Mornings in your window"] : [String(pts.length), pts.length === 1 ? "Morning logged" : "Mornings logged"],
       u ? [tm.usualText, "Your usual window"] : ["Learning", D.learning ? `Your window, by day ${D.learning.of}` : "Your window"],
@@ -529,6 +534,7 @@
       ${hl(x, big)}
       ${say(x, sentence)}
       <dl class="ou-stats">${stats.map(([v, l]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+      ${outNote}
       ${legend(x, [[nOut ? "now-shift" : "now", tf ? "Today" : "Latest"], u && ["usual", "Your usual window"], [u ? "tick-usual" : "tick", D.learning ? "Each morning so far" : u ? `Each morning in your window, last ${nOf(D)} days` : `Each morning, last ${nOf(D)} days`], (later || earlier) && ["tick-shift", "Outside your window"]])}`);
   }
 

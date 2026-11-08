@@ -24,7 +24,7 @@
   }
 
   const CFG = window.FOCUS_CONFIG || {};
-  const BUILD = "fg.20261108.419db433"; /* build.js stamps the build here */
+  const BUILD = "fg.20261108.b452f652"; /* build.js stamps the build here */
   const P = "florin-focus:";
   const ls = {
     get(k, d) { try { const v = localStorage.getItem(P + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },

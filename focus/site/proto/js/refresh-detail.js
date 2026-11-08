@@ -69,15 +69,6 @@
   const ticks = (N, label) => (N <= 7 ? Array.from({ length: N }, (_, i) => i) : [0, Math.floor((N - 1) / 2), N - 1]).map((i, k, all) => ({ i, t: label(i), a: N <= 7 ? "middle" : k === 0 ? "start" : k === all.length - 1 ? "end" : "middle" }));
   const dayTick = (F) => (i) => (F[i].d === TODAY ? "Today" : F.length <= 7 ? Ut.DOW[L.dateOf(F[i].d).getDay()] : short(F[i].d));
   const wkTick = (G) => (i) => (G[i].d1 >= TODAY ? "This week" : short(G[i].d0));
-  /* days against a usual share, in words: over a few days a day or two either way is chance, so only past one and a
-     half standard deviations, and more than a day (the rule Symptoms uses) */
-  const cmpShare = (p, k, m) => {
-    if (p == null || !m) return null;
-    const e = p * m, t = Math.max(1, 1.5 * Math.sqrt(m * p * (1 - p)));
-    return k > e + t ? "more" : k < e - t ? "less" : "same";
-  };
-  /* the weeks the usual comes from (days 28 to 83), read the one way (L.facts) */
-  const baseDays = (M, mode) => M.days.filter((x) => x.d >= 28 && x.d <= 83).map((x) => L.facts(M, x, mode));
 
   /* ============================== THE STRETCH ==============================
      One read of a stretch for every block on a page, through L.span and L.facts, so the headline, the contributors, the
@@ -180,17 +171,17 @@
   function timingCon(X, R) {
     const u = X.u, M = X.M;
     if (!R.read.length) return "";
-    const base = baseDays(M, X.mode).filter((f) => f.first != null && f.inWin != null);
-    const p = base.length ? base.filter((f) => f.inWin).length / base.length : null;
-    const c = cmpShare(p, R.within, R.read.length);
+    /* the mornings in and outside the window, and how that compares with the usual share, from the model's one count
+       (L.windowOut), which Insights' Timing card says in its note (Will, Nov 8) */
+    const W = L.windowOut(M, X.F, X.mode), p = W.p, c = W.cIn;
     const vals = R.read.map((f) => f.first).concat([u.tLo, u.tHi]);
     const lo = Math.floor(Math.min(...vals) - 0.25), hi = Math.ceil(Math.max(...vals) + 0.25);
     const tw = (v) => relWord(v, u.tLo, u.tHi, "In your usual window", "Earlier than your window", "Later than your window");
     const tone = (v) => (tw(v) === "In your usual window" ? "usual" : "shift");
     const tk = (v) => ({ lo, hi, band: [u.tLo, u.tHi], mark: v, tone: tone(v) === "usual" ? "read" : "shift" });
     return conBlock("Your mornings", `${RANGE[X.n]}, against your usual window, ${winText(u)}.`, [
-      { label: "Mornings in your window", value: `${R.within}<small>of ${R.read.length}</small>`, word: c ? { same: "About as often as usual", more: "More often than usual", less: "Less often than usual" }[c] : "", tone: c === "less" ? "shift" : "usual",
-        track: { seg: [{ k: "usual", v: R.within }, { k: "shift", v: R.read.length - R.within }] }, foot: [p != null ? usually(p, "morning") : "", `${R.later.length} later, ${R.earlier.length} earlier`] },
+      { label: "Mornings in your window", value: `${W.within}<small>of ${W.read}</small>`, word: c ? L.OUT_CMP[c] : "", tone: c === "less" ? "shift" : "usual",
+        track: { seg: [{ k: "usual", v: W.within }, { k: "shift", v: W.out }] }, foot: [p != null ? usually(p, "morning") : "", `${W.later} later, ${W.earlier} earlier`] },
       { label: "Earliest", value: esc(T(R.first.first)), word: tw(R.first.first), tone: tone(R.first.first), track: tk(R.first.first), foot: [dayLong(R.first.d), ""] },
       { label: "Latest", value: esc(T(R.last.first)), word: tw(R.last.first), tone: tone(R.last.first), track: tk(R.last.first), foot: [dayLong(R.last.d), ""] }
     ]);
@@ -198,16 +189,16 @@
   function oftenCon(X, R) {
     const u = X.u, M = X.M;
     if (!R.read.length) return "";
-    const base = baseDays(M, X.mode).filter((f) => f.inCount != null);
-    const p = base.length ? base.filter((f) => f.inCount).length / base.length : null;
-    const c = cmpShare(p, R.within, R.read.length);
+    /* the days with a usual count and outside it, and how that compares with the usual share, from the model's one count
+       (L.countOut), which Insights' Frequency card says in its note (Will, Nov 8) */
+    const C = L.countOut(M, X.F, X.mode), p = C.p, c = C.cIn;
     const cw = (v) => (v < u.nLo ? "Fewer than your usual" : v > u.nHi ? "More than your usual" : "A usual count");
     const tk = (v, own) => ({ lo: 0, hi: R.yMax, band: [Math.max(0, u.nLo - 0.5), u.nHi + 0.5], mark: v, tone: own ? (cw(v) === "A usual count" ? "read" : "shift") : "read" });
     const b = R.busiest, avgIn = R.avg >= u.nLo && R.avg <= u.nHi;
     return conBlock("Your counts", `${RANGE[X.n]}, against your usual count, ${nText(u.nLo, u.nHi)} a day.`, [
       { label: "BMs a day, on average", value: `${R.avg.toFixed(1)}<small>a day</small>`, word: avgIn ? "Within your usual count" : R.avg > u.nHi ? "Above your usual count" : "Below your usual count", tone: avgIn ? "usual" : "shift", track: tk(R.avg, false), foot: [`Usual ${nText(u.nLo, u.nHi)} a day`, `${plural(R.total, "BM")} on ${plural(R.read.length, "day")}`] },
-      { label: "Days with a usual count", value: `${R.within}<small>of ${R.read.length}</small>`, word: c ? { same: "About as often as usual", more: "More often than usual", less: "Less often than usual" }[c] : "", tone: c === "less" ? "shift" : "usual",
-        track: { seg: [{ k: "usual", v: R.within }, { k: "shift", v: R.read.length - R.within }] }, foot: [p != null ? usually(p, "day") : "", `${R.above.length} above, ${R.below.length} below`] },
+      { label: "Days with a usual count", value: `${C.within}<small>of ${C.read}</small>`, word: c ? L.OUT_CMP[c] : "", tone: c === "less" ? "shift" : "usual",
+        track: { seg: [{ k: "usual", v: C.within }, { k: "shift", v: C.out }] }, foot: [p != null ? usually(p, "day") : "", `${C.above} above, ${C.below} below`] },
       { label: "Busiest day", value: `${b.count}<small>${b.count === 1 ? "BM" : "BMs"}</small>`, word: cw(b.count), tone: cw(b.count) === "A usual count" ? "usual" : "shift", track: tk(b.count, true), foot: [dayLong(b.d), ""] },
       /* no state word: it would read as said of the count of No BM days, when it belongs to each day's count; the
          track's Gold already marks those days as outside the usual count */
@@ -312,7 +303,7 @@
     return {
       svg: svg(W, H, g + marks + lbl, `First BM each day, ${X.learning ? "so far" : RANGE[X.n].toLowerCase()}${u ? `, against your usual window ${winText(u)}` : ""}`),
       N, xs: F.map((f, i) => x(i) / W * 100), top: top / H * 100, h: plotH / H * 100,
-      cap: u ? `First BM in your window on ${R.within} of ${plural(R.read.length, "day")}` : "First BM, each day", right: X.learning ? "So far" : RANGE[X.n],
+      cap: u ? `First BM in your window on ${R.within} of ${plural(R.read.length, "morning")}` : "First BM, each day", right: X.learning ? "So far" : RANGE[X.n],
       legend: u ? `${lg("", "In your usual window")}${R.later.length || R.earlier.length ? lg("sw--shift", "Outside your usual window") : ""}${X.flag ? lg("sw--clin", "Noted for a clinician") : ""}` : lg("sw--learn", "A first BM"),
       sel: lastIdx(F, (f) => f.first != null)
     };

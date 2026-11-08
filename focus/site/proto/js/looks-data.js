@@ -195,8 +195,21 @@
       /* flagToday: today has a log noted for a clinician, so the mornings and days counted against the usual leave it out
          (mornings30 and read30 count the days read) */
       flagToday: flagT,
-      timing: { usual: u ? [u.tLo, u.tHi] : null, usualText: u ? `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}` : null, inWin30: u ? F30.filter((f) => f.inWin).length : null, mornings30: F30.filter((f) => f.first != null && !f.flag).length },
-      often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null && !f.flag); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })(), inCount30: u ? F30.filter((f) => f.inCount).length : null, read30: F30.filter((f) => f.count != null && !f.flag).length },
+      /* out: the mornings outside the usual window over the stretch, later and earlier, against the usual share (the model's
+         one count, L.windowOut, as Insights' Timing card and the Timing page count them), and outLine its one sentence
+         (L.outLine, Will, Nov 8); null and "" before the usual */
+      timing: (() => {
+        const W = L.windowOut ? L.windowOut(M, R30, mode) : null;
+        return { usual: u ? [u.tLo, u.tHi] : null, usualText: u ? `${T(u.tLo).replace(/ (AM|PM)$/, "")} to ${T(u.tHi)}` : null, inWin30: u ? F30.filter((f) => f.inWin).length : null, mornings30: F30.filter((f) => f.first != null && !f.flag).length,
+          out: W ? { read: W.read, within: W.within, out: W.out, later: W.later, earlier: W.earlier, cmp: W.cOut } : null, outLine: W && L.outLine ? L.outLine(W, RN) : "" };
+      })(),
+      /* out and outLine: the days outside the usual count over the stretch (L.countOut, L.countLine, Will, Nov 8), as the
+         Frequency card in Florin charts and the How often page count them; null and "" before the usual */
+      often: (() => {
+        const C = L.countOut ? L.countOut(M, R30, mode) : null;
+        return { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null && !f.flag); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })(), inCount30: u ? F30.filter((f) => f.inCount).length : null, read30: F30.filter((f) => f.count != null && !f.flag).length,
+          out: C ? { read: C.read, within: C.within, out: C.out, above: C.above, below: C.below, zero: C.zero, fewer: C.fewer, cmp: C.cOut } : null, outLine: C && L.countLine ? L.countLine(C, RN) : "" };
+      })(),
       /* usualWeeks: the days the usual forms were learned from, so a look can show what share of BMs they held */
       form: { scale, usual: formUsual, usualText: u ? L.usualFormsText(M, mode) : null, bins, spans, firmer, looser, either, within30: allForms.filter((x) => x.within === true).length, total30: allForms.length, usualWeeks: u ? BASE.slice() : null },
       symptoms: { usualText: symUsual, rows: symRows, withSym30: symF.filter((f) => f.sym.length).length, logged30: symF.filter((f) => f.logged).length, flagAt: F30.findIndex((f) => f.flag) },

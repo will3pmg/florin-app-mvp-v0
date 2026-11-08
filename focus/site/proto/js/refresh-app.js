@@ -56,7 +56,7 @@
   function Phone(host, cfg) {
     const S = {
       form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member",
-      bmUI: cfg.bmUI || "quick", home: cfg.home || "compact", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short", askUI: cfg.askUI || "pill",
+      bmUI: cfg.bmUI || "quick", home: cfg.home || "compact", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short", askUI: cfg.askUI || (EXT.askUI && EXT.askUI.def) || "compact",
       tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {}
     };
     S.M = L.build(S.persona, S.data, { meals: S.meals });
@@ -947,7 +947,7 @@
           ? `Florin is still learning this person's usual, so FloraScore's big ring shows the day it's on, Day ${L.learnDay(M)} of ${L.LEARN_DAYS}, and the cards show counts only until day ${L.LEARN_DAYS}. A food is checked once it's logged ${L.PATTERN_BAR.n} times.`
           : P.plan === "free"
             ? `On Free, Insights covers the last ${L.RANGES[0]} days, under FloraScore's big ring. Longer ranges, the details and possible patterns come with membership, shown as the person's own counts, blurred.`
-            : `FloraScore first, in the Rings style's big ring (Will's pick, Nov 5), then the Trend, its line over the range, and Your days, the days within the usual and what the others had. Then a card per question: timing, frequency, form, symptoms${ckOn() ? ", the weekly check-in" : ""} and patterns, each named in a word or two, the range picked once at the top. A card opens its detail, and Ask about this, inside it, opens Ask Florin with its numbers.${PR.sparse ? ` Meals are logged on too few days here, so food patterns are held back and a ${L.FOOD_CHECK_DAYS}-day food check is offered.` : ""}`
+            : `FloraScore first, in the Rings style's big ring (Will's pick, Nov 5), then the Trend, its line over the range, and Your days, the days within the usual and what the others had. Then a card per question: timing, frequency, form, symptoms${ckOn() ? ", the weekly check-in" : ""} and patterns, each named in a word or two, the range picked once at the top. Timing and frequency end on a note of what fell outside the usual. A card opens its detail, and Ask about this, inside it, opens Ask Florin with its numbers.${PR.sparse ? ` Meals are logged on too few days here, so food patterns are held back and a ${L.FOOD_CHECK_DAYS}-day food check is offered.` : ""}`
       };
     },
     pay: () => ({
@@ -999,7 +999,7 @@
     }),
     "ask-about": () => ({
       t: "Ask about this",
-      lede: "Every Insights card and detail has Ask about this. It opens Ask Florin with that card's numbers loaded, so the chat starts from the same figures as the chart. Ask button, under View on the left, sets how it looks on every card."
+      lede: "Every Insights card and detail has Ask about this. It opens Ask Florin with that card's numbers loaded, so the chat starts from the same figures as the chart. Will picked B, Compact, on Nov 8: a small pill in the card's corner. Ask button, under View on the left, keeps the other five to compare."
     })
   };
 
@@ -1256,9 +1256,10 @@
   const P = { persona: "sarah", data: "est", meals: "all", plan: "member", themeSet: null, key: "today", dec: null, ph: null, demoOpen: !!store.get("demoOpen", false) };
   DECISIONS.forEach((D) => { const v = store.get(D.k, D.def); P[D.k] = D.opts.some(([o]) => o === v) ? v : D.def; });
   /* Ask button (Will, Nov 7): how Ask about this looks everywhere it appears. A design-system option, not one of the
-     decisions: refresh-ask.js lists the styles (EXT.askUI), and it is stored per viewer like a decision */
-  const ASKUI = (EXT.askUI && EXT.askUI.opts) || [["pill", "A Pill", ""]];
-  const ASKUI_DEF = (EXT.askUI && EXT.askUI.def) || "pill";
+     decisions: refresh-ask.js lists the styles (EXT.askUI), and it is stored per viewer like a decision. B, Compact,
+     is the default (Will, Nov 8: "let's do B for the ask buttons"); a stored pick still wins */
+  const ASKUI = (EXT.askUI && EXT.askUI.opts) || [["compact", "B Compact", ""]];
+  const ASKUI_DEF = (EXT.askUI && EXT.askUI.def) || "compact";
   P.askUI = ((v) => (ASKUI.some(([o]) => o === v) ? v : ASKUI_DEF))(store.get("askUI", ASKUI_DEF));
   const appTheme = () => P.themeSet || pageTheme();
   /* what a module's notes see: every decision, the demo controls and the screen */

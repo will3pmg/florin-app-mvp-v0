@@ -465,8 +465,8 @@ deck isn't needed. can kill that."
   the usual forms), in place of a paragraph. We kept two cards rather than merging them: one is a score, one is the logs.
 - **Will's picks, Nov 7.** Frequency is Bento's stacked chart ("cleaner visually"), Form is Oura's ("our has the best
   FORM analysis visualizer"; the Rings and Oura mix is gone), and Symptoms and the check-in stay Oura. Timing ("torn
-  between oura and rings"): the screenshot of the Timing card he likes was the Rings morning dial, so his picks now draw
-  it, at the range picked at the top; Oura's card stays one switch away (`WILL_PICKS.timing`).
+  between oura and rings"): the screenshot of the Timing card he likes was the Rings morning dial, so his picks drew
+  it, at the range picked at the top. On Nov 8 he settled it: Oura's card ("TIMING: I Like OURA"), below.
 - **A day with 5 BMs** ("We should show a day with 5 (maybe goes to red on 5?)"). Each demo person now has one, Monday
   Sep 21, in the last 30 days but not this week, an ordinary day with nothing flagged. It is Gold, not red: red is out of
   the app's palette, and a day over the usual count is a shift, which is always Gold. Nothing else the demo says changed
@@ -486,6 +486,29 @@ deck isn't needed. can kill that."
   opens a page: the on and off switch first, then text size (Large or Larger), fewer cards on Today, What I ate
   listening as it opens and less motion, with a preview at the top. Left out: simpler screens on their own (a third
   version to check), bigger buttons on their own (Easy's are 56 to 64px, and Larger grows them) and numbers as words.
+
+## Will's notes (Nov 8) and what they changed
+
+- **Ask button: B, Compact** ("let's do B for the ask buttons"). Every Ask about this is the small Ray pill in the
+  card's corner, the token and "Ask", with the card's name in what a screen reader hears. It is the default for every
+  viewer (one who picked another style keeps theirs), and the other five stay under Ask button, on the left bar, to
+  compare. DESIGN.md names B as the component; the handoff draws B alone, the others on the Reference page.
+- **Timing in Will's picks is Oura's card again** ("TIMING: I Like OURA"). His Nov 7 screenshot was the Rings morning
+  dial, which his picks drew for a day; it stays one table edit away (`WILL_PICKS.timing`).
+- **A note of what fell outside the usual, on Insights itself** ("can we make sure on the main insights tab to flag a
+  note about the number of poops OUTSIDE regular windows/cadence. outside standard devs. it's already on the
+  clickthrough detail"). Timing (Oura's card in his picks, Florin charts' in the default) now says, set apart under its
+  stats or legend with the Gold mark, how many first BMs fell outside the usual window over the range picked at the top,
+  later and earlier, and how that compares with how often it usually happens: "7 of 28 mornings were outside your
+  window: 5 later, 2 earlier. Mornings like these came about as often as usual." Frequency (Bento's in his picks,
+  Florin charts' in the default) says the same for the count: "2 of 29 days were outside your usual count: 1 with more
+  BMs and 1 No BM day. Days like these came about as often as usual." The cards
+  and the detail pages count with the same two functions. On "standard devs": the usual window isn't a standard
+  deviation; it is the middle of the person's own first BM times in their first weeks (the 10th to 75th percentile, to
+  the quarter hour), and "as often as usual" is judged against how often their mornings fell outside it then, allowing
+  for chance over a short stretch. The app says "your usual window", never a statistic.
+- **Insights into the Figma file for handoff** ("we can build out insights into the figma too for handoff"): next,
+  once the file's edit access is sorted (handoff.md, section 10).
 
 ## The calls for Will
 
@@ -537,8 +560,8 @@ line says so.
 - Rings says "1 of 3 check-ins saved" before the first three: is that the way to put it?
 - Bento's usual days now have a Plum edge on light, so a usual month looks busier: acceptable?
 - Rings and Oura lead with a big 0 ("0 of 4 like your first weeks") when every answer moved: follow Easy read?
-- Will's picks (Nov 7): every picked card now draws 7, 30 and 90 days. Timing is the Rings dial from his screenshot:
-  right, or Oura's? At 90 days its dot columns pack tight: keep, or a bar a slot? Frequency
+- Will's picks (Nov 7): every picked card now draws 7, 30 and 90 days. Timing is Oura's card again (answered Nov 8).
+  The note of what fell outside the usual on Timing and Frequency: one line each, or only when something did? Frequency
   draws Bento's whole board (the stacked chart, then Average and Day by day tiles): keep the two small tiles, or the
   chart alone? And the Insights FloraScore ring fills toward 100, which data viz.md warned can read as a grade: keep it,
   with its end never Gold?
@@ -645,8 +668,8 @@ line says so.
   keep that, or name it once per screen?
 
 *Ask Florin*
-- Ask button: which of the six styles in `options/ask/`? We recommend B, Compact. And should the FloraScore card alone
-  carry E, its own question?
+- Ask button: answered Nov 8, B, Compact ("let's do B for the ask buttons"), the default everywhere, the other five
+  kept to compare. Still open: should the FloraScore card alone carry E, its own question?
 
 *For the studio (from `claude/Florin data viz.md`)*
 - On dark, draw a reading in Cream, so Ray means only the usual?

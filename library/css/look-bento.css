@@ -90,6 +90,10 @@
 .lk-bento .bt-sw--ecap { width: 6px; height: 12px; border-radius: 999px; background: var(--bt-e); box-shadow: inset 0 0 0 1.5px var(--ap-ink3); }
 .lk-bento .bt-sw--c { background: var(--ap-card2); box-shadow: inset 0 0 0 1px var(--ap-line); }
 .lk-bento .bt-sw--l { background: var(--bt-l); }
+/* the days outside your usual count (Will, Nov 8): set apart under the main tile's legend on the track's ground, led by
+   the chart's own swatch, Gold when any were, the usual's when none were */
+.lk-bento .bt-out { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 12px; border-radius: 12px; background: var(--bt-trk); font-size: 13px; line-height: 1.45; color: var(--ap-ink); text-wrap: pretty; }
+.lk-bento .bt-out .bt-sw { margin-top: 4px; }
 .lk-bento .bt-sw--x, .lk-bento .bt-sw--miss { background: transparent; box-shadow: inset 0 0 0 1px var(--ap-ink3); }
 .lk-bento .bt-sw--rail { width: 4px; height: 12px; border-radius: 999px; background: var(--ap-usual-ink); }
 .lk-bento .bt-sw--band { width: 16px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }

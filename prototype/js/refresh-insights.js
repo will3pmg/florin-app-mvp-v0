@@ -910,6 +910,9 @@
     return [L.tally(F, n <= 7).left, none.length ? (n <= 7 ? `Nothing logged on ${join(none.map((f) => L.dayName(f.d)))}.` : `${plural(none.length, "day")} with nothing logged.`) : ""].filter(Boolean).join(" ");
   };
 
+  /* the note of what fell outside the usual on an Insights card (Will, Nov 8), set apart under the legend and led by the
+     chart's own mark: Gold (shift) when anything did, the usual's when nothing did. text is the model's one sentence */
+  RU.outNote = (text, shift) => (text ? `<p class="ap-ic-out${shift ? " is-shift" : ""}"><i class="sw sw--${shift ? "shift" : "usual"}" aria-hidden="true"></i><span>${esc(text)}</span></p>` : "");
   RU.insights = (M, V, st) => {
     const mode = V.form, u = M.usual, learning = !u, free = V.plan === "free";
     const n = learning || free ? 7 : st.range;
@@ -965,23 +968,32 @@
       sum: `Day ${L.learnDay(M)} of ${L.LEARN_DAYS}. Once Florin knows your usual, FloraScore reads each day against it.`
     });
 
-    /* timing: did my first BM come in my usual window? */
+    /* timing: did my first BM come in my usual window? Then, set apart under the legend, the mornings outside it, later
+       and earlier, against the usual share (Will, Nov 8: "flag a note about the number of poops OUTSIDE regular
+       windows/cadence ... it's already on the clickthrough detail"): the model's one count (L.windowOut) in the one
+       sentence (L.outLine), as the Timing page's contributors count it. Nothing about outside while Florin learns */
     const tm = timingOf(M, F), Tc = chartOf(M, V, "timing", n, 318);
+    const TW = L.windowOut(M, F, mode), tOut = L.outLine(TW, n);
     const timing = card(V, {
       k: "timing", icon: "clock", kicker: "Timing", sr: `first BM, ${rw}`, range: n,
       head: u ? `Usually ${winText(u)}` : "Learning your usual window",
-      sum: u ? (tm.read.length ? `First BM in your window on <b>${tm.inW} of ${plural(tm.read.length, "day")}</b>${tm.later.length || tm.earlier.length ? `: ${join([tm.later.length ? `${tm.later.length} later` : "", tm.earlier.length ? `${tm.earlier.length} earlier` : ""].filter(Boolean))}` : ""}.` : tm.mornings.length ? esc(RU.FLAG_DAY) : "No first BM logged in this stretch.")
+      sum: u ? (tm.read.length ? `First BM in your window on <b>${tm.inW} of ${plural(tm.read.length, "morning")}</b>.` : tm.mornings.length ? esc(RU.FLAG_DAY) : "No first BM logged in this stretch.")
         : tm.mornings.length ? `First BM logged on <b>${plural(tm.mornings.length, "day")}</b> so far, ${esc(timesText(tm))}.` : "No BMs logged yet.",
-      chart: Tc.chart, legend: Tc.legend
+      chart: Tc.chart, legend: Tc.legend,
+      /* at 90 days the chart is weekly bars with no ring for today, so a flagged today's line is said under the note */
+      after: `${RU.outNote(tOut, !!(TW && TW.out))}${n >= 90 && TW && TW.flag ? `<p class="ap-ic-note">${esc(RU.FLAG_DAY)}</p>` : ""}`
     });
 
-    /* how often: did I go my usual number of times? */
+    /* how often: did I go my usual number of times? Then, as Timing has it, the days outside the usual count (Will, Nov 8,
+       "cadence"): the model's one count (L.countOut) in its one sentence (L.countLine), as the How often page counts it */
     const of = oftenOf(M, F), Oc = chartOf(M, V, "often", n, 318);
+    const OW = L.countOut(M, F, mode), oOut = L.countLine(OW, n);
     const often = card(V, {
       k: "often", icon: "bars", kicker: "Frequency", sr: `how often, ${rw}`, range: n,
       head: u ? `Usually ${u.nLo} to ${u.nHi} a day` : "Learning your usual count",
-      sum: of.known.length ? (u ? (of.read.length ? `<b>${of.inC} of ${plural(of.read.length, "day")}</b> with a usual count${of.busy || of.fewer ? `: ${join([of.busy ? `${of.busy} with more` : "", of.fewer ? `${of.fewer} with fewer` : ""].filter(Boolean))}` : ""}.` : esc(RU.FLAG_DAY)) : `<b>${plural(of.total, "BM")}</b> over ${plural(of.known.length, "day")}.`) : u ? "No BMs logged in this stretch." : "No BMs logged yet.",
-      chart: Oc.chart, legend: Oc.legend
+      sum: of.known.length ? (u ? (of.read.length ? `<b>${of.inC} of ${plural(of.read.length, "day")}</b> with a usual count.` : esc(RU.FLAG_DAY)) : `<b>${plural(of.total, "BM")}</b> over ${plural(of.known.length, "day")}.`) : u ? "No BMs logged in this stretch." : "No BMs logged yet.",
+      chart: Oc.chart, legend: Oc.legend,
+      after: `${RU.outNote(oOut, !!(OW && OW.out))}${n >= 90 && OW && OW.flag ? `<p class="ap-ic-note">${esc(RU.FLAG_DAY)}</p>` : ""}`
     });
 
     /* form: were my BMs my usual forms? */

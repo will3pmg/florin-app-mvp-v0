@@ -472,6 +472,13 @@
       const firsts = days.filter((x) => x.d >= 28 && x.d <= 83 && x.logged).map((x) => x.entries.find((e) => e.kind === "bm")).filter(Boolean).map((e) => e.t);
       const tLo = Math.floor(Ut.pct(firsts, 0.1) / 0.25) * 0.25, tHi = Math.ceil(Ut.pct(firsts, 0.75) / 0.25) * 0.25;
       M.usual = { tLo, tHi, nLo: U.nLo, nHi: U.nHi, fLo: a.lo + 1, fHi: a.hi + 1, wLo: b.lo, wHi: b.hi, sym: symUsual(days) };
+      /* the usual shares, fixed with the window and the count when the usual is set, from the same days 28 to 83 read
+         the one way (L.facts): the mornings with the first BM in the window (pWin) and the days with a usual count
+         (pCount). Logging or editing a recent day, inside the stretch they are compared with, can't move them */
+      const rd = days.filter((x) => x.d >= 28 && x.d <= 83).map((x) => L.facts(M, x));
+      const bw = rd.filter((f) => f.first != null && f.inWin != null), bc = rd.filter((f) => f.inCount != null);
+      M.usual.pWin = bw.length ? bw.filter((f) => f.inWin).length / bw.length : null;
+      M.usual.pCount = bc.length ? bc.filter((f) => f.inCount).length / bc.length : null;
       /* twelve answered Sundays (one skipped), tonight's still to come */
       M.checkins = [];
       for (let w = 0; w < 12; w++) {
@@ -588,6 +595,51 @@
     const of = (a, b) => M.days.filter((x) => x.d >= Math.max(M.start, a) && x.d <= b).map((x) => L.facts(M, x, mode));
     if (n >= 90) return { cur: L.span(M, 30, mode), prev: of(M.start, M.start + 29), cur30: true, label: "your first 30 days" };
     return { cur: L.span(M, n, mode), prev: of(TODAY - 2 * n + 1, TODAY - n), label: n === 7 ? "the week before" : `the ${n} days before` };
+  };
+  /* a count of days against a usual share, in words: over a few days a day or two either way is chance, so a stretch reads
+     as more or less often only past one and a half binomial spreads of what the usual share gives over the same days, and
+     by more than a day. "more", "less" or "same"; null with no usual share or no days. The Timing card's note and every
+     detail page's contributors read it (refresh-detail.js) */
+  L.shareCmp = (p, k, m) => {
+    if (p == null || !m) return null;
+    const e = p * m, t = Math.max(1, 1.5 * Math.sqrt(m * p * (1 - p)));
+    return k > e + t ? "more" : k < e - t ? "less" : "same";
+  };
+  /* the usual share of mornings with the first BM in the usual window: the logged first BMs of the weeks the usual comes
+     from (days 28 to 83), read the one way (L.facts), so the share and the window come from the same mornings. Fixed
+     when the usual is set (M.usual.pWin, L.build), as the window is, so the logs it is compared with never move it */
+  L.winShare = (M) => (M.usual ? (M.usual.pWin !== undefined ? M.usual.pWin : null) : null);
+  /* the usual share of days with a usual count, from the same days, fixed the same way (M.usual.pCount) */
+  L.countShare = (M) => (M.usual ? (M.usual.pCount !== undefined ? M.usual.pCount : null) : null);
+  /* the mornings outside the usual window over a stretch of L.span's facts (Will, Nov 8: "flag a note about the number of
+     poops OUTSIDE regular windows"). Over the mornings read: a flagged today is in no count. later and earlier are the
+     first BMs past the window's end or before its start, at the minute shown, as inWin reads them, so within + out is
+     every morning read. cIn compares the mornings in the window with the usual share (L.winShare, L.shareCmp), as the
+     Timing page's contributors say it; cOut is the same comparison said of the mornings outside it. null before the
+     usual (day 14). One count for Insights' Timing card (Florin charts and every look, through D.timing.out), the Timing
+     page and Ask */
+  L.windowOut = (M, F, mode) => {
+    const u = M.usual;
+    if (!u) return null;
+    const at = (f) => Math.round(f.first * 60) / 60;
+    const read = F.filter((f) => f.first != null && !f.flag);
+    const later = read.filter((f) => at(f) > u.tHi), earlier = read.filter((f) => at(f) < u.tLo);
+    const within = read.filter((f) => f.inWin).length, p = L.winShare(M, mode), cIn = L.shareCmp(p, within, read.length);
+    return { read: read.length, within, out: later.length + earlier.length, later: later.length, earlier: earlier.length, laterDays: later, earlierDays: earlier, p, cIn, cOut: cIn === "less" ? "more" : cIn === "more" ? "less" : cIn, flag: F.some((f) => f.flag) };
+  };
+  /* the days outside the usual count over a stretch of L.span's facts (Will, Nov 8, "OUTSIDE regular windows/cadence"):
+     over the days read with something said about BMs (a flagged today is in no count), above (more BMs than the usual
+     count), below (fewer, No BM among them) and zero (No BM), and how the days with a usual count compare with the
+     usual share of the weeks the usual comes from (L.countShare, L.shareCmp), said of the days outside as cOut. null before day 14.
+     One count for Insights' Frequency card (Florin charts and Bento, through D.often.out) and the How often page */
+  L.countOut = (M, F, mode) => {
+    const u = M.usual;
+    if (!u) return null;
+    const read = F.filter((f) => f.count != null && !f.flag);
+    const above = read.filter((f) => f.count > u.nHi).length, below = read.filter((f) => f.count < u.nLo).length, zero = read.filter((f) => f.count === 0).length;
+    const within = read.filter((f) => f.inCount).length;
+    const p = L.countShare(M), cIn = L.shareCmp(p, within, read.length);
+    return { read: read.length, within, out: above + below, above, below, zero, fewer: below - (u.nLo > 0 ? zero : 0), p, cIn, cOut: cIn === "less" ? "more" : cIn === "more" ? "less" : cIn, flag: F.some((f) => f.flag) };
   };
   /* a dinner logged at 8 PM or later */
   L.lateDinner = (M, d) => { const x = L.day(M, d); return !!x && x.logged && x.entries.some((e) => e.kind === "meal" && e.meal === "dinner" && e.t >= 20); };

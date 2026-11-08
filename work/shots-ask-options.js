@@ -16,7 +16,9 @@ require("fs").mkdirSync(RAW, { recursive: true });
     for (const ui of ["pill", "compact", "link", "icon", "chip", "bar"]) {
       await p.evaluate(([ui, theme]) => { const api = window.FLORIN_EXT.api; api.set("theme", theme); api.set("look", "picks"); api.set("askUI", ui); api.open("insights"); }, [ui, theme]);
       await p.waitForTimeout(1800);
-      await p.evaluate(() => document.querySelector(".rx-stage .ap-rx").classList.add("is-full"));
+      /* the app's tab bar sits over the foot of a tall card scrolled to the bottom (Oura's Timing card since Nov 8), so it
+         is hidden while the cards are shot: each picture is a card, not the screen */
+      await p.evaluate(() => { const ph = document.querySelector(".rx-stage .ap-rx"); ph.classList.add("is-full"); const tb = ph.querySelector(".ap-tb"); if (tb) tb.style.visibility = "hidden"; });
       /* the Trend (a Florin charts card), the Timing card (in Will's pick for it, WILL_PICKS) and the foot of the dark
          FloraScore card (the Rings hero), so each style is seen on a dark ground too */
       for (const [card, sel] of [["score", '.ap-ins .ap-ic:has(.ap-askw[data-k="score"])'], ["timing", '[data-rlk-k="timing"]'], ["hero", ".rpk-score"]]) {

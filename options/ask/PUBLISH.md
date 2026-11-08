@@ -22,10 +22,10 @@ file. No capabilities. Icon: `chat`. Title comes from the page: Ask Button Optio
 The pictures are the prototype's Insights (Will's picks view, Sarah, 12 weeks, Member, 30 days) at 390 wide and
 deviceScaleFactor 2, one per Ask button style, card and theme, saved as WebP at quality 88. To retake them after the
 cards change, run `NODE_PATH=$(npm root -g) node work/shots-ask-options.js <raw dir>` (it sets `look` to `picks` and `askUI`
-to each style through phone.set, opens Insights, and shoots the FloraScore trend card, the Timing card (in Will's pick for Timing: the pictures on the page are from Nov 7,
-when that was the Rings morning dial; since Nov 8 it is Oura's card) and the
-foot of the dark FloraScore card, with 12px of ground around each), then convert to WebP under img/ with the names
-above.
+to each style through phone.set, opens Insights, and shoots the FloraScore trend card, the Timing card (in Will's pick for Timing: Oura's card since Nov 8, with its note on
+the mornings outside the window; the pictures were retaken on Nov 8) and the
+foot of the dark FloraScore card, with 12px of ground around each, the app's tab bar hidden so it never covers a
+card's foot), then convert to WebP under img/ with the names above.
 
 The page's link to the demo points at https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. Will picked B, Compact, on Nov 8: the page marks
 it as his pick and the app's default, and its Ask button row (View, left bar) keeps the other five to compare.

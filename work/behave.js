@@ -2430,6 +2430,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       up.on("pageerror", (e) => uerr.push(e.message));
       up.on("console", (m) => { if (m.type() === "error") uerr.push(m.text()); });
       await up.goto(PAGE); await up.waitForSelector(".rx-stage .ap-rx"); await up.waitForTimeout(400);
+      /* these are A Pill's numbers (DESIGN.md): B, Compact, is the default since Nov 8 and the nov8 block checks it */
+      await up.evaluate(() => window.FLORIN_EXT.api.set("askUI", "pill")); await up.waitForTimeout(300);
       const uw = (ms = 450) => up.waitForTimeout(ms);
       const uph = ".rx-stage .ap-rx";
       const uopen = async (id) => { await up.evaluate((id) => document.querySelector(`[data-rx="screen"][data-v="${id}"]`).click(), id); await uw(); };
@@ -2542,6 +2544,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         window.claude = { use: async (name) => (name === "sample" ? (input, opts) => { window.__askLast = input; return window.__askImpl(input, opts); } : null) };
       });
       await cp.goto(PAGE); await cp.waitForSelector(".rx-stage .ap-rx"); await cp.waitForTimeout(400);
+      await cp.evaluate(() => window.FLORIN_EXT.api.set("askUI", "pill")); await cp.waitForTimeout(300);
       const cph = ".rx-stage .ap-rx";
       await cp.evaluate(() => document.querySelector('[data-rx="screen"][data-v="ask"]').click()); await cp.waitForTimeout(400);
       const cask = async (q) => { await cp.fill(`${cph} .ap-askx-in`, q); await cp.press(`${cph} .ap-askx-in`, "Enter"); await cp.waitForTimeout(600); };
@@ -3433,7 +3436,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return { t, w, k, flag: RU.FLAG_DAY, mor: F.filter((f) => f.first != null && !f.flag).length, inW: F.filter((f) => f.inWin).length };
     });
     /* the score card: since Will's pick (Nov 5) the Rings hero, its number in the ring and the words under it */
-    ok(/\d+, not read against your usual today|\b\d+\s+Your usual \d+ to \d+\s+Not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} days`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and the first BM in the window on ${ins.inW} of ${ins.mor} days without it, and says why`);
+    ok(/\d+, not read against your usual today|\b\d+\s+Your usual \d+ to \d+\s+Not read against your usual today/.test(ins.t) && ins.t.includes(`${ins.w}\nof ${ins.k}`) && ins.t.includes(ins.flag) && ins.t.includes(`${ins.inW} of ${ins.mor} mornings`), `final-fix: Insights reads the flagged today against nothing: the score card, ${ins.w} of ${ins.k} days and the first BM in the window on ${ins.inW} of ${ins.mor} mornings without it, and says why`);
     /* 4. every data style's 30-day cards leave today out of their counts */
     const lookBad = [];
     for (const look of ["rings", "journal", "bento", "oura", "easy"]) {
@@ -5010,7 +5013,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       return {
         rpk: !!r && r.classList.contains("rpk-ins"), picks: !!r && r.dataset.rpk === "picks",
         cards: r ? [...r.querySelectorAll(":scope > section")].map((s) => (s.dataset.rlkK ? `${s.dataset.rlkK}:${s.dataset.rlkLook}` : s.classList.contains("ap-sum") ? "sum" : `${((s.querySelector(".ap-ic-h") || {}).dataset || {}).k}:core`)) : [],
-        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-rings .rg-timing'), often: q('[data-rlk-k="often"] .lk-bento .bt'), form: q('[data-rlk-k="form"] .lk-oura .ou-form'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
+        looks: { score: q('[data-rlk-k="score"] .lk-rings .rg-score'), timing: q('[data-rlk-k="timing"] .lk-oura .ou-timing'), often: q('[data-rlk-k="often"] .lk-bento .bt'), form: q('[data-rlk-k="form"] .lk-oura .ou-form'), symptoms: q('[data-rlk-k="symptoms"] .lk-oura .ou-symptoms'), checkin: q('[data-rlk-k="checkin"] .lk-oura .ou-checkin') },
         /* Nov 7: the foot sits inside the look's card */
         foot: [...l.querySelectorAll(".rpk-card")].map((c) => { const a = c.querySelector('.rlk-look .rlk-foot [data-act="ask-about"], .rlk-look .rlk-foot [data-pay="ask"]'), g = c.querySelector(".rlk-look .rlk-foot .rlk-go"); return `${c.dataset.rlkK}:${a ? (a.dataset.act === "pay" ? "pay" : `ask=${a.dataset.k}`) : "none"}:${g ? `${g.dataset.act}=${g.dataset.k || g.dataset.pay}` : "none"}`; }),
         theme: [...new Set([...l.querySelectorAll(".rpk-card .rlk-look")].map((n) => n.dataset.theme))].join(","),
@@ -5047,17 +5050,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
 
     /* 3. each picked card in its style, in Insights' own order, at 7, 30 and 90 days (Nov 7: every card draws the range
        the tabs say, so no style falls back to Florin charts). Every picked card keeps Ask about this and opens its detail */
-    /* Nov 7: Timing is the Rings morning dial (Will's screenshot of the Timing card he likes was Rings', though he
-       called it "the oura") */
-    const EXP1 = "score:rings,score:core,sum,timing:rings,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
+    /* Nov 8: Timing is Oura's card again ("TIMING: I Like OURA"; Nov 7 drew the Rings morning dial) */
+    const EXP1 = "score:rings,score:core,sum,timing:oura,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
     const EXP = { 30: EXP1, 7: EXP1, 90: EXP1 };
     const FOOT = { score: "ask=score:idetail=score", timing: "ask=timing:idetail=timing", often: "ask=often:idetail=often", form: "ask=form:idetail=form", symptoms: "ask=sym:idetail=sym", checkin: "ask=ck:idetail=ck" };
     for (const n of [7, 30, 90]) {
       await range(n);
       const r = await insOf();
       const feet = r.foot.every((f) => { const [k] = f.split(":"); return f === `${k}:${FOOT[k]}`; });
-      ok(r.picks && r.cards.join(",") === EXP[n] && Object.values(r.looks).every(Boolean) && feet && !r.bad, `wills-picks, ${n} days: FloraScore in Rings, Timing in the Rings morning dial, Form, Symptoms and the check-in in Oura, Frequency in Bento, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
-      ok(!/draws 30 days|Florin charts' here/.test(r.note) && /picked once, at the top/.test(r.note) && /Timing in the Rings morning dial/.test(r.note) && !/Timing[^;.]*in Oura's cards/.test(r.note), `wills-picks, ${n} days: the note says the range at the top is every card's, names no fallback, and says Timing is the Rings morning dial`);
+      ok(r.picks && r.cards.join(",") === EXP[n] && Object.values(r.looks).every(Boolean) && feet && !r.bad, `wills-picks, ${n} days: FloraScore in Rings, Timing, Form, Symptoms and the check-in in Oura, Frequency in Bento, in Insights' order, each with Ask about this and its detail (${r.cards.join(", ")}${feet ? "" : `; feet ${r.foot.join(" ")}`})`);
+      ok(!/draws 30 days|Florin charts' here/.test(r.note) && /picked once, at the top/.test(r.note) && /Timing, Form, Symptoms and the check-in in Oura's cards/.test(r.note) && !/morning dial/.test(r.note), `wills-picks, ${n} days: the note says the range at the top is every card's, names no fallback, and says Timing is in Oura's cards`);
     }
 
     /* 4. Oura's Form card counts the range the tabs say (Nov 7; it was Rings' count over Oura's bars, "the mix", Nov 5):
@@ -5091,7 +5093,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const td = await w.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), look: !!document.querySelector(".rx-stage .ap-rx .ap-layer .rlk-look"), core: !!document.querySelector(".rx-stage .ap-rx .ap-layer .ap-idt") }));
     await wclick(`${ph} .ap-back`, 600);
     const tb0 = await w.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('[data-rlk-k="timing"]') && a.matches(".rlk-go"); });
-    ok(td.key === "i-timing" && !td.look && td.core && tb0 && await wkey() === "look-insights", `wills-picks: the Rings Timing dial opens Florin charts' Timing page, and Back lands on the card (${td.key})`);
+    ok(td.key === "i-timing" && !td.look && td.core && tb0 && await wkey() === "look-insights", `wills-picks: Oura's Timing card opens Florin charts' Timing page, and Back lands on the card (${td.key})`);
     await range(90);
     await wclick(`${ph} [data-rlk-k="form"] [data-act="ask-about"]`, 600);
     const ak = await w.evaluate(() => ({ tab: window.FLORIN_EXT.api.S.tab, ctx: window.FLORIN_EXT.api.S.askCtx }));
@@ -5169,21 +5171,22 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await w.evaluate(() => { const api = window.FLORIN_EXT.api, L = window.FLORIN_LOGS, M = api.M(); L.add(M, { kind: "bm", d: L.TODAY, t: 19.7, form: 4, how: {}, dur: null, flags: { blood: true }, note: "" }); api.renderTab(true); }); await ww();
     const fl = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"); return { text: s.textContent.replace(/\s+/g, " "), num: !!s.querySelector(".rg-dial-n") && /\d/.test(s.querySelector(".rg-dial-n").textContent), gold: !!s.querySelector(".rg-end.is-shift") }; });
     ok(!lb.length && /Not read against your usual today/.test(fl.text) && fl.num && !fl.gold, `wills-picks: while Florin learns, the Rings card is Day 5 of 14 and the picked cards show the days so far; on a flagged today it keeps the number and says Not read against your usual today${lb.length ? ` (${lb.join("; ")})` : ""}`);
-    /* the Timing dial on a flagged today: today's first BM a Teal ring (is-flag), never a dot in or out of the window,
-       in none of the counts (the centre is the model's mornings read, the flagged today left out), and its line and
-       legend say why (RU.FLAG_DAY), at 7, 30 and 90 days */
+    /* Oura's Timing card on a flagged today (Nov 8: Timing is Oura's again): its count is the model's mornings read, the
+       flagged today left out, today's dot is never Gold, its line says why (RU.FLAG_DAY), and the note of the mornings
+       outside the window is the model's one sentence over the mornings read, at 7, 30 and 90 days */
     const flt = [];
     for (const n of [7, 30, 90]) {
       await range(n);
       const t = await w.evaluate((n) => {
-        const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), F = L.span(M, n, api.V().form);
+        const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, F = L.span(M, n, mode);
         const morn = F.filter((f) => f.first != null && !f.flag), c = document.querySelector('.rx-stage .ap-rx [data-rlk-k="timing"]');
-        const fd = c.querySelectorAll(".rg-mdot.is-flag"), num = c.querySelector(".rg-mdial-n").textContent.trim(), of = c.querySelector(".rg-mdial-s").textContent.trim();
-        return { n, flagDots: fd.length, newest: fd.length === 1 && fd[0].classList.contains("is-new") && !fd[0].classList.contains("is-shift"), halo: !!c.querySelector(".rg-now-halo.is-flag"), count: `${num} ${of}`, want: `${morn.filter((f) => f.inWin).length} of ${morn.length} mornings`, line: c.textContent.includes(RU.FLAG_DAY), legend: /Today, noted for a clinician/.test((c.querySelector(".rg-legend") || {}).textContent || ""), read: /inside your window|in your usual window\.|later than your window\.|earlier than your window\./.test((c.querySelector(".rg-ans") || {}).textContent || "") };
+        const dd = [...c.querySelectorAll(".ou-stats div")].find((x) => /Mornings in your window/.test(x.querySelector("dt").textContent));
+        const W = L.windowOut(M, F, mode), note = ((c.querySelector(".ou-out") || {}).textContent || "").trim();
+        return { n, oura: !!c.querySelector(".ou-timing"), count: dd ? dd.querySelector("dd").textContent.trim() : "", want: `${morn.filter((f) => f.inWin).length} of ${morn.length}`, nowShift: !!c.querySelector(".ou-now.is-shift"), line: c.textContent.includes(RU.FLAG_DAY), note, noteWant: L.outLine(W, n), read: W.read === morn.length && W.flag };
       }, n);
-      if (!(t.flagDots === 1 && t.newest && t.halo && t.count === t.want && t.line && t.legend && !t.read)) flt.push(JSON.stringify(t));
+      if (!(t.oura && t.count === t.want && !t.nowShift && t.line && t.note && t.note === t.noteWant && t.read)) flt.push(JSON.stringify(t));
     }
-    ok(!flt.length, `wills-picks: on a flagged today the Timing dial draws today's first BM as a Teal ring read against nothing, in none of its counts, and says why, at 7, 30 and 90 days${flt.length ? ` (${flt.slice(0, 2).join("; ")})` : ""}`);
+    ok(!flt.length, `wills-picks: on a flagged today Oura's Timing card reads today against nothing, in none of its counts or its note of the mornings outside the window, and says why, at 7, 30 and 90 days${flt.length ? ` (${flt.slice(0, 2).join("; ")})` : ""}`);
     await wset("data", "est");
 
     /* 11. the Easy version keeps its own screens; View says so under the switch */
@@ -5406,7 +5409,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const aww = (ms = 450) => aw.waitForTimeout(ms);
     const awph = ".rx-stage .ap-rx";
     const STY = await aw.evaluate(() => window.FLORIN_EXT.askUI.opts.map(([v]) => v));
-    ok(STY.join(",") === "pill,compact,link,icon,chip,bar" && await aw.evaluate(() => document.querySelector(`.rx-stage .ap-rx`).dataset.askUi === "pill" && document.querySelector('[data-rx="askUI"][aria-pressed="true"]').dataset.v === "pill"), `ask-widget: six styles (${STY.join(", ")}), the pill by default, page and phone agree`);
+    ok(STY.join(",") === "pill,compact,link,icon,chip,bar" && await aw.evaluate(() => document.querySelector(`.rx-stage .ap-rx`).dataset.askUi === "compact" && document.querySelector('[data-rx="askUI"][aria-pressed="true"]').dataset.v === "compact"), `ask-widget: six styles (${STY.join(", ")}), B Compact by default (Will, Nov 8), page and phone agree`);
     ok(await aw.evaluate(() => !document.querySelector('.rx-panel--dec [data-rx="askUI"]') && !!document.querySelector('.rx-panel--view [data-rx="askUI"]')), "ask-widget: Ask button sits under View, not among the decisions");
     /* each button as drawn: the token first, its target, its name and the words it shows */
     const look = () => aw.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-layer :is(.ap-ask-b, .ap-idt-ask, .ap-ez-ask)")].filter((x) => x.getClientRects().length).map((x) => {
@@ -5515,7 +5518,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       });
     });
     const NAMES = { score: "FloraScore", days: "Your days", timing: "Timing", often: "Frequency", form: "Form", symptoms: "Symptoms", sym: "Symptoms", checkin: "Check-in", ck: "Check-in", pat: "Patterns" };
-    const ORDER = "score:rings,score:core,days:core,timing:rings,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
+    const ORDER = "score:rings,score:core,days:core,timing:oura,often:bento,form:oura,symptoms:oura,checkin:oura,pat:core";
     const bad = [];
     const judge = (tag, cs, n, free) => {
       cs.forEach((c, i) => {
@@ -5546,7 +5549,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       }
     }
     await vset("theme", "light");
-    ok(!bad.length && tabs.every((t) => t === 3), `insights-v2: Will's picks at 7, 30 and 90 days, light and dark: Rings, the Trend, Your days, the Rings Timing dial, Bento's Frequency, Oura's Form, Symptoms and check-in, Patterns; each card named in a word or two, the range only in the tabs at the top and in the words a screen reader hears, Ask about this inside each card at that range (${bad.slice(0, 4).join("; ") || "54 cards"})`);
+    ok(!bad.length && tabs.every((t) => t === 3), `insights-v2: Will's picks at 7, 30 and 90 days, light and dark: Rings, the Trend, Your days, Oura's Timing, Bento's Frequency, Oura's Form, Symptoms and check-in, Patterns; each card named in a word or two, the range only in the tabs at the top and in the words a screen reader hears, Ask about this inside each card at that range (${bad.slice(0, 4).join("; ") || "54 cards"})`);
     bad.length = 0;
     await v.click('#rxLeft [data-rx="view"][data-v="built"]'); await vw(600);
     for (const n of [7, 30, 90]) { await vins(n); judge(`default ${n}`, await cardsOf(), n, false); }
@@ -5554,9 +5557,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(!bad.length && dflt === "score:rings,score:core,days:core,timing:core,often:core,form:core,sym:core,ck:core,pat:core", `insights-v2: the default, Florin charts, has the same plain heads, the range only at the top, and Ask about this inside every card (${bad.slice(0, 4).join("; ") || dflt})`);
     bad.length = 0;
 
-    /* 2. the picked cards read the range: the Rings Timing dial and Bento's Frequency count the same days the model
-       does. The dial's centre is the mornings in the window of the mornings read, it draws a dot for each first BM in
-       the range, Gold for each outside the window, and its chart's words name the range */
+    /* 2. the picked cards read the range: Oura's Timing card (Nov 8) and Bento's Frequency count the same days the model
+       does. Oura's stats say the mornings in the window of the mornings read, its clock draws a tick for each first BM
+       in the range, Gold for each outside the window, and its chart's words name the range */
     await v.click('#rxLeft [data-rx="view"][data-v="picks"]'); await vw(600);
     const cnt = [];
     for (const who of ["sarah", "marcus", "alex"]) {
@@ -5566,15 +5569,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const m = await v.evaluate((n) => {
           const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), F = L.span(M, n, api.V().form).filter((f) => !f.flag);
           const morn = F.filter((f) => f.first != null), known = F.filter((f) => f.count != null), u = M.usual;
-          const ph = document.querySelector(".rx-stage .ap-rx"), tc = ph.querySelector('[data-rlk-k="timing"] .rg-mdial'), fq = ph.querySelector('[data-rlk-k="often"] .bt-a');
-          const tn = tc && tc.querySelector(".rg-mdial-n"), ts = tc && tc.querySelector(".rg-mdial-s");
-          return { tm: tn && ts ? `${tn.textContent.trim()} ${ts.textContent.trim().replace(/ mornings?$/, "")}` : "", want: `${morn.filter((f) => f.inWin).length} of ${morn.length}`, dots: tc ? `${tc.querySelectorAll(".rg-mdot").length}/${tc.querySelectorAll(".rg-mdot.is-shift").length}` : "", dwant: `${morn.length}/${morn.filter((f) => f.inWin === false).length}`, aria: tc ? new RegExp(`^First BM each morning, last ${n} days\\.`).test(tc.getAttribute("aria-label")) : false, fq: fq ? fq.textContent : "", fwant: `Within your usual ${u.nLo} to ${u.nHi} a day on ${known.filter((f) => f.count >= u.nLo && f.count <= u.nHi).length} of ${known.length} day` };
+          const ph = document.querySelector(".rx-stage .ap-rx"), tc = ph.querySelector('[data-rlk-k="timing"] .ou-timing'), fq = ph.querySelector('[data-rlk-k="often"] .bt-a');
+          const dd = tc && [...tc.querySelectorAll(".ou-stats div")].find((x) => /Mornings in your window/.test(x.querySelector("dt").textContent)), clock = tc && tc.querySelector(".ou-clock");
+          return { tm: dd ? dd.querySelector("dd").textContent.trim() : "", want: `${morn.filter((f) => f.inWin).length} of ${morn.length}`, dots: tc ? `${tc.querySelectorAll(".ou-ck-tick").length}/${tc.querySelectorAll(".ou-ck-tick.is-shift").length}` : "", dwant: `${morn.length}/${morn.filter((f) => f.inWin === false).length}`, aria: clock ? new RegExp(`^First BM each morning, the last ${n} days,`).test(clock.getAttribute("aria-label")) : false, fq: fq ? fq.textContent : "", fwant: `Within your usual ${u.nLo} to ${u.nHi} a day on ${known.filter((f) => f.count >= u.nLo && f.count <= u.nHi).length} of ${known.length} day` };
         }, n);
         if (m.tm !== m.want || m.dots !== m.dwant || !m.aria || m.fq.indexOf(m.fwant) !== 0) cnt.push(`${who} ${n}: timing ${m.tm} (model ${m.want}), dots ${m.dots} (model ${m.dwant})${m.aria ? "" : ", aria not the range"}; frequency "${m.fq}" (model "${m.fwant}")`);
       }
     }
     await vset("persona", "sarah");
-    ok(!cnt.length, `insights-v2: the Rings Timing dial (its count, its dots and its words) and Bento's Frequency read the range the tabs say, as the model does, at 7, 30 and 90 days for each person (${cnt.slice(0, 2).join("; ") || "18 counts"})`);
+    ok(!cnt.length, `insights-v2: Oura's Timing card (its count, its ticks and its words) and Bento's Frequency read the range the tabs say, as the model does, at 7, 30 and 90 days for each person (${cnt.slice(0, 2).join("; ") || "18 counts"})`);
 
     /* 3. the busy day (refresh-data.js, BUSY): one day with 5 BMs in each person's last 30 days, not in the last 7, an
        ordinary day (no flag, no note, no alarm word), read as a shift of the count; on Bento's Frequency it is Gold at
@@ -5986,7 +5989,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await n7.evaluate(() => document.querySelectorAll('.rx-stage .ap-rx .ap-ins .ap-askw[data-k="score"]')[1].click()); await nw(600);
     const box = await n7.evaluate(() => (document.querySelector(".rx-stage .ap-rx .ap-askx-in") || {}).value || "");
     ok(!qd.length && !!tq && box === tq, `nov7-fixes: in E Question no two Ask buttons on Insights read the same, in Florin charts, Will's picks and every data style, and the Trend's ("${tq}") is the one Ask opens with (${qd.slice(0, 2).join("; ") || box})`);
-    await n7.click('[data-rx="askUI"][data-v="pill"]'); await nw(300);
+    await n7.click('[data-rx="askUI"][data-v="compact"]'); await nw(300);
     ok(!cb.length, `nov7-fixes: in light, C Link, D Token and F Bar read on the dark FloraScore card in Florin charts, Will's picks, Rings, Bento and Oura: the words at 4.5:1 or more, the token at 3:1 or more (${cb.slice(0, 3).join("; ") || "15 cases"})`);
     await nset("look", "built");
 
@@ -6031,6 +6034,212 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await nc.close();
   }
   /* ===== end nov7-fixes ===== */
+
+  /* ===== nov8 (Will, Nov 8: "let's do B for the ask buttons. TIMING: I Like OURA, but can we make sure on the main
+     insights tab to flag a note about the number of poops OUTSIDE regular windows/cadence ... it's already on the
+     clickthrough detail."):
+     1. Ask button: B, Compact, by default with nothing stored, a stored pick still wins, and B reads in both themes
+     2. Will's picks draws Timing in Oura's card
+     3. the Timing card's note of the mornings outside the window, in Will's picks (Oura) and the default (Florin
+        charts), is the model's one count and sentence, and the same as the Timing page's contributors, at 7, 30 and
+        90 days for Sarah, Marcus and Alex; the Frequency card's note likewise against the How often page
+     4. no note while Florin learns the usual; a flagged today is in no count and the clinician line stays; Free keeps
+        the notes at 7 days; the words are plain ===== */
+  {
+    const c8 = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+    const n8 = await c8.newPage();
+    const e8 = [];
+    n8.on("pageerror", (e) => e8.push(e.message));
+    n8.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /Florin|refresh-/.test(m.text()))) e8.push(m.text()); });
+    await n8.goto(PAGE); await n8.waitForSelector(".rx-stage .ap-rx"); await n8.waitForTimeout(400);
+    const w8 = (ms = 350) => n8.waitForTimeout(ms);
+    const set8 = async (k, v) => { await n8.evaluate(([k, v]) => window.FLORIN_EXT.api.set(k, v), [k, v]); await w8(300); };
+    const ins8 = async (n) => {
+      await n8.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.S.tab = "insights"; api.S.ins.k = null; api.renderTab(true); }); await w8(250);
+      if (n) { await n8.evaluate((n) => { const x = document.querySelector(`.rx-stage .ap-rx [data-act="irange"][data-v="${n}"]`); if (x) x.click(); }, n); await w8(350); }
+    };
+
+    /* 1. Ask button: B by default with nothing stored, page and phone agree, its line names Will's pick */
+    const d8 = await n8.evaluate(() => ({ def: window.FLORIN_EXT.askUI.def, ui: document.querySelector(".rx-stage .ap-rx").dataset.askUi, s: window.FLORIN_EXT.api.S.askUI, pressed: (document.querySelector('[data-rx="askUI"][aria-pressed="true"]') || {}).dataset, stored: localStorage.getItem("florin-refresh:askUI"), line: document.querySelector("[data-askui-line]").textContent }));
+    ok(d8.def === "compact" && d8.ui === "compact" && d8.s === "compact" && d8.pressed && d8.pressed.v === "compact" && d8.stored === null && /Will's pick, Nov 8/.test(d8.line) && !/[–—!]/.test(d8.line), `nov8: with nothing stored, Ask button is B, Compact, on page and phone, and its line says Will picked it on Nov 8 (${d8.ui}, "${d8.line}")`);
+    /* a viewer's stored pick wins over the default */
+    const cs8 = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+    await cs8.addInitScript(() => { try { if (!sessionStorage.getItem("nov8-seeded")) { localStorage.setItem("florin-refresh:askUI", JSON.stringify("link")); sessionStorage.setItem("nov8-seeded", "1"); } } catch (e) { /* fine */ } });
+    const s8 = await cs8.newPage();
+    await s8.goto(PAGE); await s8.waitForSelector(".rx-stage .ap-rx"); await s8.waitForTimeout(400);
+    const st8 = await s8.evaluate(() => ({ ui: document.querySelector(".rx-stage .ap-rx").dataset.askUi, pressed: document.querySelector('[data-rx="askUI"][aria-pressed="true"]').dataset.v }));
+    await cs8.close();
+    ok(st8.ui === "link" && st8.pressed === "link", `nov8: a viewer's stored Ask button pick still wins over B (${JSON.stringify(st8)})`);
+    /* B in light and dark on Insights: the words 4.5:1 on its own fill, its shape 3:1 against the card, the token 3:1,
+       and a 44px target or more */
+    const bc = [];
+    for (const th of ["light", "dark"]) {
+      await set8("theme", th); await ins8(30);
+      const c = await n8.evaluate(() => {
+        const ph = document.querySelector(".rx-stage .ap-rx"), cv = document.createElement("canvas"); cv.width = cv.height = 1;
+        const cx = cv.getContext("2d", { willReadFrequently: true });
+        const px = (css) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = "#000"; cx.fillStyle = css; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data]; };
+        const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+        const cr = (a, b) => { const x = lum(a), y = lum(b); return +((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)).toFixed(2); };
+        /* over a ground: a see-through fill mixed onto the card */
+        const over = (fg, bg) => { const a = fg[3] / 255; return [0, 1, 2].map((i) => Math.round(fg[i] * a + bg[i] * (1 - a))).concat(255); };
+        const btn = ph.querySelector('.ap-ins .ap-ic .ap-askw[data-k="timing"]'), card = btn.closest(".ap-card, .ap-ic");
+        const card0 = px(getComputedStyle(card).backgroundColor), fill = over(px(getComputedStyle(btn).backgroundColor), card0);
+        const edgeM = getComputedStyle(btn).boxShadow.match(/(rgba?\([^)]*\)|oklch\([^)]*\)|color\([^)]*\))/), edge = edgeM ? over(px(edgeM[1]), card0) : fill;
+        const tok = btn.querySelector(".ic"), a = getComputedStyle(btn, "::after"), r = btn.getBoundingClientRect();
+        return { ui: btn.dataset.askw, words: cr(px(getComputedStyle(btn).color), fill), shape: Math.max(cr(fill, card0), cr(edge, card0)), tok: cr(px(getComputedStyle(tok).color), px(getComputedStyle(tok).backgroundColor)), hit: Math.round(r.height - parseFloat(a.top || 0) - parseFloat(a.bottom || 0)), shown: btn.querySelector(".ap-askw-a").getClientRects().length > 0 && !btn.querySelector(".ap-askw-b").getClientRects().length, name: btn.getAttribute("aria-label") };
+      });
+      if (!(c.ui === "compact" && c.words >= 4.5 && c.shape >= 3 && c.tok >= 3 && c.hit >= 44 && c.shown && c.name === "Ask about this: Timing")) bc.push(`${th}: ${JSON.stringify(c)}`);
+    }
+    await set8("theme", "light");
+    ok(!bc.length, `nov8: B, Compact, on Insights in light and dark: "Ask" on the token, the words at 4.5:1, the shape at 3:1, the token at 3:1, a 44px target, its name the card's (${bc.join("; ") || "both themes"})`);
+
+    /* 2. Will's picks: Timing in Oura's card */
+    await n8.click('#rxLeft [data-rx="view"][data-v="picks"]'); await w8(600);
+    const tp = await n8.evaluate(() => { const c = document.querySelector('.rx-stage .ap-rx .ap-ins [data-rlk-k="timing"]'); return { look: c ? c.dataset.rlkLook : "", oura: !!(c && c.querySelector(".ou-timing")), dial: !!(c && c.querySelector(".rg-mdial")) }; });
+    ok(tp.look === "oura" && tp.oura && !tp.dial, `nov8: Will's picks draws Timing in Oura's card, not the Rings dial (${JSON.stringify(tp)})`);
+
+    /* 3. the notes against the model and the detail pages, in Will's picks and the default, at 7, 30 and 90 days */
+    const nb = [];
+    const NOTE_SEL = { timing: ".ap-ic-out, .ou-out", often: ".ap-ic-out, .bt-out" };
+    const readCards = (n) => n8.evaluate(([n, SEL]) => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), V = api.V(), mode = V.form, F = L.span(M, n, mode);
+      const ph = document.querySelector(".rx-stage .ap-rx .ap-ins");
+      const cardOf = (k) => ph.querySelector(`[data-rlk-k="${k}"]`) || (ph.querySelector(`.ap-ic-h[data-k="${k}"]`) || { closest: () => null }).closest("section");
+      const W = L.windowOut(M, F, mode), C = L.countOut(M, F, mode);
+      /* the detail pages' contributors, as drawn */
+      const dt = (k, label) => {
+        const d = new DOMParser().parseFromString(`<div>${RU.idetail(M, Object.assign({}, V, { plan: "member", easy: false }), { k, range: n })}</div>`, "text/html");
+        const row = [...d.querySelectorAll(".dt-cr")].find((r) => (r.querySelector(".dt-cr-l") || {}).textContent === label);
+        if (!row) return null;
+        const v = row.querySelector(".dt-cr-v").textContent.match(/(\d+)\s*of\s*(\d+)/), foot = [...row.querySelectorAll(".dt-cr-f span")].map((s) => s.textContent);
+        return { within: +v[1], read: +v[2], foot: foot[1], word: ((row.querySelector(".dt-sw") || {}).textContent || "") };
+      };
+      const out = {};
+      for (const [k, sel] of Object.entries(SEL)) {
+        const c = cardOf(k), note = c && c.querySelector(sel);
+        out[k] = { has: !!note, text: note ? note.textContent.trim() : "", gold: !!(note && note.querySelector(".sw--shift, .ou-sw--tick-shift, .bt-sw--s")), usual: !!(note && note.querySelector(".sw--usual, .ou-sw--tick-usual, .bt-sw--u")),
+          /* the card's summary line (Florin charts) and, on Bento's Frequency board, the Day by day tile's legend */
+          sum: c ? ((c.querySelector(".ap-ic-sum") || {}).textContent || "").trim() : "", split: c ? [...c.querySelectorAll(".bt-seg + .bt-lg li")].map((li) => li.textContent.trim()) : [], splitSr: c ? ((c.querySelector(".bt-seg") || { getAttribute: () => "" }).getAttribute("aria-label") || "") : "" };
+      }
+      return { out, W, C, line: L.outLine(W, n), cline: L.countLine(C, n), dT: dt("timing", "Mornings in your window"), dO: dt("often", "Days with a usual count"), OUT_CMP: L.OUT_CMP, OUT_SAID: L.OUT_SAID };
+    }, [n, NOTE_SEL]);
+    const flip = { same: "same", more: "less", less: "more" };
+    const judge8 = (tag, r) => {
+      const t = r.out.timing, o = r.out.often, W = r.W, C = r.C;
+      if (!t.has || t.text !== r.line) nb.push(`${tag} timing: "${t.text}" (model "${r.line}")`);
+      if (t.gold !== !!W.out || t.usual === !!W.out) nb.push(`${tag} timing: the mark (Gold ${t.gold}, usual ${t.usual}) for ${W.out} outside`);
+      if (!r.dT || r.dT.within !== W.within || r.dT.read !== W.read || r.dT.read - r.dT.within !== W.out || r.dT.foot !== `${W.later} later, ${W.earlier} earlier`) nb.push(`${tag} timing: the detail ${JSON.stringify(r.dT)} against the model ${W.within} of ${W.read}, ${W.later} later, ${W.earlier} earlier`);
+      const m = t.text.match(/^(\d+) of (\d+) mornings? (?:was|were) (?:outside your window: (\d+) later, (\d+) earlier|(later|earlier) than your window)\./);
+      if (W.out) {
+        const later = m ? (m[3] != null ? +m[3] : m[5] === "later" ? +m[1] : 0) : -1, earlier = m ? (m[4] != null ? +m[4] : m[5] === "earlier" ? +m[1] : 0) : -1;
+        if (!m || +m[1] !== W.out || +m[2] !== W.read || later !== W.later || earlier !== W.earlier || later + earlier !== +m[1]) nb.push(`${tag} timing: the note's numbers "${t.text}" against ${W.out} of ${W.read}, ${W.later} later, ${W.earlier} earlier`);
+        /* the comparison names what it compares (fix F1, Nov 8): "Mornings like these came ... than usual", the detail's
+           word for the mornings in the window turned round */
+        const word = r.dT && r.dT.word, cmp = Object.keys(r.OUT_CMP).find((k) => r.OUT_CMP[k] === word);
+        if (cmp && !t.text.endsWith(` Mornings like these ${r.OUT_SAID[flip[cmp]]}.`)) nb.push(`${tag} timing: the note's comparison against the detail's "${word}": "${t.text}"`);
+      } else if (!/^No mornings outside your window in the last \d+ days\.$/.test(t.text)) nb.push(`${tag} timing: none outside, but "${t.text}"`);
+      if (!o.has || o.text !== r.cline) nb.push(`${tag} often: "${o.text}" (model "${r.cline}")`);
+      if (C.out) {
+        const ow = r.dO && r.dO.word, oc = Object.keys(r.OUT_CMP).find((k) => r.OUT_CMP[k] === ow);
+        if (oc && !o.text.endsWith(` Days like these ${r.OUT_SAID[flip[oc]]}.`)) nb.push(`${tag} often: the note's comparison against the detail's "${ow}": "${o.text}"`);
+      }
+      /* never a bare "More often than usual." on a card about how often (fix F1) */
+      if (/(^|\. )(About as often as usual|More often than usual|Less often than usual)\./.test(`${t.text} ${o.text}`)) nb.push(`${tag}: a bare comparison that doesn't say what it compares: "${t.text}" / "${o.text}"`);
+      /* the default Timing card names its count in mornings, as its note and the Timing page do (fix F3) */
+      if (t.sum && /First BM in your window/.test(t.sum) && t.sum !== `First BM in your window on ${W.within} of ${W.read} ${W.read === 1 ? "morning" : "mornings"}.`) nb.push(`${tag} timing: the card's line "${t.sum}"`);
+      /* Bento's Day by day tile says the days outside in the note's words (fix F1): with more BMs, with fewer, No BM days */
+      if (o.split.length) {
+        const num = (re) => { const h = o.split.map((x) => x.match(re)).find(Boolean); return h ? +h[1] : 0; };
+        const zOut = C.below - C.fewer;
+        if (o.split.some((x) => /more often|less often/i.test(x)) || /more often|less often/i.test(o.splitSr)) nb.push(`${tag} often: the Day by day tile says "more often" or "less often" (${o.split.join(", ")})`);
+        if (num(/^(\d+) with more BMs$/) !== C.above || num(/^(\d+) with fewer$/) !== C.fewer || num(/^(\d+) No BM days?$/) !== zOut || num(/^(\d+) with a usual count$/) !== C.within) nb.push(`${tag} often: the Day by day tile (${o.split.join(", ")}) against the note's ${C.within} usual, ${C.above} more, ${C.fewer} fewer, ${zOut} No BM`);
+      }
+      if (o.gold !== !!C.out) nb.push(`${tag} often: the Gold mark for ${C.out} outside`);
+      if (!r.dO || r.dO.within !== C.within || r.dO.read !== C.read || r.dO.foot !== `${C.above} above, ${C.below} below` || C.above + C.below !== C.out || C.zero + C.fewer !== C.below) nb.push(`${tag} often: the detail ${JSON.stringify(r.dO)} against the model ${JSON.stringify(C)}`);
+      if (/standard dev|deviation|[–—!]|\b(abnormal|normal|healthy|improving|worsening)\b/i.test(`${t.text} ${o.text}`)) nb.push(`${tag}: a word the app never uses`);
+    };
+    for (const view of ["picks", "built"]) {
+      await n8.click(`#rxLeft [data-rx="view"][data-v="${view}"]`); await w8(500);
+      for (const who of ["sarah", "marcus", "alex"]) {
+        await set8("persona", who);
+        for (const n of [7, 30, 90]) { await ins8(n); judge8(`${view} ${who} ${n}`, await readCards(n)); }
+      }
+    }
+    ok(!nb.length, `nov8: the Timing card's note of the mornings outside the window (its count, later and earlier, and the comparison) equals the model's (L.windowOut, L.outLine) and the Timing page's contributors, and the Frequency card's equals L.countOut and the How often page, in Will's picks (Oura, Bento) and the default (Florin charts), at 7, 30 and 90 days for Sarah, Marcus and Alex (${nb.slice(0, 3).join("; ") || "36 cards"})`);
+
+    /* 4. while Florin learns the usual: no note, in either view */
+    const lb8 = [];
+    await set8("persona", "sarah"); await set8("data", "new");
+    for (const view of ["picks", "built"]) {
+      await n8.click(`#rxLeft [data-rx="view"][data-v="${view}"]`); await w8(500); await ins8();
+      const has = await n8.evaluate(() => document.querySelectorAll(".rx-stage .ap-rx .ap-ins :is(.ap-ic-out, .ou-out, .bt-out)").length);
+      if (has) lb8.push(`${view}: ${has} notes`);
+    }
+    await set8("data", "est");
+    ok(!lb8.length, `nov8: while Florin learns the usual (New, day 5) neither card says anything about outside, in Will's picks or the default (${lb8.join("; ") || "none"})`);
+
+    /* a flagged today: in no count of either note, and the card's clinician line stays */
+    const fb8 = [];
+    for (const view of ["picks", "built"]) {
+      await n8.click(`#rxLeft [data-rx="view"][data-v="${view}"]`); await w8(500);
+      await set8("persona", "alex");
+      await n8.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api; L.add(api.M(), { kind: "bm", d: L.TODAY, t: 19.6, form: 4, word: null, how: {}, dur: null, flags: { blood: true }, note: "" }); });
+      for (const n of [7, 30, 90]) {
+        await ins8(n);
+        const r = await readCards(n);
+        const f = await n8.evaluate(([n, view]) => {
+          const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, F = L.span(M, n, mode);
+          const ph = document.querySelector(".rx-stage .ap-rx .ap-ins"), c = ph.querySelector('[data-rlk-k="timing"]') || ph.querySelector('.ap-ic-h[data-k="timing"]').closest("section");
+          return { flag: L.flagToday(M), read: F.filter((f) => f.first != null && !f.flag).length, cread: F.filter((f) => f.count != null && !f.flag).length, clin: c.textContent.includes(RU.FLAG_DAY) || (view === "built" && n < 90 && /Noted for a clinician/.test((c.querySelector(".ap-legend") || {}).textContent || "")) };
+        }, [n, view]);
+        judge8(`flag ${view} ${n}`, r);
+        if (!(f.flag && r.W.flag && r.W.read === f.read && r.C.read === f.cread && f.clin)) fb8.push(`${view} ${n}: ${JSON.stringify(f)}, W.read ${r.W.read}, C.read ${r.C.read}`);
+      }
+      await set8("persona", "sarah");
+    }
+    ok(!fb8.length && !nb.length, `nov8: on a flagged today both notes leave today out of every count, and the card's clinician line stays, in Will's picks and the default at 7, 30 and 90 days (${fb8.concat(nb).slice(0, 2).join("; ") || "6 cases"})`);
+
+    /* the usual shares are fixed with the usual (fix F2): moving first BMs and adding BMs on days the usual comes from
+       and the last 30 days share (61 to 83) changes the 30 days' counts and their comparison, never the usual share
+       they are compared with; and a fresh model's shares are the live read of days 28 to 83 */
+    await set8("persona", "marcus"); await set8("persona", "sarah");
+    const fz8 = await n8.evaluate(() => {
+      const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, u = M.usual;
+      const live = () => {
+        const rd = M.days.filter((x) => x.d >= 28 && x.d <= 83).map((x) => L.facts(M, x, mode));
+        const bw = rd.filter((f) => f.first != null && f.inWin != null), bc = rd.filter((f) => f.inCount != null);
+        return { w: bw.filter((f) => f.inWin).length / bw.length, c: bc.filter((f) => f.inCount).length / bc.length };
+      };
+      const at = () => { const F = L.span(M, 30, mode), W = L.windowOut(M, F, mode), C = L.countOut(M, F, mode); return { wp: W.p, cp: C.p, wOut: W.out, cOut: W.cOut, oOut: C.out, ocOut: C.cOut }; };
+      const lv0 = live(), a0 = at(), p0 = { w: u.pWin, c: u.pCount };
+      /* eight mornings in the window, days 61 to 83, moved two hours past its end; eight days given two BMs more */
+      const inWin = M.days.filter((x) => x.d >= 61 && x.d <= 83 && L.facts(M, x, mode).inWin).slice(0, 8);
+      inWin.forEach((x) => { const bms = L.bms(x), sh = u.tHi + 2 - bms[0].t; bms.forEach((b) => (b.t += sh)); });
+      const inC = M.days.filter((x) => x.d >= 61 && x.d <= 83 && L.facts(M, x, mode).inCount).slice(0, 8);
+      inC.forEach((x) => { const t = Math.max(...L.bms(x).map((b) => b.t)); for (let k = 1; k <= u.nHi + 1; k++) L.add(M, { kind: "bm", d: x.d, t: Math.min(23.5, t + k * 0.3), form: 4, word: null, how: {}, dur: null, flags: {}, note: "" }); });
+      const lv1 = live(), a1 = at();
+      return { n: inWin.length, nc: inC.length, p0, lv0, lv1, a0, a1, same: Math.abs(p0.w - lv0.w) < 1e-9 && Math.abs(p0.c - lv0.c) < 1e-9 };
+    });
+    await set8("persona", "marcus"); await set8("persona", "sarah");
+    ok(fz8.n === 8 && fz8.nc === 8 && fz8.same && fz8.lv1.w < fz8.lv0.w && fz8.lv1.c < fz8.lv0.c && fz8.a1.wp === fz8.a0.wp && fz8.a1.cp === fz8.a0.cp && fz8.a1.wp === fz8.p0.w && fz8.a1.cp === fz8.p0.c && fz8.a1.wOut > fz8.a0.wOut && fz8.a1.cOut === "more" && fz8.a1.oOut > fz8.a0.oOut && fz8.a1.ocOut === "more",
+      `nov8: the usual shares are fixed with the usual: logging 8 mornings late and 8 busier days inside the days it comes from moves the 30 days' notes to "came more often than usual" and leaves the usual share where it was (${JSON.stringify({ p: fz8.p0, before: fz8.a0, after: fz8.a1 })})`);
+
+    /* Free: 7 days, the notes stay */
+    await set8("plan", "free");
+    const fr8 = [];
+    for (const view of ["picks", "built"]) {
+      await n8.click(`#rxLeft [data-rx="view"][data-v="${view}"]`); await w8(500); await ins8();
+      const r = await readCards(7);
+      if (!(r.out.timing.has && r.out.timing.text === r.line && r.out.often.has && r.out.often.text === r.cline)) fr8.push(`${view}: ${JSON.stringify(r.out)}`);
+    }
+    await set8("plan", "member");
+    await n8.click('#rxLeft [data-rx="view"][data-v="built"]'); await w8(400);
+    ok(!fr8.length, `nov8: on Free, Insights' 7 days keep both notes, in Will's picks and the default (${fr8.join("; ") || "both"})`);
+    ok(!e8.length, `nov8: no console errors or module warnings${e8.length ? ": " + e8.slice(0, 3).join(" | ") : ""}`);
+    await c8.close();
+  }
+  /* ===== end nov8 ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

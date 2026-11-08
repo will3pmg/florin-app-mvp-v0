@@ -26,7 +26,7 @@ rebuild that is running now.
 | # | Page | What it holds | Status |
 |---|---|---|---|
 | 1 | Brand | The six brand tokens and the app's colour roles, type, spacing and radius, elevation, the marks, icons, copy and licensing rules | Ready to build |
-| 2 | Components | Every component with its variants and states | Ready, except Ask about this (style pending Will's pick) |
+| 2 | Components | Every component with its variants and states | Ready (Ask about this is B, Compact, locked Nov 8) |
 | 3 | Home (Compact) | Today, the FloraScore strip, the week row, the day picked, the check-in row, the flag note | Ready |
 | 4 | Logging | Plus, BM quick tiles and the form, symptoms, meals (quick and one at a time), voice, photo (in progress), No BM, an earlier day, edit and delete | Ready; photo log in progress |
 | 5 | History | Calendar, a day tapped, months, Free | Ready |
@@ -363,7 +363,7 @@ its chip (About the same in Plum, More or Fewer than at first in Gold).
 | Composer | Empty (send disabled), typed, busy (Stop); docked over the tab bar |
 | What Ask Florin knows | Every answer reads (rows), Leave out / Put back rows, Let Ask Florin start a conversation (switch), undo toast |
 | Free lock | The tab's membership card, What people ask with locks |
-| **Ask about this** | **Pending Will's pick:** six styles, A Pill, B Compact (recommended), C Link, D Token, E Question, F Bar (`options/ask/`, DESIGN.md "Ask Florin"); each with the token, a 44px target, its card in its name, a lock on Free; Easy a step larger. Build B as the default variant once picked, or all six as a variant axis if Will wants them in the file |
+| **Ask about this** | **B, Compact, locked Nov 8** (Will: "let's do B for the ask buttons"; `options/ask/`, DESIGN.md "Ask Florin"): the one component, a 32px Ray pill in the card's corner with the token and Ask, on a 48px target, its card in its accessible name, a lock in the token on Free; Easy a step larger (48px, 18px words). States: Member, Free; light, dark, on the dark FloraScore card; pressed, focus. The other five (A Pill, C Link, D Token, E Question, F Bar) go on the Reference page as screenshots only, never as variants |
 
 ### 4.9 Onboarding and Profile pieces
 
@@ -511,7 +511,7 @@ answer first and is never sent anywhere; a request to diagnose, dose or predict 
 | From a card (`ask/card`) | Timing loaded | The card's chart is Insights': its look settles with the rebuild |
 | What Ask Florin knows (`ask/knows`) | Default; today's logs left out; start a conversation on | |
 | Free (`ask/free`) | 12 weeks, day 0 | The lock; decision "Ask Florin on Free" (section 7) may change it to one answer a week |
-| Ask about this, six styles | **Pending Will's pick** | |
+| Ask about this | B, Compact (locked Nov 8) on every card and detail page | The other five styles on the Reference page only |
 
 ### 5.6 Onboarding
 
@@ -653,15 +653,14 @@ name (Insights is being rebuilt; ask again when it lands).
 | 10 | Ask Florin on Free | Members only (built); one free answer a week | One answer a week; questions about seeing a doctor always answered (the prototype still shows the lock) | Locked Nov 7 | Ask on Free, Make a report on Free, the paywall's Ask entry |
 
 **Still open, drawn as they stand:**
-- **Ask about this.** The six styles are built (`refresh-ask.css`, `data-ask-ui`; specs in `options/ask/`). One component
-  set with all six variants; its description says we recommend B, Compact. Will hasn't picked.
 - **The day mark.** Both are drawn as the app has them now: section 1's day mark (`RU.dayMark`) for the calendar, History
   and Your days, and the Rings ring for Today's week card and Compact's week. The note on both components names the open
   call.
 - **The developer's platform** is unknown; the variables carry the `--ap-*` CSS names as their code syntax for now.
 
 **Alternatives** (Score first, Day first, History list, Full survey, One meal at a time, Consistency A and B, Full form
-only) go on the Reference page only, as screenshots from the captures, not as built frames.
+only, and Ask about this A and C to F) go on the Reference page only, as screenshots from the captures, not as built
+frames. Ask about this is B, Compact (Will, Nov 8: "let's do B for the ask buttons"): one component, no style axis.
 
 **Ask on Free, as locked, isn't on the prototype yet** (it still shows the lock). The Figma frames draw the locked
 behaviour: the Ask tab on Free with one answer a week (the count left, then the lock with the paywall), and a question
@@ -739,7 +738,7 @@ written to Figma.
 | 9 Membership | 5.9 |
 | 10 Insights (after the rebuild) | A placeholder frame until then |
 | --- Reference --- | Separator |
-| Reference | The alternatives as screenshots only (Score first, Day first, History list, Full survey, One meal at a time, Consistency A and B tiles, Full form only), and the captures as a reference column per flow (light, Member, base states), clearly labelled as reference |
+| Reference | The alternatives as screenshots only (Score first, Day first, History list, Full survey, One meal at a time, Consistency A and B tiles, Full form only, Ask about this A and C to F from `options/ask/`), and the captures as a reference column per flow (light, Member, base states), clearly labelled as reference |
 
 **A flow page** is a row of Figma sections, one per screen, in the flow's order. Inside a section: the steps strip (the
 screens in tap order with a numbered label for each tap), then the state grid (columns are states; rows are Light, Dark,
@@ -860,15 +859,16 @@ more calls than the average. Writes run one at a time, so the calls set the pace
    Undone-US team), or the connector has to sign in as the account that owns it.
 2. **Data style:** his Nov 7 locks didn't name it; we recommend Florin charts everywhere, Easy read only in Easy. Needed
    before Insights is built.
-3. **The Ask button style** (A to F; we recommend B, Compact). Drawn as one component set with all six until he picks.
-4. **The day mark** for every screen: the ring (Today's week, Compact) or the filled circle (calendar, History, Your
+3. **The day mark** for every screen: the ring (Today's week, Compact) or the filled circle (calendar, History, Your
    days). Both drawn as they are until he picks.
-5. **The developer's platform** (iOS, Android, React Native, web), so the variables carry its code syntax as well as the
+4. **The developer's platform** (iOS, Android, React Native, web), so the variables carry its code syntax as well as the
    CSS names.
-6. **When the Insights rebuild lands**, so it can be captured and built last.
+5. **When the Insights rebuild lands**, so it can be captured and built last.
 
 Answered on Nov 7: the locks (section 7), alternatives on the Reference page as screenshots only, and the photo meal log
-and Easy view settings page in for v1.
+and Easy view settings page in for v1. Answered on Nov 8: the Ask button is B, Compact (the other five on Reference);
+Timing in Will's picks is Oura's card again, with a note on the card of the mornings outside the usual window; and
+Insights goes into the Figma file for handoff once it is built.
 
 ## 11. What the developer gets
 

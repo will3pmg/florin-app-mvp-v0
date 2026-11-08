@@ -504,11 +504,12 @@
   const WILL_PICKS = {
     score: "rings", /* FloraScore today: Rings' hero, "the large green big circle like in the Score first visual" (Nov 5),
                        on the default demo too (heroInto, below). Nov 7: "Large FloraScore: keep" */
-    timing: "rings", /* Nov 5, "let's take this one too"; Nov 7, "i like TIMING selected ... needs the ask about this chat
-                       widget inside. torn between oura and rings actually". He called it "the oura", but the screenshot
-                       he sent is the Rings look's morning dial (a column of dots per time, "19 of 26 mornings in your
-                       window" in its centre), so his picks draw that dial. Oura's thin-arc card is one edit away:
-                       timing: "oura" */
+    timing: "oura", /* Nov 8, "TIMING: I Like OURA, but can we make sure on the main insights tab to flag a note about the
+                       number of poops OUTSIDE regular windows/cadence": Oura's thin-arc card, with the note of the
+                       mornings outside the usual window under its stats (look-oura.js, D.timing.out). Before that, Nov 5,
+                       "let's take this one too"; Nov 7, "torn between oura and rings actually", and the screenshot he
+                       sent was the Rings look's morning dial, which his picks drew Nov 7. The Rings dial is one edit
+                       away: timing: "rings" */
     often: "bento", /* Nov 7, Frequency: "i think i like the Bento stack chart, cleaner visually. We should show a day
                        with 5 (maybe goes to red on 5?)". There's no red in the app: a day over the usual count is Gold,
                        as every shift is, and each demo person has one 5-BM day in the last 30 days (refresh-data.js, BUSY) */
@@ -899,7 +900,7 @@
     const list = picksAt(M, P);
     return {
       t: "Insights, in Will's picks",
-      lede: `Each card in the style Will picked on the data modules page, in Insights' own order: FloraScore in the Rings card's big ring; ${picksSaid(list).join("; ")}; the rest in Florin charts, as every detail page is. The range is picked once, at the top, and every card draws it.${!M.usual ? " While Florin learns the usual, the picked cards show the days so far." : ""}${P.plan === "free" ? ` On Free that's ${RU.FREE_DAYS} days, and the details and Ask open membership.` : ""}`
+      lede: `Each card in the style Will picked on the data modules page, in Insights' own order: FloraScore in the Rings card's big ring; ${picksSaid(list).join("; ")}; the rest in Florin charts, as every detail page is. The range is picked once, at the top, and every card draws it; Timing and Frequency end on a note of what fell outside the usual.${!M.usual ? " While Florin learns the usual, the picked cards show the days so far." : ""}${P.plan === "free" ? ` On Free that's ${RU.FREE_DAYS} days, and the details and Ask open membership.` : ""}`
     };
   };
   EXT.notes["look-insights"] = (M, P) => {

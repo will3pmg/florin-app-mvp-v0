@@ -148,9 +148,9 @@ rows set BM logging and Meal sheet, and its theme row sets the theme, all throug
 **Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"; Nov 7:
 "I think FLORIN CHARTS for insights tab has the best flow"), Data style's `picks`: the core's Insights in its own order
 and range tabs, each card Will picked (`WILL_PICKS` in refresh-looks.js, read Nov 7; change the table when he picks
-more) in his style: Timing in the Rings look's morning dial (the screenshot of the Timing card he likes was Rings',
-though he called it "the oura"; Oura's card is one table edit away), Form, Symptoms and the check-in in Oura's cards,
-Frequency in Bento's stacked chart, the rest in Florin charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
+more) in his style: Timing, Form, Symptoms and the check-in in Oura's cards (Nov 8: "TIMING: I Like OURA"; the Rings
+morning dial his Nov 7 screenshot showed is one table edit away), Frequency in Bento's stacked chart, the rest in Florin
+charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
 toggled at very top, not labeled within"), and every card draws it, picked or not: a look's card reads the range
 through `FLD.build(..., { range })` (7, 30 or 90; 7 on Free; the days so far while learning), whose `D.range` the
 range cards say. Every Insights card, in Florin charts, Will's picks and each library look the phone draws (the Easy
@@ -179,6 +179,25 @@ one or two steps. Read a BM's consistency only through `L.formName`, `L.formLine
 take the entry; `L.inForms` is three-valued in A and C (null when a B word's steps sit on both sides of the usual,
 which reads as "could be either", never a shift). Foods are counted only through `L.matchFoods`, for seeded meals and
 typed ones alike.
+
+Insights' Timing and Frequency cards, in Florin charts and in Will's picks (Oura's Timing, Bento's Frequency), carry a
+note of what fell outside the usual over the range picked (Will, Nov 8: "flag a note about the number of poops OUTSIDE
+regular windows/cadence"), set apart under the legend and led by the chart's Gold mark (the usual's mark when nothing
+did): "7 of 28 mornings were outside your window: 5 later, 2 earlier. Mornings like these came about as often as
+usual." and "2 of 29 days were outside your usual count: 1 with more BMs and 1 No BM day. Days like these came about as
+often as usual." (the comparison always names what it compares, so it never reads as how often the person went).
+Counted once, by the model: `L.windowOut(M, F, mode)` and `L.countOut(M, F, mode)` (over the days read, a flagged today
+in neither; the comparison is `L.shareCmp`, one and a half binomial spreads of the usual share, `L.winShare` for the
+window and `L.countShare` for the count, both fixed with the usual from days 28 to 83 when the model is built,
+`M.usual.pWin` and `M.usual.pCount`, so logging or editing a recent day never moves the usual it is compared with),
+said once, by `L.outLine(W, n)` and `L.countLine(C, n)` (refresh-ui.js; `L.OUT_SAID` the note's words, `L.OUT_CMP` the
+detail page's state words; Bento's Day by day tile says its days in the note's words), drawn by `RU.outNote`
+on the core's cards and from `D.timing.out` / `outLine` and `D.often.out` / `outLine` in the looks (so the library
+page's Oura Timing and Bento Frequency cards carry it too, at 30 days). The Timing and How often pages' contributors read
+the same two counts, and at 90 days, where Florin charts' chart is weekly bars, a flagged today's line sits under the
+note. Nothing about outside before day 14. The usual window is the 10th to
+75th percentile of the person's logged first BMs in days 28 to 83, to the quarter hour; the usual count is the 10th to
+90th percentile of their daily counts there (data-app.js); neither is a standard deviation, and no copy says one.
 
 Insights reads days through `L.facts` (a gap stays a gap, No BM is a zero, a day is usual, shifted, unsure, none, or
 "flag" for a flagged today)
