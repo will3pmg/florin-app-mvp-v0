@@ -56,7 +56,7 @@
   function Phone(host, cfg) {
     const S = {
       form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member",
-      bmUI: cfg.bmUI || "quick", home: cfg.home || "compact", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short", askUI: cfg.askUI || "pill",
+      bmUI: cfg.bmUI || "quick", home: cfg.home || "compact", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short", askUI: cfg.askUI || (EXT.askUI && EXT.askUI.def) || "compact",
       tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {}
     };
     S.M = L.build(S.persona, S.data, { meals: S.meals });
@@ -999,7 +999,7 @@
     }),
     "ask-about": () => ({
       t: "Ask about this",
-      lede: "Every Insights card and detail has Ask about this. It opens Ask Florin with that card's numbers loaded, so the chat starts from the same figures as the chart. Ask button, under View on the left, sets how it looks on every card."
+      lede: "Every Insights card and detail has Ask about this. It opens Ask Florin with that card's numbers loaded, so the chat starts from the same figures as the chart. Will picked B, Compact, on Nov 8: a small pill in the card's corner. Ask button, under View on the left, keeps the other five to compare."
     })
   };
 
@@ -1256,9 +1256,10 @@
   const P = { persona: "sarah", data: "est", meals: "all", plan: "member", themeSet: null, key: "today", dec: null, ph: null, demoOpen: !!store.get("demoOpen", false) };
   DECISIONS.forEach((D) => { const v = store.get(D.k, D.def); P[D.k] = D.opts.some(([o]) => o === v) ? v : D.def; });
   /* Ask button (Will, Nov 7): how Ask about this looks everywhere it appears. A design-system option, not one of the
-     decisions: refresh-ask.js lists the styles (EXT.askUI), and it is stored per viewer like a decision */
-  const ASKUI = (EXT.askUI && EXT.askUI.opts) || [["pill", "A Pill", ""]];
-  const ASKUI_DEF = (EXT.askUI && EXT.askUI.def) || "pill";
+     decisions: refresh-ask.js lists the styles (EXT.askUI), and it is stored per viewer like a decision. B, Compact,
+     is the default (Will, Nov 8: "let's do B for the ask buttons"); a stored pick still wins */
+  const ASKUI = (EXT.askUI && EXT.askUI.opts) || [["compact", "B Compact", ""]];
+  const ASKUI_DEF = (EXT.askUI && EXT.askUI.def) || "compact";
   P.askUI = ((v) => (ASKUI.some(([o]) => o === v) ? v : ASKUI_DEF))(store.get("askUI", ASKUI_DEF));
   const appTheme = () => P.themeSet || pageTheme();
   /* what a module's notes see: every decision, the demo controls and the screen */

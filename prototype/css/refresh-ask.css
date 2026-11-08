@@ -38,7 +38,8 @@
    parts (.ap-askw: the token, "Ask" and " about this", the card's first question for E, a chevron for F); each style
    shows the parts it needs. Every style keeps the token, and Ray where there is a fill: they are Ask Florin's mark.
    Every target is 44px or more, whatever the drawing: a smaller drawing takes an invisible frame (::after).
-   A pill (the default): the Ray pill above.  B compact: a small Ray-tinted pill, the token and "Ask", in the corner.
+   A pill: the Ray pill above.  B compact (the default and the component, Will, Nov 8: "let's do B for the ask
+   buttons"): a small Ray-tinted pill, the token and "Ask", in the corner.
    C link: the token and the words, no fill, in the corner.  D icon: the token alone in the corner; its name says
    the card, and focus shows the words.  E chip: the token and the card's own first question, the question Ask opens
    with.  F bar: a slim row across the card's foot, a line above it, the token, the words and a chevron. */

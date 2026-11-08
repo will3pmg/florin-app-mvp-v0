@@ -26,7 +26,7 @@ const BOTH = { plan: ["member", "free"], theme: ["light", "dark"] };
 
 module.exports = {
   /* the recommended option of every decision (claude/Florin decisions.md), as data-v on the left bar */
-  defaults: { persona: "sarah", decisions: { form: "C", bmUI: "quick", home: "compact", history: "calendar", checkin: "true", mealUI: "quick", look: "built", easy: "false", onboard: "short", askUI: "pill" } },
+  defaults: { persona: "sarah", decisions: { form: "C", bmUI: "quick", home: "compact", history: "calendar", checkin: "true", mealUI: "quick", look: "built", easy: "false", onboard: "short", askUI: "compact" } },
   matrix: { data: ["est"], plan: ["member", "free"], theme: ["light", "dark"] },
   flows: [
     /* ------------------------------------------------------------------------------------------------ 1. Home */

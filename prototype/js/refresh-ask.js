@@ -1501,16 +1501,18 @@
      EXT.askUI), sets it through phone.set ("askUI") and stamps it on the root as data-ask-ui; refresh-ask.css draws each
      style. The markup stays the core's, the looks' and Easy's, wherever they put the button: as each one lands in the
      phone, this pass gives it the same parts (the token, "Ask" and " about this", the card's first question for the
-     Question style, a chevron for the Bar) and a name that says which card. Every style keeps the token and Ray ---------- */
+     Question style, a chevron for the Bar) and a name that says which card. Every style keeps the token and Ray.
+     Nov 8, Will: "let's do B for the ask buttons": B, Compact, is the default and the component; a viewer's stored pick
+     still wins, and the other five stay to compare ---------- */
   const ASKUI = [
-    ["pill", "A Pill", "The Ray pill with the token and Ask about this, as the app has it now."],
-    ["compact", "B Compact", "A small Ray pill in the card's corner: the token and Ask."],
+    ["pill", "A Pill", "A larger Ray pill with the token and Ask about this on every card."],
+    ["compact", "B Compact", "Will's pick, Nov 8: a small Ray pill in the card's corner, with the token and Ask."],
     ["link", "C Link", "A quiet link in the card's corner: the token and Ask about this, no fill."],
     ["icon", "D Token", "The token alone in the card's corner. Its name says Ask about this and the card."],
     ["chip", "E Question", "The token and the card's own first question, the one Ask opens with in the box."],
     ["bar", "F Bar", "A slim row across the card's foot: a line above, the token, Ask about this and a chevron."]
   ];
-  EXT.askUI = { def: "pill", opts: ASKUI, name: (v) => (ASKUI.find(([o]) => o === v) || ASKUI[0])[1] };
+  EXT.askUI = { def: "compact", opts: ASKUI, name: (v) => (ASKUI.find(([o]) => o === v) || ASKUI[0])[1] };
   /* a button's name says its card: the card's visible head where it has one (cardHead), else these, in the plain
      heads' words (Nov 7: FREQUENCY, CHECK-IN, PATTERNS) */
   const CARD_NAME = { score: "FloraScore", days: "Your days", timing: "Timing", often: "Frequency", form: "Form", sym: "Symptoms", ck: "Check-in", pat: "Patterns" };
@@ -1538,7 +1540,7 @@
     const root = b.closest(".ap-rx");
     if (!root) return;
     const api = EXT.api && EXT.api.root === root ? EXT.api : null;
-    const ui = root.getAttribute("data-ask-ui") || "pill", k = b.dataset.k || "", free = b.dataset.act === "pay";
+    const ui = root.getAttribute("data-ask-ui") || EXT.askUI.def, k = b.dataset.k || "", free = b.dataset.act === "pay";
     const glyph = [...b.children].find((c) => c.classList && c.classList.contains("ic")) || null;
     /* E Question: the card's first question that no Ask about this earlier on the same screen already shows (the
        FloraScore card and the Trend share their questions), so no two read the same. The range is the card's own;
@@ -1565,7 +1567,7 @@
   try {
     new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { try { askScan(n); } catch (e) { warn("drawing Ask about this in its style", e); } })))
       .observe(document.documentElement, { childList: true, subtree: true });
-  } catch (e) { warn("no MutationObserver: Ask about this keeps the pill", e); }
+  } catch (e) { warn("no MutationObserver: Ask about this keeps its markup as drawn", e); }
 
   /* ---------- notes for Will. Oct 28: plain, about 80 words at most, with at most one open question ---------- */
   const engineNow = () => (ASK.state === "ready" && !ASK.off ? "In this view, answers come from Claude on your own account, checked before they show." : "In this view, every answer is worked out from the logs.");
@@ -1585,7 +1587,7 @@
   });
   EXT.notes["ask-about"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask about this",
-    lede: `Every Insights card and detail has Ask about this, with the Ask token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart. Ask button, under View on the left, sets how it looks on every card.`
+    lede: `Every Insights card and detail has Ask about this, with the Ask token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart. Will picked B, Compact, on Nov 8: a small pill in the card's corner. Ask button, under View on the left, keeps the other five to compare.`
   });
   EXT.notes["ask-mem"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, what it knows",
