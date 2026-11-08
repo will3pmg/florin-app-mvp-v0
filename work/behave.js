@@ -275,7 +275,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   /* 19. focus follows Insights: into a detail lands on its title, back lands on the card you left */
   await open("insights");
   await p.focus(`${ph} .ap-ic-h[data-k="often"]`); await p.keyboard.press("Enter"); await wait(500);
-  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("ap-nav-t") && /How often/.test(document.activeElement.textContent)), "opening a card's detail puts focus on its title");
+  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("ap-nav-t") && /Frequency/.test(document.activeElement.textContent)), "opening a card's detail puts focus on its title");
   await p.click(`${ph} .ap-back`); await wait(500);
   ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.matches('.ap-ic-h[data-k="often"]'); }), "back puts focus on the card you opened");
   await p.click(`${ph} [data-act="irange"][data-v="7"]`); await wait(400);
@@ -977,7 +977,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       }
       await lpick("look", "journal"); await lopen("look-insights");
       const jr = await q.evaluate(() => ({ n: document.querySelectorAll(".rx-stage .ap-rx .jr-link").length, go: document.querySelector('.rx-stage .ap-rx [data-rlk-k="pattern"] .rlk-go').textContent.trim(), found: (() => { const V = window.FLORIN_EXT.api.V(); return window.FLD.build(V.persona, { mode: V.form, data: V.data, meals: V.meals, M: window.FLORIN_EXT.api.M() }).patterns.found.length; })() }));
-      ok(!bad.length && jr.n === 0 && (jr.found > 1 ? jr.go === `All ${jr.found} possible patterns` : jr.go === "Possible patterns in detail"), `data style: the cards' headings never skip a level, and Field journal's pattern card links once, with the count (${bad.join("; ") || jr.go})`);
+      ok(!bad.length && jr.n === 0 && (jr.found > 1 ? jr.go === `All ${jr.found} possible patterns` : jr.go === "Patterns in detail"), `data style: the cards' headings never skip a level, and Field journal's pattern card links once, with the count (${bad.join("; ") || jr.go})`);
     }
     /* Your days: Ask about this opens Ask Florin with the days' own counts, not FloraScore's */
     await lpick("look", "oura"); await lopen("look-insights");
@@ -3889,9 +3889,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const ser = L.scoreSeries(M, n, V.form), su = L.scoreUsual(M, V.form), sc = ser.filter((s) => s.value != null), k2 = sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length;
         const t = document.createElement("i"); t.style.color = "var(--ap-shift)"; lay.appendChild(t); const gold = getComputedStyle(t).color; t.remove();
         const dot = lay.querySelector(".ap-sbar-dot");
-        return { area: lay.querySelectorAll(".c-area, .c-avg").length, ring: lay.querySelectorAll(".dv-ring").length, today: [...lay.querySelectorAll(".dv-newlbl")].some((x) => /^Today \d+$/.test(x.textContent)), cap: lay.textContent.includes(`In its usual range on ${k2} of ${sc.length} days`), gold: dot ? getComputedStyle(dot).backgroundColor === gold : true, count: !!lay.querySelector("[data-count]") };
+        /* today's "Today N" label is drawn over a week only (Nov 7: on 30 and 90 days it sat on its neighbours); the
+           ring marks it at every range */
+        const lbl = [...lay.querySelectorAll(".dv-newlbl")].some((x) => /^Today \d+$/.test(x.textContent));
+        return { area: lay.querySelectorAll(".c-area, .c-avg").length, ring: lay.querySelectorAll(".dv-ring").length, today: n <= 7 ? lbl : !lbl, cap: lay.textContent.includes(`In its usual range on ${k2} of ${sc.length} days`), gold: dot ? getComputedStyle(dot).backgroundColor === gold : true, count: !!lay.querySelector("[data-count]") };
       });
-      ok(!sd.area && sd.ring >= 1 && sd.today && sd.cap && !sd.gold && !sd.count, `build-core, FloraScore detail ${theme}: no area or average line, today ringed and labelled, "In its usual range on N of M days" from the model, the dot never Gold, no count-up`);
+      ok(!sd.area && sd.ring >= 1 && sd.today && sd.cap && !sd.gold && !sd.count, `build-core, FloraScore detail ${theme}: no area or average line, today ringed (and labelled over a week), "In its usual range on N of M days" from the model, the dot never Gold, no count-up`);
     }
     await kset("theme", "light");
 
@@ -5023,14 +5026,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await wopen("insights");
     const d0 = await insOf();
     ok(d0.rpk && !d0.picks && d0.cards.slice(0, 3).join(",") === "score:rings,score:core,sum" && d0.looks.score && !d0.looks.timing && !d0.looks.form && !d0.bad, `wills-picks: the default's Insights opens on the Rings FloraScore card, the core's card under it, then the summary (${d0.cards.slice(0, 3).join(", ")})`);
-    const hero = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"), end = s.querySelector(".rg-end"), arc = s.querySelector(".rg-arc"), dot = s.querySelector(".rg-rel i"); return { out: !!s.querySelector(".rg-end.is-shift"), end: end && getComputedStyle(end).fill, read: arc && getComputedStyle(arc).stroke, dot: dot && getComputedStyle(dot).backgroundColor, trend: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t b') || {}).textContent || "", kick: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t .ap-k') || {}).textContent || "" }; });
+    const hero = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"), end = s.querySelector(".rg-end"), arc = s.querySelector(".rg-arc"), dot = s.querySelector(".rg-rel i"), L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, n = api.S.ins.range || 30, sc = L.scoreSeries(M, n, mode).filter((x) => x.value != null), avg = Math.round(sc.reduce((a, x) => a + x.value, 0) / sc.length), rel = window.FLORIN_RUI.scoreRel(avg, L.scoreUsual(M, mode)); return { want: `FloraScore averaged ${avg}, ${rel.charAt(0).toLowerCase()}${rel.slice(1)}`, out: !!s.querySelector(".rg-end.is-shift"), end: end && getComputedStyle(end).fill, read: arc && getComputedStyle(arc).stroke, dot: dot && getComputedStyle(dot).backgroundColor, trend: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t b') || {}).textContent || "", kick: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t .ap-k') || {}).textContent || "" }; });
     ok(hero.out && hero.end === hero.read && hero.dot === hero.read, `wills-picks: FloraScore outside its usual range is never Gold on the Rings card: the ring's end and the dot before the sentence are the reading colour (${hero.end})`);
     await wclick(`${ph} .rpk-score .rlk-go`);
     const det = await w.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), cap: [...document.querySelectorAll(".rx-stage .ap-rx .ap-figcap b")].map((x) => x.textContent).find((t) => /^In its usual range on|^Not scored/.test(t)) || "", look: !!document.querySelector(".rx-stage .ap-rx .ap-layer .rlk-look") }));
     await wclick(`${ph} .ap-back`);
     const back0 = await w.evaluate(() => { const a = document.activeElement; return !!a && !!a.closest('.rpk-score') && a.matches(".rlk-go"); });
-    /* Nov 7: the card under it is the Trend, its line naming FloraScore ("FloraScore in its usual range on 16 of 29 days") */
-    ok(det.key === "i-score" && !det.look && hero.trend === `FloraScore ${det.cap.charAt(0).toLowerCase()}${det.cap.slice(1)}` && /^Trend, FloraScore, last 30 days$/.test(hero.kick) && await wkey() === "insights" && back0, `wills-picks: the Rings card opens FloraScore's page (Florin charts), whose count the Trend card under it says ("${hero.trend}"), and Back lands on the Rings card's link`);
+    /* Nov 7: the card under it is the Trend, its line FloraScore's average against its usual range ("FloraScore
+       averaged 80, in its usual range"), never an "N of M days" count (that shape is Your days'); the count of days in
+       range is on FloraScore's page */
+    ok(det.key === "i-score" && !det.look && /^In its usual range on \d+ of \d+ days?$/.test(det.cap) && hero.trend === hero.want && /^Trend, FloraScore, last 30 days$/.test(hero.kick) && await wkey() === "insights" && back0, `wills-picks: the Rings card opens FloraScore's page (Florin charts), which counts the days in range ("${det.cap}"), and the Trend card under it says FloraScore's average against its usual range ("${hero.trend}"); Back lands on the Rings card's link`);
     ok(/Rings style's big ring/.test(d0.note), "wills-picks: the default Insights note says FloraScore is the Rings style's big ring");
 
     /* 2. the switch: Will's picks sets Data style through phone.set, opens Insights in the picks, with its note */
@@ -5056,8 +5061,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     }
 
     /* 4. Oura's Form card counts the range the tabs say (Nov 7; it was Rings' count over Oura's bars, "the mix", Nov 5):
-       its range row, "This week" at 7 days, is the model's (L.span over the range, a flagged today left out, L.inForms
-       per BM) and the same as Insights' Form card in the default, for each person, A, B and C */
+       its row, Your BMs (the range is the tabs', never labelled in the card, Nov 7), is the model's (L.span over the
+       range, a flagged today left out, L.inForms per BM) and the same as Insights' Form card in the default, for each
+       person, A, B and C */
     const mixBad = [];
     for (const [who, form] of [["sarah", "C"], ["marcus", "C"], ["alex", "C"], ["sarah", "A"], ["sarah", "B"]]) {
       await wset("form", form); await wset("persona", who); await wopen("look-insights");
@@ -5068,12 +5074,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
           const bms = L.span(M, n, mode).filter((f) => !f.flag).flatMap((f) => f.bms), st = bms.map((x) => L.inForms(M, x, mode));
           const model = { in: st.filter((s) => s === true).length, read: st.filter((s) => s !== null).length, out: st.filter((s) => s === false).length, n: bms.length };
           const c = document.querySelector(".rx-stage .ap-rx .ou-form"), rows = [...c.querySelectorAll(".ou-habits li")];
-          const own = rows.find((x) => x.querySelector(".ou-hb-top span").textContent === (n <= 7 ? "This week" : `Last ${n} days`));
+          const own = rows.find((x) => x.querySelector(".ou-hb-top span").textContent === "Your BMs");
           const core = RU.core.insights(M, Object.assign({}, api.V(), { look: "built" }), { range: n }).replace(/<[^>]+>/g, "").match(/(\d+) of (\d+) BMs? in your usual forms/);
           return { model, bar: own ? own.querySelector(".ou-hb-top b").textContent : "", core: core ? `${core[1]} of ${core[2]}` : "", gone: typeof RU.picksForm === "undefined" && !c.closest(".lk-rings") };
         }, n);
         const want = `${m.model.in} of ${m.model.read}`;
-        if (!(m.bar === `${want} within` && m.core === want && m.gone)) mixBad.push(`${who} ${form} ${n}: model ${want}, Oura's row ${m.bar}, Form card ${m.core}`);
+        if (!(m.bar === `${want} in your usual forms` && m.core === want && m.gone)) mixBad.push(`${who} ${form} ${n}: model ${want}, Oura's row ${m.bar}, Form card ${m.core}`);
       }
     }
     ok(!mixBad.length, `wills-picks: Oura's Form card counts the range: its row equals the model and Insights' Form card at 7, 30 and 90 days, for each person and in A, B and C (${mixBad.slice(0, 2).join("; ") || "15 counts"})`);
@@ -5590,17 +5596,19 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     }
     ok(!busy.length && gold.join(",") === "none,gold5,gold5", `insights-v2: each person has one ordinary day with 5 BMs in the last 30 days but not the last 7, read as more BMs than usual, and Bento's Frequency draws it Gold at 30 and 90 days (${busy.slice(0, 2).join("; ") || gold.join(", ")})`);
 
-    /* 4. the Trend says it is FloraScore, and Your days says what "within your usual" means and what each day outside
-       it had: every count from the model */
+    /* 4. the Trend says it is FloraScore, by its average against its usual range (never an "N of M days" count, so it
+       can't be read as Your days' count, Nov 7), and Your days says what "within your usual" means and what each day
+       outside it had: every count from the model */
     await vins(30);
     const td = await v.evaluate(() => {
       const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, F = L.span(M, 30, mode), T = L.tally(F, false), u = M.usual;
-      const su = L.scoreUsual(M, mode), sc = L.scoreSeries(M, 30, mode).filter((s) => s.value != null && !(L.flagToday(M) && s.d === L.TODAY));
+      const su = L.scoreUsual(M, mode), sc = L.scoreSeries(M, 30, mode).filter((s) => s.value != null);
+      const avg = Math.round(sc.reduce((a, s) => a + s.value, 0) / sc.length), rel = window.FLORIN_RUI.scoreRel(avg, su);
       const ph = document.querySelector(".rx-stage .ap-rx .ap-ins"), tr = ph.querySelector('.ap-ic-h[data-k="score"] .ap-ic-t b').textContent, yd = ph.querySelector(".ap-sum");
       const sh = F.filter((f) => f.state === "shifted");
       const want = { "First BM outside your window": sh.filter((f) => f.inWin === false).length, "More BMs than usual": sh.filter((f) => f.inCount === false && f.count > u.nHi).length, "No BM": sh.filter((f) => f.count === 0).length, "A form outside your usual forms": sh.filter((f) => f.formsIn === false).length };
       const rows = Object.fromEntries([...yd.querySelectorAll(".ap-yd-why li")].map((li) => [li.querySelector("span").textContent, parseInt(li.querySelector("strong").textContent, 10)]));
-      return { tr, trWant: `FloraScore in its usual range on ${sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length} of ${sc.length} days`, big: yd.querySelector(".ap-big").textContent.replace(/\s+/g, " "), bigWant: `${T.within}of ${T.known} days`, def: (yd.querySelector(".ap-yd-def") || {}).textContent || "", rows, ok: Object.entries(want).every(([k, n]) => (n ? rows[k] === n : !(k in rows))), h: (yd.querySelector(".ap-yd-out-h") || {}).textContent || "", hWant: `What the ${sh.length} days outside your usual had`, para: /Of the \d+ days outside/.test(yd.textContent) };
+      return { tr, trWant: `FloraScore averaged ${avg}, ${rel.charAt(0).toLowerCase()}${rel.slice(1)}`, big: yd.querySelector(".ap-big").textContent.replace(/\s+/g, " "), bigWant: `${T.within}of ${T.known} days`, def: (yd.querySelector(".ap-yd-def") || {}).textContent || "", rows, ok: Object.entries(want).every(([k, n]) => (n ? rows[k] === n : !(k in rows))), h: (yd.querySelector(".ap-yd-out-h") || {}).textContent || "", hWant: `What the ${sh.length} days outside your usual had`, para: /Of the \d+ days outside/.test(yd.textContent) };
     });
     ok(td.tr === td.trWant && td.big === td.bigWant && /all three: a first BM in your window, a usual count and your usual forms/.test(td.def) && td.ok && td.h === td.hWant && !td.para, `insights-v2: the Trend reads "${td.tr}" and Your days "${td.big}", says what within your usual means, and breaks the days outside it down a row each, as the model counts them (${JSON.stringify(td.rows)})`);
 
@@ -5613,16 +5621,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     bad.length = 0;
     await vset("plan", "member");
 
-    /* 6. a library look on the phone (Data style): its cards' heads plain, and Ask about this inside each card, except
-       Easy read's, whose large links stay under the card */
+    /* 6. a library look on the phone (Data style): its cards' heads plain, and Ask about this inside each card, Easy
+       read's too (Nov 7: "inside rather than below a card") */
     const lk = [];
-    for (const id of ["rings", "journal", "bento", "oura"]) {
+    for (const id of ["rings", "journal", "bento", "oura", "easy"]) {
       await vset("look", id); await vins();
       const cs = await cardsOf();
       cs.forEach((c) => { if (!c.inside || c.meta || c.seen.split(" ").length > 2 || /\d|·/.test(c.seen)) lk.push(`${id} ${c.k}: "${c.seen}"${c.inside ? "" : ", Ask outside"}${c.meta ? ", a range or date" : ""}`); });
     }
     await vset("look", "built");
-    ok(!lk.length, `insights-v2: in every data style the phone draws, each Insights card has a plain head and Ask about this inside it (${lk.slice(0, 3).join("; ") || "4 styles"})`);
+    ok(!lk.length, `insights-v2: in every data style the phone draws, each Insights card has a plain head and Ask about this inside it (${lk.slice(0, 3).join("; ") || "5 styles"})`);
 
     ok(!ve.length, `insights-v2: no console errors or module warnings${ve.length ? ": " + ve.slice(0, 3).join(" | ") : ""}`);
     await vc.close();
@@ -5789,15 +5797,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const m1 = await meals();
     /* every food taken out: Save is off and a tap saves nothing */
     for (let i = 0; i < s1.items.length; i++) await tapIn(`[data-act="ph-food"][data-v="${i}"]`, 120);
-    const off = await ev(() => window.FLORIN_EXT.api.top().el.querySelector('[data-act="ph-save"]').getAttribute("aria-disabled"));
-    await tapIn('[data-act="ph-save"]', 300);
+    const off = await ev(() => window.FLORIN_EXT.api.top().el.querySelector('[data-act="save-photo"]').getAttribute("aria-disabled"));
+    await tapIn('[data-act="save-photo"]', 300);
     const m2 = await meals(), stillOpen = (await top()) === "ph";
     await tapIn('[data-act="ph-food"][data-v="0"]', 150);
     await tapIn('[data-act="ph-other"]', 150);
     await q.fill('.ap-rx .ap-o:last-child [data-ph-in="new"]', "Rice");
     await q.press('.ap-rx .ap-o:last-child [data-ph-in="new"]', "Enter"); await W(200);
     const s2 = await ev(() => window.FLORIN_EXT.api.top().st.items.filter((x) => x.on).map((x) => x.name));
-    await tapIn('[data-act="ph-save"]', 700);
+    await tapIn('[data-act="save-photo"]', 700);
     const m3 = await meals(), after = await ev(() => ({ ovl: window.FLORIN_EXT.api.S.ovl.length, toast: (document.querySelector(".ap-rx .ap-tst") || {}).textContent || "", focus: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id : null, pz: window.FLORIN_LOGS.foodCounts(window.FLORIN_EXT.api.M(), 90).pizza || 0 }));
     const nw = m3.find((e) => !m0.some((x) => x.id === e.id)) || {};
     const counted = await ev((t) => window.FLORIN_LOGS.matchFoods(t), nw.text || "");
@@ -5806,16 +5814,17 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(off === "true" && m2.length === m0.length && stillOpen, "photo-easy: with every food taken out, Save is off and a tap saves nothing");
     ok(nw.meal === s1.forNow && s2.includes("rice") && JSON.stringify(nw.foods) === JSON.stringify(counted) && counted.includes("rice") && after.ovl === 0 && /saved/.test(after.toast) && after.focus === nw.id && after.pz === pz0 + 1, `photo-easy: Save goes through save-meal: one ${nw.meal} ("${nw.text}") whose foods L.matchFoods counts (${counted.join(", ")}), the meal sheet closes with it, the toast says so and focus lands on the new row`);
 
-    /* 2. the alarm net reads what's saved: a sign typed as a food opens the primary care sheet */
+    /* 2. food names are not a note (Nov 7): a photo meal saves as a typed meal does, with no primary care sheet (a
+       Bloody Mary is a drink); a reply naming a sign leaves that name out, and counts it with can't tell */
     await ev(() => window.FLORIN_EXT.api.open("meal")); await W();
     await tapIn('[data-act="ph-sample"]', 500);
     await tapIn('[data-act="ph-other"]', 150);
-    await q.fill('.ap-rx .ap-o:last-child [data-ph-in="new"]', "threw up after");
+    await q.fill('.ap-rx .ap-o:last-child [data-ph-in="new"]', "bloody mary");
     await tapIn('[data-act="ph-add-food"]', 150);
-    await tapIn('[data-act="ph-save"]', 700);
-    const fl = await ev(() => { const t = window.FLORIN_EXT.api.top(); return { type: t && t.type, txt: t ? t.el.textContent : "" }; });
-    const cl = await ev(() => window.FLORIN_RUI.photo.clean({ foods: ["rice", "blood in it", "black stool", "toast"], cantTell: 0 }).names);
-    ok(fl.type === "flag" && /Vomiting/i.test(fl.txt) && JSON.stringify(cl) === JSON.stringify(["rice", "toast"]), `photo-easy: the alarm net reads a photo's words: a sign typed as a food opens the primary care sheet, and a reply naming one is left out (${cl.join(", ")})`);
+    await tapIn('[data-act="save-photo"]', 700);
+    const fl = await ev(() => { const t = window.FLORIN_EXT.api.top(); return { type: t ? t.type : null, toast: (document.querySelector(".ap-rx .ap-tst") || {}).textContent || "" }; });
+    const cl = await ev(() => window.FLORIN_RUI.photo.clean({ foods: ["rice", "blood in it", "black stool", "toast"], cantTell: 0 }));
+    ok(fl.type !== "flag" && /saved/.test(fl.toast) && JSON.stringify(cl.names) === JSON.stringify(["rice", "toast"]) && cl.unsure === 2, `photo-easy: a photo meal raises no alarm a typed meal wouldn't (top ${fl.type || "none"}), and a reply naming a sign leaves it out and counts it (${cl.names.join(", ")}, ${cl.unsure} left out)`);
     await ev(() => window.FLORIN_EXT.api.closeAll());
 
     /* 3. a real photo with no capability (a local file): shown from memory, the sample said plainly, let go on close */
@@ -5879,11 +5888,149 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const acc = await q2.evaluate(() => [...document.querySelectorAll(".ap-rx .ap-o:not(.is-out)")].pop().querySelector("input[data-ph-file]").accept);
     await q2.setInputFiles('.ap-rx .ap-o:last-child input[data-ph-file]', shot); await q2.waitForTimeout(700);
     const cr = await q2.evaluate(() => { const t = window.FLORIN_EXT.api.top(); return { calls: (window.__ph || {}).calls, images: (window.__ph || {}).images, tier: (window.__ph || {}).tier, prompt: (window.__ph || {}).prompt || "", items: t.st.items.map((x) => x.name), unsure: t.st.unsure, status: t.el.querySelector(".ph-status").textContent, where: t.el.querySelector(".ph-pic-m em").textContent, txt: t.el.textContent }; });
-    ok(acc === "image/jpeg,image/png,image/webp,image/gif" && cr.calls === 1 && cr.images === 1 && cr.tier === "quick" && /can't tell/.test(cr.prompt) && /No words about health/.test(cr.prompt) && JSON.stringify(cr.items) === JSON.stringify(["salmon", "brown rice", "green salad", "wine"]) && cr.unsure === 1 && /Read from your photo/.test(cr.status) && /sends the photo once/.test(cr.where) && !/kcal|healthy|stool/i.test(cr.txt), `photo-easy: where the page can send images, Claude reads the photo once (quick tier, a strict prompt), and the reply is checked: plain food names only (${cr.items.join(", ")}), an amount and a sign left out, a judgement word taken out, "can't tell" counted once (${cr.unsure}), and the line says the photo is sent once and not kept`);
+    ok(acc === "image/jpeg,image/png,image/webp,image/gif" && cr.calls === 1 && cr.images === 1 && cr.tier === "quick" && /can't tell/.test(cr.prompt) && /No words about health/.test(cr.prompt) && JSON.stringify(cr.items) === JSON.stringify(["salmon", "brown rice", "green salad", "wine"]) && cr.unsure === 3 && /Read from your photo/.test(cr.status) && /sends the photo once/.test(cr.where) && !/kcal|healthy|stool/i.test(cr.txt), `photo-easy: where the page can send images, Claude reads the photo once (quick tier, a strict prompt), and the reply is checked: plain food names only (${cr.items.join(", ")}), an amount and a sign left out and counted with "can't tell" (once, ${cr.unsure} in all), a judgement word taken out, and the line says the photo is sent once and not kept`);
     await cc.close();
     ok(!pe.length, `photo-easy: no console errors or module warnings${pe.length ? ": " + pe.slice(0, 3).join(" | ") : ""}`);
   }
   /* ===== end photo-easy ===== */
+
+  /* ===== nov7-fixes: the blockers the Nov 7 review confirmed, each held here so it stays fixed.
+     1. Will's picks' Symptoms card (Oura) leaves a flagged today out of its counts and says why, as the model counts
+     2. Frequency (Bento) draws a day with nothing logged as nothing, and a flagged today as a Teal column
+     3. Ask about this in C Link, D Token and F Bar reads on the dark FloraScore card in light
+     4. the photo sheet scrolls, so Save is in reach in Easy and on a small phone
+     5. Form's detail at 90 days names the most common form of the stretch its sentence names ===== */
+  {
+    const nc = await b.newContext({ viewport: { width: 1440, height: 1000 } });
+    const n7 = await nc.newPage();
+    const ne = [];
+    n7.on("pageerror", (e) => ne.push(e.message));
+    n7.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /Florin|refresh-/.test(m.text()))) ne.push(m.text()); });
+    await n7.goto(PAGE); await n7.waitForSelector(".rx-stage .ap-rx"); await n7.waitForTimeout(400);
+    const nw = (ms = 350) => n7.waitForTimeout(ms);
+    const nset = async (k, v) => { await n7.evaluate(([k, v]) => window.FLORIN_EXT.api.set(k, v), [k, v]); await nw(300); };
+    const nins = async (n) => {
+      await n7.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.S.tab = "insights"; api.S.ins.k = null; api.renderTab(true); }); await nw(250);
+      if (n) { await n7.evaluate((n) => { const x = document.querySelector(`.rx-stage .ap-rx [data-act="irange"][data-v="${n}"]`); if (x) x.click(); }, n); await nw(350); }
+    };
+    await n7.click('#rxLeft [data-rx="view"][data-v="picks"]'); await nw(600);
+
+    /* 1 and 2: a flagged today (a BM noted for blood), each range */
+    const flagIt = () => n7.evaluate(() => { const L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api; L.add(api.M(), { kind: "bm", d: L.TODAY, t: 19.6, form: 4, word: null, how: {}, dur: null, flags: { blood: true }, note: "" }); });
+    const sb = [], gb = [];
+    for (const who of ["sarah", "alex"]) {
+      await nset("persona", who); await flagIt();
+      for (const n of [7, 30, 90]) {
+        await nins(n);
+        const r = await n7.evaluate((n) => {
+          const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, api = window.FLORIN_EXT.api, M = api.M(), F = L.span(M, n, api.V().form);
+          const read = F.filter((f) => f.logged && !f.pending && !f.flag), want = `${read.filter((f) => f.nsym).length}of ${read.length === 1 ? "1 logged day" : `${read.length} logged days`}`;
+          const ph = document.querySelector(".rx-stage .ap-rx"), sy = ph.querySelector('[data-rlk-k="symptoms"]'), of = ph.querySelector('[data-rlk-k="often"]');
+          const big = sy ? sy.querySelector(".ou-big").textContent.replace(/\s+/g, " ").trim() : "";
+          return { flag: L.flagToday(M), big, want, line: !!sy && sy.textContent.includes(RU.FLAG_DAY),
+            gaps: of ? of.querySelectorAll(".bt-gapmark").length : -1, gapWords: of ? /left as a gap/i.test(of.textContent) : true, teal: !!of && !!of.querySelector(".bt-todaycol.is-flag") && [...of.querySelectorAll(".bt-unit")].some((u) => u.classList.contains("is-flag")), lg: !!of && /Noted for a clinician/.test(of.querySelector(".bt-lg").textContent) };
+        }, n);
+        if (!r.flag || !r.big.startsWith(r.want) || !r.line) sb.push(`${who} ${n}: "${r.big}" against ${r.want}${r.line ? "" : ", no flag line"}`);
+        if (r.gaps || r.gapWords || !r.teal || !r.lg) gb.push(`${who} ${n}: ${JSON.stringify(r)}`);
+      }
+    }
+    ok(!sb.length, `nov7-fixes: Will's picks' Symptoms card leaves a flagged today out of its counts at 7, 30 and 90 days, as the model and the default card count, and says why (${sb.slice(0, 2).join("; ") || "Sarah and Alex"})`);
+    /* a gap is drawn as nothing in every Bento card the phone draws, with no flag too */
+    await nset("persona", "sarah");
+    for (const look of ["picks", "bento"]) {
+      await nset("look", look);
+      for (const n of [7, 30, 90]) {
+        await nins(n);
+        const g = await n7.evaluate(() => { const ph = document.querySelector(".rx-stage .ap-rx .ap-ins"); return { marks: ph.querySelectorAll(".bt-gapmark").length, words: /left as a gap/i.test(ph.textContent) }; });
+        if (g.marks || g.words) gb.push(`${look} ${n}: ${g.marks} gap marks${g.words ? ", left as a gap" : ""}`);
+      }
+    }
+    ok(!gb.length, `nov7-fixes: Frequency (Bento) draws a day with nothing logged as nothing, in Will's picks and the Bento style at every range, and a flagged today as a hollow Teal column with Noted for a clinician in its legend (${gb.slice(0, 2).join("; ") || "ok"})`);
+
+    /* 3. the Ask button's words and token on the dark FloraScore card, light theme */
+    await nset("theme", "light");
+    const cb = [];
+    for (const ui of ["link", "icon", "bar"]) {
+      await n7.click(`[data-rx="askUI"][data-v="${ui}"]`); await nw(300);
+      for (const look of ["built", "picks", "rings", "bento", "oura"]) {
+        await nset("look", look); await nins();
+        const c = await n7.evaluate(() => {
+          const ph = document.querySelector(".rx-stage .ap-rx"), cv = document.createElement("canvas"); cv.width = cv.height = 1;
+          const cx = cv.getContext("2d", { willReadFrequently: true });
+          const px = (css) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = "#000"; cx.fillStyle = css; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data]; };
+          const probe = (v) => { const d = document.createElement("i"); d.style.cssText = `position:absolute;background:${v}`; ph.appendChild(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return px(c); };
+          const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+          const cr = (a, b) => { const x = lum(a), y = lum(b); return +((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)).toFixed(2); };
+          const btn = ph.querySelector('.ap-ins [data-rlk-k="score"] .ap-askw');
+          if (!btn) return { none: true };
+          /* the card's ground: its own colour, or Forest under Bento's gradient (a Forest gradient lit with Teal) */
+          let g = btn.parentElement, bg = null;
+          while (g && g !== ph && !bg) { const s = getComputedStyle(g), c = px(s.backgroundColor); if (c[3] > 200) bg = c; else if (s.backgroundImage && s.backgroundImage !== "none") bg = probe("var(--forest)"); g = g.parentElement; }
+          return { text: cr(px(getComputedStyle(btn).color), bg), tok: cr(px(getComputedStyle(btn.querySelector(".ic")).backgroundColor), bg) };
+        });
+        if (c.none || c.text < 4.5 || c.tok < 3) cb.push(`${ui} ${look}: ${JSON.stringify(c)}`);
+      }
+    }
+    /* E Question: no two Ask buttons on one Insights screen show the same question, in any style, and the one tapped is
+       the one Ask opens with in its box */
+    await n7.click('[data-rx="askUI"][data-v="chip"]'); await nw(300);
+    const qd = [];
+    for (const look of ["built", "picks", "rings", "journal", "bento", "oura", "easy"]) {
+      await nset("look", look); await nins(30);
+      const qs = await n7.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .ap-ins .ap-askw-q")].map((n) => n.textContent));
+      const dup = qs.filter((q, i) => qs.indexOf(q) !== i);
+      if (!qs.length || dup.length) qd.push(`${look}: ${dup.join(", ") || "no questions"}`);
+    }
+    await nset("look", "built"); await nins(30);
+    const tq = await n7.evaluate(() => { const b0 = document.querySelectorAll('.rx-stage .ap-rx .ap-ins .ap-askw[data-k="score"]')[1]; return b0 ? b0.dataset.q : ""; });
+    await n7.evaluate(() => document.querySelectorAll('.rx-stage .ap-rx .ap-ins .ap-askw[data-k="score"]')[1].click()); await nw(600);
+    const box = await n7.evaluate(() => (document.querySelector(".rx-stage .ap-rx .ap-askx-in") || {}).value || "");
+    ok(!qd.length && !!tq && box === tq, `nov7-fixes: in E Question no two Ask buttons on Insights read the same, in Florin charts, Will's picks and every data style, and the Trend's ("${tq}") is the one Ask opens with (${qd.slice(0, 2).join("; ") || box})`);
+    await n7.click('[data-rx="askUI"][data-v="pill"]'); await nw(300);
+    ok(!cb.length, `nov7-fixes: in light, C Link, D Token and F Bar read on the dark FloraScore card in Florin charts, Will's picks, Rings, Bento and Oura: the words at 4.5:1 or more, the token at 3:1 or more (${cb.slice(0, 3).join("; ") || "15 cases"})`);
+    await nset("look", "built");
+
+    /* 4. the photo sheet scrolls: Save in reach in Easy, and on a small phone */
+    const reach = async (page) => page.evaluate(async () => {
+      const t = window.FLORIN_EXT.api.top(), fsh = t.el.querySelector(".ap-fsh"), body = t.el.querySelector(".ap-fsh-b"), save = t.el.querySelector('[data-act="save-photo"]');
+      body.scrollTop = body.scrollHeight; await new Promise((r) => setTimeout(r, 200));
+      const r = save.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { flex: getComputedStyle(fsh).display, scrolls: body.scrollHeight <= body.clientHeight + 1 || body.scrollTop > 0, inView: r.bottom <= window.innerHeight && r.top >= 0, hit: !!hit && (hit === save || save.contains(hit)), when: !!body.querySelector(".ap-when") && body.querySelector(".ap-when").getBoundingClientRect().top < window.innerHeight };
+    });
+    const pr = [];
+    const sc = await b.newContext({ viewport: { width: 390, height: 844 } }), sp = await sc.newPage();
+    await sp.goto(PAGE); await sp.waitForSelector(".ap-rx"); await sp.waitForTimeout(400);
+    await sp.evaluate(() => { const api = window.FLORIN_EXT.api; api.set("easy", true); api.closeAll(); api.open("meal-photo"); }); await sp.waitForTimeout(900);
+    const e1 = await reach(sp);
+    if (e1.flex !== "flex" || !e1.inView || !e1.hit) pr.push(`easy: ${JSON.stringify(e1)}`);
+    await sc.close();
+    const sc2 = await b.newContext({ viewport: { width: 375, height: 667 } }), sp2 = await sc2.newPage();
+    await sp2.goto(PAGE); await sp2.waitForSelector(".ap-rx"); await sp2.waitForTimeout(400);
+    await sp2.evaluate(() => { const api = window.FLORIN_EXT.api; api.closeAll(); api.open("meal-photo"); }); await sp2.waitForTimeout(900);
+    const e2 = await reach(sp2);
+    if (e2.flex !== "flex" || !e2.inView || !e2.hit) pr.push(`375x667: ${JSON.stringify(e2)}`);
+    await sc2.close();
+    ok(!pr.length, `nov7-fixes: the photo sheet is the meal sheet's flex column, so its body scrolls and Save is in reach by touch, in Easy and at 375 by 667 (${pr.join("; ") || "both"})`);
+
+    /* 5. Form's detail at 90 days: "In your last 30 days ... The most common form was X" names the last 30 days' X */
+    const fm = await n7.evaluate(() => {
+      const L = window.FLORIN_LOGS, RU = window.FLORIN_RUI, bad = [];
+      const V = (o) => Object.assign({ form: "C", uid: 7, plan: "member", mealUI: "quick", bmUI: "quick", home: "score", history: "list", checkin: true, look: "built", easy: false, onboard: "short", persona: "sarah", data: "est", meals: "all" }, o);
+      const topOf = (F, mode) => { const t = {}; F.filter((f) => !f.flag).flatMap((f) => f.bms).forEach((b) => { const w = L.formKey(b, mode); t[w] = (t[w] || 0) + 1; }); const e = Object.entries(t).sort((a, b) => b[1] - a[1])[0]; return e ? e[0] : null; };
+      for (const who of ["sarah", "marcus", "alex"]) for (const mode of ["A", "B", "C"]) {
+        const M = L.build(who, "est"), P = L.prevSpan(M, 90, mode), a = topOf(P.cur, mode), b0 = topOf(P.prev, mode);
+        const d = new DOMParser().parseFromString(`<div>${RU.idetail(M, V({ persona: who, form: mode }), { k: "form", range: 90 })}</div>`, "text/html");
+        const t = ((d.querySelector(".dt-moved p") || {}).textContent || "").replace(/\s+/g, " ");
+        const want = a === b0 ? `${a.charAt(0).toUpperCase()}${a.slice(1)} was the most common form in both.` : `The most common form was ${a}, against ${b0} before.`;
+        if (!t.includes(want)) bad.push(`${who} ${mode}: wanted "${want}" in "${t}"`);
+      }
+      return bad;
+    });
+    ok(!fm.length, `nov7-fixes: Form's detail at 90 days names the most common form of the last 30 days, the stretch its sentence names, against the first 30 (${fm.slice(0, 2).join("; ") || "3 people, A, B and C"})`);
+    ok(!ne.length, `nov7-fixes: no console errors or module warnings${ne.length ? ": " + ne.slice(0, 3).join(" | ") : ""}`);
+    await nc.close();
+  }
+  /* ===== end nov7-fixes ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

@@ -67,7 +67,9 @@
 .dt-pick-w { display: flex; gap: 8px; align-items: baseline; font-size: 13px; line-height: 1.4; color: var(--ap-ink2); margin: 0; }
 .dt-pick-w em { flex: none; font-family: var(--mono); font-style: normal; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
 .dt-pick-l { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.dt-pick-l li { display: grid; grid-template-columns: 80px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; line-height: 1.35; }
+/* the answer takes the room its words need, and the state word wraps in the last column, so they never overlap */
+.dt-pick-l li { display: grid; grid-template-columns: 80px auto minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 13px; line-height: 1.35; }
+.dt-pick-l .dt-sw { white-space: normal; text-align: right; }
 .dt-pick-l li span:first-child { color: var(--ap-ink2); }
 .dt-pick-l li b { font-weight: 500; }
 .dt-hint { margin: 8px 4px 0; font-size: 11px; line-height: 1.3; color: var(--ap-ink3); }

@@ -458,8 +458,9 @@ deck isn't needed. can kill that."
   picked styles included (they used to fall back to Florin charts at 7 and 90 days). Ask about this and the detail link
   sit inside every card, at its foot ("I like the 'ask about this' inside rather than below a card").
 - **The two "N of 27" cards** ("i'm having a hard time understanding the two cards (20 of 27; 12 of 27?) the data isn't
-  clear"). The card under the big ring is now the Trend, its line naming FloraScore ("FloraScore in its usual range on
-  16 of 29 days"); the next is Your days, about the logs: its count, what "within your usual" means in one line, and what
+  clear"). The card under the big ring is now the Trend, its line FloraScore's average over the range against its
+  usual range ("FloraScore averaged 80, in its usual range"; Nov 7 review: a count of days in range, "16 of 29 days",
+  still read like Your days' "18 of 29", so the count moved to FloraScore's page); the next is Your days, about the logs: its count, what "within your usual" means in one line, and what
   the days outside it had as a small breakdown (first BM outside the window, more BMs than usual, No BM, a form outside
   the usual forms), in place of a paragraph. We kept two cards rather than merging them: one is a score, one is the logs.
 - **Will's picks, Nov 7.** Frequency is Bento's stacked chart ("cleaner visually"), Form is Oura's ("our has the best

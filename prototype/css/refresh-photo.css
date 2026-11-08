@@ -14,6 +14,9 @@
 .ap-rx .ph-sample { align-self: flex-start; padding: 0 4px; }
 
 /* ---------- the photo sheet ---------- */
+/* the sheet's root also carries .ph, which app.css gives the studio's photo placeholder (display: block): put the
+   core sheet's flex column back, so its body scrolls and Save stays in reach at the foot */
+.ap .ap-fsh.ph { display: flex; }
 .ph-pic { display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
 .ph-frame { flex: none; width: 96px; height: 96px; border-radius: 16px; overflow: hidden; background: var(--ap-card2); }
 .ph-img, .ph-plate { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -38,8 +41,6 @@
 .ph-foods { align-items: center; }
 .ph .ph-other { color: var(--ap-ink); }
 .ph .ph-other .ic { width: 14px; height: 14px; }
-.ph-day { cursor: default; }
-.ph-day > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- the Easy version: bigger, words in Ink ---------- */
 .ap--easy .ph-add { min-height: 72px; padding: 12px 20px; gap: 16px; }

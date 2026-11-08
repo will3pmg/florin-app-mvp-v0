@@ -459,7 +459,7 @@
     return card(x, "rg-timing", "Timing of the first BM", `
       ${head(x, "Timing · first BM", u ? chip(x, "usual", tm.usualText) : chip(x, "neutral", "Learning"))}
       ${svg}
-      <p class="rg-ans">${esc(ans)}</p>
+      <p class="rg-ans">${esc(`${ans}${!u && x.live && D.learning ? ` Florin learns your usual window by day ${D.learning.of}.` : ""}`)}</p>
       ${legend(x, [["read", u ? "One morning, in your window" : "One morning"], (later || earlier) && ["shift", "Outside your window"], newest.d.flag ? ["flag", "Today, noted for a clinician"] : [newest.d.inWin === false ? "now-shift" : "now", newest.d.today ? "Today" : "Latest"]])}`);
   }
 

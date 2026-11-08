@@ -43,7 +43,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .ao-tag--now { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); }
 
 /* two cards side by side, each a picture of the phone at 390 wide; the theme the row picks, else the page's */
-.ao-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; align-items: start; }
+.ao-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; align-items: start; }
+@media (max-width: 899px) { .ao-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ao-fig { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .ao-fig img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 16px; box-shadow: 0 0 0 1px var(--line); background: var(--panel); }
 .ao-opt[data-rec] .ao-fig img { box-shadow: 0 0 0 2px var(--ink); }

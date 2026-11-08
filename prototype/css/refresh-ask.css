@@ -51,6 +51,10 @@
 }
 /* the token on the card's own ground (C, D, F, and B in dark): Forest with a Ray glyph in light, Ray with a Forest glyph in dark */
 .ap-rx[data-theme="dark"]:is([data-ask-ui="link"], [data-ask-ui="icon"], [data-ask-ui="bar"], [data-ask-ui="compact"]) .ap-askw > .ic:first-child { background: var(--ray); color: var(--forest); }
+/* the dark FloraScore heroes in light: C, D and F draw the token on the card's own ground, so there it is Ray with a
+   Forest glyph, as on any dark ground (the words follow the card's ink, color: inherit, below). B, A and E keep a Ray
+   fill, so their token stays Forest */
+.ap.ap-rx:not([data-theme="dark"]):is([data-ask-ui="link"], [data-ask-ui="icon"], [data-ask-ui="bar"]) :is(.rg--hero, .bt-hero, .ou--hero) .ap-askw > .ic:first-child { background: var(--ray); color: var(--forest); }
 
 /* B compact */
 .ap.ap-rx[data-ask-ui="compact"] .ap-askw { display: inline-flex; align-items: center; gap: 4px; width: auto; min-height: 32px; margin-left: auto; padding: 0 12px 0 4px; border-radius: 999px; background: color-mix(in srgb, var(--ray) 70%, var(--ap-card)); color: var(--forest); font-size: 13px; font-weight: 500; line-height: 1; box-shadow: inset 0 0 0 1px var(--ap-ask-edge); }
@@ -64,14 +68,14 @@
 }
 
 /* C link */
-.ap.ap-rx[data-ask-ui="link"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; min-height: 44px; margin-left: auto; padding: 0 4px; border-radius: 12px; background: none; box-shadow: none; color: var(--ap-ink); font-size: 14px; font-weight: 500; line-height: 1.2; }
+.ap.ap-rx[data-ask-ui="link"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; min-height: 44px; margin-left: auto; padding: 0 4px; border-radius: 12px; background: none; box-shadow: none; color: inherit; font-size: 14px; font-weight: 500; line-height: 1.2; }
 .ap.ap-rx[data-ask-ui="link"] .ap-askw > .ic:first-child { width: 24px; height: 24px; padding: 4px; }
-.ap.ap-rx[data-ask-ui="link"] .ap-askw .ap-askw-t { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; text-decoration-color: var(--ap-line); }
+.ap.ap-rx[data-ask-ui="link"] .ap-askw .ap-askw-t { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); }
 @media (hover: hover) { .ap.ap-rx[data-ask-ui="link"] .ap-askw:hover .ap-askw-t { text-decoration-color: currentColor; } }
 .ap.ap-rx[data-ask-ui="link"] .ap-askw::after { display: none; }
 
 /* D icon: the token alone. The words stay in its name, and show beside it on keyboard focus */
-.ap.ap-rx[data-ask-ui="icon"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; min-width: 36px; min-height: 36px; margin-left: auto; padding: 0; border-radius: 999px; background: none; box-shadow: none; color: var(--ap-ink); font-size: 14px; font-weight: 500; line-height: 1; }
+.ap.ap-rx[data-ask-ui="icon"] .ap-askw { display: inline-flex; align-items: center; gap: 8px; width: auto; min-width: 36px; min-height: 36px; margin-left: auto; padding: 0; border-radius: 999px; background: none; box-shadow: none; color: inherit; font-size: 14px; font-weight: 500; line-height: 1; }
 .ap.ap-rx[data-ask-ui="icon"] .ap-askw > .ic:first-child { width: 36px; height: 36px; padding: 8px; box-shadow: var(--ap-ask-drop); }
 .ap.ap-rx[data-ask-ui="icon"] .ap-askw .ap-askw-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .ap.ap-rx[data-ask-ui="icon"] .ap-askw:focus-visible { padding-right: 12px; background: var(--ray); color: var(--forest); }
@@ -87,12 +91,12 @@
 .ap.ap-rx[data-ask-ui="chip"] .ap-askw::after { display: none; }
 
 /* F bar: a slim row across the foot of the card, a line above it (the core card's foot already draws one) */
-.ap.ap-rx[data-ask-ui="bar"] .ap-askw { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; flex-basis: 100%; min-height: 48px; margin: 0; padding: 4px 0 0; border-radius: 0; background: none; box-shadow: inset 0 1px 0 var(--ap-line); color: var(--ap-ink); font-size: 15px; font-weight: 500; line-height: 1.2; text-align: left; }
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; flex-basis: 100%; min-height: 48px; margin: 0; padding: 4px 0 0; border-radius: 0; background: none; box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 16%, transparent); color: inherit; font-size: 15px; font-weight: 500; line-height: 1.2; text-align: left; }
 .ap.ap-rx[data-ask-ui="bar"] .ap-ic-f > .ap-askw { padding-top: 0; box-shadow: none; }
 .ap.ap-rx[data-ask-ui="bar"] .ap-askw > .ic:first-child { width: 24px; height: 24px; padding: 4px; }
-.ap.ap-rx[data-ask-ui="bar"] .ap-askw .ap-askw-go { display: block; flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--ap-ink2); transition: transform .2s var(--ap-ease); }
+.ap.ap-rx[data-ask-ui="bar"] .ap-askw .ap-askw-go { display: block; flex: none; width: 16px; height: 16px; margin-left: auto; color: color-mix(in srgb, currentColor 72%, transparent); transition: transform .2s var(--ap-ease); }
 .ap.ap-rx[data-ask-ui="bar"] .ap-askw::after { display: none; }
-@media (hover: hover) { .ap.ap-rx[data-ask-ui="bar"] .ap-askw:hover .ap-askw-go { transform: translateX(4px); color: var(--ap-ink); } }
+@media (hover: hover) { .ap.ap-rx[data-ask-ui="bar"] .ap-askw:hover .ap-askw-go { transform: translateX(4px); color: currentColor; } }
 
 /* in a look's card foot, beside the way into its detail: a small Ask (B, C, D) takes the corner and the detail link the
    start; E keeps the start and the link the corner; F runs last, across the foot, under the link */
@@ -100,6 +104,12 @@
 .ap.ap-rx:is([data-ask-ui="compact"], [data-ask-ui="link"], [data-ask-ui="icon"]) .rlk-foot > .rlk-go { margin-left: -8px; margin-right: auto; }
 .ap.ap-rx[data-ask-ui="bar"] .rlk-foot > .ap-askw { order: 2; }
 .ap.ap-rx[data-ask-ui="bar"] .rlk-foot > .rlk-go { margin-left: auto; }
+/* a core card whose foot has a button of its own (the check-in's Check in): in E and F the Ask goes after it, so the
+   card's own action leads; F puts its hairline back over the bar (and under Your days' detail link, as in a look's
+   foot), and E keeps the button at the end of its row */
+.ap.ap-rx:is([data-ask-ui="bar"], [data-ask-ui="chip"]) .ap-ic-f > .ap-askw { order: 3; }
+.ap.ap-rx[data-ask-ui="bar"] :is(.ap-ic-f > .ap-btn ~ .ap-askw, .ap-ic-f.rlk-foot > .ap-askw) { padding-top: 4px; box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 16%, transparent); }
+.ap.ap-rx[data-ask-ui="chip"] .ap-ic-f > .ap-btn { margin-left: auto; }
 
 /* pressed, every style */
 .ap.ap-rx .ap-askw:active { transform: scale(.97); }

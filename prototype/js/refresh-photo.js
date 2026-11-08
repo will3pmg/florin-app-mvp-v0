@@ -12,11 +12,13 @@
      sees as chips the person checks (tap one to take it out, Something else to add one), which meal it was (it follows
      the time until picked) and the time. Nothing is saved until Save, which runs the core's own save-meal on the
      sheet's state, so the meal is committed, its foods counted (L.matchFoods) and its toast shown exactly as a typed or
-     spoken meal's are. The words saved run through the alarm net (L.alarmsIn); a sign opens the primary care sheet;
+     spoken meal's are, and nothing more: food names are not a note, so the photo raises no alarm a typed meal
+     wouldn't (a Bloody Mary is a drink). A food typed in the box and not yet added is saved with the rest;
    - what reads the photo: Claude, through the page's sample capability, when the page declares images
      (capabilities: { sample: { images: true } }) and the viewer allows it: one call, quick tier, a strict prompt, the
      reply checked (only plain food names kept: no numbers, no judgement or health words, nothing the claims rules or
-     the alarm net catch, "can't tell" counted, never guessed). With no capability (a local file, a test, a view that
+     the alarm net catch; a name left out is counted with "can't tell", so nothing vanishes without a word, never
+     guessed). With no capability (a local file, a test, a view that
      can't send images, a viewer who says no) the demo plays a sample instead: that slot's meal from L.mealSay, the
      day as the microphone plays it, and says so in one line;
    - the photo lives in memory only, as a blob URL revoked when its sheet closes, and goes nowhere but that one Claude
@@ -88,10 +90,13 @@
       let s = String(x == null ? "" : x).replace(/[\u2018\u2019]/g, "'").replace(/[^\p{L}\s'&-]/gu, " ").replace(/\s+/g, " ").trim().toLowerCase();
       if (!s) return;
       if (UNSURE.test(s)) { unsure++; return; }
-      if (DROP.test(String(x))) return;
+      /* a name left out whole is still counted, so the person hears there was something to add */
+      if (DROP.test(String(x))) { unsure++; return; }
       s = s.replace(JUDGE, " ").replace(/\s+/g, " ").trim().replace(/^(?:a|an|some|the|and)\s+/, "").replace(/^(?:glass|cup|mug|bowl|slice|piece|plate)s?\s+of\s+/, "").trim();
+      /* "junk food" is "food" once the judgement word is out: a thing Florin can't name, never a chip */
+      if (!s || UNSURE.test(s)) { unsure++; return; }
       if (s.length < 2 || s.length > 32 || s.split(" ").length > 4) return;
-      if (claims(s) || L.alarmsIn(s).length) return;
+      if (claims(s) || L.alarmsIn(s).length) { unsure++; return; }
       if (seen.has(s)) return;
       seen.add(s);
       out.push(s);
@@ -185,10 +190,12 @@
     off: "Claude isn't allowed to read photos in this view, so these foods are a sample, not read from your photo.",
     busy: "Claude couldn't read the photo just now, so these foods are a sample, not read from your photo.",
     none: "Florin didn't find a food or drink in this photo. Add what you had.",
-    rejected: "This photo couldn't be read. Try another, or add what you had.",
+    unnamed: "Florin saw something but couldn't name it. Add what you had.",
+    rejected: "This photo couldn't be read. Add what you had, or close this and pick another photo.",
     stopped: "Stopped. Add what you had."
   };
-  const dayLabel = (d) => (d === L.TODAY ? "Today" : d === L.TODAY - 1 ? "Yesterday" : RU.dayName(d));
+  /* the day is said in the When label, not drawn as a field: it is the meal sheet's day, changed there */
+  const whenDay = (d) => (d === L.TODAY ? "today" : d === L.TODAY - 1 ? "yesterday" : RU.dayName(d));
   const onItems = (st) => st.items.filter((x) => x.on);
   const textOf = (st) => cap1(andList(onItems(st).map((x) => x.name)));
   function render(M, V, st) {
@@ -197,7 +204,7 @@
     const C = L.MEAL_COPY[st.meal] || L.MEAL_COPY.other;
     const pic = st.sample ? PLATE : `<img class="ph-img" src="${esc(st.shown || st.url || "")}" alt="Your photo of the meal">`;
     const chips = st.items.map((x, i) => `<button type="button" class="ap-ch${x.on ? " is-on" : ""}" data-act="ph-food" data-v="${i}" aria-pressed="${x.on}">${x.on ? ic("check") : ""}${esc(cap1(x.name))}</button>`).join("");
-    const unsure = st.unsure > 0 ? `<p class="ap-f-h">${esc(st.unsure === 1 ? "Florin couldn't tell what one thing was. Add it if you know." : `Florin couldn't tell what ${plural(st.unsure, "thing")} were. Add them if you know.`)}</p>` : "";
+    const unsure = st.unsure > 0 && st.status !== "unnamed" ? `<p class="ap-f-h">${esc(st.unsure === 1 ? "Florin couldn't tell what one thing was. Add it if you know." : `Florin couldn't tell what ${plural(st.unsure, "thing")} were. Add them if you know.`)}</p>` : "";
     const add = st.adding
       ? `<div class="ap-sy-add ph-new"><label class="sr" for="${id}-new">Name a food or drink</label><input id="${id}-new" class="ap-in" data-ph-in="new" type="text" enterkeyhint="done" autocomplete="off" placeholder="A food or drink" value="${esc(st.newName || "")}"><button type="button" class="ap-btn" data-act="ph-add-food">Add</button></div>`
       : `<button type="button" class="ap-ch ph-other" data-act="ph-other">${ic("plus")}Something else</button>`;
@@ -211,7 +218,7 @@
         </div>
         ${reading ? `<div class="ph-wait"><span class="ph-dots" aria-hidden="true"><i></i><i></i><i></i></span><button type="button" class="ap-btn ap-btn--line ap-btn--c" data-act="ph-stop">Stop</button></div>` : `
         <div class="ap-f"><span class="ap-f-l" id="${id}-fl">Is this what you had?</span>
-          <p class="ap-f-h">Tap one to take it out. Add anything Florin missed.</p>
+          ${st.items.length ? `<p class="ap-f-h">Tap one to take it out. Add anything Florin missed.</p>` : ""}
           <div class="ap-chs ap-chs--wrap ph-foods" role="group" aria-labelledby="${id}-fl">${chips}${st.adding ? "" : add}</div>
           ${st.adding ? add : ""}
           ${unsure}
@@ -219,12 +226,12 @@
         </div>
         <div class="ap-f"><span class="ap-f-l" id="${id}-ml">Which meal</span><div class="ap-chs ap-chs--wrap" role="radiogroup" aria-labelledby="${id}-ml">${KINDS.map(([k, l]) => `<button type="button" class="ap-ch${st.meal === k ? " is-on" : ""}" data-act="ph-meal" data-v="${k}" role="radio" aria-checked="${st.meal === k}">${esc(l)}</button>`).join("")}</div>
           ${st.mealTouched ? "" : `<p class="ap-f-h">From the time. Pick another if it was.</p>`}</div>
-        <div class="ap-f"><span class="ap-f-l" id="${id}-wl">When</span>
-          <div class="ap-when" role="group" aria-labelledby="${id}-wl"><span class="ap-fld ph-day">${ic("cal")}<span>${esc(dayLabel(st.d))}</span></span><label class="ap-fld">${ic("clock")}<span class="sr">Time</span><input id="${id}-time" type="time" data-in="time" value="${RU.toInput(st.t)}"></label></div></div>`}
+        <div class="ap-f"><span class="ap-f-l" id="${id}-wl">${esc(`When, ${whenDay(st.d)}`)}</span>
+          <div class="ap-when" role="group" aria-labelledby="${id}-wl"><label class="ap-fld">${ic("clock")}<span class="sr">Time</span><input id="${id}-time" type="time" data-in="time" value="${RU.toInput(st.t)}"></label></div></div>`}
       </div>
       <div class="ap-fsh-f">
         ${hint ? `<p class="ap-fsh-hint" id="${id}-hint" aria-live="polite">${esc(hint)}</p>` : ""}
-        <button type="button" class="ap-btn ap-btn--block" data-act="ph-save"${ok ? "" : ` aria-disabled="true" aria-describedby="${id}-hint"`}>${esc(C.save)}</button>
+        <button type="button" class="ap-btn ap-btn--block" data-act="save-photo"${ok ? "" : ` aria-disabled="true" aria-describedby="${id}-hint"`}>${esc(C.save)}</button>
       </div>
     </div>`;
   }
@@ -259,7 +266,7 @@
       const reply = await CAP.fn.json(PROMPT, { images: [st.file], modelTier: "quick", signal: ctl.signal });
       if (!isOpen(api, ov)) return null;
       const c = clean(reply);
-      setItems(st, c.names, c.names.length ? "claude" : "none");
+      setItems(st, c.names, c.names.length ? "claude" : c.unsure ? "unnamed" : "none");
       st.unsure = c.unsure;
     } catch (e) {
       if (!isOpen(api, ov)) return null;
@@ -291,9 +298,10 @@
     sweep(api);
     const under = api.top(), us = under && under.type === "meal" ? under.st : null;
     const d = us && us.d != null ? us.d : L.TODAY;
-    const t = d === L.TODAY ? L.NOW : us && !us.quick ? us.t : 12.5;
+    /* the one-meal sheet's time comes with its meal (it moved when a meal was picked there), so the two agree */
+    const t = us && !us.quick && us.t != null ? us.t : d === L.TODAY ? L.NOW : 12.5;
     const meal = us && !us.quick && us.mealTouched ? us.meal : L.mealFor(t);
-    const st = { d, t, meal, mealTouched: !!(us && !us.quick && us.mealTouched), tTouched: false, sample: !!o.sample, url: o.url || null, file: o.file || null, shown: null, sent: canRead() && !o.sample, phase: "reading", status: "reading", items: [], unsure: 0, adding: false, newName: "", text: "", note: "" };
+    const st = { d, t, meal, mealTouched: !!(us && !us.quick && us.mealTouched), tTouched: !!(us && !us.quick && us.tTouched), sample: !!o.sample, url: o.url || null, file: o.file || null, shown: null, sent: canRead() && !o.sample, phase: "reading", status: "reading", items: [], unsure: 0, adding: false, newName: "", text: "", note: "" };
     if (st.url) live.add(st.url);
     const ov = api.push("ph", st);
     if (!ov) { letGo(st); return null; }
@@ -336,29 +344,56 @@
       api.say(`${cap1(name)} added.`);
       const f = ov.el.querySelector(".ph-other"); if (f) f.focus({ preventScroll: true });
     },
-    "ph-meal"(b, api) { const ov = phTop(api); if (!ov) return; ov.st.meal = b.dataset.v; ov.st.mealTouched = true; api.rerender(ov); },
+    /* a meal picked moves the time, until the person sets it, as the core's one-meal sheet does (mealTime) */
+    "ph-meal"(b, api) {
+      const ov = phTop(api); if (!ov) return;
+      const st = ov.st;
+      st.meal = b.dataset.v; st.mealTouched = true;
+      if (!st.tTouched) {
+        if (st.d === L.TODAY && st.meal === L.mealFor(L.NOW)) st.t = L.NOW;
+        else { const u = L.mealUsualTime(api.M(), st.meal); st.t = st.d === L.TODAY ? Math.min(u, L.NOW) : u; }
+      }
+      api.rerender(ov);
+    },
     "ph-stop"(b, api) { const ov = phTop(api); if (ov && ov.st.ctl) { try { ov.st.ctl.abort(); } catch (e) { /* already stopped */ } } },
     "ph-close"(b, api) { const ov = phTop(api); if (!ov) return; letGo(ov.st); api.pop(); },
     /* Save: the core's own save-meal on this sheet's state, so it's committed, counted and toasted as any meal is.
        The meal sheet it came from closes too when nothing is typed on it */
-    "ph-save"(b, api, e) {
+    /* named save-photo so the core lets a tap on it through while it's off (refresh-app.js passes save- acts), and
+       this act says why, as the core's blocked() does */
+    "save-photo"(b, api, e) {
       const ov = phTop(api); if (!ov) return;
       const st = ov.st;
+      /* a food typed in the box and not added yet is the person's own words: it's saved with the rest */
+      const typed = String(st.newName || "").replace(/\s+/g, " ").trim().slice(0, 48).toLowerCase();
+      if (typed && st.phase !== "reading") {
+        const have = st.items.find((x) => x.name === typed);
+        if (have) have.on = true; else st.items.push({ name: typed, on: true, own: true });
+        st.newName = ""; st.adding = false;
+      }
       if (st.phase === "reading" || !onItems(st).length) {
         const h = ov.el.querySelector(".ap-fsh-hint"); if (h) { h.classList.remove("is-flash"); void h.offsetWidth; h.classList.add("is-flash"); }
+        /* then lead to what's missing: the box when there's nothing to keep, else the first food to keep */
+        if (!st.items.length || st.adding) { const f = ov.el.querySelector("[data-ph-in=new]"); if (f) f.focus({ preventScroll: true }); }
+        else { const c = ov.el.querySelector(".ph-foods .ap-ch"); if (c) { c.scrollIntoView({ block: "center" }); c.focus({ preventScroll: true }); } }
+        if (h) api.say(h.textContent);
         return;
       }
       st.text = textOf(st); st.note = "";
-      const signs = L.alarmsIn(st.items.filter((x) => x.on).map((x) => x.name).join(". "));
-      const restore = api.snapshot();
       const day = L.day(api.M(), st.d), had = new Set(((day && day.entries) || []).map((x) => x.id));
       letGo(st);
       api.act("save-meal", b, e);
       if (api.S.ovl.includes(ov)) return; /* the save didn't go through */
       const day2 = L.day(api.M(), st.d), e2 = ((day2 && day2.entries) || []).find((x) => !had.has(x.id) && x.kind === "meal");
+      /* the sheet under closes too when it holds nothing of the person's: empty, or only the demo's pretend dictation
+         (Easy's voice first starts only on an empty box, so a start of L.mealSay is only ever that), so the same meal
+         isn't left there to be saved twice */
       const under = api.top();
-      if (under && under.type === "meal" && !under.st.edit && !(under.st.text || "").trim()) { under.st.saved = true; api.pop({ instant: true, focusId: e2 ? e2.id : undefined }); }
-      if (signs.length) { const fo = api.push("flag", { sign: L.signText(signs), signs, restore }); if (fo && e2) fo.okey = { act: "edit", id: e2.id }; }
+      if (under && under.type === "meal" && !under.st.edit) {
+        const said = (() => { try { return L.mealSay(api.M(), under.st.d) || ""; } catch (x) { return ""; } })();
+        const txt = (under.st.text || "").trim();
+        if (!txt || (said && said.startsWith(txt))) { under.st.saved = true; api.pop({ instant: true, focusId: e2 ? e2.id : undefined }); }
+      }
     }
   };
   Object.entries(ACTS).forEach(([k, f]) => { EXT.acts[k] = (b, a, e) => { try { return f(b, a || EXT.api, e); } catch (err) { warn(`the ${k} tap`, err); } }; });
@@ -390,7 +425,13 @@
     });
     root.addEventListener("input", (e) => {
       const el = e.target, ov = phTop(api);
-      if (ov && el && el.matches && el.matches("[data-ph-in=new]")) ov.st.newName = el.value;
+      if (!ov || !el || !el.matches || !el.matches("[data-ph-in=new]")) return;
+      ov.st.newName = el.value;
+      /* Save turns on while a name is typed, as on the core's symptoms sheet, in place (no redraw under the typing) */
+      const ok = ov.st.phase !== "reading" && (onItems(ov.st).length > 0 || el.value.trim().length > 0);
+      const btn = ov.el.querySelector('[data-act="save-photo"]'), h = ov.el.querySelector(".ap-fsh-hint");
+      if (btn) { if (ok) btn.removeAttribute("aria-disabled"); else btn.setAttribute("aria-disabled", "true"); }
+      if (h) h.hidden = ok;
     });
     root.addEventListener("keydown", (e) => {
       const el = e.target;

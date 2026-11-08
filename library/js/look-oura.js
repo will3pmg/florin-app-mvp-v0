@@ -629,22 +629,25 @@
       const segs = order.filter(([, v]) => v).map(([k, v]) => { const s = { k, w: r1((v / c.n) * 100), x: r1((at / c.n) * 100) }; at += v; return s; });
       /* within out of the BMs read either way, as Insights counts them; a BM that could be either is said under */
       const e = c.el + c.eh;
-      return { label, value: c.n === e ? `${plural(e, "BM")}, could be either` : `${c.in} of ${c.n - e} within`, segs, stacked: true, sub: e && c.n > e ? `${e} could be either` : "" };
+      return { label, value: c.n === e ? `${plural(e, "BM")}, could be either` : `${c.in} of ${c.n - e} in your usual forms`, segs, stacked: true, sub: e && c.n > e ? `${e} could be either` : "" };
     };
     /* your usual, as the same bar: the share of BMs your usual forms held in the weeks Florin learned them from */
     const uw = F.usualWeeks, baseF = uw ? D.days[90].filter((d) => d.d >= uw[0] && d.d <= uw[1]).flatMap((d) => d.forms) : [];
-    const rows = learning ? [bar("So far", moF)] : nOf(D) <= 7 ? [bar("This week", wkF)] : [bar("This week", wkF), bar(`Last ${nOf(D)} days`, moF)];
+    /* in the app (x.live) the range is the tabs' at the top of Insights (Will, Nov 7: "not labeled within"), so one bar,
+       Your BMs, reads the range picked; the library page keeps this week and the last 30 days */
+    const rows = x.live ? [bar("Your BMs", moF)] : learning ? [bar("So far", moF)] : nOf(D) <= 7 ? [bar("This week", wkF)] : [bar("This week", wkF), bar(`Last ${nOf(D)} days`, moF)];
     if (u && baseF.length) rows.push({ ...bar("Your usual", baseF), sub: `${F.usualText}, in the weeks that set your usual` });
     const total = F.total30, firmer = F.firmer || 0, looser = F.looser || 0, either = F.either || 0;
     const was = (k) => (k === 1 ? "was" : "were");
     const eith = either ? `, and ${either} could be either` : "";
-    const inLast = `In the last ${nOf(D)} days`;
-    const ans = !total ? (learning ? "No BMs logged so far." : `No BMs logged in the last ${nOf(D)} days.`)
+    /* the sentence opens on its stretch on the library page; in the app the tabs name it */
+    const inLast = x.live ? "" : `In the last ${nOf(D)} days, `, up = (t) => (x.live ? cap(t) : t);
+    const ans = !total ? (learning ? "No BMs logged so far." : x.live ? "No BMs logged." : `No BMs logged in the last ${nOf(D)} days.`)
       : !u ? `Florin learns your usual forms by day ${D.learning ? D.learning.of : ""}.`
-      : firmer && looser ? `${inLast}, ${firmer} ${was(firmer)} firmer and ${looser} looser than your usual forms${eith}.`
-      : firmer ? `${inLast}, ${firmer} ${was(firmer)} firmer than your usual forms${eith}.`
-      : looser ? `${inLast}, ${looser} ${was(looser)} looser than your usual forms${eith}.`
-      : either ? `${inLast}, ${either} could be either; the rest sat within your usual forms.` : `${inLast}, every BM sat within your usual forms.`;
+      : firmer && looser ? `${inLast}${firmer} ${was(firmer)} firmer and ${looser} looser than your usual forms${eith}.`
+      : firmer ? `${inLast}${firmer} ${was(firmer)} firmer than your usual forms${eith}.`
+      : looser ? `${inLast}${looser} ${was(looser)} looser than your usual forms${eith}.`
+      : either ? `${inLast}${either} could be either; the rest sat within your usual forms.` : `${inLast}${up("every BM sat within your usual forms.")}`;
     const scaleName = mode === "A" ? "1 to 7" : mode === "B" ? "five words" : "seven words";
     return card(x, "ou-form", "Form", `
       ${head(x, `Form · ${scaleName}`, u ? chip(x, "usual", F.usualText) : chip(x, "learn", "Learning"))}
@@ -681,8 +684,12 @@
       </li>`;
     }).join("");
     const top = rows[0];
-    const ans = rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : !S.logged30 ? "Nothing logged yet." : `No symptoms on the ${plural(S.logged30, "day")} you logged.`;
-    const aria = `Symptoms, ${D.learning ? "so far" : `last ${nOf(D)} days`}. ${S.logged30 ? `${S.withSym30} of ${plural(S.logged30, "logged day")} with symptoms.` : "Nothing logged yet."}${S.usualText ? ` Your usual: ${lower1(S.usualText)}.` : ""} ${ans} ${rows.map((row) => `${row.name}: ${plural(row.days, "day")}, ${most(row)}`).join(". ")}.`;
+    /* in the app (x.live) the head carries no pill (Nov 7), so the usual, or the day Florin learns it, is said here; a
+       flagged today is left out of every count, and the card says so (D.flagLine), as its timing card does */
+    const ansUsual = !x.live ? "" : S.usualText ? ` Your usual: ${lower1(S.usualText)}.` : D.learning ? ` Florin learns your usual by day ${D.learning.of}.` : "";
+    const flagSay = D.flagToday && D.flagLine ? ` ${D.flagLine}` : "";
+    const ans = `${rows.length ? `${top.name} came up most, on ${plural(top.days, "day")}.` : !S.logged30 ? "Nothing logged yet." : `No symptoms on the ${plural(S.logged30, "day")} you logged.`}${ansUsual}${flagSay}`;
+    const aria = `Symptoms, ${D.learning ? "so far" : `last ${nOf(D)} days`}. ${S.logged30 ? `${S.withSym30} of ${plural(S.logged30, "logged day")} with symptoms.` : "Nothing logged yet."}${S.usualText && !ansUsual ? ` Your usual: ${lower1(S.usualText)}.` : ""} ${ans} ${rows.map((row) => `${row.name}: ${plural(row.days, "day")}, ${most(row)}`).join(". ")}.`;
     const strengths = new Set(rows.flatMap((row) => row.cells.filter((c) => c != null && c !== false)));
     return card(x, "ou-symptoms", "Symptoms", `
       ${head(x, D.learning ? "Symptoms · so far" : `Symptoms · ${nOf(D)} days`, S.usualText ? chip(x, "usual", `Usual: ${S.usualText.toLowerCase()}`) : chip(x, "learn", "Learning"))}

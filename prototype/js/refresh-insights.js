@@ -789,7 +789,7 @@
   const sparseHead = (PR) => (PR.withMeal ? "Not enough ordinary days yet" : "No meals logged");
   const sparseLine = (PR) => (PR.withMeal
     ? `Meals are logged on ${PR.mealDays} of the ${PR.loggedDays === 1 ? "1 day" : `${PR.loggedDays} days`} you logged in the last ${PR.window} days${PR.roughShare >= 1 ? ", all of them days with symptoms" : PR.roughShare >= 0.6 ? ", most of them days with symptoms" : ""}, so there are few ordinary days to compare with. A ${L.FOOD_CHECK_DAYS}-day food check, ordinary days too, lets Florin look.`
-    : `Florin looks for what tends to follow a food once meals are logged on most days. When a day feels off, say what you ate, and Florin starts from there.`);
+    : `Florin looks for what tends to follow a food once meals are logged on most days. Log what you eat on most days, ordinary ones too, and Florin starts from there.`);
   const foodCheckBtn = (free) => free ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="pay" data-pay="food">${icon("lock")}Start a ${L.FOOD_CHECK_DAYS}-day food check</button>` : `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="toast" data-msg="${esc(`A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, ordinary days too, then shows what tends to follow. It comes with the next pass.`)}">Start a ${L.FOOD_CHECK_DAYS}-day food check</button>`;
 
   /* the patterns, and how each one reads */
@@ -919,6 +919,8 @@
     /* the summary: how many days sat within your usual, counted as Today's card counts them (L.tally), over a bar of the
        days read; not counted and nothing logged in words under it */
     let summary;
+    /* Ask about this, at the card's foot whether or not Florin is still learning (Will, Nov 7: inside every card) */
+    const ask = free ? `<button type="button" class="ap-ask-b" data-act="pay" data-pay="ask" data-k="days">${icon("lock")}Ask about this</button>` : `<button type="button" class="ap-ask-b" data-act="ask-about" data-k="days" data-range="${n}">${icon("chat")}Ask about this</button>`;
     if (learning) {
       const bms = F.reduce((s, f) => s + f.bms.length, 0), logged = live.filter((f) => f.logged).length;
       const symDays = F.filter((f) => f.nsym).length, meals = F.reduce((s, f) => s + f.meals.length, 0);
@@ -926,6 +928,7 @@
           <span class="ap-k">Your days<span class="sr">${esc(`, learning your usual, day ${L.learnDay(M)} of ${L.LEARN_DAYS}`)}</span></span>
           <p class="ap-sum-lede">Counts only for now. From day ${L.LEARN_DAYS}, each card shows your usual, and how each day sits next to it.</p>
           <ul class="ap-sum-counts"><li><b>${logged}</b>${logged === 1 ? "day" : "days"} logged</li><li><b>${bms}</b>${bms === 1 ? "BM" : "BMs"}</li><li><b>${symDays}</b>${symDays === 1 ? "day" : "days"} with symptoms</li><li><b>${meals}</b>${meals === 1 ? "meal" : "meals"}</li></ul>
+          <div class="ap-ic-f">${ask}</div>
         </section>`;
     } else {
       /* Your days: the count over the days read, what "within your usual" means in one line, the bar, then what the days
@@ -935,7 +938,6 @@
       const why = DW.rows.length ? `<div class="ap-yd-out"><p class="ap-yd-out-h">${esc(`What the ${plural(DW.sh.length, "day")} outside your usual had`)}</p>
           <ul class="ap-yd-why">${DW.rows.map(([t, k]) => `<li><span>${esc(t)}</span><i class="ap-yd-t" aria-hidden="true"><b style="--w:${n1((k / rowMax) * 100)}%"></b></i><strong>${esc(plural(k, "day"))}</strong></li>`).join("")}</ul>
           ${DW.more ? `<p class="ap-yd-more">A day can have more than one.</p>` : ""}</div>` : "";
-      const ask = free ? `<button type="button" class="ap-ask-b" data-act="pay" data-pay="ask" data-k="days">${icon("lock")}Ask about this</button>` : `<button type="button" class="ap-ask-b" data-act="ask-about" data-k="days" data-range="${n}">${icon("chat")}Ask about this</button>`;
       summary = `<section class="ap-card ap-sum ap-yd" data-a aria-labelledby="sum-${V.uid}">
           <span class="ap-k" id="sum-${V.uid}">Your days<span class="sr">${esc(`, ${RANGE_NAME[n].toLowerCase()}, ${spanOf(M, n)}`)}</span></span>
           <div class="ap-sum-top">${T7.known ? `<b class="ap-big">${T7.within}<small>of ${plural(T7.known, "day")}</small></b><p>within your usual</p>` : `<p>None of these days can be read against your usual.</p>`}</div>
@@ -1353,8 +1355,8 @@
     }
     if (k === "often") {
       const of = oftenOf(M, F), any = of.known.length > 0;
-      if (u) return { title: `How often · ${rn}`, facts: any ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `A usual count on ${of.inC} of ${plural(of.read.length, "day")}`] : [`Your usual: ${u.nLo} to ${u.nHi} a day`, "No BMs logged in this stretch"], qs: [of.busy > 0 ? "What made my busier days different?" : "How often do I go?", "Why does a gap not count as zero?", "How is my usual worked out?"] };
-      return { title: `How often · ${rn}`, facts: any ? [dayN, `${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`] : [dayN, "No BMs logged yet"], qs: any ? ["How is my usual worked out?", "Why does a gap not count as zero?", "What should I log, and when?"] : START };
+      if (u) return { title: `Frequency · ${rn}`, facts: any ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `A usual count on ${of.inC} of ${plural(of.read.length, "day")}`] : [`Your usual: ${u.nLo} to ${u.nHi} a day`, "No BMs logged in this stretch"], qs: [of.busy > 0 ? "What made my busier days different?" : "How often do I go?", "Why does a gap not count as zero?", "How is my usual worked out?"] };
+      return { title: `Frequency · ${rn}`, facts: any ? [dayN, `${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`] : [dayN, "No BMs logged yet"], qs: any ? ["How is my usual worked out?", "Why does a gap not count as zero?", "What should I log, and when?"] : START };
     }
     if (k === "form") {
       const fm = formOf(M, F, mode), any = fm.bms.length > 0;

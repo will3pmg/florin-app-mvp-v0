@@ -789,7 +789,7 @@
   const sparseHead = (PR) => (PR.withMeal ? "Not enough ordinary days yet" : "No meals logged");
   const sparseLine = (PR) => (PR.withMeal
     ? `Meals are logged on ${PR.mealDays} of the ${PR.loggedDays === 1 ? "1 day" : `${PR.loggedDays} days`} you logged in the last ${PR.window} days${PR.roughShare >= 1 ? ", all of them days with symptoms" : PR.roughShare >= 0.6 ? ", most of them days with symptoms" : ""}, so there are few ordinary days to compare with. A ${L.FOOD_CHECK_DAYS}-day food check, ordinary days too, lets Florin look.`
-    : `Florin looks for what tends to follow a food once meals are logged on most days. When a day feels off, say what you ate, and Florin starts from there.`);
+    : `Florin looks for what tends to follow a food once meals are logged on most days. Log what you eat on most days, ordinary ones too, and Florin starts from there.`);
   const foodCheckBtn = (free) => free ? `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="pay" data-pay="food">${icon("lock")}Start a ${L.FOOD_CHECK_DAYS}-day food check</button>` : `<button type="button" class="ap-btn ap-btn--2 ap-btn--c" data-act="toast" data-msg="${esc(`A food check asks for one line a day for ${L.FOOD_CHECK_DAYS} days, ordinary days too, then shows what tends to follow. It comes with the next pass.`)}">Start a ${L.FOOD_CHECK_DAYS}-day food check</button>`;
 
   /* the patterns, and how each one reads */
@@ -879,7 +879,7 @@
   const card = (V, o) => `<section class="ap-card ap-ic" data-a aria-labelledby="ic-${o.k}-${V.uid}">
       <button type="button" class="ap-ic-h" ${V.plan === "free" ? `data-act="pay" data-pay="${o.k}"` : `data-act="idetail"`} data-k="${o.k}"${V.plan === "free" ? ` aria-describedby="ic-${o.k}-${V.uid}-m"` : ""}>
         <span class="ap-ic-ic">${o.glyph || icon(o.icon)}</span>
-        <span class="ap-ic-t"><span class="ap-k">${esc(o.kicker)}</span><b id="ic-${o.k}-${V.uid}">${esc(o.head)}</b></span>
+        <span class="ap-ic-t"><span class="ap-k">${esc(o.kicker)}${o.sr ? `<span class="sr">, ${esc(o.sr)}</span>` : ""}</span><b id="ic-${o.k}-${V.uid}">${esc(o.head)}</b></span>
         ${V.plan === "free" ? `<span class="ap-lockp" id="ic-${o.k}-${V.uid}-m">${icon("lock")}<span class="sr">The detail comes with Florin membership</span></span>` : icon("chev", "ap-ic-go")}
       </button>
       ${o.sum ? `<p class="ap-ic-sum">${o.sum}</p>` : ""}
@@ -887,24 +887,27 @@
       ${o.chart ? `<div class="ap-ic-fig">${o.chart}</div>` : ""}
       ${o.legend ? `<div class="ap-legend">${o.legend}</div>` : ""}
       ${o.after || ""}
-      <div class="ap-ic-f">${o.foot || ""}<button type="button" class="ap-ask-b" ${V.plan === "free" ? `data-act="pay" data-pay="ask"` : `data-act="ask-about"`} data-k="${o.k}">${icon(V.plan === "free" ? "lock" : "chat")}Ask about this</button></div>
+      <div class="ap-ic-f">${o.foot || ""}<button type="button" class="ap-ask-b" ${V.plan === "free" ? `data-act="pay" data-pay="ask"` : `data-act="ask-about"${o.range ? ` data-range="${o.range}"` : ""}`} data-k="${o.k}">${icon(V.plan === "free" ? "lock" : "chat")}Ask about this</button></div>
     </section>`;
 
-  /* the days a stretch read, said the one way: "Of the 2 days outside your usual, 1 had a first BM outside your window
-     and 1 had a form outside your usual forms", then the days counted neither way (L.tally's left) and the days with
-     nothing logged */
-  const daysNote = (M, F, n, sparse) => {
-    const T7 = L.tally(F, n <= 7), sh = F.filter((f) => f.state === "shifted");
-    const why = [[sh.filter((f) => f.inWin === false).length, "a first BM outside your window"], [sh.filter((f) => f.formsIn === false).length, "a form outside your usual forms"], [sh.filter((f) => f.count === 0).length, "No BM"], [sh.filter((f) => f.inCount === false && f.count > 0).length, "more or fewer BMs than usual"]].filter(([k]) => k);
-    /* dinners are read only when meals are logged on most days: with meals on few days (L.patterns' sparse), the count
-       of late dinners is too low to mean anything, and the Patterns card on the same page says so (fix-viz, Oct 28) */
-    const afterLate = sparse ? 0 : sh.filter((f) => L.lateDinner(M, f.d - 1)).length;
+  /* Your days (Will, Nov 7: the trend and the days card read alike, "the data isn't clear"): the days outside your
+     usual, by what each one had, as a small breakdown rather than a paragraph. A day can have more than one, so the
+     rows can add up to more than the days; the card says so when they do. Then, in words, the days counted neither way
+     (L.tally's left) and the days with nothing logged */
+  const daysWhy = (M, F) => {
+    const u = M.usual, sh = F.filter((f) => f.state === "shifted");
+    const rows = [
+      ["First BM outside your window", sh.filter((f) => f.inWin === false).length],
+      ["More BMs than usual", sh.filter((f) => f.inCount === false && f.count > u.nHi).length],
+      ["Fewer BMs than usual", sh.filter((f) => f.inCount === false && f.count > 0 && f.count < u.nLo).length],
+      ["No BM", sh.filter((f) => f.count === 0).length],
+      ["A form outside your usual forms", sh.filter((f) => f.formsIn === false).length]
+    ].filter(([, k]) => k);
+    return { sh, rows, more: rows.reduce((a, [, k]) => a + k, 0) > sh.length };
+  };
+  const daysLeft = (F, n) => {
     const none = F.filter((f) => !f.logged && !f.pending);
-    return [
-      sh.length ? `Of the ${plural(sh.length, "day")} outside your usual, ${join(why.map(([k, t]) => `${k} had ${t}`))}.${afterLate ? ` ${afterLate} of the ${sh.length} came after a dinner past 8 PM.` : ""}` : "",
-      T7.left,
-      none.length ? (n <= 7 ? `Nothing logged on ${join(none.map((f) => L.dayName(f.d)))}.` : `${plural(none.length, "day")} with nothing logged.`) : ""
-    ].filter(Boolean).join(" ");
+    return [L.tally(F, n <= 7).left, none.length ? (n <= 7 ? `Nothing logged on ${join(none.map((f) => L.dayName(f.d)))}.` : `${plural(none.length, "day")} with nothing logged.`) : ""].filter(Boolean).join(" ");
   };
 
   RU.insights = (M, V, st) => {
@@ -916,29 +919,42 @@
     /* the summary: how many days sat within your usual, counted as Today's card counts them (L.tally), over a bar of the
        days read; not counted and nothing logged in words under it */
     let summary;
+    /* Ask about this, at the card's foot whether or not Florin is still learning (Will, Nov 7: inside every card) */
+    const ask = free ? `<button type="button" class="ap-ask-b" data-act="pay" data-pay="ask" data-k="days">${icon("lock")}Ask about this</button>` : `<button type="button" class="ap-ask-b" data-act="ask-about" data-k="days" data-range="${n}">${icon("chat")}Ask about this</button>`;
     if (learning) {
       const bms = F.reduce((s, f) => s + f.bms.length, 0), logged = live.filter((f) => f.logged).length;
       const symDays = F.filter((f) => f.nsym).length, meals = F.reduce((s, f) => s + f.meals.length, 0);
       summary = `<section class="ap-card ap-sum ap-sum--learn" data-a>
-          <span class="ap-k">Learning your usual · day ${L.learnDay(M)} of ${L.LEARN_DAYS}</span>
+          <span class="ap-k">Your days<span class="sr">${esc(`, learning your usual, day ${L.learnDay(M)} of ${L.LEARN_DAYS}`)}</span></span>
           <p class="ap-sum-lede">Counts only for now. From day ${L.LEARN_DAYS}, each card shows your usual, and how each day sits next to it.</p>
           <ul class="ap-sum-counts"><li><b>${logged}</b>${logged === 1 ? "day" : "days"} logged</li><li><b>${bms}</b>${bms === 1 ? "BM" : "BMs"}</li><li><b>${symDays}</b>${symDays === 1 ? "day" : "days"} with symptoms</li><li><b>${meals}</b>${meals === 1 ? "meal" : "meals"}</li></ul>
+          <div class="ap-ic-f">${ask}</div>
         </section>`;
     } else {
-      const T7 = L.tally(F, n <= 7), Wc = chartOf(M, V, "week", n, 318), note = daysNote(M, F, n, L.patterns(M, mode).sparse);
-      summary = `<section class="ap-card ap-sum" data-a>
-          <span class="ap-k">${esc(RANGE_NAME[n])} · ${esc(spanOf(M, n))}</span>
-          <div class="ap-sum-top">${T7.known ? `<b class="ap-big">${T7.within}<small>of ${plural(T7.known, "day")}</small></b><p>within your usual: a first BM in your window, a usual count and usual forms.</p>` : `<p>None of these days can be read against your usual.</p>`}</div>
+      /* Your days: the count over the days read, what "within your usual" means in one line, the bar, then what the days
+         outside it had, a row each. The range is the tabs' at the top: a screen reader hears it with the card's name */
+      const T7 = L.tally(F, n <= 7), Wc = chartOf(M, V, "week", n, 318), DW = daysWhy(M, F), left = daysLeft(F, n);
+      const rowMax = Math.max(1, DW.sh.length);
+      const why = DW.rows.length ? `<div class="ap-yd-out"><p class="ap-yd-out-h">${esc(`What the ${plural(DW.sh.length, "day")} outside your usual had`)}</p>
+          <ul class="ap-yd-why">${DW.rows.map(([t, k]) => `<li><span>${esc(t)}</span><i class="ap-yd-t" aria-hidden="true"><b style="--w:${n1((k / rowMax) * 100)}%"></b></i><strong>${esc(plural(k, "day"))}</strong></li>`).join("")}</ul>
+          ${DW.more ? `<p class="ap-yd-more">A day can have more than one.</p>` : ""}</div>` : "";
+      summary = `<section class="ap-card ap-sum ap-yd" data-a aria-labelledby="sum-${V.uid}">
+          <span class="ap-k" id="sum-${V.uid}">Your days<span class="sr">${esc(`, ${RANGE_NAME[n].toLowerCase()}, ${spanOf(M, n)}`)}</span></span>
+          <div class="ap-sum-top">${T7.known ? `<b class="ap-big">${T7.within}<small>of ${plural(T7.known, "day")}</small></b><p>within your usual</p>` : `<p>None of these days can be read against your usual.</p>`}</div>
+          <p class="ap-yd-def">${esc("A day within your usual has all three: a first BM in your window, a usual count and your usual forms.")}</p>
           ${Wc.chart}${Wc.legend ? `<div class="ap-legend">${Wc.legend}</div>` : ""}
-          ${note ? `<p class="ap-sum-note">${esc(note)}</p>` : ""}
+          ${why}
+          ${left ? `<p class="ap-sum-note">${esc(left)}</p>` : ""}
+          <div class="ap-ic-f">${ask}</div>
         </section>`;
     }
 
     /* FloraScore: has it stayed in its usual range? A line on the band, then the part that moved it most this week */
     const SC = scoreOf(M, mode);
     const Sc = chartOf(M, V, "score", n, 318), mm = SC && SC.mv ? movedMost(SC.mv) : "";
+    const rw = RANGE_NAME[n].toLowerCase();
     const scoreCard = SC ? card(V, {
-      k: "score", glyph: glyph(18), kicker: "FloraScore · today",
+      k: "score", glyph: glyph(18), kicker: "FloraScore", sr: "today", range: n,
       head: SC.v == null ? "Not scored today" : `${SC.v}, ${lower1(SC.rel)}`,
       sum: `Your usual range is <b>${SC.su[0]} to ${SC.su[1]}</b>.${SC.mv ? ` ${esc(weekLine(SC.mv))}` : ""}${SC.flag ? ` ${esc(RU.FLAG_DAY)}` : ""}`,
       chart: Sc.chart, legend: Sc.legend,
@@ -952,7 +968,7 @@
     /* timing: did my first BM come in my usual window? */
     const tm = timingOf(M, F), Tc = chartOf(M, V, "timing", n, 318);
     const timing = card(V, {
-      k: "timing", icon: "clock", kicker: "Timing · first BM",
+      k: "timing", icon: "clock", kicker: "Timing", sr: `first BM, ${rw}`, range: n,
       head: u ? `Usually ${winText(u)}` : "Learning your usual window",
       sum: u ? (tm.read.length ? `First BM in your window on <b>${tm.inW} of ${plural(tm.read.length, "day")}</b>${tm.later.length || tm.earlier.length ? `: ${join([tm.later.length ? `${tm.later.length} later` : "", tm.earlier.length ? `${tm.earlier.length} earlier` : ""].filter(Boolean))}` : ""}.` : tm.mornings.length ? esc(RU.FLAG_DAY) : "No first BM logged in this stretch.")
         : tm.mornings.length ? `First BM logged on <b>${plural(tm.mornings.length, "day")}</b> so far, ${esc(timesText(tm))}.` : "No BMs logged yet.",
@@ -962,7 +978,7 @@
     /* how often: did I go my usual number of times? */
     const of = oftenOf(M, F), Oc = chartOf(M, V, "often", n, 318);
     const often = card(V, {
-      k: "often", icon: "bars", kicker: "How often",
+      k: "often", icon: "bars", kicker: "Frequency", sr: `how often, ${rw}`, range: n,
       head: u ? `Usually ${u.nLo} to ${u.nHi} a day` : "Learning your usual count",
       sum: of.known.length ? (u ? (of.read.length ? `<b>${of.inC} of ${plural(of.read.length, "day")}</b> with a usual count${of.busy || of.fewer ? `: ${join([of.busy ? `${of.busy} with more` : "", of.fewer ? `${of.fewer} with fewer` : ""].filter(Boolean))}` : ""}.` : esc(RU.FLAG_DAY)) : `<b>${plural(of.total, "BM")}</b> over ${plural(of.known.length, "day")}.`) : u ? "No BMs logged in this stretch." : "No BMs logged yet.",
       chart: Oc.chart, legend: Oc.legend
@@ -971,7 +987,7 @@
     /* form: were my BMs my usual forms? */
     const fm = formOf(M, F, mode), Fc = chartOf(M, V, "form", n, 318), fs = formsSaid(fm);
     const form = card(V, {
-      k: "form", glyph: RU.glyph(4, "ap-ic-gl"), kicker: "Form",
+      k: "form", glyph: RU.glyph(4, "ap-ic-gl"), kicker: "Form", sr: rw, range: n,
       head: u ? `Usually ${L.usualFormsText(M, mode)}` : "Learning your usual forms",
       sum: fm.bms.length ? (u ? `<b>${fm.inF} of ${plural(fm.bms.length - fm.unsure, "BM")}</b> in your usual forms${fm.out.length ? `: ${join([fm.firmer ? `${fm.firmer} firmer` : "", fm.looser ? `${fm.looser} looser` : ""].filter(Boolean))}` : ""}${fm.unsure ? `, and ${fm.unsure} that could be either` : ""}.` : `<b>${plural(fm.bms.length, "BM")}</b> so far${/^\d/.test(fs) ? ": " : ", "}${esc(fs)}.`) : u ? "No BMs logged in this stretch." : "No BMs logged yet.",
       chart: Fc.chart, legend: Fc.legend,
@@ -985,7 +1001,7 @@
     const cw30 = free && u ? cameWith(M, L.span(M, 30, mode), mode) : null;
     const symTease = cw30 && cw30.shown.length ? `<div class="ap-tease ap-sym-tease"><div class="ap-tease-in" aria-hidden="true"><p class="ap-k">What came with them · last 30 days</p>${cameRows(cw30.shown.slice(0, 1))}</div><button type="button" class="ap-btn ap-btn--2 ap-btn--c ap-tease-b" data-act="pay" data-pay="sym">${icon("lock")}See what came with them</button></div>` : "";
     const symptoms = card(V, {
-      k: "sym", icon: "sym", kicker: "Symptoms",
+      k: "sym", icon: "sym", kicker: "Symptoms", sr: rw, range: n,
       head: symHead(sy),
       sum: `${esc(sv.text)}${sy.flag ? ` ${esc(RU.FLAG_DAY)}` : ""}`,
       chart: Yc.chart, legend: Yc.legend,
@@ -1001,7 +1017,7 @@
     const ckBody = K.b ? `<ul class="ap-ic-ck">${L.CHECKIN.map((q, i) => `<li><span class="ap-ic-ck-m"><span class="ap-k">${esc(q.label)}</span><b>${esc(q.opts[K.latest.answers[i]])}</b></span>${chip(K.cmp[i].text, K.cmp[i].k === "same" ? "usual" : "shift")}</li>`).join("")}</ul>`
       : `<p class="ap-ic-note">${K.done.length ? `${plural(K.done.length, "check-in")} so far. After three, each week is compared with them.` : "Your first three check-ins become the starting point for every week after."}</p>`;
     const checkin = !ckOn ? "" : card(V, {
-      k: "ck", icon: "ck", kicker: K.b ? `Weekly check-in · ${K.cur ? "this week" : `week of ${short(K.latest.ws)}`}` : "Weekly check-in",
+      k: "ck", icon: "ck", kicker: "Check-in", sr: K.b ? `weekly, ${K.cur ? "this week" : `week of ${short(K.latest.ws)}`}` : "weekly",
       head: K.b ? ckHead(K) : ckDue ? (K.done.length ? "This week's check-in is due tonight" : "Your first check-in is due tonight") : "Your first check-in is saved",
       sum: K.b ? `Each answer next to your first three weeks, ${esc(RU.spanText(K.done[0].ws, K.done[2].ws + 6))}.${ckDue ? " This week's is due tonight." : ""}` : "",
       body: ckBody,
@@ -1017,16 +1033,16 @@
     const quietTxt = PR.quiet.length ? `Checked, nothing stands out yet: ${joinMore(PR.quiet.map((f) => lower1(foodName(f)[0])), 4)}.` : "";
     const waitTxt = PR.waiting.length ? `Needs more logs: ${joinMore(PR.waiting.map((f) => `${lower1(foodName(f)[0])} (${PR.counts[f]} of 5)`), 3)}.` : "";
     const patterns = free && PR.found.length ? card(V, {
-      k: "pat", icon: "pat", kicker: `Possible patterns · ${L.PATTERN_DAYS} days`,
+      k: "pat", icon: "pat", kicker: "Patterns", sr: `possible patterns, last ${L.PATTERN_DAYS} days`,
       head: `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"} found`,
       sum: "Florin membership shows which foods and dinner times tend to come before a change, and how often.",
       body: `<div class="ap-tease"><ul class="ap-ipats ap-tease-in" aria-hidden="true">${PR.found.map((p) => `<li><span class="ap-ipat"><span class="ap-pat-ic">${icon(p.kind === "late" ? "moon" : "meal")}</span><span class="ap-ipat-m"><b>${esc(patTitle(p))}</b><em>${esc(p.tier.label)}</em></span></span></li>`).join("")}</ul><button type="button" class="ap-btn ap-btn--2 ap-btn--c ap-tease-b" data-act="pay" data-pay="pat">${icon("lock")}See your patterns</button></div><p class="ap-ic-note">Patterns show what tends to happen together. They don't prove cause.</p>`
     }) : card(V, {
-      k: "pat", icon: "pat", kicker: learning ? "Possible patterns" : `Possible patterns · ${L.PATTERN_DAYS} days`,
+      k: "pat", icon: "pat", kicker: "Patterns", sr: learning ? "possible patterns" : `possible patterns, last ${L.PATTERN_DAYS} days`, range: L.PATTERN_DAYS,
       head: PR.found.length ? `${WORDS[PR.found.length] || PR.found.length} possible ${PR.found.length === 1 ? "pattern" : "patterns"}` : learning ? "Not enough logs yet" : PR.sparse ? sparseHead(PR) : "Nothing stands out yet",
       sum: PR.found.length ? "" : learning ? "Florin starts checking a food once you've logged it 5 times." : PR.sparse ? esc(sparseLine(PR)) : "",
       foot: !learning && PR.sparse && PR.withMeal ? foodCheckBtn(free) : "",
-      body: `${patRows ? `<ul class="ap-ipats">${patRows}</ul>` : ""}${quietTxt || waitTxt ? `<p class="ap-ic-note">${esc([quietTxt, waitTxt].filter(Boolean).join(" "))}</p>` : ""}<p class="ap-ic-note">Patterns show what tends to happen together. They don't prove cause.</p>`
+      body: `${patRows ? `<ul class="ap-ipats">${patRows}</ul>` : ""}${quietTxt || waitTxt ? `<p class="ap-ic-note">${esc([quietTxt, waitTxt].filter(Boolean).join(" "))}</p>` : ""}<p class="ap-ic-note">${learning ? "" : `From your last ${L.PATTERN_DAYS} days of logs, whichever range is picked. `}Patterns show what tends to happen together. They don't prove cause.</p>`
     });
 
     return `<div class="ap-scr ap-ins">
@@ -1339,8 +1355,8 @@
     }
     if (k === "often") {
       const of = oftenOf(M, F), any = of.known.length > 0;
-      if (u) return { title: `How often · ${rn}`, facts: any ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `A usual count on ${of.inC} of ${plural(of.read.length, "day")}`] : [`Your usual: ${u.nLo} to ${u.nHi} a day`, "No BMs logged in this stretch"], qs: [of.busy > 0 ? "What made my busier days different?" : "How often do I go?", "Why does a gap not count as zero?", "How is my usual worked out?"] };
-      return { title: `How often · ${rn}`, facts: any ? [dayN, `${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`] : [dayN, "No BMs logged yet"], qs: any ? ["How is my usual worked out?", "Why does a gap not count as zero?", "What should I log, and when?"] : START };
+      if (u) return { title: `Frequency · ${rn}`, facts: any ? [`Your usual: ${u.nLo} to ${u.nHi} a day`, `${of.avg != null ? of.avg.toFixed(1) : 0} a day on average`, `A usual count on ${of.inC} of ${plural(of.read.length, "day")}`] : [`Your usual: ${u.nLo} to ${u.nHi} a day`, "No BMs logged in this stretch"], qs: [of.busy > 0 ? "What made my busier days different?" : "How often do I go?", "Why does a gap not count as zero?", "How is my usual worked out?"] };
+      return { title: `Frequency · ${rn}`, facts: any ? [dayN, `${plural(of.total, "BM")} over ${plural(of.known.length, "day")}`] : [dayN, "No BMs logged yet"], qs: any ? ["How is my usual worked out?", "Why does a gap not count as zero?", "What should I log, and when?"] : START };
     }
     if (k === "form") {
       const fm = formOf(M, F, mode), any = fm.bms.length > 0;

@@ -203,15 +203,16 @@
      a check-in is from) stays in words a screen reader hears. The library page draws the looks' own heads ---------- */
   const EYEBROW = { score: "FloraScore", parts: "Score parts", trend: "Trend", week: "This week", month: "Your days", timing: "Timing", often: "Frequency", form: "Form", symptoms: "Symptoms", checkin: "Check-in", pattern: "Patterns" };
   const RANGED = ["trend", "month", "timing", "often", "form", "symptoms"];
-  const META = ".ou-date, .rg-k--date, .jr-meta, .bt-k--m, .bt-k--hm";
+  const META = ".ou-date, .rg-k--date, .jr-meta, .bt-k--m, .bt-k--hm, .ez-side";
   function plainHead(r, k, words) {
     const h = r.querySelector("h2"), name = EYEBROW[k];
     if (!h || !name) return;
     const row = h.parentElement, said = [];
     if (row && row !== r) {
       row.querySelectorAll(`:scope > :is(${META})`).forEach((m) => { if (m.textContent.trim()) said.push(m.textContent.trim()); m.remove(); });
-      /* Timing's usual window is under the dial already: the pill beside the name goes */
-      if (k === "timing") row.querySelectorAll(":scope > :is(.rg-chip--usual, .ou-chip.is-usual)").forEach((m) => m.remove());
+      /* no pill beside the name, on any card (Nov 7): Timing's usual window is under the dial, Form's usual forms are
+         said under its Your usual row, Symptoms' usual and Learning in its answer (look-oura.js, x.live) */
+      row.querySelectorAll(":scope > :is(.ou-chip, .rg-chip, .bt-chip)").forEach((m) => m.remove());
     }
     /* a date range labelled on a tile further in (Bento's "Sep 12 to Oct 11") goes too: the range is the tabs' */
     r.querySelectorAll(META).forEach((m) => { if (/^[A-Z][a-z]{2} \d{1,2} to [A-Z][a-z]{2} \d{1,2}$/.test(m.textContent.trim())) m.remove(); });
@@ -296,11 +297,11 @@
     week: ["days", 7, "Each day this week"],
     month: ["days", 30, "Each day this month"],
     timing: ["timing", 30, "Timing in detail"],
-    often: ["often", 30, "How often in detail"],
+    often: ["often", 30, "Frequency in detail"],
     form: ["form", 30, "Form in detail"],
     symptoms: ["sym", 30, "Symptoms in detail"],
-    checkin: ["ck", 30, "Check-ins in detail"],
-    pattern: ["pat", 30, "Possible patterns in detail"]
+    checkin: ["ck", 30, "Check-in in detail"],
+    pattern: ["pat", 30, "Patterns in detail"]
   };
   const PAY_FROM = { score: "score", parts: "score", trend: "score", pattern: "pat", checkin: "ck" };
   /* while Florin is learning, the score's detail is how FloraScore works, so the link says that; the pattern card
@@ -323,13 +324,14 @@
       : `<button type="button" class="ap-ask-b rlk-ask" data-act="ask-about" data-k="${ak}" data-range="${DETAIL[k][1]}">${ic("chat")}Ask about this</button>`;
   };
   /* Ask about this and the detail link sit inside the card, at its foot (Will, Nov 7: "I like the 'ask about this'
-     inside rather than below a card"), and the card's head is its name alone (plainHead). Easy read, the Easy version's
-     own look, keeps its large links under the card */
+     inside rather than below a card"), and the card's head is its name alone (plainHead). Easy read too: its links
+     keep their larger size, inside the card. The Easy version (V.easy) keeps its own plain words for its heads
+     ("How often", "Weekly check-in"), so only the foot moves in there */
   const rangeWords = (D) => (D && D.learning ? "so far" : `last ${(D && D.range) || 30} days`);
   const cardBlock = (look, k, D, M, V) => {
-    const foot = `<div class="rlk-foot">${askBtn(k, V)}${goLink(k, V, D)}</div>`, inside = look.id !== "easy";
-    const html = card(look, k, D, M, V, inside ? { plain: k, range: rangeWords(D), foot: foot.replace('class="rlk-foot"', 'class="rlk-foot rlk-foot--in"') } : {});
-    return html ? `<section class="rlk-card" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}">${wrap(look, html)}${inside ? "" : foot}</section>` : "";
+    const foot = `<div class="rlk-foot rlk-foot--in">${askBtn(k, V)}${goLink(k, V, D)}</div>`;
+    const html = card(look, k, D, M, V, V.easy ? { foot } : { plain: k, range: rangeWords(D), foot });
+    return html ? `<section class="rlk-card" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}">${wrap(look, html)}</section>` : "";
   };
 
   /* ---------- Insights in a look ----------
@@ -564,16 +566,18 @@
      the Score first visual"), in Florin charts and Will's picks. It reads D.score, so a flagged today keeps its number
      and says "Not read against your usual today", no score today gives L.NO_SCORE's reason, and while Florin learns
      the usual it is Day 5 of 14 on a ring of 14 steps. Under it the core's card is the Trend (Nov 7: Will found the
-     trend and the days card hard to tell apart, "20 of 27; 12 of 27?"): named Trend, its line says it is FloraScore
-     that sat in its usual range, and Your days under it is about the logs ---------- */
+     trend and the days card hard to tell apart, "20 of 27; 12 of 27?"): named Trend, its line is FloraScore's average
+     over the stretch read against its usual range, never an "N of M days" count, so "N of M days within your usual"
+     belongs to Your days alone; the day split stays on FloraScore's page ---------- */
   const inRangeText = (M, mode, n) => {
     const su = L.scoreUsual(M, mode);
     if (!su) return "";
-    /* a flagged today keeps its score and is in no count, as on FloraScore's page */
-    const fl = !!M.usual && RU.flagToday(M);
-    const sc = L.scoreSeries(M, n, mode).filter((s) => s.value != null && !(fl && s.d === L.TODAY));
-    const k = sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length;
-    return sc.length ? `In its usual range on ${k} of ${plural(sc.length, "day")}` : "Not scored in this stretch";
+    /* a flagged today keeps its score (L.score reads raw), so it is in the average, as FloraScore's page and the week's
+       average (L.scoreMoved) have it: one stretch, one number. It is in no count of days against the usual */
+    const sc = L.scoreSeries(M, n, mode).filter((s) => s.value != null);
+    if (!sc.length) return "Not scored in this stretch";
+    const avg = Math.round(sc.reduce((a, s) => a + s.value, 0) / sc.length), rel = RU.scoreRel(avg, su);
+    return `FloraScore averaged ${avg}, ${rel.charAt(0).toLowerCase()}${rel.slice(1)}`;
   };
   function heroInto(root, M, V, n) {
     const rings = lookById("rings");
@@ -586,7 +590,20 @@
     sec.before(blk);
     const kk = h.querySelector(".ap-ic-t .ap-k"), b = h.querySelector(".ap-ic-t b"), said = inRangeText(M, V.form, n);
     if (kk) kk.innerHTML = `Trend<span class="sr">${esc(`, FloraScore, ${RANGE_NAME[n].toLowerCase()}`)}</span>`;
-    if (b && said) b.textContent = `FloraScore ${said.charAt(0).toLowerCase()}${said.slice(1)}`;
+    if (b && said) b.textContent = said;
+  }
+
+  /* ---------- Your days' way into its detail page (this module's days page), at its foot after Ask, as a look's card
+     draws its own (goLink): every other Insights card opens its detail, so this one does too (Will, Nov 7: "when you
+     click in you get more"). On Free it opens the paywall. The foot takes rlk-foot, so each Ask style lays it out as
+     it lays out a look's foot. Nothing while Florin is learning: the days page needs a usual ---------- */
+  function daysGoInto(root, M, V, n) {
+    const f = M.usual ? root.querySelector(":scope > .ap-yd .ap-ic-f") : null;
+    if (!f || f.querySelector(".rlk-go")) return;
+    const go = V.plan === "free" ? `<button type="button" class="ap-link rlk-go" data-act="pay" data-pay="days">${ic("lock")}<span>Your days in detail</span><span class="sr">, with Florin membership</span></button>`
+      : `<button type="button" class="ap-link rlk-go" data-act="idetail" data-k="days" data-range="${n}" data-rlk>Your days in detail${ic("chev")}</button>`;
+    f.classList.add("rlk-foot");
+    f.insertAdjacentHTML("beforeend", go);
   }
 
   /* ---------- the picked cards into the core's Insights, in place of the core's own, at the tabs' range ---------- */
@@ -614,6 +631,7 @@
     const n = rangeOf(M, V, st), rid = ++RID;
     heroInto(root, M, V, n);
     if (picksOn(V)) { picksInto(root, M, V, n); root.dataset.rpk = "picks"; }
+    daysGoInto(root, M, V, n);
     root.classList.add("rpk-ins");
     root.dataset.rlkR = String(rid);
     schedule(rid);
@@ -881,7 +899,7 @@
     const list = picksAt(M, P);
     return {
       t: "Insights, in Will's picks",
-      lede: `Each card in the style Will picked on the data modules page, in Insights' own order: FloraScore in the Rings card's big ring; ${picksSaid(list).join("; ")}; the rest in Florin charts, as every detail page is. The range is picked once, at the top, and every card draws it.${!M.usual ? " While Florin learns the usual, the picked cards show the days so far." : ""}${P.plan === "free" ? " On Free that's 7 days, and the details and Ask open membership." : ""}`
+      lede: `Each card in the style Will picked on the data modules page, in Insights' own order: FloraScore in the Rings card's big ring; ${picksSaid(list).join("; ")}; the rest in Florin charts, as every detail page is. The range is picked once, at the top, and every card draws it.${!M.usual ? " While Florin learns the usual, the picked cards show the days so far." : ""}${P.plan === "free" ? ` On Free that's ${RU.FREE_DAYS} days, and the details and Ask open membership.` : ""}`
     };
   };
   EXT.notes["look-insights"] = (M, P) => {

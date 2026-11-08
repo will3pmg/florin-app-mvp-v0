@@ -600,6 +600,20 @@
 .ap-sum-counts li { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; line-height: 1.25; color: var(--ap-ink3); }
 .ap-sum-counts b { font-size: 24px; font-weight: 300; letter-spacing: -.02em; line-height: 1; color: var(--ap-ink); }
 .ap-sum--learn .ap-learn-bar { margin-top: 4px; }
+/* Your days (Nov 7): what "within your usual" means in one line, then what the days outside it had, a row each: the
+   words, a short Gold bar of those days out of the days outside, and the count */
+.ap-yd .ap-sum-top { margin-bottom: 4px; }
+.ap-yd-def { font-size: 13px; line-height: 1.4; color: var(--ap-ink2); margin-bottom: 12px; }
+.ap-yd-out { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ap-line); }
+.ap-rx .ap-yd-out-h { font-size: 13px; line-height: 1.35; font-weight: 500; color: var(--ap-ink); margin-bottom: 8px; }
+.ap-yd-why { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ap-yd-why li { display: grid; grid-template-columns: minmax(0, 1fr) 64px 52px; gap: 8px; align-items: center; }
+.ap-yd-why span { font-size: 13px; line-height: 1.3; color: var(--ap-ink2); }
+.ap-yd-t { display: block; height: 8px; border-radius: 2px; background: var(--ap-card2); overflow: hidden; }
+.ap-yd-t b { display: block; height: 100%; width: var(--w); border-radius: 2px; background: var(--ap-shift); box-shadow: inset 0 0 0 1px var(--ap-chart-edge); }
+.ap-yd-why strong { font-family: var(--mono); font-size: 11px; font-weight: 400; text-align: right; white-space: nowrap; color: var(--ap-ink); }
+.ap-rx .ap-yd-more { margin-top: 8px; font-size: 12px; color: var(--ap-ink3); }
+.ap-yd .ap-ic-f { margin-top: 12px; }
 
 /* one card per question: the usual in words, a count, the chart, then Ask about this */
 .ap-ic { display: flex; flex-direction: column; gap: 12px; }
@@ -1039,7 +1053,7 @@
 .ap-askc--lock > b { font-size: 20px; }
 .ap-askq { display: inline-flex; align-items: center; gap: 8px; }
 .ap-pay { display: flex; flex-direction: column; gap: 16px; }
-.ap-pay-hero { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
+.ap-pay-hero { position: relative; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-radius: 24px; background: var(--ap-hero); color: var(--ap-hero-ink); overflow: hidden; }
 .ap-pay-hero h2 { font-size: 26px; font-weight: 300; line-height: 1.12; letter-spacing: -.02em; text-wrap: balance; max-width: 15ch; }
 .ap-pay-hero p { font-family: var(--serif); font-size: 15px; line-height: 1.45; color: color-mix(in srgb, var(--ap-hero-ink) 86%, transparent); }
 .ap-pay-ring { position: absolute; right: 16px; top: 16px; color: var(--ray); opacity: .9; }

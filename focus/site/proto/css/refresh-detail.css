@@ -1,0 +1,95 @@
+/* Florin app refresh: the detail pages' added blocks (prototype/js/refresh-detail.js). Oura's detail pattern in the
+   Florin app's own design and tokens, so it follows the phone's theme: a state word under the big reading, a Lora
+   headline, contributors on tracks with the usual as the band, a chart with a scrubber and the day picked under it.
+   Plum (Ray on dark) is your usual, Gold a shift with its edge, Teal context, Ink 3 not counted. Spacing on the
+   DESIGN.md scale; tracks and pills round full, marks at 2px. Every rule sits under .dt- classes. */
+
+/* ---------- the headline ---------- */
+.dt-sw { font-family: var(--mono); font-size: 10.5px; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.dt-sw.is-usual { color: var(--ap-usual-ink); }
+.dt-sw.is-shift { color: var(--ap-shift-ink); }
+.dt-sw.is-quiet { color: var(--ap-ink2); }
+.dt-sw.is-info { color: var(--ap-info-ink); }
+.dt-sw.is-read { color: var(--ap-ink); }
+.dt-sw--hero { display: block; margin-top: 4px; font-size: 11.5px; font-weight: 700; white-space: normal; }
+.ap-dhero .dt-hl, .dt-hl { font-family: var(--serif); font-size: 18px; line-height: 1.35; color: var(--ap-ink); text-wrap: pretty; margin: 0; }
+.ap-dhero--sc .dt-hl { font-size: 16px; color: var(--ap-ink2); margin-top: -4px; }
+
+/* ---------- contributors ---------- */
+.dt-con { gap: 4px; }
+.dt-con .dt-con-sub { font-family: var(--sans); font-size: 12.5px; line-height: 1.4; color: var(--ap-ink2); }
+.dt-con-l { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; background: var(--ap-card); border-radius: 24px; box-shadow: var(--ap-shadow); overflow: hidden; }
+.dt-con-l > li + li { border-top: 1px solid var(--ap-line); }
+.dt-cr { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 16px; text-align: left; color: var(--ap-ink); background: none; border: 0; font: inherit; }
+.dt-cr--go { cursor: pointer; }
+.dt-cr--go:hover { background: color-mix(in srgb, var(--ap-ink) 3%, transparent); }
+.dt-cr--go:focus-visible { outline: 2px solid var(--ap-ink); outline-offset: -4px; border-radius: 24px; }
+.dt-cr-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.dt-cr-l { font-size: 14px; font-weight: 500; line-height: 1.3; }
+.dt-cr-h .dt-sw { margin-left: auto; text-align: right; white-space: normal; }
+.dt-cr-go { width: 16px; height: 16px; flex: none; align-self: center; stroke: var(--ap-ink3); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dt-cr-m { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; }
+.dt-cr-v { font-size: 28px; line-height: 1; font-weight: 300; letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dt-cr-v small { font-size: 13px; letter-spacing: 0; margin-left: 4px; color: var(--ap-ink3); font-weight: 400; }
+.dt-cr-f { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 10.5px; line-height: 1.35; color: var(--ap-ink2); }
+.dt-cr-f span:last-child { text-align: right; }
+
+/* a track: the usual as the band, a marker for now; a split track counts days (Plum within, Gold outside) */
+.dt-trk { position: relative; display: block; height: 8px; border-radius: 999px; background: var(--ap-card2); }
+.dt-trk--none { background: none; }
+.dt-band { position: absolute; top: -4px; bottom: -4px; border-radius: 999px; background: var(--ap-band); box-shadow: inset 0 0 0 1px var(--ap-band-edge); }
+.dt-mk { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--ap-chart); box-shadow: 0 0 0 2px var(--ap-card); }
+.dt-mk.is-shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge), 0 0 0 2px var(--ap-card); }
+.dt-trk--seg { display: flex; gap: 4px; overflow: hidden; background: var(--ap-card2); }
+.dt-seg { display: block; width: var(--w); height: 100%; border-radius: 2px; }
+.dt-seg:first-child { border-radius: 999px 2px 2px 999px; }
+.dt-seg.is-usual { background: var(--ap-signal); }
+.dt-seg.is-read { background: var(--ap-chart); }
+.dt-seg.is-shift { background: var(--ap-shift); box-shadow: inset 0 0 0 1.5px var(--ap-chart-edge); }
+.dt-seg.is-maybe { background: var(--ap-ink3); }
+.dt-seg.is-ctx { background: var(--ap-teal); }
+.dt-seg.is-rest { background: none; }
+
+/* ---------- the chart with its scrubber ---------- */
+.dt-plot { position: relative; }
+.dt-plot .dt-svg { display: block; width: 100%; height: auto; }
+.dt-hair { position: absolute; width: 0; border-left: 1.5px solid color-mix(in srgb, var(--ap-ink) 55%, transparent); transform: translateX(-.75px); pointer-events: none; transition: left .12s var(--ap-ease); }
+.dt-hair-dot { position: absolute; left: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px; transform: translateX(-.75px); border-radius: 50%; background: var(--ap-chart); box-shadow: 0 0 0 2px var(--ap-card); }
+.dt-hair-dot[hidden] { display: none; }
+.dt-scrub { position: absolute; inset: 0; cursor: ew-resize; touch-action: pan-y; border-radius: 8px; }
+.dt-scrub:focus-visible { outline: 2px solid var(--ap-ink); outline-offset: 4px; }
+.dt-fig .ap-legend { padding: 0 4px; }
+.dt-pick { display: flex; flex-direction: column; gap: 4px; margin: 12px 0 0; padding: 12px 16px; border-radius: 16px; background: var(--ap-card2); min-height: 80px; }
+.dt-pick-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.dt-pick-h b { font-size: 15px; font-weight: 500; line-height: 1.3; }
+.dt-pick-h .dt-sw { white-space: normal; text-align: right; }
+.dt-pick-v { font-size: 14px; line-height: 1.4; color: var(--ap-ink); margin: 0; }
+.dt-pick-w { display: flex; gap: 8px; align-items: baseline; font-size: 13px; line-height: 1.4; color: var(--ap-ink2); margin: 0; }
+.dt-pick-w em { flex: none; font-family: var(--mono); font-style: normal; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ap-ink3); }
+.dt-pick-l { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+/* the answer takes the room its words need, and the state word wraps in the last column, so they never overlap */
+.dt-pick-l li { display: grid; grid-template-columns: 80px auto minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 13px; line-height: 1.35; }
+.dt-pick-l .dt-sw { white-space: normal; text-align: right; }
+.dt-pick-l li span:first-child { color: var(--ap-ink2); }
+.dt-pick-l li b { font-weight: 500; }
+.dt-hint { margin: 8px 4px 0; font-size: 11px; line-height: 1.3; color: var(--ap-ink3); }
+
+/* a word that covers two steps, as a span over both: the reading colour within, Gold outside, Ink 3 could be either */
+.ap-rx .dt-span { fill: var(--ap-chart); }
+.ap-rx .dt-span.is-shift { fill: var(--ap-shift); stroke: var(--ap-chart-edge); stroke-width: 1.5; }
+.ap-rx .dt-span.is-maybe, .ap-rx .dt-span.is-learn { fill: var(--ap-ink3); }
+.ap-rx .dt-span.is-flag { fill: var(--ap-card); stroke: var(--ap-teal); stroke-width: 2; }
+/* the check-in's answers: Plum within the first weeks' range (Ray on dark), Gold with its edge when it moved */
+.ap-rx .dt-ckd { fill: var(--ap-signal); }
+.ap-rx .dt-ckd.is-shift { fill: var(--ap-shift); stroke: var(--ap-chart-edge); stroke-width: 1.5; }
+
+/* ---------- what moved ---------- */
+.dt-moved p { font-size: 15px; color: var(--ap-ink); }
+
+@media (prefers-reduced-motion: reduce) { .dt-hair { transition: none; } }
+/* the line a share has to reach (Possible patterns: meals on 6 in 10 of the days logged) */
+.dt-trk--seg { overflow: visible; }
+.dt-gate { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--ap-ink); }
+/* a form named in words, where a number would sit */
+.dt-cr-w { font-size: 22px; letter-spacing: -.02em; white-space: normal; }
+.dt-mk.is-maybe { background: var(--ap-ink3); }

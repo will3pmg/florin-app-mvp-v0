@@ -616,8 +616,10 @@ The cards, top to bottom:
   grade. Today's hero keeps its range bar.
 - **Trend** (Florin charts): Will, Nov 7: "i'm having a hard time understanding the two cards (20 of 27; 12 of 27?)
   the data isn't clear." Two "N of 27" headlines that meant different things sat one over the other. The first is now
-  named Trend and its line names FloraScore ("FloraScore in its usual range on 16 of 29 days", the count FloraScore's
-  page gives), over the line on its usual band and what moved it this week.
+  named Trend and its line is FloraScore's average over the range against its usual range ("FloraScore averaged 80, in
+  its usual range"), over the line on its usual band and what moved it this week. It never leads with an "N of M days"
+  count: that shape is Your days' alone, and the day split (in its usual range on 16, above on 10, below on 2) is on
+  FloraScore's page. A flagged today keeps its number in the average, as FloraScore's page and the week's average do.
 - **Your days** (Florin charts): about the logs. The one big number ("18 of 29 days within your usual"), what that means
   in one line ("A day within your usual has all three: a first BM in your window, a usual count and your usual
   forms."), the bar of the days read, then what the days outside it had, a row each with a short Gold bar and its count

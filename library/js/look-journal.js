@@ -617,7 +617,7 @@
     const alarm = `<aside class="jr-alarm"><span class="jr-alarm-k">When to see a clinician</span><p>Blood, black or tar-like stools, a fever, vomiting that won’t stop, weight loss, or waking at night to go: talk to your primary care clinician first.</p></aside>`;
     /* nothing logged yet (day 1): no figure of empty rows and zero days, only the answer */
     if (!Sy.logged30) return shell("symptoms", { kicker: "Symptoms", meta: lastN(days), lede, foot: alarm });
-    const anyRow = { name: "Any symptom", days: Sy.withSym30, cells: days.map((f) => (!f.logged ? null : f.sym.length ? Math.max(...f.sym.map((s) => s.strength || 0)) : false)), any: true };
+    const anyRow = { name: "Any symptom", days: Sy.withSym30, cells: days.map((f) => (!f.logged || f.flag ? null : f.sym.length ? Math.max(...f.sym.map((s) => s.strength || 0)) : false)), any: true };
     const R = [anyRow, ...rows];
     /* the strip sits between the names and the day counts, each given the room it needs */
     const left = 92, right = Math.ceil(Math.max(...R.map((x) => mw(plural(x.days, "day")))) + 10), slot = (W - left - right) / n, bx = (i) => left + slot * i + slot / 2;

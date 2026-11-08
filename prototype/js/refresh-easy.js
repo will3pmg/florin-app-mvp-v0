@@ -691,7 +691,7 @@
   });
   EXT.notes["ez-today"] = (M, P) => ({
     t: "Easy version: Today",
-    lede: `One screen, top to bottom: a greeting, one plain sentence about today, FloraScore as a big number, three big buttons to log from, ${P.checkin ? "the check-in when it's due, " : ""}${ezSet().fewer ? "a button to Your weeks (Easy view's Fewer cards on Today is on)" : "the last 7 days as day circles, with a line for each day that wasn't within the usual"}, and today's logs. The text is larger, and every button has its words on it.`,
+    lede: `One screen, top to bottom: a greeting, one plain sentence about today, FloraScore as a big number, three big buttons to log from, ${P.checkin ? "the check-in when it's due, " : ""}${ezSet().fewer ? "a button to Your weeks (with Fewer cards on Today)" : "the last 7 days as day circles, with a line for each day that wasn't within the usual"}, and today's logs. The text is larger, and every button has its words on it.`,
     open: ["Are \"Something feels off\" and \"What I ate\" the right words for symptoms and meals?"]
   });
   EXT.notes["ez-bm"] = () => ({
@@ -751,7 +751,7 @@
       </figure>`;
     const onLine = easy ? "On. Today, logging and Your weeks are drawn bigger and simpler." : "Off. The settings below wait until it's on.";
     const sizes = [["large", "Large"], ["larger", "Larger"]];
-    const sizeLine = ez.size === "larger" ? "Larger makes the words and buttons on every screen a step bigger again, so less fits on each screen." : "Large is the Easy version's own size: about a third bigger than standard.";
+    const sizeLine = ez.size === "larger" ? "Larger makes what's on each screen a step bigger again, so less fits on it. The tab bar and the Save buttons keep their size." : "Large is the Easy version's own size: about a third bigger than standard.";
     return `<div class="ap-ck ezv" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
       <div class="ap-ck-h"><button type="button" class="ap-lg-x" data-act="ezv-back" aria-label="Back to Profile">${ic("back")}</button><div class="ap-fsh-t"><h2 id="${id}-h" tabindex="-1" data-autofocus>Easy view</h2></div><span class="ap-fsh-sp"></span></div>
       <div class="ap-ck-b ezv-b" data-scroll>

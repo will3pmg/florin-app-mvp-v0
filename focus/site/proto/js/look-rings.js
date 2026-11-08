@@ -43,6 +43,9 @@
   const andList = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
   /* the dates a card covers: a one-day stretch (day 1) is that day, never "Oct 11 to Oct 11" */
   const spanOf = (days) => (days.length === 1 ? (days[0].today ? "Today" : days[0].label) : `${days[0].label} to ${days[days.length - 1].label}`);
+  /* the stretch a range card reads (D.range, looks-data.js): 30 days on the library page, 7, 30 or 90 in the app's
+     Insights, whose range tabs the card follows (Will's picks' Timing, Nov 7) */
+  const nOf = (D) => D.range || 30;
   /* a direct label that must stay inside the plot: anchor by side, then keep it in [pad, W - pad] */
   const placeLabel = (x0, sinA, text, W, pad = 2) => {
     const w = text.length * 6.6;
@@ -368,7 +371,9 @@
   }
 
   /* ---------- timing: a morning dial. 240° open at the bottom, your usual window as a band on the outer track,
-     each first BM a dot stacked outward in its 15-minute slot ---------- */
+     each first BM a dot stacked outward in its 15-minute slot. It reads the stretch D.days[30] holds (D.range: 30 on
+     the library page, 7, 30 or 90 in the app's Insights, the days so far while learning). A flagged today keeps its dot,
+     a Teal ring read against nothing, in none of the counts ---------- */
   function timing(D, x) {
     const esc = x.esc, days = D.days[30], tm = D.timing, u = tm.usual;
     const pts = days.map((d, i) => ({ d, i })).filter((p) => p.d.first != null);
@@ -406,7 +411,7 @@
     const later = off.filter((p) => p.d.first > u[1]).length, earlier = off.length - later;
     const dots = placed.map((p, j) => {
       const [px, py] = pol(cx, cy, rOf(p.k), fb(p.b));
-      return `<circle class="rg-mdot${p.d.inWin === false ? " is-shift" : ""}${p === newest ? " is-new" : ""}" style="--i:${j}" cx="${px}" cy="${py}" r="${r1(R)}"><title>${esc(`${p.d.dow} ${p.d.label}: ${p.d.firstText}${p.d.inWin === false ? ", outside your usual window" : p.d.inWin ? ", in your usual window" : ""}`)}</title></circle>`;
+      return `<circle class="rg-mdot${p.d.flag ? " is-flag" : p.d.inWin === false ? " is-shift" : ""}${p === newest ? " is-new" : ""}" style="--i:${j}" cx="${px}" cy="${py}" r="${r1(R)}"><title>${esc(`${p.d.dow} ${p.d.label}: ${p.d.firstText}${p.d.flag ? ", noted for a clinician" : p.d.inWin === false ? ", outside your usual window" : p.d.inWin ? ", in your usual window" : ""}`)}</title></circle>`;
     }).join("");
     /* the newest morning is the outermost dot of its slot: ring it, and label it on the bezel at its own angle */
     const nf = fb(newest.b), [nx, ny] = pol(cx, cy, rOf(newest.k), nf);
@@ -436,7 +441,7 @@
     const nWhere = newest.d.inWin === true ? "inside your window" : newest.d.inWin === false ? (newest.d.first > u[1] ? "later than your window" : "earlier than your window") : "";
     const ans = `${newest.d.today ? "Today" : `Latest, ${newest.d.label},`} ${newest.d.firstText}${nWhere ? `, ${nWhere}` : ""}.${newest.d.flag && D.flagLine ? ` ${D.flagLine}` : ""}`;
     const spread = [later && `${later} came later than your window`, earlier && `${earlier} earlier`].filter(Boolean);
-    const aria = u ? `First BM each morning, last 30 days. ${tm.inWin30} of ${tm.mornings30} mornings in your usual window, ${tm.usualText}.${spread.length ? ` ${cap(andList(spread))}.` : ""} ${ans}`
+    const aria = u ? `First BM each morning, last ${nOf(D)} days. ${tm.inWin30} of ${tm.mornings30} mornings in your usual window, ${tm.usualText}.${spread.length ? ` ${cap(andList(spread))}.` : ""} ${ans}`
       : `First BM each morning so far. ${plural(pts.length, "morning")} logged. ${ans} Florin learns your usual window by day ${D.learning ? D.learning.of : ""}.`;
     const svg = `<svg class="rg-svg rg-chart rg-mdial" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
       <path class="rg-utrk" d="${arc(cx, cy, rb, -HALF, HALF)}"/>
@@ -444,7 +449,7 @@
       <path class="rg-axis" d="${arc(cx, cy, rAx, -HALF, HALF)}"/>
       ${hourMarks}
       ${dots}
-      <circle class="rg-now-halo${newest.d.inWin === false ? " is-shift" : ""}" cx="${nx}" cy="${ny}" r="${r1(R + 3.5)}"/>
+      <circle class="rg-now-halo${newest.d.flag ? " is-flag" : newest.d.inWin === false ? " is-shift" : ""}" cx="${nx}" cy="${ny}" r="${r1(R + 3.5)}"/>
       <text class="rg-now-lbl" x="${lx}" y="${r1(lyRaw + 4)}" text-anchor="${la}">${esc(nText)}</text>
       <text class="rg-mdial-n" x="${cx}" y="${r1(cy - 6)}" text-anchor="middle"><tspan data-count="${u ? tm.inWin30 : pts.length}" data-dur="1000">${u ? tm.inWin30 : pts.length}</tspan></text>
       <text class="rg-mdial-s" x="${cx}" y="${r1(cy + 14)}" text-anchor="middle">${esc(u ? `of ${tm.mornings30} mornings` : pts.length === 1 ? "morning logged" : "mornings logged")}</text>
@@ -454,8 +459,8 @@
     return card(x, "rg-timing", "Timing of the first BM", `
       ${head(x, "Timing · first BM", u ? chip(x, "usual", tm.usualText) : chip(x, "neutral", "Learning"))}
       ${svg}
-      <p class="rg-ans">${esc(ans)}</p>
-      ${legend(x, [["read", u ? "One morning, in your window" : "One morning"], (later || earlier) && ["shift", "Outside your window"], [newest.d.inWin === false ? "now-shift" : "now", newest.d.today ? "Today" : "Latest"]])}`);
+      <p class="rg-ans">${esc(`${ans}${!u && x.live && D.learning ? ` Florin learns your usual window by day ${D.learning.of}.` : ""}`)}</p>
+      ${legend(x, [["read", u ? "One morning, in your window" : "One morning"], (later || earlier) && ["shift", "Outside your window"], newest.d.flag ? ["flag", "Today, noted for a clinician"] : [newest.d.inWin === false ? "now-shift" : "now", newest.d.today ? "Today" : "Latest"]])}`);
   }
 
   /* ---------- how often: a 30-day ring. One segment per day, clockwise to today at 12 o'clock; lanes 1, 2 and 3+

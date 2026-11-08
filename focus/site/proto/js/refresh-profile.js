@@ -253,14 +253,14 @@
           <p class="ap-f-h">${esc(V.mealUI === "detailed" ? "Breakfast, lunch, dinner or other, each with its time." : "One box for the day, said or typed.")}</p></div>
       </div>`);
     /* display */
-    const display = sec(`${id}-ds`, "Display", `<ol class="ap-card ap-ea">${sw("pf-easy", !!V.easy, "Larger text and simpler screens", "Bigger type and buttons, fewer cards. Your logs stay the same.")}</ol>
+    const display = sec(`${id}-ds`, "Display", `<ol class="ap-card ap-ea">${EXT.overlays["ez-set"] ? row("pf-easy", null, "Larger text and simpler screens", `${V.easy ? "On" : "Off"}. Bigger type and buttons, fewer cards. Your logs stay the same.`) : sw("pf-easy", !!V.easy, "Larger text and simpler screens", "Bigger type and buttons, fewer cards. Your logs stay the same.")}</ol>
       <div class="ap-card pf-log"><div class="ap-f"><span class="ap-f-l" id="${id}-th">Theme</span>${chips("pf-set", [["theme:light", "Light"], ["theme:dark", "Dark"]], (v) => v === `theme:${theme}`, { single: true, labelledby: `${id}-th` })}</div></div>`);
     /* connected apps: none connected; which ones is a decision for this version */
     const apps = sec(`${id}-ap`, "Connected apps", `<ol class="ap-card ap-ea">${APPS.map(([k, n]) => row("pf-app", k, n, "Not connected")).join("")}</ol>`);
     /* membership */
     const member = sec(`${id}-mb`, "Membership", free
       ? `<ol class="ap-card ap-ea"><li><button type="button" class="ap-ea-row" data-act="pay" data-pay=""><span class="ap-ea-m"><b>Free plan</b><em>${esc(ck ? "Logging, Today, FloraScore, the weekly check-in and 7 days of Insights. See what membership adds." : "Logging, Today, FloraScore and 7 days of Insights. See what membership adds.")}</em></span>${ic("chev", "ap-tl-go")}</button></li></ol>`
-      : `<ul class="ap-card ap-ea"><li class="pf-row"><span class="ap-ea-m"><b>Florin membership</b><em>Why your FloraScore moved, 30 and 90 days, patterns, Ask Florin and the clinician report.</em></span>${chip("Active")}</li></ul>`);
+      : `<ul class="ap-card ap-ea"><li class="pf-row"><span class="ap-ea-m"><b>Florin membership</b><em>Why your FloraScore moved, 30 and 90 days, patterns, Ask Florin, the clinician report and a photo of a meal.</em></span>${chip("Active")}</li></ul>`);
     /* your data */
     const c = tally(M);
     const data = sec(`${id}-dt`, "Your data", `<ol class="ap-card ap-ea">
@@ -689,7 +689,8 @@
       /* the theme doesn't redraw the phone; the chips here follow it */
       if (k === "theme") redrawPf(api);
     }),
-    "pf-easy": act((b, api) => { api.set("easy", !api.V().easy); redrawPf(api); }),
+    /* the row opens Easy view's own page (refresh-easy.js), whose first control is the switch; without it, the switch */
+    "pf-easy": act((b, api) => { if (EXT.overlays["ez-set"]) { api.push("ez-set", {}); return; } api.set("easy", !api.V().easy); redrawPf(api); }),
     /* the same switch on onboarding's Welcome and Ready steps: the step redraws in the version picked */
     "onb-easy": act((b, api) => { api.set("easy", !api.V().easy); const ov = onbTop(api); if (ov) api.rerender(ov); api.say(api.V().easy ? "Larger text and simpler screens on." : "Larger text and simpler screens off."); }),
     "pf-research": act((b, api) => {
@@ -853,7 +854,7 @@
     }),
     profile: () => ({
       t: "Profile",
-      lede: "From the avatar on Today: the person's usual, their set-up answers (each reopens its step), reminders, logging, display, connected apps, membership, their data, and help. Logging and display let a person set three of the decisions for themselves: how a BM is logged, the meal sheet, and larger text.",
+      lede: "From the avatar on Today: the person's usual, their set-up answers (each reopens its step), reminders, logging, display, connected apps, membership, their data, and help. Logging and display let a person set three of the decisions for themselves: how a BM is logged, the meal sheet, and larger text, which has its own page.",
       open: ["Should a person pick how they log, or should Florin pick one way for everyone?"]
     }),
     "profile-day1": () => ({

@@ -154,6 +154,10 @@
 .lk-bento .bt-zero.is-s { stroke: var(--bt-s); }
 .lk-bento .bt-gapmark { stroke: var(--ap-ink3); stroke-width: 1.5; stroke-linecap: round; }
 .lk-bento .bt-todaycol { fill: none; stroke: var(--ap-ink); stroke-width: 1.5; }
+/* a flagged today: noted for a clinician, read against nothing, hollow and Teal-edged like its legend's swatch */
+.lk-bento .bt-todaycol.is-flag { stroke: var(--ap-teal); }
+.lk-bento .bt-unit.is-flag { fill: var(--ap-card2); stroke: var(--ap-teal); stroke-width: 1.5; }
+.lk-bento .bt-zero.is-flag { stroke: var(--ap-teal); }
 /* form */
 .lk-bento .bt-fbar { fill: var(--ap-chart); }
 .lk-bento .bt-fbar.is-s { fill: var(--bt-s); }

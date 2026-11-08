@@ -19,9 +19,14 @@
 
   /* o.mode is the consistency option (A, B or C). o.M, when given, is a model the caller already holds (the prototype
      passes its own live one, with whatever has been logged on the phone), so the looks draw it instead of a fresh
-     seeded build; the persona, the logs scenario and the meal logs then come from that model */
+     seeded build; the persona, the logs scenario and the meal logs then come from that model.
+     o.range (Nov 7) is the stretch a card reads: 30 by default, as the library page draws every look, or 7 or 90 for the
+     app's Insights, whose range tabs every card follows (Will: "the date range is toggled at very top"). Every "30"
+     below is that stretch: days[30], tally[30], symLine[30] and each ...30 count read the last o.range days, and D.range
+     says how many, so a look can name it. days[7] and days[90] stay the week and the 90 days */
   function build(persona, o = {}) {
     const mode = o.mode || "C";
+    const RN = [7, 30, 90].includes(+o.range) ? +o.range : 30;
     const M = o.M || L.build(persona, o.data || "est", { meals: o.meals || "all" });
     const u = M.usual;
     /* today, with a flag or an alarm feature logged, is noted for a clinician and never read against the usual, as
@@ -77,7 +82,7 @@
       series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value, flag: flagS && s.d === L.TODAY }))])),
       /* today's four parts, each against its own usual range (partsUsual). Empty when today has no FloraScore */
       partsToday: !sNow || sNow.value == null || !sNow.parts ? [] : L.SCORE_PARTS.map(([k, l, d]) => ({ key: k, label: l, desc: d, weight: L.SCORE_W[k], value: Math.round(sNow.parts[k]), usual: partsUsual ? partsUsual[k] : null })),
-      how: "FloraScore blends the days among your last 3 that have a BM, or No BM, logged, and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.",
+      how: `FloraScore blends the days among your last ${L.BLEND} that have a BM, or No BM, logged, and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.`,
       /* the no-score rule in the model's one wording (L.NO_SCORE), for a look to say when today has no FloraScore */
       why: `${cap(L.NO_SCORE)}.`,
       learning: null
@@ -96,7 +101,7 @@
     };
 
     /* the cards' numbers */
-    const R7 = L.span(M, 7, mode), R30 = L.span(M, 30, mode);
+    const R7 = L.span(M, 7, mode), R30 = L.span(M, RN, mode);
     const F7 = R7.map(day), F30 = R30.map(day), F90 = span(90);
     /* a stretch's days, counted the one way every screen counts them (L.tally, in refresh-ui.js): the days within your
        usual out of the days read either way; a day that could be either, or one logged with nothing about BMs, is
@@ -119,9 +124,12 @@
     const firmer = formUsual ? outside.filter((x) => Math.max(...x.steps) < formUsual[0]).length : null;
     const looser = formUsual ? outside.filter((x) => Math.min(...x.steps) > formUsual[1]).length : null;
     const either = formUsual ? allForms.filter((x) => x.within === null).length : null;
+    /* the days read: a flagged today is noted for a clinician, in no count against the usual, so its symptoms are in no
+       row's days and its cell is null (flagAt says where it sits, so a strip can draw its Teal ring there) */
+    const symF = F30.filter((f) => !f.flag);
     const symNames = {};
-    F30.forEach((f) => f.sym.forEach((s) => (symNames[s.name] = (symNames[s.name] || 0) + 1)));
-    const symRows = Object.entries(symNames).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, days: n, cells: F30.map((f) => (!f.logged ? null : (f.sym.find((s) => s.name === name) || { strength: false }).strength)) }));
+    symF.forEach((f) => f.sym.forEach((s) => (symNames[s.name] = (symNames[s.name] || 0) + 1)));
+    const symRows = Object.entries(symNames).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, days: n, cells: F30.map((f) => (!f.logged || f.flag ? null : (f.sym.find((s) => s.name === name) || { strength: false }).strength)) }));
     const symUsual = u && u.sym ? (u.sym.every == null ? "Rarely" : u.sym.every <= 1 ? "Most days" : `About 1 day in ${u.sym.every}`) : null;
 
     /* the weekly check-in. This week's, once saved, is the latest week, the way Insights reads it (refresh-insights.js
@@ -172,16 +180,16 @@
     };
 
     return {
-      persona: { id: M.P.id, name: M.P.name }, mode, modeName: L.MODES[mode], data: o.M ? M.mode : o.data || "est", meals: M.meals,
+      persona: { id: M.P.id, name: M.P.name }, mode, range: RN, modeName: L.MODES[mode], data: o.M ? M.mode : o.data || "est", meals: M.meals,
       today: todayLine,
       todayLabel: (() => { const t = L.dateOf(L.TODAY); return `${Ut.DOWL[t.getDay()]}, ${Ut.MONL[t.getMonth()]} ${t.getDate()}`; })(),
       highlight: RU && RU.highlight ? RU.highlight(M) : "",
       learning: !u ? { day: L.learnDay(M), of: L.LEARN_DAYS } : null,
       score,
       days: { 7: F7, 30: F30, 90: F90 },
-      tally: { 7: L.tally(R7, true), 30: L.tally(R30, false) },
+      tally: { 7: L.tally(R7, true), 30: L.tally(R30, RN <= 7) },
       /* the one symptom sentence (L.symLine): the week names its days, the month counts them. "" with none logged */
-      symLine: { 7: L.symLine ? L.symLine(R7) : "", 30: L.symLine ? L.symLine(R30, { named: false }) : "" },
+      symLine: { 7: L.symLine ? L.symLine(R7) : "", 30: L.symLine ? (RN <= 7 ? L.symLine(R30) : L.symLine(R30, { named: false })) : "" },
       /* the sentence for today with a flag (RU.FLAG_DAY), or "" */
       flagLine: flagT && RU.FLAG_DAY ? RU.FLAG_DAY : "",
       /* flagToday: today has a log noted for a clinician, so the mornings and days counted against the usual leave it out
@@ -191,7 +199,7 @@
       often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null && !f.flag); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })(), inCount30: u ? F30.filter((f) => f.inCount).length : null, read30: F30.filter((f) => f.count != null && !f.flag).length },
       /* usualWeeks: the days the usual forms were learned from, so a look can show what share of BMs they held */
       form: { scale, usual: formUsual, usualText: u ? L.usualFormsText(M, mode) : null, bins, spans, firmer, looser, either, within30: allForms.filter((x) => x.within === true).length, total30: allForms.length, usualWeeks: u ? BASE.slice() : null },
-      symptoms: { usualText: symUsual, rows: symRows, withSym30: F30.filter((f) => f.sym.length).length, logged30: F30.filter((f) => f.logged).length },
+      symptoms: { usualText: symUsual, rows: symRows, withSym30: symF.filter((f) => f.sym.length).length, logged30: symF.filter((f) => f.logged).length, flagAt: F30.findIndex((f) => f.flag) },
       checkin, patterns,
       disclaimer: "Florin Health shows patterns in your own data. It doesn't diagnose, treat or prevent any condition."
     };

@@ -406,3 +406,33 @@
   .ap-ez-big, .ap-ez-opt, .ap-ez-word { transition: none; }
   .ap-ez-big:active, .ap-ez-opt:active, .ap-ez-word:active { transform: none; }
 }
+
+/* ---------- Easy view's settings (Will, Nov 7) ----------
+   The two settings stamped on the root while Easy is on (refresh-easy.js, sync): Larger draws every screen's content
+   a step bigger (the tab bar keeps its size), and less motion stops the motion as the phone's own setting does */
+.ap.ap--easy[data-ez-size="larger"] :is(.ap-layer > .ap-scr, .ap-fsh-b, .ap-ck-b, .ap-psh) { zoom: 1.12; }
+.ap.ap--easy[data-ez-motion="less"] *, .ap.ap--easy[data-ez-motion="less"] *::before, .ap.ap--easy[data-ez-motion="less"] *::after { animation: none !important; transition: none !important; }
+.ap.ap--easy[data-ez-motion="less"] :is(.ap-ez-big, .ap-ez-opt, .ap-ez-word):active { transform: none; }
+/* the page itself is drawn in both versions (it holds the switch), so these few rules aren't under .ap--easy: the
+   preview is a card at the standard size, and at the Easy version's own size when it's on */
+.ezv-pv { margin: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; border-radius: 24px; background: var(--ap-card); box-shadow: var(--ap-shadow); }
+.ezv-pv-say { font-size: 17px; line-height: 1.35; color: var(--ap-ink); text-wrap: pretty; }
+.ezv-pv-score { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ezv-pv-score span { font-size: 13px; font-weight: 500; color: var(--ap-ink2); }
+.ezv-pv-score b { font-size: 40px; line-height: 1; font-weight: 300; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ap-ink); }
+.ezv-pv-score em { font-style: normal; font-size: 14px; color: var(--ap-ink2); }
+.ezv-pv-btn { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 16px 8px 8px; border-radius: 16px; box-shadow: inset 0 0 0 1.5px var(--ap-line); color: var(--ap-ink); }
+.ezv-pv-btn b { font-size: 15px; font-weight: 500; }
+.ezv-pv-ic { --gl-bg: color-mix(in srgb, var(--forest) 10%, var(--ray)); flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: color-mix(in srgb, var(--forest) 10%, var(--ray)); color: var(--forest); }
+.ezv-pv-ic .ap-gl { width: 22px; height: 22px; }
+.ap--easy .ezv-pv { gap: 16px; padding: 20px; }
+.ap--easy .ezv-pv-say { font-size: 28px; line-height: 1.3; }
+.ap--easy .ezv-pv-score span { font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ezv-pv-score b { font-size: 64px; font-weight: 400; }
+.ap--easy .ezv-pv-score em { font-size: 18px; color: var(--ap-ink); }
+.ap--easy .ezv-pv-btn { min-height: 72px; gap: 16px; padding: 12px 20px 12px 12px; border-radius: 24px; }
+.ap--easy .ezv-pv-btn b { font-size: 22px; }
+.ap--easy .ezv-pv-ic { width: 48px; height: 48px; border-radius: 16px; }
+.ap--easy .ezv-pv-ic .ap-gl { width: 32px; height: 32px; }
+.ezv .ap-chs .ap-ch { flex: 1 1 0; justify-content: center; }
+.ezv-sec .pf-sw[aria-disabled="true"] { cursor: default; }

@@ -152,16 +152,18 @@ though he called it "the oura"; Oura's card is one table edit away), Form, Sympt
 Frequency in Bento's stacked chart, the rest in Florin charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
 toggled at very top, not labeled within"), and every card draws it, picked or not: a look's card reads the range
 through `FLD.build(..., { range })` (7, 30 or 90; 7 on Free; the days so far while learning), whose `D.range` the
-range cards say. Every Insights card, in Florin charts, Will's picks and each library look the phone draws (Easy read
-excepted), is named in a word or two (FloraScore, Trend, Your days, Timing, Frequency, Form, Symptoms, Check-in,
-Patterns; a look's head is rewritten by refresh-looks's `plainHead`, which drops its date and Timing's pill; Oura's
+range cards say. Every Insights card, in Florin charts, Will's picks and each library look the phone draws (the Easy
+version keeps its own plain heads), is named in a word or two (FloraScore, Trend, Your days, Timing, Frequency, Form,
+Symptoms, Check-in, Patterns; a look's head is rewritten by refresh-looks's `plainHead`, which drops its range, its date
+and every pill beside it, what a pill said being said in the card's body; Oura's
 trend keeps its 30 and 90 switch in the Oura style, which has no range tabs), with the range said only in words a screen reader hears, and carries Ask about this and its detail link inside
 the card at its foot (`.rlk-foot--in`; on a Bento board in its full-width first tile, else a tile of its own). Today,
 the detail pages and the theme don't change (an Oura card takes the phone's theme). In every view but a library look
 and Easy, Insights' FloraScore card is the Rings look's hero, "the large green big circle" (Will, Nov 5), drawn by its
-own renderer; under it the core's card is the Trend ("FloraScore in its usual range on 16 of 29 days", with what moved
-it), then Your days (the logs: the count within your usual, what that means in one line, and what the days outside it
-had, a row each). FloraScore stays out of Gold there. Each demo person has one day with 5 BMs (refresh-data.js, `BUSY`,
+own renderer; under it the core's card is the Trend (FloraScore's average over the range against its usual range,
+"FloraScore averaged 80, in its usual range", with what moved it; never an "N of M days" count, which is Your days'
+alone, Nov 7), then Your days (the logs: the count within your usual, what that means in one line, and what the days
+outside it had, a row each, with Ask about this and Your days in detail at its foot). FloraScore stays out of Gold there. Each demo person has one day with 5 BMs (refresh-data.js, `BUSY`,
 Sep 21), in the last 30 days and outside this week and last, so Frequency shows one; it is Gold, as every shift is.
 
 The prototype loads the library's looks (looks-data.js, look-*.js and their css, never library.js, which mounts the

@@ -47,6 +47,21 @@
   const winBetween = (u) => { const a = T(u.tLo), b = T(u.tHi); return `${/AM$/.test(a) && /AM$/.test(b) ? a.replace(/ AM$/, "") : a} and ${b}`; };
   const on = (V) => !!(V && V.easy);
   const api = () => EXT.api || null;
+  /* Easy view's own settings (Will, Nov 7: "Page for 'easy view' settings?"), kept with the profile in the phone's
+     state (S.pf.ez, as Profile keeps its answers in S.pf), so a redraw, another person or other logs keep them and
+     Reset clears them with the profile. Each one is honoured where its sentence on the page says:
+       size    "large" (the Easy version's own) or "larger" (every screen's content a step bigger: data-ez-size)
+       fewer   Today without the last 7 days, which stay one tap away in Your weeks
+       voice   What I ate starts listening as it opens (the quick meal sheet; the demo plays its sample)
+       motion  less motion: FL.reduced() answers yes and data-ez-motion stops the CSS motion, as the phone's own
+               reduced motion setting does (which always wins) */
+  const EZ_DEF = { size: "large", fewer: false, voice: false, motion: false };
+  const ezSet = (a = api()) => {
+    if (!a || !a.S) return Object.assign({}, EZ_DEF);
+    const P = a.S.pf || (a.S.pf = { ans: {} });
+    return P.ez || (P.ez = Object.assign({}, EZ_DEF));
+  };
+  const phoneLess = () => { try { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; } };
 
   /* the library's Easy read look, and the one data object every card draws from, built on the phone's live model */
   const look = () => (window.FLOOKS || []).find((k) => k && k.id === "easy") || null;
@@ -78,6 +93,10 @@
     if (!a || !a.root || !a.S) return;
     const root = a.root, easy = !!a.S.easy;
     root.classList.toggle("ap--easy", easy);
+    /* Easy view's settings, stamped only while Easy is on, so the standard version never sees them */
+    const ez = ezSet(a);
+    if (easy && ez.size === "larger") root.dataset.ezSize = "larger"; else delete root.dataset.ezSize;
+    if (easy && ez.motion) root.dataset.ezMotion = "less"; else delete root.dataset.ezMotion;
     /* plus gets its word (Add) while Easy is on; its own name comes back when it's off */
     const plus = root.querySelector(".ap-tb-plus");
     if (plus) {
@@ -221,6 +240,11 @@
       : bigBtn("tab", ic("bars"), "More about your weeks", `Your score, timing, form, symptoms${RU.ckOn(V) ? ", the check-in" : ""} and patterns`, { cls: "ap-ez-big--line", chev: true, attrs: ' data-tab="insights" data-range="30"' });
     return `<section class="ap-ez-sec" data-a aria-label="Your last 7 days">${wk ? box(wk, "ap-ez-lk") : ""}${more}</section>`;
   }
+  /* Fewer cards on Today (Easy view): the week card stays in Your weeks, one big button away, on Free too (Your weeks
+     on Free is this week's card and the check-in) */
+  const fewerPart = (M, V) => `<section class="ap-ez-sec" data-a aria-label="Your last 7 days">${V.plan === "free"
+    ? bigBtn("tab", ic("bars"), "Your last 7 days", "Each day against your usual", { cls: "ap-ez-big--line", chev: true, attrs: ' data-tab="insights"' })
+    : bigBtn("tab", ic("bars"), "Your weeks", `Your last 7 days, your score, timing, form, symptoms${RU.ckOn(V) ? ", the check-in" : ""} and patterns`, { cls: "ap-ez-big--line", chev: true, attrs: ' data-tab="insights" data-range="30"' })}</section>`;
 
   /* today's logs: the app's own rows (RU.entryRow), drawn big by the CSS */
   function entriesPart(M, V) {
@@ -243,7 +267,7 @@
         ${scorePart(D, M)}
         ${doPart()}
         ${checkinPart(M, V)}
-        ${weekPart(D, M, V)}
+        ${ezSet().fewer ? fewerPart(M, V) : weekPart(D, M, V)}
         ${entriesPart(M, V)}
         <p class="ap-fine">${esc(`${SCORE_NOTE} ${DISC}${symOn ? ` ${CLIN}` : ""}`)}</p>
       </div>`;
@@ -663,11 +687,11 @@
     ],
     rec: { v: true, short: "Easy, as a setting", text: "We recommend Easy as a setting anyone can turn on or off, \"Larger text and simpler screens\", not a separate version, with Standard as the default.", why: "One app underneath keeps the same logs, so a person can switch either way and lose nothing." },
     open: "Is offering it during set-up enough, or should Florin also offer it when the phone's text is set large?",
-    try: "Switch to Easy. With Easy on, Home and Data style don't apply, because Easy has its own Today and charts. Set-up offers it on its first and last steps, and it's in Profile, from the avatar on Today."
+    try: "Switch to Easy. With Easy on, Home and Data style don't apply, because Easy has its own Today and charts. Set-up offers it on its first and last steps, and it's in Profile, from the avatar on Today, on a page of its own with text size, fewer cards on Today, voice first and less motion."
   });
   EXT.notes["ez-today"] = (M, P) => ({
     t: "Easy version: Today",
-    lede: `One screen, top to bottom: a greeting, one plain sentence about today, FloraScore as a big number, three big buttons to log from, ${P.checkin ? "the check-in when it's due, " : ""}the last 7 days as day circles, with a line for each day that wasn't within the usual, and today's logs. The text is larger, and every button has its words on it.`,
+    lede: `One screen, top to bottom: a greeting, one plain sentence about today, FloraScore as a big number, three big buttons to log from, ${P.checkin ? "the check-in when it's due, " : ""}${ezSet().fewer ? "a button to Your weeks (with Fewer cards on Today)" : "the last 7 days as day circles, with a line for each day that wasn't within the usual"}, and today's logs. The text is larger, and every button has its words on it.`,
     open: ["Are \"Something feels off\" and \"What I ate\" the right words for symptoms and meals?"]
   });
   EXT.notes["ez-bm"] = () => ({
@@ -697,4 +721,96 @@
       lede: `The same ${num(L.SYMPTOMS.length)} symptoms and Something else as big chips, and how strong as three big buttons, all on one screen. The time is when it's logged.`
     };
   };
+  /* ====================================================================== */
+  /* EASY VIEW: ITS OWN SETTINGS PAGE (Will, Nov 7)                           */
+  /* ====================================================================== */
+  /* From Profile's Larger text and simpler screens row (the profile module opens "ez-set" when it's here). The first
+     control is the on/off itself, the Version decision through phone.set, so the left bar follows. Then only what the
+     prototype honours, each said in one plain sentence: text size, fewer cards on Today, voice first for What I ate,
+     less motion. A preview at the top is drawn at the settings picked (the page itself is drawn in Easy when it's on).
+     Left out, and why (claude/Florin decisions.md, Version): simpler screens on their own (it would make a third
+     version, standard screens at Easy's size, for every screen to be checked in), bigger buttons on their own (Easy's
+     are 56 to 64px already, and Larger makes them bigger with the words), numbers as words (Easy's cards already show
+     digits, and digits are quicker to read) */
+  {
+    const base = FL.reduced;
+    if (typeof base === "function") FL.reduced = () => { try { const a = api(); if (a && a.S && a.S.easy && ezSet(a).motion) return true; } catch (e) { /* the phone's own setting */ } return base(); };
+  }
+  function setPage(M, V) {
+    const a = api(), ez = ezSet(a), id = `ezv${V.uid}`, easy = !!V.easy, quick = V.mealUI !== "detailed", less = phoneLess();
+    const sw = (act, checked, b, em, o = {}) => `<li><button type="button" class="ap-ea-row pf-sw" role="switch" aria-checked="${checked}" data-act="${act}"${o.dis ? ' aria-disabled="true"' : ""}><span class="ap-ea-m"><b>${esc(b)}</b>${em ? `<em>${esc(em)}</em>` : ""}</span><span class="pf-sw-t" aria-hidden="true"></span></button></li>`;
+    const sec = (k, title, body) => `<section class="pf-sec ezv-sec" aria-labelledby="${id}-${k}"><div class="ap-card-h ap-card-h--pad"><h3 id="${id}-${k}">${esc(title)}</h3></div>${body}</section>`;
+    /* the preview: today's sentence, FloraScore and one big button, as Today draws them, never focusable */
+    const sc = (() => { try { return M.usual ? L.score(M, L.TODAY, V.form) : null; } catch (e) { return null; } })();
+    const big = !M.usual ? `Day ${L.learnDay(M)}` : sc && sc.value != null ? String(sc.value) : "";
+    const pv = `<figure class="ezv-pv" aria-hidden="true" inert>
+        <figcaption class="ap-k">Preview</figcaption>
+        <p class="ezv-pv-say">${esc(sentence(M, V.form))}</p>
+        <p class="ezv-pv-score"><span>FloraScore</span>${big ? `<b>${esc(big)}</b>` : `<em>No FloraScore today</em>`}</p>
+        <span class="ezv-pv-btn"><span class="ezv-pv-ic">${RU.glyph(4)}</span><b>I had a BM</b></span>
+      </figure>`;
+    const onLine = easy ? "On. Today, logging and Your weeks are drawn bigger and simpler." : "Off. The settings below wait until it's on.";
+    const sizes = [["large", "Large"], ["larger", "Larger"]];
+    const sizeLine = ez.size === "larger" ? "Larger makes what's on each screen a step bigger again, so less fits on it. The tab bar and the Save buttons keep their size." : "Large is the Easy version's own size: about a third bigger than standard.";
+    return `<div class="ap-ck ezv" role="dialog" aria-modal="true" aria-labelledby="${id}-h">
+      <div class="ap-ck-h"><button type="button" class="ap-lg-x" data-act="ezv-back" aria-label="Back to Profile">${ic("back")}</button><div class="ap-fsh-t"><h2 id="${id}-h" tabindex="-1" data-autofocus>Easy view</h2></div><span class="ap-fsh-sp"></span></div>
+      <div class="ap-ck-b ezv-b" data-scroll>
+        ${pv}
+        <ol class="ap-card ap-ea">${sw("ezv-on", easy, "Larger text and simpler screens", onLine)}</ol>
+        ${sec("sz", "Text size", `<div class="ap-card pf-log"><div class="ap-f"><div class="ap-chs" role="radiogroup" aria-labelledby="${id}-sz">${sizes.map(([v, l]) => `<button type="button" class="ap-ch${ez.size === v ? " is-on" : ""}" data-act="ezv-size" data-v="${v}" role="radio" aria-checked="${ez.size === v}">${ez.size === v ? ic("check") : ""}${esc(l)}</button>`).join("")}</div><p class="ap-f-h">${esc(sizeLine)}</p></div></div>`)}
+        ${sec("td", "Today", `<ol class="ap-card ap-ea">${sw("ezv-fewer", !!ez.fewer, "Fewer cards on Today", `Today keeps FloraScore, the buttons to log and today's logs. Your last 7 days move to ${V.plan === "free" ? "their own page" : "Your weeks"}, one tap away.`)}</ol>`)}
+        ${sec("lg", "Logging", `<ol class="ap-card ap-ea">${sw("ezv-voice", !!ez.voice, "Start listening when What I ate opens", quick ? "Say what you ate without tapping the microphone first." : "Works with the Quick meal sheet. Logging, in Profile, has One meal at a time picked.")}</ol>`)}
+        ${sec("mo", "Motion", `<ol class="ap-card ap-ea">${sw("ezv-motion", less || !!ez.motion, "Less motion", less ? "Your phone already asks for less motion, so Florin keeps it low either way." : "Screens appear without sliding, and numbers don't count up.", { dis: less })}</ol>`)}
+        <p class="ap-fine">Your logs stay the same whichever you pick.</p>
+      </div>
+    </div>`;
+  }
+  EXT.overlays["ez-set"] = { kind: "screen", render: (M, V) => { try { return setPage(M, V); } catch (e) { warn("Easy view's settings page", e); return ""; } }, key: () => "ez-set" };
+  const setTop = (a) => { const t = a.top(); return t && t.type === "ez-set" ? t : null; };
+  /* a setting changed: the root's stamps, Today under the page, and the page */
+  const redrawSet = (a) => { sync(a); a.renderTab(true); const t = setTop(a); if (t) a.rerender(t); };
+  const SET_ACTS = {
+    /* back lands on the row that opened the page, in view (Profile was redrawn if Easy was switched, so the row is new) */
+    "ezv-back"(b, a) {
+      a.pop();
+      const t = a.top(), row = t && t.type === "pf" ? t.el.querySelector('[data-act="pf-easy"]') : null;
+      if (!row) return;
+      row.focus({ preventScroll: true });
+      const sc = row.closest("[data-scroll]");
+      if (sc) { const r = row.getBoundingClientRect(), lr = sc.getBoundingClientRect(), k = lr.height / sc.clientHeight || 1; if (r.top < lr.top || r.bottom > lr.bottom) sc.scrollTop += ((r.top + r.bottom) / 2 - (lr.top + lr.bottom) / 2) / k; }
+    },
+    "ezv-on"(b, a) { a.set("easy", !a.V().easy); const t = setTop(a); if (t) a.rerender(t); a.say(a.V().easy ? "Larger text and simpler screens on." : "Larger text and simpler screens off."); },
+    "ezv-size"(b, a) { const ez = ezSet(a); if (ez.size === b.dataset.v) return; ez.size = b.dataset.v === "larger" ? "larger" : "large"; redrawSet(a); a.say(`Text size ${ez.size === "larger" ? "Larger" : "Large"}.`); },
+    "ezv-fewer"(b, a) { const ez = ezSet(a); ez.fewer = !ez.fewer; redrawSet(a); a.say(ez.fewer ? "Fewer cards on Today." : "Your last 7 days are back on Today."); },
+    "ezv-voice"(b, a) { const ez = ezSet(a); ez.voice = !ez.voice; redrawSet(a); a.say(ez.voice ? "What I ate starts listening as it opens." : "What I ate waits for the microphone."); },
+    "ezv-motion"(b, a) { if (phoneLess()) return; const ez = ezSet(a); ez.motion = !ez.motion; redrawSet(a); a.say(ez.motion ? "Less motion on." : "Less motion off."); }
+  };
+  Object.entries(SET_ACTS).forEach(([k, f]) => { EXT.acts[k] = (b, a, e) => { try { return f(b, a || api(), e); } catch (err) { warn(`the ${k} tap`, err); } }; });
+  /* voice first: with Easy on and the quick meal sheet, What I ate starts listening as it opens (an edit or a sheet
+     with words already on it waits) */
+  {
+    const prev = EXT.acts["open-meal"];
+    EXT.acts["open-meal"] = (b, a, e) => {
+      const r = prev ? prev(b, a, e) : a.core("open-meal", b, e);
+      try {
+        if (a && a.S && a.S.easy && ezSet(a).voice) {
+          const t = a.top();
+          if (t && t.type === "meal" && t.st && t.st.quick && !t.st.edit && !(t.st.text || "").trim() && t.st.voice !== "listening") a.act("mq-mic", b, e);
+        }
+      } catch (err) { warn("voice first", err); }
+      return r;
+    };
+  }
+  EXT.screens.push(["Onboarding and profile", [["ez-set", "Easy view settings"]]]);
+  /* Profile, then the page over it: the row doesn't change Version, so the page shows whichever is on */
+  EXT.opens["ez-set"] = (a) => {
+    try { if (EXT.opens.profile) EXT.opens.profile(a); } catch (e) { warn("opening Profile", e); }
+    a.push("ez-set", {}, { instant: true });
+  };
+  EXT.onSet.push((k, v, a) => { if (k === "mealUI" || k === "plan") { const t = setTop(a); if (t) a.rerender(t, { noRestore: true }); } });
+  EXT.notes["ez-set"] = () => ({
+    t: "Easy view settings",
+    lede: "From Profile's Larger text and simpler screens row. The first switch turns Easy on or off. Then four settings, each a sentence of what it changes: text size, Large or Larger; fewer cards on Today; What I ate listening as it opens; and less motion, where the phone's own setting always wins. The preview at the top is drawn at what's picked.",
+    open: ["Offer Larger without the simpler screens, for someone who wants every chart but bigger?"]
+  });
 })();

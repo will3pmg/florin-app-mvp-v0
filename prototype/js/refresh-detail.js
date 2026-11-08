@@ -40,7 +40,9 @@
   const nText = (a, b) => (a === b ? `${a}` : `${a} to ${b}`);
   const RANGE = { 7: "Last 7 days", 30: "Last 30 days", 90: "Last 90 days" };
   const FLAG_REL = "Not read against your usual today";
-  const NAME = { score: "FloraScore", timing: "Timing", often: "How often", form: "Form", sym: "Symptoms", ck: "Weekly check-in" };
+  const NAME = { score: "FloraScore", timing: "Timing", often: "Frequency", form: "Form", sym: "Symptoms", ck: "Weekly check-in" };
+  /* a usual share in words: rounding 0.96 to "10 in 10" would read as every day and hide the rate a word compares with */
+  const usually = (p, noun) => { const r = Math.round(p * 10); return p >= 0.995 ? `Usually every ${noun}` : r >= 10 ? `Usually nearly every ${noun}` : r < 1 ? `Usually under 1 in 10 ${noun}s` : `Usually ${r} in 10 ${noun}s`; };
   const CKN = { pain: "Belly pain", way: "In the way", bloat: "Bloating", settled: "Habits" };
   const sw = (tone, text) => (text ? `<span class="dt-sw is-${tone}">${esc(text)}</span>` : "");
   const svg = (w, h, body, aria) => `<svg class="c-chart dv-chart dt-svg" viewBox="0 0 ${n1(w)} ${n1(h)}" role="img" aria-label="${esc(aria || "")}">${body}</svg>`;
@@ -151,18 +153,27 @@
     const M = X.M, mode = X.mode, s = L.score(M, TODAY, mode), mv = L.scoreMoved(M, mode), PU = partUsual(M, mode);
     const today = s && s.value != null, flag = today && RU.flagToday(M);
     if (!today && !mv) return null;
+    /* when FloraScore sits above or below its own usual range while every part is in its own, the parts on that edge of
+       their band say so, so the breakdown explains the headline (Nov 7). A part is never called good or bad */
+    const su = L.scoreUsual(M, mode), rel = today && !flag && su ? RU.scoreRel(s.value, su) : null;
+    const side = !rel || rel === "In its usual range" ? 0 : s.value > su[1] ? 1 : -1;
     const rows = L.SCORE_PARTS.map(([key, label]) => {
       const v = today ? Math.round(s.parts[key]) : mv.parts.find((p) => p.key === key).now, rg = PU[key];
-      const word = flag ? "" : rg ? RU.scoreRel(v, rg) : "";
+      const edge = !!(side && rg && (side > 0 ? v >= rg[1] : v <= rg[0]));
+      const word = flag ? "" : edge ? (side > 0 ? "At the top of its usual range" : "At the foot of its usual range") : rg ? RU.scoreRel(v, rg) : "";
       const lo = Math.min(50, Math.floor(Math.min(v, rg ? rg[0] : v) / 10) * 10);
-      return { key, v, rg, label, word, row: {
+      return { key, v, rg, label, word, edge, row: {
         label, act: PART_PAGE[key], value: String(v), word, tone: "read",
         track: { lo, hi: 100, band: rg, mark: flag ? null : v },
-        foot: [rg ? `Usual ${nText(rg[0], rg[1])}` : "", `${Math.round(L.SCORE_W[key] * 100)}% of the score`],
-        aria: `${label}, ${v} out of 100${word ? `, ${lower1(word)}` : ""}${rg ? `, usual ${nText(rg[0], rg[1])}` : ""}. ${Math.round(L.SCORE_W[key] * 100)}% of the score. Open ${label === "Comfort" ? "Symptoms" : label}`
+        foot: [rg ? `Usual ${nText(rg[0], rg[1])}` : "", ""],
+        aria: `${label}, ${v}${word ? `, ${lower1(word)}` : ""}${rg ? `, usual ${nText(rg[0], rg[1])}` : ""}. Open ${label === "Comfort" ? "Symptoms" : label}`
       } };
     });
-    return { rows, today, flag, html: conBlock("Contributors", flag ? "Today's FloraScore blends your last 3 logged days. Today has a log noted for a clinician, so its parts aren't read against their usual today." : today ? "Today's FloraScore blends your last 3 logged days. Each part is out of 100, against its own usual." : "No score today, so these are this week's averages, out of 100, against each part's usual.", rows.map((r) => r.row)) };
+    const blend = `Today's FloraScore blends the days among your last ${L.BLEND} that have a BM, or No BM, logged.`;
+    const edges = rows.filter((r) => r.edge).map((r, i) => (i ? r.label.toLowerCase() : r.label));
+    const why = !side ? "" : edges.length ? ` ${join(edges)} ${edges.length === 1 ? "is" : "are"} at the ${side > 0 ? "top" : "foot"} of ${edges.length === 1 ? "its usual range" : "their usual ranges"}, so together the four parts put FloraScore ${lower1(rel)}.`
+      : ` Each part is within its own usual range; together they put FloraScore ${lower1(rel)}.`;
+    return { rows, today, flag, html: conBlock("Contributors", flag ? `${blend} Today has a log noted for a clinician, so its parts aren't read against their usual today.` : today ? `${blend} Each part against its own usual.${why}` : "No score today, so these are this week's averages, against each part's usual.", rows.map((r) => r.row)) };
   }
 
   const relWord = (v, lo, hi, a, b, c) => (v == null ? null : mins(v) < lo ? b : mins(v) > hi ? c : a);
@@ -179,7 +190,7 @@
     const tk = (v) => ({ lo, hi, band: [u.tLo, u.tHi], mark: v, tone: tone(v) === "usual" ? "read" : "shift" });
     return conBlock("Your mornings", `${RANGE[X.n]}, against your usual window, ${winText(u)}.`, [
       { label: "Mornings in your window", value: `${R.within}<small>of ${R.read.length}</small>`, word: c ? { same: "About as often as usual", more: "More often than usual", less: "Less often than usual" }[c] : "", tone: c === "less" ? "shift" : "usual",
-        track: { seg: [{ k: "usual", v: R.within }, { k: "shift", v: R.read.length - R.within }] }, foot: [p != null ? `Usually ${Math.round(p * 10)} in 10 mornings` : "", `${R.later.length} later, ${R.earlier.length} earlier`] },
+        track: { seg: [{ k: "usual", v: R.within }, { k: "shift", v: R.read.length - R.within }] }, foot: [p != null ? usually(p, "morning") : "", `${R.later.length} later, ${R.earlier.length} earlier`] },
       { label: "Earliest", value: esc(T(R.first.first)), word: tw(R.first.first), tone: tone(R.first.first), track: tk(R.first.first), foot: [dayLong(R.first.d), ""] },
       { label: "Latest", value: esc(T(R.last.first)), word: tw(R.last.first), tone: tone(R.last.first), track: tk(R.last.first), foot: [dayLong(R.last.d), ""] }
     ]);
@@ -193,12 +204,14 @@
     const cw = (v) => (v < u.nLo ? "Fewer than your usual" : v > u.nHi ? "More than your usual" : "A usual count");
     const tk = (v, own) => ({ lo: 0, hi: R.yMax, band: [Math.max(0, u.nLo - 0.5), u.nHi + 0.5], mark: v, tone: own ? (cw(v) === "A usual count" ? "read" : "shift") : "read" });
     const b = R.busiest, avgIn = R.avg >= u.nLo && R.avg <= u.nHi;
-    return conBlock("Your days", `${RANGE[X.n]}, against your usual count, ${nText(u.nLo, u.nHi)} a day.`, [
+    return conBlock("Your counts", `${RANGE[X.n]}, against your usual count, ${nText(u.nLo, u.nHi)} a day.`, [
       { label: "BMs a day, on average", value: `${R.avg.toFixed(1)}<small>a day</small>`, word: avgIn ? "Within your usual count" : R.avg > u.nHi ? "Above your usual count" : "Below your usual count", tone: avgIn ? "usual" : "shift", track: tk(R.avg, false), foot: [`Usual ${nText(u.nLo, u.nHi)} a day`, `${plural(R.total, "BM")} on ${plural(R.read.length, "day")}`] },
       { label: "Days with a usual count", value: `${R.within}<small>of ${R.read.length}</small>`, word: c ? { same: "About as often as usual", more: "More often than usual", less: "Less often than usual" }[c] : "", tone: c === "less" ? "shift" : "usual",
-        track: { seg: [{ k: "usual", v: R.within }, { k: "shift", v: R.read.length - R.within }] }, foot: [p != null ? `Usually ${Math.round(p * 10)} in 10 days` : "", `${R.above.length} above, ${R.below.length} below`] },
+        track: { seg: [{ k: "usual", v: R.within }, { k: "shift", v: R.read.length - R.within }] }, foot: [p != null ? usually(p, "day") : "", `${R.above.length} above, ${R.below.length} below`] },
       { label: "Busiest day", value: `${b.count}<small>${b.count === 1 ? "BM" : "BMs"}</small>`, word: cw(b.count), tone: cw(b.count) === "A usual count" ? "usual" : "shift", track: tk(b.count, true), foot: [dayLong(b.d), ""] },
-      { label: "No BM days", value: String(R.zero.length), word: R.zero.length ? (u.nLo > 0 ? "Fewer than your usual" : "A usual count") : "", tone: R.zero.length && u.nLo > 0 ? "shift" : "usual", track: { seg: [{ k: u.nLo > 0 ? "shift" : "read", v: R.zero.length }, { k: "rest", v: R.read.length - R.zero.length }] }, foot: [R.zero.length ? `Last on ${dayLong(R.zero[R.zero.length - 1].d)}` : "A No BM log is a zero, never a gap", `Of ${plural(R.read.length, "day")}`] }
+      /* no state word: it would read as said of the count of No BM days, when it belongs to each day's count; the
+         track's Gold already marks those days as outside the usual count */
+      { label: "No BM days", value: String(R.zero.length), word: "", tone: "quiet", track: { seg: [{ k: u.nLo > 0 ? "shift" : "read", v: R.zero.length }, { k: "rest", v: R.read.length - R.zero.length }] }, foot: [R.zero.length ? `Last on ${dayLong(R.zero[R.zero.length - 1].d)}` : "None logged", `Of ${plural(R.read.length, "day")}`] }
     ]);
   }
   function formCon(X, R) {
@@ -262,14 +275,16 @@
     if (li >= 0 && ser[li].today) {
       const s = ser[li], px = x(li), py = y(s.value);
       if (!s.flag) marks += ringAt(px, py, 7);
-      lbl += labelAt(px, py - 12 < 12 ? py + 22 : py - 12, `Today ${s.value}`, W);
+      /* the label only over a week: on a busy 30 or 90 days it sits on its neighbours, and the day picked says it */
+      if (N <= 7) lbl += labelAt(px, py - 12 < 12 ? py + 22 : py - 12, `Today ${s.value}`, W);
     }
     lbl += axisX(N, x, top + plotH + 15, (i) => (ser[i].today ? "Today" : N <= 7 ? Ut.DOW[L.dateOf(ser[i].d).getDay()] : short(ser[i].d)));
     const sc = ser.filter((s) => s.value != null && !s.flag), k = sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length;
     return {
       svg: svg(W, H, g + marks + lbl, `FloraScore, ${RANGE[X.n].toLowerCase()}, against your usual range ${su[0]} to ${su[1]}`),
-      N, xs: ser.map((s, i) => x(i) / W * 100), ys: ser.map((s) => (s.value == null ? null : (y(s.value) - top) / plotH * 100)), top: top / H * 100, h: plotH / H * 100,
-      cap: sc.length ? `In its usual range on ${k} of ${plural(sc.length, "day")}` : "Not scored in this stretch", right: `${sc.length} of ${ser.length} days scored`,
+      /* no hair dot on a flagged today, so its Teal ring shows when it is picked (the hairline still marks it) */
+      N, xs: ser.map((s, i) => x(i) / W * 100), ys: ser.map((s) => (s.value == null || s.flag ? null : (y(s.value) - top) / plotH * 100)), top: top / H * 100, h: plotH / H * 100,
+      cap: sc.length ? `In its usual range on ${k} of ${plural(sc.length, "day")}` : "Not scored in this stretch", right: `${ser.filter((s) => s.value != null).length} of ${ser.length} days scored`,
       legend: `${lg("sw--band", `Your usual range, ${su[0]} to ${su[1]}`)}${ser.some((s) => s.flag) ? lg("sw--clin", "Noted for a clinician") : ""}`,
       sel: li >= 0 ? li : N - 1, ser, su
     };
@@ -290,14 +305,14 @@
       if (f.first == null) return;
       if (N > 7) marks += spacer(x(i), y(f.first), 4);
       marks += `<circle class="${dotCls(X, f, f.inWin)}" cx="${n1(x(i))}" cy="${n1(y(f.first))}" r="4"/>`;
-      if (f.today && !f.flag) { marks += ringAt(x(i), y(f.first), 7); lbl += labelAt(x(i), y(f.first) - 12 < 12 ? y(f.first) + 22 : y(f.first) - 12, `Today ${T(f.first)}`, W); }
+      if (f.today && !f.flag) { marks += ringAt(x(i), y(f.first), 7); if (N <= 7) lbl += labelAt(x(i), y(f.first) - 12 < 12 ? y(f.first) + 22 : y(f.first) - 12, `Today ${T(f.first)}`, W); }
     });
     lbl += axisX(N, x, top + plotH + 15, dayTick(F));
     const R = timingRead(X);
     return {
-      svg: svg(W, H, g + marks + lbl, `First BM each day, ${RANGE[X.n].toLowerCase()}${u ? `, against your usual window ${winText(u)}` : ""}`),
+      svg: svg(W, H, g + marks + lbl, `First BM each day, ${X.learning ? "so far" : RANGE[X.n].toLowerCase()}${u ? `, against your usual window ${winText(u)}` : ""}`),
       N, xs: F.map((f, i) => x(i) / W * 100), top: top / H * 100, h: plotH / H * 100,
-      cap: u ? `First BM in your window on ${R.within} of ${plural(R.read.length, "day")}` : "First BM, each day", right: RANGE[X.n],
+      cap: u ? `First BM in your window on ${R.within} of ${plural(R.read.length, "day")}` : "First BM, each day", right: X.learning ? "So far" : RANGE[X.n],
       legend: u ? `${lg("", "In your usual window")}${R.later.length || R.earlier.length ? lg("sw--shift", "Outside your usual window") : ""}${X.flag ? lg("sw--clin", "Noted for a clinician") : ""}` : lg("sw--learn", "A first BM"),
       sel: lastIdx(F, (f) => f.first != null)
     };
@@ -316,14 +331,14 @@
       if (f.count == null) return;
       if (N > 7) marks += spacer(x(i), y(f.count), 4);
       marks += `<circle class="${dotCls(X, f, f.inCount)}" cx="${n1(x(i))}" cy="${n1(y(f.count))}" r="4"/>`;
-      if (f.today && !f.flag) { marks += ringAt(x(i), y(f.count), 7); lbl += labelAt(x(i), y(f.count) - 12 < 12 ? y(f.count) + 22 : y(f.count) - 12, `Today ${f.count === 0 ? "No BM" : f.count}`, W); }
+      if (f.today && !f.flag) { marks += ringAt(x(i), y(f.count), 7); if (N <= 7) lbl += labelAt(x(i), y(f.count) - 12 < 12 ? y(f.count) + 22 : y(f.count) - 12, `Today ${f.count === 0 ? "No BM" : f.count}`, W); }
       else if (busy && f.d === busy.d) lbl += labelAt(x(i), y(f.count) - 10, `Busiest, ${f.count}`, W);
     });
     lbl += axisX(N, x, top + plotH + 15, dayTick(F));
     return {
-      svg: svg(W, H, g + marks + lbl, `BMs a day, ${RANGE[X.n].toLowerCase()}${u ? `, against your usual ${u.nLo} to ${u.nHi}` : ""}`),
+      svg: svg(W, H, g + marks + lbl, `BMs a day, ${X.learning ? "so far" : RANGE[X.n].toLowerCase()}${u ? `, against your usual ${u.nLo} to ${u.nHi}` : ""}`),
       N, xs: F.map((f, i) => x(i) / W * 100), top: top / H * 100, h: plotH / H * 100,
-      cap: u ? `A usual count on ${R.within} of ${plural(R.read.length, "day")}` : "BMs each day", right: RANGE[X.n],
+      cap: u ? `A usual count on ${R.within} of ${plural(R.read.length, "day")}` : "BMs each day", right: X.learning ? "So far" : RANGE[X.n],
       legend: u ? `${lg("", "A usual count")}${R.above.length || R.below.length ? lg("sw--shift", "Outside your usual count") : ""}${X.flag ? lg("sw--clin", "Noted for a clinician") : ""}` : lg("sw--learn", "BMs that day"),
       sel: lastIdx(F, (f) => f.count != null)
     };
@@ -399,7 +414,7 @@
     if (li >= 0) lbl += labelAt(x(li), y(G[li].read) - 8, `${G[li].within} of ${G[li].read}`, W);
     lbl += axisX(N, x, top + plotH + 15, wkTick(G));
     return {
-      svg: svg(W, H, g + marks + lbl, `${Wk.cap}, 13 weeks`),
+      svg: svg(W, H, g + marks + lbl, `${Wk.cap}, ${plural(N, "week")}`),
       N, xs: G.map((w, i) => x(i) / W * 100), top: top / H * 100, h: plotH / H * 100, weeks: G,
       cap: Wk.cap, right: `${plural(N, "week")}`, legend: `${lg("sw--usual", Wk.lgIn)}${G.some((w) => w.read > w.within) ? lg("sw--shift", Wk.lgOut) : ""}`,
       sel: N - 1
@@ -430,7 +445,7 @@
     let marks = "";
     G.forEach((g, c) => g.days.forEach((f) => (marks += symMark(f, xm(c), ym((L.dateOf(f.d).getDay() + 6) % 7), s))));
     const lbl = [[0, "Mon"], [3, "Thu"], [6, "Sun"]].map(([r, t]) => tx(0, ym(r) + 3.5, t, "dv-ax")).join("") + axisX(N, xm, base + 15, wkTick(G));
-    return { svg: svg(W, H, marks + lbl, "Days with symptoms, week by week, last 90 days"), N, xs: G.map((g, c) => xm(c) / W * 100), top: (top / H) * 100, h: ((ph * 7) / H) * 100, weeks: G, cap: "Each day, week by week", right: "13 weeks", legend, sel: N - 1 };
+    return { svg: svg(W, H, marks + lbl, "Days with symptoms, week by week, last 90 days"), N, xs: G.map((g, c) => xm(c) / W * 100), top: (top / H) * 100, h: ((ph * 7) / H) * 100, weeks: G, cap: "Each day, week by week", right: plural(N, "week"), legend, sel: N - 1 };
   }
 
   /* the check-in: a column a week, a row a question, each answer a dot: Plum when it sits within the range of your first
@@ -481,7 +496,7 @@
       const title = c.ws >= 84 ? "This week" : `Week of ${short(c.ws)}`;
       if (!c.answers) return { title, word: "Skipped", tone: "quiet", value: "", why: "A skipped week stays a gap, never a week without symptoms.", sr: `${title}, skipped` };
       const rows = L.CHECKIN.map((q, r) => { const cm = L.compare(b, r, c.answers[r]); return { q: CKN[q.k] || q.label, a: q.opts[c.answers[r]], w: cm.text, t: cm.k === "same" ? "usual" : "shift" }; });
-      return { title, word: first ? "One of your first weeks" : "", tone: "quiet", list: rows, why: first ? "Your first three check-ins are the starting point every week is compared with." : "", sr: `${title}: ${rows.map((r) => `${r.q} ${r.a}, ${lower1(r.w)}`).join("; ")}` };
+      return { title, word: first ? "One of your first weeks" : "", tone: "quiet", list: rows, why: first ? `Your first ${plural(L.BASE_WEEKS, "check-in")} are the starting point every week is compared with.` : "", sr: `${title}: ${rows.map((r) => `${r.q} ${r.a}, ${lower1(r.w)}`).join("; ")}` };
     }
     if (ch.weeks) {
       const g = ch.weeks[i], title = weekName(g);
@@ -505,7 +520,7 @@
       if (s.value != null) {
         word = s.flag ? FLAG_REL : RU.scoreRel(s.value, ch.su);
         value = `FloraScore ${s.value}. ${L.SCORE_PARTS.map(([pk, pl]) => `${pl} ${Math.round(sc.parts[pk])}`).join(", ")}.`;
-      } else value = sc && sc.learning ? `No FloraScore before day ${L.LEARN_DAYS}.` : f && f.logged && f.count != null ? `No FloraScore: ${L.NO_SCORE}.` : "No FloraScore: nothing about BMs was logged that day, so it has no score of its own.";
+      } else value = sc && sc.learning ? `No FloraScore in your first ${L.LEARN_DAYS - 1} days of logging, while Florin learned your usual.` : f && f.logged && f.count != null ? `No FloraScore: ${L.NO_SCORE}.` : "No FloraScore: nothing about BMs was logged that day, so it has no score of its own.";
       const why = f ? reasonOf(X, f) : "";
       return { title, word, tone: "read", value, why, day: true, sr: `${title}: ${value}${word ? ` ${word}.` : ""}` };
     }
@@ -526,10 +541,11 @@
       if (f.flag) { word = "Noted for a clinician"; tone = "info"; }
       else if (f.bms.length && u) { word = f.formsIn ? "In your usual forms" : f.formsIn === false ? "Outside your usual forms" : "Could be either"; tone = f.formsIn ? "usual" : f.formsIn === false ? "shift" : "quiet"; }
     } else if (k === "sym") {
-      if (f.flag) { word = "Noted for a clinician"; tone = "info"; value = "Not counted."; }
-      else if (!f.logged) value = `${none}.`;
+      /* a flagged today keeps its reading, named as any day's, and is read against nothing */
+      if (!f.logged) value = `${none}.`;
       else if (f.nsym) { value = `${upper1(join(Object.keys(f.sym).map((nm) => { const s = f.unrated && f.unrated[nm] ? 0 : f.sym[nm]; return `${nm.toLowerCase()}, ${s ? L.STRENGTH[s - 1].toLowerCase() : "strength not said"}`; })))}.`; word = "Symptoms"; tone = "info"; }
       else { value = "No symptoms logged."; word = "Logged"; }
+      if (f.flag) { word = "Noted for a clinician"; tone = "info"; }
     }
     return { title, word, tone, value, why: f.flag ? L.FLAG_DAY : why, day: !f.flag, sr: `${title}: ${value}${word ? ` ${word}.` : ""}` };
   }
@@ -567,19 +583,23 @@
      your first 30 days against your last 30), in counts and the person's own times, never better or worse */
   const before = (X) => {
     const P = L.prevSpan(X.M, X.n, X.mode), Y = (F) => Object.assign({}, X, { F });
-    return { P, cur: Y(P.cur), prev: Y(P.prev), was: P.cur30 ? "in your first 30 days" : `in ${P.label}`, now: P.cur30 ? "In your last 30 days" : RANGE[X.n] };
+    return { P, cur: Y(P.cur), prev: Y(P.prev), was: P.cur30 ? "in your first 30 days" : `in ${P.label}`, now: P.cur30 ? "In your last 30 days" : `In the ${RANGE[X.n].toLowerCase()}` };
   };
   const minsSaid = (a, b) => { const d = Math.round((a - b) * 60 / 5) * 5; return Math.abs(d) < 10 ? "about the same time of day" : `about ${Math.abs(d)} minutes ${d > 0 ? "later" : "earlier"}`; };
   function moved(X) {
     const k = X.k, u = X.u, B = before(X), lines = [];
     if (k === "score") {
-      const su = L.scoreUsual(X.M, X.mode), sc = (F) => F.map((f) => L.score(X.M, f.d, X.mode)).filter((s) => s && s.value != null && !(s.d === TODAY && RU.flagToday(X.M)));
-      const a = sc(B.cur.F), b = sc(B.prev.F);
+      /* the averages keep a flagged today (FloraScore keeps its number, as the hero and What moved it do); the counts in
+         and out of the usual range leave it out, since it is read against nothing */
+      const su = L.scoreUsual(X.M, X.mode), all = (F) => F.map((f) => L.score(X.M, f.d, X.mode)).filter((s) => s && s.value != null);
+      const sc = (F) => all(F).filter((s) => !(s.d === TODAY && RU.flagToday(X.M)));
+      const a = all(B.cur.F), b = all(B.prev.F);
       if (!a.length) return "";
       const av = Math.round(Ut.mean(a.map((s) => s.value))), bv = b.length ? Math.round(Ut.mean(b.map((s) => s.value))) : null;
       lines.push(`${B.now}, FloraScore averaged ${av}${bv != null ? `, against ${bv} ${B.was}` : ""}.`);
       const S = sc(X.F), inR = S.filter((s) => s.value >= su[0] && s.value <= su[1]).length, ab = S.filter((s) => s.value > su[1]).length, be = S.filter((s) => s.value < su[0]).length;
-      lines.push(`Over the ${RANGE[X.n].toLowerCase()} it sat in its usual range on ${inR} of ${plural(S.length, "day")} scored${ab || be ? `, above it on ${ab} and below it on ${be}` : ""}.`);
+      const tail = [ab && `above it on ${ab}`, be && `below it on ${be}`].filter(Boolean).join(" and ");
+      if (S.length) lines.push(`Over the ${RANGE[X.n].toLowerCase()} it sat in its usual range on ${inR} of ${plural(S.length, "day")}${tail ? `, ${tail}` : ""}.`);
       if (S.length > 1) { const lo = S.slice().sort((p, q) => p.value - q.value || q.d - p.d)[0], hi = S.slice().sort((p, q) => q.value - p.value || q.d - p.d)[0]; lines.push(`Lowest ${lo.value} on ${dayLong(lo.d)}, highest ${hi.value} on ${dayLong(hi.d)}.`); }
     } else if (k === "timing") {
       const a = timingRead(B.cur), b = timingRead(B.prev), R = timingRead(X);
@@ -592,23 +612,28 @@
       const ds = Object.keys(byD).filter((d) => byD[d].length >= 3).map((d) => ({ d: +d, m: Ut.median(byD[d]) }));
       if (ds.length >= 5) {
         const late = ds.slice().sort((p, q) => q.m - p.m)[0], early = ds.slice().sort((p, q) => p.m - q.m)[0];
-        lines.push(late.m - early.m >= 1 / 3 ? `By day of the week, it came latest on ${Ut.DOWL[late.d]}s (typically ${T(late.m)}) and earliest on ${Ut.DOWL[early.d]}s (${T(early.m)}).` : "No day of the week stood apart: every weekday's typical first BM was within 20 minutes of the others.");
+        /* at 90 days the sentences before read the last 30, so this one names its own stretch */
+        const ov = X.n >= 90 ? `Over the ${RANGE[X.n].toLowerCase()}, ` : "";
+        lines.push(late.m - early.m >= 1 / 3 ? `${ov ? `${ov}by` : "By"} day of the week, it came latest on ${Ut.DOWL[late.d]}s (typically ${T(late.m)}) and earliest on ${Ut.DOWL[early.d]}s (${T(early.m)}).` : `${ov ? `${ov}no` : "No"} day of the week stood apart: every weekday's typical first BM was within 20 minutes of the others.`);
       }
     } else if (k === "often") {
       const a = oftenRead(B.cur), b = oftenRead(B.prev), R = oftenRead(X);
       if (!R.read.length) return "";
       lines.push(`${B.now}, a usual count on ${a.within} of ${plural(a.read.length, "day")}${b.read.length ? `, against ${b.within} of ${b.read.length} ${B.was}` : ""}.`);
       if (b.avg != null && a.avg != null) lines.push(`On average ${a.avg.toFixed(1)} a day, against ${b.avg.toFixed(1)}.`);
-      if (R.above.length) { const t = R.busiest; lines.push(`The busiest day was ${dayLong(t.d)}, with ${plural(t.count, "BM")}, more than your usual ${nText(u.nLo, u.nHi)}.`); }
-      else lines.push(`No day went above your usual ${nText(u.nLo, u.nHi)}.`);
+      const ov = X.n >= 90 ? `Over the ${RANGE[X.n].toLowerCase()}, ` : "";
+      if (R.above.length) { const t = R.busiest; lines.push(`${ov ? `${ov}the` : "The"} busiest day was ${dayLong(t.d)}, with ${plural(t.count, "BM")}, more than your usual ${nText(u.nLo, u.nHi)}.`); }
+      else lines.push(`${ov ? `${ov}no` : "No"} day went above your usual ${nText(u.nLo, u.nHi)}.`);
     } else if (k === "form") {
       const a = formRead(B.cur), b = formRead(B.prev), R = formRead(X);
       if (!R.bms.length) return "";
       lines.push(`${B.now}, ${a.within} of ${plural(a.bms.length - a.unsure, "BM")} were in your usual forms${b.bms.length ? `, against ${b.within} of ${b.bms.length - b.unsure} ${B.was}` : ""}.`.replace(/^(.*?), 1 of 1 BM were/, "$1, 1 of 1 BM was"));
-      if (R.top && b.top) lines.push(R.top.label === b.top.label ? `${upper1(R.top.label)} was the most common form in both.` : `The most common form was ${R.top.label}, against ${b.top.label} before.`);
+      /* the stretch the sentence before names (B.cur), against the one before it, never the 90 days against the first 30 */
+      if (a.top && b.top) lines.push(a.top.label === b.top.label ? `${upper1(a.top.label)} was the most common form in both.` : `The most common form was ${a.top.label}, against ${b.top.label} before.`);
     }
     if (X.flag) lines.push(L.FLAG_DAY);
-    return lines.length ? `<section class="ap-sect dt-moved" data-a><h3>What moved, and what stayed the same</h3><p>${esc(lines.join(" "))}</p></section>` : "";
+    /* the heading names the stretch it compares with, so it can't be read as the core's What moved it this week */
+    return lines.length ? `<section class="ap-sect dt-moved" data-a><h3>${esc(`Against ${B.was.replace(/^in /, "")}`)}</h3><p>${esc(lines.join(" "))}</p></section>` : "";
   }
 
   /* ============================== THE HEADLINE ==============================
@@ -657,6 +682,9 @@
     if (!root || !root.classList.contains("ap-idt")) return null;
     root.classList.add("dt-page");
     root.setAttribute("data-dt", k);
+    /* the page's title is its card's plain head (Nov 7: FREQUENCY on Insights), where the core names it otherwise */
+    const navT = k === "often" ? root.querySelector(":scope > .ap-nav .ap-nav-t") : null;
+    if (navT) navT.textContent = NAME[k];
     const hero = root.querySelector(":scope > .ap-dhero");
     const at = anchorOf(root);
 
@@ -668,8 +696,8 @@
         const nm = (p, i) => { const s = (L.SCORE_PARTS.find((x) => x[0] === p.key) || [])[1] || p.key; return i ? s.toLowerCase() : s; };
         const most = !tops.length ? "No one part moved it this week." : `${join(tops.map(nm))} moved it most this week, ${tops[0].pts > 0 ? "adding" : "taking off"} ${plural(Math.abs(tops[0].pts), "point")}${tops.length > 1 ? " each" : ""}.`;
         const same = tops.length > 1 && !(tops.every((p) => p.pts > 0) || tops.every((p) => p.pts < 0));
-        const wk = mv.delta === 0 ? "The same as last week, on average." : `${plural(Math.abs(mv.delta), "point")} ${mv.delta > 0 ? "above" : "below"} last week, on average.`;
-        insertAfter(line, `<p class="dt-hl">${esc(`${wk} ${same ? "" : most}`.trim())}</p>`);
+        /* the week's change itself is the core's chip and What moved it, under this; the line says only which part */
+        if (!same) insertAfter(line, `<p class="dt-hl">${esc(most)}</p>`);
       }
       const SP = scoreParts(X);
       const cf = chartFig(X);
@@ -794,11 +822,11 @@
   const notes = {
     "i-score": {
       t: "FloraScore, the detail",
-      lede: "Today's score against its usual range, then its four parts as contributors, each against its own usual and opening its page. FloraScore by day on the usual band, with a scrubber: a picked day shows its score, its parts and why the day sat where it did. Then what moved and stayed the same against the stretch before, and what moved it this week in whole points. A day with no BM logged is left out."
+      lede: "Today's score against its usual range, then its four parts as contributors, each against its own usual and opening its page. FloraScore by day on the usual band, with a scrubber: a picked day shows its score, its parts and why the day sat where it did. Then the stretch against the one before it, and what moved it this week in whole points. A day with no BM logged is left out."
     },
     "i-timing": {
       t: "Timing, the detail",
-      lede: "The typical first BM, a word for where it sits against the usual window and one sentence on the stretch. Your mornings: the mornings in the window, the typical, earliest and latest, each on a track with the window as the band. The first BM by day, with a scrubber for any day's times and reasons; a bar a week at 90 days. Then the stretch before, and every BM by day."
+      lede: "The typical first BM, a word for where it sits against the usual window and one sentence on the stretch. Your mornings: the mornings in the window, the earliest and the latest, each on a track with the window as the band. The first BM by day, with a scrubber for any day's times and reasons; a bar a week at 90 days. Then the stretch before, and every BM by day."
     },
     "i-often": {
       t: "How often, the detail",
@@ -806,7 +834,7 @@
     },
     "i-form": {
       t: "Form, the detail",
-      lede: "The most common form with a word against the usual forms, then how many BMs sat in them, firmer or looser. The mix as bars, then each BM by day with a scrubber for any day's forms and reasons; a bar a week at 90 days. A word that covers steps on both sides of the usual is could be either, counted neither way."
+      lede: "The most common form with a word against the usual forms, then how many BMs sat in them, firmer or looser. The mix as bars, then each BM by day with a scrubber for any day's forms and reasons; a bar a week at 90 days. A word that covers steps on both sides of the usual reads as could be either, counted neither way."
     },
     "i-sym": {
       t: "Symptoms, the detail",
@@ -815,11 +843,11 @@
     },
     "i-ck": {
       t: "Weekly check-in, the detail",
-      lede: "The latest week next to the person's first three check-ins, each question with its trend. Week by week, a dot an answer: Plum within the range of the first weeks, Gold when it moved either way, nothing for a skipped week. A picked week lists its four answers in their own words."
+      lede: `The latest week next to the person's first ${plural(L.BASE_WEEKS, "check-in")}, each question with its trend. Week by week, a dot an answer: Plum within the range of the first weeks, Gold when it moved either way, nothing for a skipped week. A picked week lists its four answers in their own words.`
     },
     "i-pat": {
       t: "Possible patterns",
-      lede: "What Florin read first: the days with a meal logged against the days logged, with the line patterns need, and the foods checked. Then each pattern, said as seen together, never cause. A food is checked once it's logged 5 times, and a pattern has to stand out against other days."
+      lede: `What Florin read first: the days with a meal logged against the days logged, with the line patterns need, and the foods checked. Then each pattern, said as seen together, never cause. A food is checked once it's logged ${L.PATTERN_BAR.n} times, and a pattern has to stand out against other days.`
     }
   };
   Object.keys(notes).forEach((id) => {

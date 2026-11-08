@@ -82,7 +82,7 @@
       series: Object.fromEntries([7, 30, 90].map((n) => [n, L.scoreSeries(M, n, mode).map((s) => ({ d: s.d, label: short(s.d), dow: dow(s.d), today: s.d === L.TODAY, value: s.value, flag: flagS && s.d === L.TODAY }))])),
       /* today's four parts, each against its own usual range (partsUsual). Empty when today has no FloraScore */
       partsToday: !sNow || sNow.value == null || !sNow.parts ? [] : L.SCORE_PARTS.map(([k, l, d]) => ({ key: k, label: l, desc: d, weight: L.SCORE_W[k], value: Math.round(sNow.parts[k]), usual: partsUsual ? partsUsual[k] : null })),
-      how: "FloraScore blends the days among your last 3 that have a BM, or No BM, logged, and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.",
+      how: `FloraScore blends the days among your last ${L.BLEND} that have a BM, or No BM, logged, and compares you with you. It isn't a medical score, and a lower number isn't a diagnosis.`,
       /* the no-score rule in the model's one wording (L.NO_SCORE), for a look to say when today has no FloraScore */
       why: `${cap(L.NO_SCORE)}.`,
       learning: null
@@ -124,9 +124,12 @@
     const firmer = formUsual ? outside.filter((x) => Math.max(...x.steps) < formUsual[0]).length : null;
     const looser = formUsual ? outside.filter((x) => Math.min(...x.steps) > formUsual[1]).length : null;
     const either = formUsual ? allForms.filter((x) => x.within === null).length : null;
+    /* the days read: a flagged today is noted for a clinician, in no count against the usual, so its symptoms are in no
+       row's days and its cell is null (flagAt says where it sits, so a strip can draw its Teal ring there) */
+    const symF = F30.filter((f) => !f.flag);
     const symNames = {};
-    F30.forEach((f) => f.sym.forEach((s) => (symNames[s.name] = (symNames[s.name] || 0) + 1)));
-    const symRows = Object.entries(symNames).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, days: n, cells: F30.map((f) => (!f.logged ? null : (f.sym.find((s) => s.name === name) || { strength: false }).strength)) }));
+    symF.forEach((f) => f.sym.forEach((s) => (symNames[s.name] = (symNames[s.name] || 0) + 1)));
+    const symRows = Object.entries(symNames).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, days: n, cells: F30.map((f) => (!f.logged || f.flag ? null : (f.sym.find((s) => s.name === name) || { strength: false }).strength)) }));
     const symUsual = u && u.sym ? (u.sym.every == null ? "Rarely" : u.sym.every <= 1 ? "Most days" : `About 1 day in ${u.sym.every}`) : null;
 
     /* the weekly check-in. This week's, once saved, is the latest week, the way Insights reads it (refresh-insights.js
@@ -196,7 +199,7 @@
       often: { usual: u ? [u.nLo, u.nHi] : null, usualText: u ? `${u.nLo} to ${u.nHi} a day` : null, avg30: (() => { const k = F30.filter((f) => f.count != null && !f.flag); return k.length ? +(k.reduce((s, f) => s + f.count, 0) / k.length).toFixed(1) : null; })(), inCount30: u ? F30.filter((f) => f.inCount).length : null, read30: F30.filter((f) => f.count != null && !f.flag).length },
       /* usualWeeks: the days the usual forms were learned from, so a look can show what share of BMs they held */
       form: { scale, usual: formUsual, usualText: u ? L.usualFormsText(M, mode) : null, bins, spans, firmer, looser, either, within30: allForms.filter((x) => x.within === true).length, total30: allForms.length, usualWeeks: u ? BASE.slice() : null },
-      symptoms: { usualText: symUsual, rows: symRows, withSym30: F30.filter((f) => f.sym.length).length, logged30: F30.filter((f) => f.logged).length },
+      symptoms: { usualText: symUsual, rows: symRows, withSym30: symF.filter((f) => f.sym.length).length, logged30: symF.filter((f) => f.logged).length, flagAt: F30.findIndex((f) => f.flag) },
       checkin, patterns,
       disclaimer: "Florin Health shows patterns in your own data. It doesn't diagnose, treat or prevent any condition."
     };

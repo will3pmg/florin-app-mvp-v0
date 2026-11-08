@@ -547,7 +547,7 @@
       if (PR.sparse && !R.cp) {
         lines.push(PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${COVER(PR)}, so there are few ordinary days to compare with.` : "No meals are logged, so Florin can't look at what comes before a rougher day yet.");
         used.push("p.held", "p.check");
-        return { used, lines, try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there.", fine: FINE_SYM };
+        return { used, lines, try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "Log what you eat on most days, ordinary ones too, and Florin starts from there.", fine: FINE_SYM };
       }
       /* a symptom the patterns don't look at on its own is said plainly, never answered with another symptom's pattern */
       const named = R.cp ? null : symNamed(q);
@@ -577,7 +577,7 @@
       if (/\b\d+ logs\b|\bwhy does a food\b/i.test(q)) return { used: ["p.bar"], lines: [`Florin checks every food you log against the mornings after, so it waits for ${n} logs of a food before it looks.`, "With fewer, chance alone would name a food now and then."], try: "Keep logging meals as you usually would." };
       if (/\b(what else|part of it)\b/i.test(q)) return { used: p ? [pid(R, p)] : [], lines: ["Patterns only see what you logged, so sleep, a busy week, travel or how much you ate could be part of it too.", "That's why Florin calls it a possible pattern, never a cause."], try: "A short note on the day helps you see it later." };
       if (R.cp) return Object.assign({ used: ["p.c", "p.bar"], lines: [`${patTitle(p)}: ${p.hit} of ${p.n} times, against ${p.oh} of ${p.on} otherwise${p.below ? ", below the bar for now" : ""}.`, "Patterns show what tends to happen together; they don't prove cause."], try: patTry(p) }, patChart(R, p));
-      if (PR.sparse) return { used: ["p.held", "p.check"], lines: [PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${COVER(PR)}, so there are few ordinary days to compare with.` : "No meals are logged yet, so there's nothing to compare."], try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "When a day feels off, say what you ate, and Florin starts from there." };
+      if (PR.sparse) return { used: ["p.held", "p.check"], lines: [PR.withMeal ? `Florin holds meal patterns back for now: meals are logged on ${COVER(PR)}, so there are few ordinary days to compare with.` : "No meals are logged yet, so there's nothing to compare."], try: PR.withMeal ? `A ${L.FOOD_CHECK_DAYS}-day food check, one line a day, on ${ORD} too, lets Florin look.` : "Log what you eat on most days, ordinary ones too, and Florin starts from there." };
       if (!PR.found.length) return { used: ["p.none", "p.bar"], lines: [`Nothing stands out yet in your last ${L.PATTERN_DAYS} days: ${plural(PR.checked.length, "food")} checked, and none cleared the bar.`, "A pattern has to hold most of the time, and far more often than on other days."], try: `Keep logging meals on ${ORD} too, so there's something to compare with.` };
       const two = PR.found.slice(0, 2);
       return Object.assign({ used: two.map((x, i) => `p.${i}`).concat(["p.bar"]), lines: two.map((x) => `${patTitle(x)}: ${x.hit} of ${x.n} times, against ${x.oh} of ${x.on} otherwise.`).concat(["Patterns show what tends to happen together; they don't prove cause."]), try: patTry(two[0]) }, patChart(R, two[0]));
@@ -934,7 +934,8 @@
   })();
 
   /* ============================== THE CHAT ============================== */
-  const ctxKey = (ctx) => (ctx ? `${ctx.k}|${ctx.range}` : null);
+  /* q: the question a card's Question style (E) showed, so the box opens with that one (refresh-ask.css, askWidget) */
+  const ctxKey = (ctx) => (ctx ? `${ctx.k}|${ctx.range}|${ctx.q || ""}` : null);
   /* a new model (another person, other logs, Reset) starts a new chat, and stops an answer still coming for the old one.
      forget: what the person left out of this chat in What Ask Florin knows; a new chat starts with everything again */
   const chatOf = (S) => {
@@ -1235,7 +1236,7 @@
     if (key !== ch.ctxKey) {
       if (ch.preload && ch.draft === ch.preload) ch.draft = "";
       ch.ctxKey = key; ch.preload = "";
-      if (R.c && R.c.qs && R.c.qs.length && !ch.busy) { ch.draft = R.c.qs[0]; ch.preload = R.c.qs[0]; }
+      if (R.c && R.c.qs && R.c.qs.length && !ch.busy) { const q0 = ctx && ctx.q && R.c.qs.includes(ctx.q) ? ctx.q : R.c.qs[0]; ch.draft = q0; ch.preload = q0; }
     }
     const chips = ch.busy ? [] : chipsFor(R, ch);
     const n = ch.msgs.length;
@@ -1368,8 +1369,12 @@
   /* a card that reads a stretch of its own (a data style's cards) says which, so the chat reads that stretch too */
   act("ask-about", (b, api, e, prev) => {
     if (prev) prev(b, api, e); else api.core("ask-about", b, e);
-    const r = +(b.dataset.range || 0);
-    if (r && api.S.askCtx && api.S.askCtx.range !== r) { api.S.askCtx.range = r; if (api.S.tab === "ask") api.renderTab(true); }
+    const r = +(b.dataset.range || 0), C0 = api.S.askCtx;
+    /* the range the card reads, and the question its Question style showed, so the box opens with that question */
+    let redraw = false;
+    if (r && C0 && C0.range !== r) { C0.range = r; redraw = true; }
+    if (b.dataset.q && C0 && C0.q !== b.dataset.q) { C0.q = b.dataset.q; redraw = true; }
+    if (redraw && api.S.tab === "ask") api.renderTab(true);
     if (api.S.plan !== "free" && api.S.tab === "ask") api.focusSel(".ap-askx-in");
   });
   act("ask-clear", (b, api, e, prev) => { if (prev) prev(b, api, e); else api.core("ask-clear", b, e); if (api.S.tab === "ask") api.focusSel(".ap-askx-in"); });
@@ -1506,11 +1511,22 @@
     ["bar", "F Bar", "A slim row across the card's foot: a line above, the token, Ask about this and a chevron."]
   ];
   EXT.askUI = { def: "pill", opts: ASKUI, name: (v) => (ASKUI.find(([o]) => o === v) || ASKUI[0])[1] };
-  const CARD_NAME = { score: "FloraScore", days: "Your days", timing: "Timing", often: "How often", form: "Form", sym: "Symptoms", ck: "Weekly check-in", pat: "Possible patterns" };
+  /* a button's name says its card: the card's visible head where it has one (cardHead), else these, in the plain
+     heads' words (Nov 7: FREQUENCY, CHECK-IN, PATTERNS) */
+  const CARD_NAME = { score: "FloraScore", days: "Your days", timing: "Timing", often: "Frequency", form: "Form", sym: "Symptoms", ck: "Check-in", pat: "Patterns" };
   const ASK_SEL = ".ap-ask-b, .ap-idt-ask, .ap-ez-ask";
-  /* the card's first question, as Ask about this puts it in the box (RU.askContext, at the range Ask will read) */
+  /* the card's questions, as Ask about this puts the first in the box (RU.askContext, at the range Ask will read) */
   const firstQ = (api, k, range) => {
-    try { const c = RU.askContext(api.M(), api.V(), { k, range: range || api.S.ins.range }); return c && c.qs && c.qs[0] ? c.qs[0] : ""; } catch (e) { warn("the card's first question", e); return ""; }
+    try { const c = RU.askContext(api.M(), api.V(), { k, range: range || api.S.ins.range }); return c && c.qs ? c.qs.filter(Boolean) : []; } catch (e) { warn("the card's first question", e); return []; }
+  };
+  /* the head a person sees on the button's card, its screen-reader words left out ("Trend", "Frequency") */
+  const cardHead = (b) => {
+    const c = b.closest("[data-rlk-k], .ap-ic, .ap-card, article");
+    const h = c && c.querySelector("h2, .ap-ic-h .ap-k, :scope > .ap-k");
+    if (!h) return "";
+    const x = h.cloneNode(true);
+    x.querySelectorAll(".sr").forEach((n) => n.remove());
+    return x.textContent.replace(/\s+/g, " ").trim();
   };
   const cardName = (api, k) => {
     if (CARD_NAME[k]) return CARD_NAME[k];
@@ -1524,8 +1540,18 @@
     const api = EXT.api && EXT.api.root === root ? EXT.api : null;
     const ui = root.getAttribute("data-ask-ui") || "pill", k = b.dataset.k || "", free = b.dataset.act === "pay";
     const glyph = [...b.children].find((c) => c.classList && c.classList.contains("ic")) || null;
-    const q = ui === "chip" && api && k ? firstQ(api, k, +(b.dataset.range || 0)) : "";
-    const nm = cardName(api, k), lock = free ? ", with Florin membership" : "";
+    /* E Question: the card's first question that no Ask about this earlier on the same screen already shows (the
+       FloraScore card and the Trend share their questions), so no two read the same. The range is the card's own;
+       on Free that is 7 days, the range Free draws */
+    const range = +(b.dataset.range || 0) || (free ? RU.FREE_DAYS || 7 : 0);
+    let q = "";
+    if (ui === "chip" && api && k) {
+      const qs = firstQ(api, k, range), scr = b.closest(".ap-scr") || root;
+      const shown = new Set([...scr.querySelectorAll(".ap-askw-q")].map((n) => n.textContent));
+      q = qs.find((x) => !shown.has(x)) || qs[0] || "";
+      if (q && !free) b.dataset.q = q;
+    }
+    const nm = (b.matches(".ap-ask-b") ? cardHead(b) : "") || cardName(api, k), lock = free ? ", with Florin membership" : "";
     b.dataset.askw = ui;
     b.classList.add("ap-askw");
     b.innerHTML = `${glyph ? glyph.outerHTML : RU.icon(free ? "lock" : "chat")}<span class="ap-askw-t"><span class="ap-askw-a">Ask</span><span class="ap-askw-b"> about this</span></span>${q ? `<span class="ap-askw-q">${esc(q)}</span>` : ""}${ui === "bar" ? RU.icon("chev", "ap-askw-go") : ""}`;
@@ -1559,7 +1585,7 @@
   });
   EXT.notes["ask-about"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask about this",
-    lede: `Every Insights card and detail has Ask about this, with the Ask token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart. Ask button, under View on the left, sets how it looks on every card: ${EXT.askUI.name(EXT.api ? EXT.api.S.askUI : "pill")} now.`
+    lede: `Every Insights card and detail has Ask about this, with the Ask token the Ask tab carries. It opens Ask Florin with the card's chart and numbers loaded and its first question in the box, so the answer starts from the same figures as the chart. Ask button, under View on the left, sets how it looks on every card.`
   });
   EXT.notes["ask-mem"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin, what it knows",

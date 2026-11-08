@@ -925,9 +925,12 @@
     const Y = (v) => +(bot - (v / 3) * (bot - top)).toFixed(1);
     const band = b ? `<rect class="c-band" x="${left - 8}" y="${(Y(b[qi].hi) - 8).toFixed(1)}" width="${W - left - right + 16}" height="${(Y(b[qi].lo) - Y(b[qi].hi) + 16).toFixed(1)}" rx="4"/>` : "";
     const grid = [0, 1, 2, 3].map((v) => `<line class="ap-ckt-grid" x1="${left - 8}" x2="${W - right + 4}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ap-ckt-y" x="0" y="${Y(v) + 3.5}">${esc(q.opts[v])}</text>`).join("");
-    const xs = `<text class="ap-ckt-x" x="${X(0)}" y="${H - 4}" text-anchor="start">${esc(shortDate(0))}</text><text class="ap-ckt-x" x="${X(12)}" y="${H - 4}" text-anchor="end">This week</text>`;
     /* the newest answered week is ringed: this week once it's in, the last one before that */
     const answered = weeks.filter((c) => c.answers && c.answers[qi] != null), last = answered[answered.length - 1];
+    /* the axis ends on the ringed week, named as the week-by-week chart beside it names it: "This week" only once this
+       week is answered, else that week's date ("Sep 28"), never "This week" over an earlier week */
+    const endX = cur == null && last ? X(last.w) : X(12), endT = cur == null && last ? shortDate(last.w * 7) : "This week";
+    const xs = `${endX - X(0) > 64 ? `<text class="ap-ckt-x" x="${X(0)}" y="${H - 4}" text-anchor="start">${esc(shortDate(0))}</text>` : ""}<text class="ap-ckt-x" x="${endX}" y="${H - 4}" text-anchor="end">${esc(endT)}</text>`;
     /* every week's dot 8px across (marks are 8px or more), this week's ringed */
     const dots = answered.map((c) => `<circle class="ap-ckt-dot${c === last ? " is-now" : ""}" cx="${X(c.w)}" cy="${Y(c.answers[qi])}" r="4"/>`).join("");
     const now = last ? `<circle class="ap-ckt-ring" cx="${X(last.w)}" cy="${Y(last.answers[qi])}" r="8"/>` : "";

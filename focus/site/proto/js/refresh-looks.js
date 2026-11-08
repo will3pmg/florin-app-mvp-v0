@@ -9,14 +9,16 @@
      the core's card kept as RU.core.weekCard (for a week drawn to another day, or if the look can't draw)
    - RU.insights, RU.todayParts.hero and .week, wrapped; RU.idetail, wrapped for one detail page of its own ("days",
      the days behind the week and month cards), and RU.askContext, for that page's Ask about this
-   - Ask about this on every Insights card in a look (Will, Nov 5), at the range the card reads (data-range), drawn Ray
-     with the Ask token by refresh-ask.css; on Free it opens the paywall, as the core's cards do
+   - Ask about this on every Insights card in a look (Will, Nov 5), at the range the card reads (data-range), inside the
+     card at its foot with the detail link (Nov 7, .rlk-foot--in), styled by refresh-ask.css; on Free it opens the
+     paywall, as the core's cards do. Each Insights card's head is its name alone, a word or two (Nov 7, plainHead)
    - RU.lookOf(V), RU.lookCards(M, V, keys, o) and RU.lookAfter(el), so another module (the Easy version) can draw
      cards in a look through RU
    - Insights' FloraScore card is the Rings look's FloraScore hero, the big dark green ring (Will, Nov 5), in Florin
      charts and Will's picks alike: the core's card stays under it for FloraScore over the range and what moved it
-   - Will's picks (Will, Nov 5), Data style's "picks": the core's Insights, each card Will picked on the data modules
-     page drawn in his style (WILL_PICKS, below), the rest in Florin charts. Its note and its screen's note
+   - Will's picks (Will, Nov 5, Nov 7), Data style's "picks": the core's Insights, each card Will picked on the data
+     modules page drawn in his style (WILL_PICKS, below) at the range the tabs at the top say, the rest in Florin
+     charts. Its note and its screen's note
    - EXT.decisions.look (the decision's note for Will), EXT.notes for its screens, EXT.screens, EXT.opens,
      EXT.keys, EXT.acts and EXT.onSet (theme, look, rebuilds). Oura is dark first: while the phone draws it and the
      viewer hasn't picked a theme, the module sets the phone dark through api.set (also once at load, for a stored
@@ -77,11 +79,12 @@
      Today asks for two cards in one draw, so the build is kept until the draw ends (a microtask), never longer: the
      model changes in place when something is logged */
   let memo = null;
-  function dataOf(M, V) {
+  /* n: the stretch the range cards read (FLD.build's range): 30 unless Insights' tabs ask for 7 or 90 (Nov 7) */
+  function dataOf(M, V, n = 30) {
     const mode = V.form || "C";
-    if (memo && memo.M === M && memo.mode === mode) return memo.D;
-    const D = window.FLD.build(V.persona || (M.P && M.P.id), { mode, data: V.data, meals: V.meals, M });
-    memo = { M, mode, D };
+    if (memo && memo.M === M && memo.mode === mode && memo.n === n) return memo.D;
+    const D = window.FLD.build(V.persona || (M.P && M.P.id), { mode, data: V.data, meals: V.meals, M, range: n });
+    memo = { M, mode, n, D };
     queueMicrotask(() => { memo = null; });
     return D;
   }
@@ -180,9 +183,42 @@
         else if (b.matches(".bt-field")) b.dataset.act = "open-meal";
       });
     }
+    if (o.plain) plainHead(r, o.plain, o.range);
+    /* the foot goes at the end of the card. A Bento board has no card of its own around its tiles: the foot goes at the
+       foot of its first tile when that tile is the board's width (the one with the card's name and its chart), else in
+       a tile of its own across the board's foot */
+    if (o.foot) {
+      const root = r.firstElementChild, g = root && root.querySelector(":scope > .bt-g");
+      let host = root;
+      if (g) { host = g.querySelector(":scope > .bt-t.bt-s6:first-child"); if (!host) { host = document.createElement("div"); host.className = "bt-t bt-s6 rlk-foot-t"; g.appendChild(host); } }
+      if (host) { const f = document.createElement("template"); f.innerHTML = o.foot; host.appendChild(f.content); }
+    }
     const out = document.createElement("div");
     out.appendChild(r);
     return out.innerHTML;
+  }
+  /* ---------- a card's head on Insights (Will, Nov 7: "All of them need to have the headings simplified ie 'TIMING'
+     'FREQUENCY' and the date range is toggled at very top, not labeled within"): the card's name in a word or two, as
+     the core's cards are named, with no range, date or pill beside it. What it took away (the range, a date, the week
+     a check-in is from) stays in words a screen reader hears. The library page draws the looks' own heads ---------- */
+  const EYEBROW = { score: "FloraScore", parts: "Score parts", trend: "Trend", week: "This week", month: "Your days", timing: "Timing", often: "Frequency", form: "Form", symptoms: "Symptoms", checkin: "Check-in", pattern: "Patterns" };
+  const RANGED = ["trend", "month", "timing", "often", "form", "symptoms"];
+  const META = ".ou-date, .rg-k--date, .jr-meta, .bt-k--m, .bt-k--hm, .ez-side";
+  function plainHead(r, k, words) {
+    const h = r.querySelector("h2"), name = EYEBROW[k];
+    if (!h || !name) return;
+    const row = h.parentElement, said = [];
+    if (row && row !== r) {
+      row.querySelectorAll(`:scope > :is(${META})`).forEach((m) => { if (m.textContent.trim()) said.push(m.textContent.trim()); m.remove(); });
+      /* no pill beside the name, on any card (Nov 7): Timing's usual window is under the dial, Form's usual forms are
+         said under its Your usual row, Symptoms' usual and Learning in its answer (look-oura.js, x.live) */
+      row.querySelectorAll(":scope > :is(.ou-chip, .rg-chip, .bt-chip)").forEach((m) => m.remove());
+    }
+    /* a date range labelled on a tile further in (Bento's "Sep 12 to Oct 11") goes too: the range is the tabs' */
+    r.querySelectorAll(META).forEach((m) => { if (/^[A-Z][a-z]{2} \d{1,2} to [A-Z][a-z]{2} \d{1,2}$/.test(m.textContent.trim())) m.remove(); });
+    const sr = [RANGED.includes(k) && words, ...said].filter(Boolean).join(", ");
+    h.textContent = name;
+    if (sr) { const x = document.createElement("span"); x.className = "sr"; x.textContent = `, ${sr}`; h.appendChild(x); }
   }
   /* one component in a look, ready for the app, or "" when it fails (logged; the rest of the screen still draws) */
   function card(look, k, D, M, V, o = {}) {
@@ -261,11 +297,11 @@
     week: ["days", 7, "Each day this week"],
     month: ["days", 30, "Each day this month"],
     timing: ["timing", 30, "Timing in detail"],
-    often: ["often", 30, "How often in detail"],
+    often: ["often", 30, "Frequency in detail"],
     form: ["form", 30, "Form in detail"],
     symptoms: ["sym", 30, "Symptoms in detail"],
-    checkin: ["ck", 30, "Your check-ins in detail"],
-    pattern: ["pat", 30, "Possible patterns in detail"]
+    checkin: ["ck", 30, "Check-in in detail"],
+    pattern: ["pat", 30, "Patterns in detail"]
   };
   const PAY_FROM = { score: "score", parts: "score", trend: "score", pattern: "pat", checkin: "ck" };
   /* while Florin is learning, the score's detail is how FloraScore works, so the link says that; the pattern card
@@ -287,14 +323,21 @@
     return V.plan === "free" ? `<button type="button" class="ap-ask-b rlk-ask" data-act="pay" data-pay="ask" data-k="${ak}">${ic("lock")}Ask about this</button>`
       : `<button type="button" class="ap-ask-b rlk-ask" data-act="ask-about" data-k="${ak}" data-range="${DETAIL[k][1]}">${ic("chat")}Ask about this</button>`;
   };
+  /* Ask about this and the detail link sit inside the card, at its foot (Will, Nov 7: "I like the 'ask about this'
+     inside rather than below a card"), and the card's head is its name alone (plainHead). Easy read too: its links
+     keep their larger size, inside the card. The Easy version (V.easy) keeps its own plain words for its heads
+     ("How often", "Weekly check-in"), so only the foot moves in there */
+  const rangeWords = (D) => (D && D.learning ? "so far" : `last ${(D && D.range) || 30} days`);
   const cardBlock = (look, k, D, M, V) => {
-    const html = card(look, k, D, M, V);
-    return html ? `<section class="rlk-card" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}">${wrap(look, html)}<div class="rlk-foot">${askBtn(k, V)}${goLink(k, V, D)}</div></section>` : "";
+    const foot = `<div class="rlk-foot rlk-foot--in">${askBtn(k, V)}${goLink(k, V, D)}</div>`;
+    const html = card(look, k, D, M, V, V.easy ? { foot } : { plain: k, range: rangeWords(D), foot });
+    return html ? `<section class="rlk-card" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}">${wrap(look, html)}</section>` : "";
   };
 
   /* ---------- Insights in a look ----------
      The cards in the library's order, each with its tap target into the detail. The range tabs give way to one label:
-     the cards draw 30 days (7 on the free plan, and the days so far while Florin is learning). Free keeps the score,
+     the cards draw 30 days (the days so far while Florin is learning), the library's own stretch; on Free, 7 days, the
+     week's own (the score, the week and the check-in read no longer stretch). Free keeps the score,
      the week and the check-in, then one card for the rest that opens the paywall, over a blur of the person's own
      numbers */
   const ORDER = ["score", "parts", "trend", "week", "month", "timing", "often", "form", "symptoms", "checkin", "pattern"];
@@ -450,48 +493,55 @@
   /* ============================== WILL'S PICKS ==============================
      Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default? I want to see how they
      lay out one by one." He picks a style chart by chart on the data modules page (modules/, published at
-     https://claude.ai/artifact/K3VM5FUAZSbddHUMkVc4hb). These are its saved picks as read on Nov 5, one row per Insights
-     card, by the key the core's card carries; null is not picked yet, drawn in the default, Florin charts. When Will
-     picks more, change this table (and the lines in CLAUDE.md, the brief and data viz.md that name them).
-     The view keeps Insights' own order and range tabs. A picked card is drawn at every range its style draws: a look's
-     card reads the last 30 days (or the days so far while Florin learns the usual), so at another range the card is
-     Florin charts', and the screen's note says so; the check-in has no range; the mix draws every range. Detail pages
-     stay Florin charts' (no picked style has its own), Today stays Florin charts with the Rings week, and the theme is
-     left alone: an Oura card takes its light or dark form from the phone */
+     https://claude.ai/artifact/K3VM5FUAZSbddHUMkVc4hb). One row per Insights card, by the key the core's card carries;
+     null is not picked yet, drawn in the default, Florin charts. When Will picks more, change this table (and the lines
+     in CLAUDE.md, the brief, decisions.md and data viz.md that name them).
+     Nov 7, on the demo's Insights: "I think FLORIN CHARTS for insights tab has the best flow", so the view keeps the
+     core's order and its range tabs, the one place the range is picked: every card, picked or not, draws the range the
+     tabs say (7, 30 or 90 days; 7 on Free; the days so far while Florin learns the usual), with its name alone as its
+     head, and Ask about this and its detail inside it, at its foot. Detail pages stay Florin charts', Today stays Florin
+     charts with the Rings week, and the theme is left alone: an Oura card takes its light or dark form from the phone */
   const WILL_PICKS = {
-    score: "rings", /* FloraScore today: Rings' hero, "the large green big circle like in the Score first visual". He
-                       asked for it on the default demo too, so Florin charts draws it as well (heroInto, below) */
-    timing: "oura", /* "let's take this one too" */
-    often: null, /* How often: not picked yet */
-    form: "mix", /* "a mix": Rings' count ("32 of 38") with Oura's bar chart under it, the 7, 30 and 90 day tabs on it */
-    sym: "oura", /* "i think this is my preferred"; he likes Rings too, and Oura is the saved pick */
-    ck: "oura", /* "i think i like this one" */
+    score: "rings", /* FloraScore today: Rings' hero, "the large green big circle like in the Score first visual" (Nov 5),
+                       on the default demo too (heroInto, below). Nov 7: "Large FloraScore: keep" */
+    timing: "rings", /* Nov 5, "let's take this one too"; Nov 7, "i like TIMING selected ... needs the ask about this chat
+                       widget inside. torn between oura and rings actually". He called it "the oura", but the screenshot
+                       he sent is the Rings look's morning dial (a column of dots per time, "19 of 26 mornings in your
+                       window" in its centre), so his picks draw that dial. Oura's thin-arc card is one edit away:
+                       timing: "oura" */
+    often: "bento", /* Nov 7, Frequency: "i think i like the Bento stack chart, cleaner visually. We should show a day
+                       with 5 (maybe goes to red on 5?)". There's no red in the app: a day over the usual count is Gold,
+                       as every shift is, and each demo person has one 5-BM day in the last 30 days (refresh-data.js, BUSY) */
+    form: "oura", /* Nov 7: "our has the best FORM analysis visualizer" (Oura; it was "a mix" of Rings and Oura, Nov 5) */
+    sym: "oura", /* Nov 5, "i think this is my preferred" */
+    ck: "oura", /* Nov 5, "i think i like this one" */
     pat: null /* Possible patterns: not picked yet */
-    /* Not on Insights: The last 7 days is Rings (Nov 4), Today's week card in every view already. Not picked yet:
-       FloraScore over time and What moved FloraScore (the core's card under the hero), The month and History's days */
+    /* Not on Insights: The last 7 days is Rings (Nov 4), Today's week card in every view already. The trend and Your
+       days stay Florin charts' (the core's cards under the hero, made plainer Nov 7: one about FloraScore, one about the
+       logs) */
   };
   /* each Insights card's key, as a look names it */
   const LOOK_K = { score: "score", timing: "timing", often: "often", form: "form", sym: "symptoms", ck: "checkin", pat: "pattern" };
-  const CARD_NAME = { score: "FloraScore", timing: "Timing", often: "How often", form: "Form", sym: "Symptoms", ck: "the check-in", pat: "Possible patterns" };
-  /* the stretch a look's card reads (D.days[30]: the last 30 days, or since the person started) is the range's */
-  const lookFits = (M, n) => Math.max(M.start, L.TODAY - 29) === Math.max(M.start, L.TODAY - n + 1);
+  const CARD_NAME = { score: "FloraScore", timing: "Timing", often: "Frequency", form: "Form", sym: "Symptoms", ck: "the check-in", pat: "Patterns" };
   /* the range Insights draws: 7 days on Free and while Florin learns the usual, as the core's does */
   const rangeOf = (M, V, st) => (!M.usual || V.plan === "free" ? 7 : L.RANGES.includes(+(st && st.range)) ? +st.range : 30);
-  /* each picked card at range n, and whether its style draws it there */
-  const picksAt = (M, V, n) => Object.keys(WILL_PICKS).filter((k) => WILL_PICKS[k] && (k !== "ck" || RU.ckOn(V))).map((k) => {
-    const style = WILL_PICKS[k];
-    return { k, style, drawn: k === "score" || k === "ck" || style === "mix" || lookFits(M, n) };
-  });
-  /* what each style draws, in a sentence: "Timing, Symptoms and the check-in in Oura's cards" */
-  const STYLE_SAID = { oura: "in Oura's cards", rings: "in the Rings cards", mix: "as Rings' count over Oura's bars" };
+  /* the stretch a look's card reads for range n: the range itself, or, while Florin learns the usual, every day so far
+     (FLD.build's 30, from the person's first day), as the looks say "so far" */
+  const lookRange = (M, n) => (M.usual ? n : 30);
+  /* each picked card */
+  const picksAt = (M, V) => Object.keys(WILL_PICKS).filter((k) => WILL_PICKS[k] && (k !== "ck" || RU.ckOn(V))).map((k) => ({ k, style: WILL_PICKS[k] }));
+  /* what each style draws, in a sentence: "Form, Symptoms and the check-in in Oura's cards". A card with a drawing of
+     its own says it by name: Timing in Rings is the morning dial */
+  const STYLE_SAID = { oura: "in Oura's cards", rings: "in the Rings cards", bento: "in Bento's stacked chart" };
+  const CARD_SAID = { "rings:timing": "Timing in the Rings morning dial" };
   const picksSaid = (list) => {
-    const by = {};
-    list.filter((x) => x.k !== "score").forEach((x) => (by[x.style] = by[x.style] || []).push(CARD_NAME[x.k]));
-    return Object.entries(by).map(([s, names]) => `${join(names)} ${STYLE_SAID[s] || `in ${nameOf(s)}`}`);
+    const by = {}, own = [];
+    list.filter((x) => x.k !== "score").forEach((x) => { const c = CARD_SAID[`${x.style}:${x.k}`]; if (c) own.push(c); else (by[x.style] = by[x.style] || []).push(CARD_NAME[x.k]); });
+    return own.concat(Object.entries(by).map(([s, names]) => `${join(names)} ${STYLE_SAID[s] || `in ${nameOf(s)}`}`));
   };
 
-  /* ---------- the footer every picked card carries: Ask about this, at the range it draws, and its detail page.
-     On Free both open the paywall, as the core's cards do ---------- */
+  /* ---------- the foot every picked card carries inside it: Ask about this, at the range it draws, and its detail
+     page. On Free both open the paywall, as the core's cards do ---------- */
   const askAt = (k, V, n) => {
     const ak = ASK_OF[k];
     return V.plan === "free" ? `<button type="button" class="ap-ask-b rlk-ask" data-act="pay" data-pay="ask" data-k="${ak}">${ic("lock")}Ask about this</button>`
@@ -503,126 +553,69 @@
     if (V.plan === "free") return `<button type="button" class="ap-link rlk-go" data-act="pay" data-pay="${PAY_FROM[k] || dk}">${ic("lock")}<span>${esc(words)}</span><span class="sr">, with Florin membership</span></button>`;
     return `<button type="button" class="ap-link rlk-go" data-act="idetail" data-k="${dk}">${esc(words)}${ic("chev")}</button>`;
   };
-  const blockOf = (look, k, html, V, n, D, cls = "") => `<section class="rlk-card rpk-card${cls}" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}" data-a>${wrap(look, html)}<div class="rlk-foot">${askAt(k, V, n)}${goAt(k, V, D)}</div></section>`;
+  const footAt = (k, V, n, D) => `<div class="rlk-foot rlk-foot--in">${askAt(k, V, n)}${goAt(k, V, D)}</div>`;
+  /* a picked card in its look, its head plain and its foot inside, at range n */
+  const pickedCard = (look, k, M, V, n) => {
+    const D = dataOf(M, V, lookRange(M, n));
+    return card(look, k, D, M, V, { plain: k, range: rangeWords(D), foot: footAt(k, V, n, D) });
+  };
+  const blockOf = (look, k, html, cls = "") => `<section class="rlk-card rpk-card${cls}" data-rlk-k="${k}" data-rlk-look="${esc(look.id)}" data-a>${wrap(look, html)}</section>`;
   const nodeOf = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
   /* ---------- FloraScore today on Insights: the Rings look's own hero (Will, Nov 5, "the large green big circle like in
      the Score first visual"), in Florin charts and Will's picks. It reads D.score, so a flagged today keeps its number
      and says "Not read against your usual today", no score today gives L.NO_SCORE's reason, and while Florin learns
-     the usual it is Day 5 of 14 on a ring of 14 steps. FloraScore over the range and what moved it aren't picked yet,
-     so the core's card stays under the hero, its head saying how the range went (as FloraScore's page says it) ---------- */
+     the usual it is Day 5 of 14 on a ring of 14 steps. Under it the core's card is the Trend (Nov 7: Will found the
+     trend and the days card hard to tell apart, "20 of 27; 12 of 27?"): named Trend, its line is FloraScore's average
+     over the stretch read against its usual range, never an "N of M days" count, so "N of M days within your usual"
+     belongs to Your days alone; the day split stays on FloraScore's page ---------- */
   const inRangeText = (M, mode, n) => {
     const su = L.scoreUsual(M, mode);
     if (!su) return "";
-    /* a flagged today keeps its score and is in no count, as on FloraScore's page */
-    const fl = !!M.usual && RU.flagToday(M);
-    const sc = L.scoreSeries(M, n, mode).filter((s) => s.value != null && !(fl && s.d === L.TODAY));
-    const k = sc.filter((s) => s.value >= su[0] && s.value <= su[1]).length;
-    return sc.length ? `In its usual range on ${k} of ${plural(sc.length, "day")}` : "Not scored in this stretch";
+    /* a flagged today keeps its score (L.score reads raw), so it is in the average, as FloraScore's page and the week's
+       average (L.scoreMoved) have it: one stretch, one number. It is in no count of days against the usual */
+    const sc = L.scoreSeries(M, n, mode).filter((s) => s.value != null);
+    if (!sc.length) return "Not scored in this stretch";
+    const avg = Math.round(sc.reduce((a, s) => a + s.value, 0) / sc.length), rel = RU.scoreRel(avg, su);
+    return `FloraScore averaged ${avg}, ${rel.charAt(0).toLowerCase()}${rel.slice(1)}`;
   };
-  function heroInto(root, M, V, D, n) {
+  function heroInto(root, M, V, n) {
     const rings = lookById("rings");
     const h = root.querySelector('.ap-ic-h[data-k="score"]'), sec = h && h.closest("section");
     if (!rings || !sec) return;
-    const html = card(rings, "score", D, M, V);
+    const html = pickedCard(rings, "score", M, V, n);
     if (!html) return;
-    const blk = nodeOf(blockOf(rings, "score", html, V, n, D, " rpk-score"));
+    const blk = nodeOf(blockOf(rings, "score", html, " rpk-score"));
     if (!M.usual) { sec.replaceWith(blk); return; }
     sec.before(blk);
     const kk = h.querySelector(".ap-ic-t .ap-k"), b = h.querySelector(".ap-ic-t b"), said = inRangeText(M, V.form, n);
-    if (kk) kk.textContent = `FloraScore · ${RANGE_NAME[n].toLowerCase()}`;
+    if (kk) kk.innerHTML = `Trend<span class="sr">${esc(`, FloraScore, ${RANGE_NAME[n].toLowerCase()}`)}</span>`;
     if (b && said) b.textContent = said;
   }
 
-  /* ---------- Form, the mix (Will, Nov 5: Rings' count "with Oura's bar chart under it", and "the 7, 30 and 90 day
-     toggle to work on it as it does in the app") ----------
-     One card: the Rings card's head, its big count of BMs in the usual forms and its sentence, then Oura's bars, one
-     for each stretch up to the range (the last 7 days, 30, 90) and one for the weeks that set the usual, each split from
-     firmer to looser. Every number is read from the model the way Insights' Form card reads it (L.span over the range,
-     a flagged today left out, L.inForms for each BM), so the big number, the range's own bar and the Form card agree.
-     The marks are the app's (claude/Florin data viz.md, section 1): a BM in the usual forms in the reading colour, one
-     outside them Gold with its edge, one that could be either, or logged before day 14, Ink 3 */
-  const sidesOf = (M, mode, F) => {
-    const u = M.usual, B = mode === "B", lo = u ? (B ? u.wLo : u.fLo) : null;
-    const c = { fi: 0, el: 0, in: 0, eh: 0, lo: 0, n: 0 };
-    F.filter((f) => !f.flag).forEach((f) => f.bms.forEach((b) => {
-      c.n++;
-      if (!u) return;
-      const steps = B ? [L.wordKey(b)] : L.stepsOf(b), w = L.inForms(M, b, mode);
-      if (w === true) c.in++;
-      else if (w == null) { if (Math.min(...steps) < lo) c.el++; else c.eh++; }
-      else if (Math.max(...steps) < lo) c.fi++;
-      else c.lo++;
-    }));
-    c.either = c.el + c.eh; c.out = c.fi + c.lo; c.read = c.n - c.either;
-    return c;
-  };
-  /* the counts the card states for range n, for the card and for the checks (behave.js, wills-picks) */
-  RU.picksForm = (M, mode, n) => sidesOf(M, mode, L.span(M, n, mode));
-  const share = (v, of) => Math.round((v / of) * 1000) / 10;
-  const MIN_PART = 4;
-  function mixBar(label, c, learning, sub) {
-    if (!c.n) return `<li class="rpk-hb"><p class="rpk-hb-top"><span>${esc(label)}</span><b>None logged</b></p><span class="rpk-hb-t" aria-hidden="true"></span></li>`;
-    const segs = learning ? [["learn", c.n]] : [["shift", c.fi], ["either", c.el], ["in", c.in], ["either", c.eh], ["shift", c.lo]].filter(([, v]) => v);
-    /* a part is never narrower than MIN_PART of the bar, so one BM in 120 still shows as a mark (data viz.md: marks 8px at
-       least); the widest part gives up the room. The counts are written beside the bar */
-    let w = segs.map(([, v]) => share(v, c.n));
-    const add = w.reduce((s, x) => s + (x < MIN_PART ? MIN_PART - x : 0), 0);
-    if (add) { const wide = w.indexOf(Math.max(...w)); w = w.map((x, i) => (i === wide ? Math.round((x - add) * 10) / 10 : Math.max(x, MIN_PART))); }
-    let at = 0;
-    const fills = segs.map(([k], i) => { const s = `<i class="rpk-hb-f is-${k}" style="--x:${Math.round(at * 10) / 10}%;--w:${w[i]}%"></i>`; at += w[i]; return s; }).join("");
-    const value = learning ? plural(c.n, "BM") : c.read ? `${c.in} of ${c.read}` : `${plural(c.n, "BM")}, could be either`;
-    const words = learning ? `${plural(c.n, "BM")} logged, read against your usual forms from day ${L.LEARN_DAYS}`
-      : [c.read ? `${c.in} of ${plural(c.read, "BM")} in your usual forms` : "", c.fi ? `${c.fi} firmer` : "", c.lo ? `${c.lo} looser` : "", c.either ? `${c.either} could be either` : ""].filter(Boolean).join(", ");
-    const below = sub || (!learning && c.either && c.read ? `${c.either} could be either` : "");
-    return `<li class="rpk-hb"><p class="rpk-hb-top"><span>${esc(label)}</span><b>${esc(value)}</b></p><span class="rpk-hb-t" role="img" aria-label="${esc(`${label}: ${words}.`)}">${fills}</span>${below ? `<p class="rpk-hb-sub">${esc(below)}</p>` : ""}</li>`;
-  }
-  function mixCard(M, V, n, D) {
-    const mode = V.form, u = M.usual, learning = !u;
-    const c = RU.picksForm(M, mode, n);
-    /* one bar per stretch up to the range, the range's own last; two that start on the same day are one */
-    const d0 = (s) => Math.max(M.start, L.TODAY - s + 1);
-    const spans = L.RANGES.filter((s) => s <= n).filter((s, i, a) => i === a.length - 1 || d0(a[i + 1]) !== d0(s));
-    const rows = spans.map((s) => mixBar(learning ? "So far" : RANGE_NAME[s], s === n ? c : RU.picksForm(M, mode, s), learning));
-    /* the weeks that set the usual (looks-data.js's usualWeeks), as Oura's card draws them */
-    const uw = D && D.form && D.form.usualWeeks;
-    const base = u && uw ? sidesOf(M, mode, M.days.filter((x) => x.d >= Math.max(uw[0], M.start) && x.d <= uw[1]).map((x) => L.facts(M, x, mode))) : null;
-    if (base && base.n) rows.push(mixBar("Your usual", base, false, `${L.usualFormsText(M, mode)}, in the weeks that set your usual`));
-    const was = (k) => (k === 1 ? "was" : "were");
-    const eith = c.either ? `, and ${c.either} could be either` : "";
-    const ans = !c.n ? (learning ? "No BMs logged so far." : `No BMs logged in the ${RANGE_NAME[n].toLowerCase()}.`)
-      : learning ? `Florin learns your usual forms by day ${L.LEARN_DAYS}.`
-      : c.fi && c.lo ? `${c.fi} ${was(c.fi)} firmer and ${c.lo} looser than your usual forms${eith}.`
-      : c.fi ? `${c.fi} ${was(c.fi)} firmer than your usual forms${eith}.`
-      : c.lo ? `${c.lo} ${was(c.lo)} looser than your usual forms${eith}.`
-      : c.either ? `${c.either} could be either; the rest sat in your usual forms.` : "Every BM sat in your usual forms.";
-    const big = !learning && c.read ? `<p class="rg-big"><b class="rg-n">${c.in}</b><span class="rg-of">${esc(`of ${plural(c.read, "BM")} in your usual forms`)}</span></p>`
-      : c.n ? `<p class="rg-big"><b class="rg-n">${c.n}</b><span class="rg-of">${c.n === 1 ? "BM logged" : "BMs logged"}</span></p>` : `<p class="rg-big">Not yet</p>`;
-    const span = learning ? "so far" : `${n} days`;
-    const chip = u ? `<span class="rg-chip rg-chip--usual">${esc(L.usualFormsText(M, mode))}</span>` : `<span class="rg-chip rg-chip--neutral">Learning</span>`;
-    /* the legend: only the marks drawn, in the app's words */
-    const all = [c].concat(spans.filter((s) => s !== n).map((s) => RU.picksForm(M, mode, s)), base ? [base] : []);
-    const any = (f) => all.some(f);
-    const lg = learning ? [["learn", "Logged"]] : [any((x) => x.in) && ["in", "In your usual forms"], any((x) => x.out) && ["shift", "Outside your usual forms"], any((x) => x.either) && ["either", "Could be either"]].filter(Boolean);
-    return `<article class="rg rg-form rpk-mix" aria-label="${esc(`Form, ${span}`)}">
-      <header class="rg-h"><h3 class="rg-k">${esc(`Form · ${span}`)}</h3>${chip}</header>
-      <div class="rg-lead">${big}<p class="rg-ans">${esc(ans)}</p></div>
-      <ul class="rpk-hbs">${rows.join("")}</ul>
-      ${learning || !c.n ? "" : `<p class="rpk-dir" aria-hidden="true"><span>Firmer</span><span>Looser</span></p>`}
-      ${lg.length ? `<ul class="rg-legend">${lg.map(([k, t]) => `<li><i class="rpk-sw rpk-sw--${k}" aria-hidden="true"></i>${esc(t)}</li>`).join("")}</ul>` : ""}
-    </article>`;
+  /* ---------- Your days' way into its detail page (this module's days page), at its foot after Ask, as a look's card
+     draws its own (goLink): every other Insights card opens its detail, so this one does too (Will, Nov 7: "when you
+     click in you get more"). On Free it opens the paywall. The foot takes rlk-foot, so each Ask style lays it out as
+     it lays out a look's foot. Nothing while Florin is learning: the days page needs a usual ---------- */
+  function daysGoInto(root, M, V, n) {
+    const f = M.usual ? root.querySelector(":scope > .ap-yd .ap-ic-f") : null;
+    if (!f || f.querySelector(".rlk-go")) return;
+    const go = V.plan === "free" ? `<button type="button" class="ap-link rlk-go" data-act="pay" data-pay="days">${ic("lock")}<span>Your days in detail</span><span class="sr">, with Florin membership</span></button>`
+      : `<button type="button" class="ap-link rlk-go" data-act="idetail" data-k="days" data-range="${n}" data-rlk>Your days in detail${ic("chev")}</button>`;
+    f.classList.add("rlk-foot");
+    f.insertAdjacentHTML("beforeend", go);
   }
 
-  /* ---------- the picked cards into the core's Insights, in place of the core's own ---------- */
-  function picksInto(root, M, V, D, n) {
-    picksAt(M, V, n).forEach(({ k, style, drawn }) => {
-      if (k === "score" || !drawn) return;
+  /* ---------- the picked cards into the core's Insights, in place of the core's own, at the tabs' range ---------- */
+  function picksInto(root, M, V, n) {
+    picksAt(M, V).forEach(({ k, style }) => {
+      if (k === "score") return;
       const h = root.querySelector(`.ap-ic-h[data-k="${k}"]`), sec = h && h.closest("section");
       if (!sec) return;
-      const look = lookById(style === "mix" ? "rings" : style);
+      const look = lookById(style);
       if (!look) return;
-      const html = style === "mix" ? fit(mixCard(M, V, n, D), { M, V }) : card(look, LOOK_K[k], D, M, V);
-      if (html) sec.replaceWith(nodeOf(blockOf(look, LOOK_K[k], html, V, n, D, style === "mix" ? " rpk-mixc" : "")));
+      const html = pickedCard(look, LOOK_K[k], M, V, n);
+      if (html) sec.replaceWith(nodeOf(blockOf(look, LOOK_K[k], html)));
     });
   }
   /* Insights in Florin charts and in Will's picks: the core's screen, with FloraScore today as the Rings hero, and in
@@ -635,9 +628,10 @@
     t.innerHTML = html.trim();
     const root = t.content.firstElementChild;
     if (!root || !root.classList.contains("ap-ins")) return html;
-    const D = dataOf(M, V), n = rangeOf(M, V, st), rid = ++RID;
-    heroInto(root, M, V, D, n);
-    if (picksOn(V)) { picksInto(root, M, V, D, n); root.dataset.rpk = "picks"; }
+    const n = rangeOf(M, V, st), rid = ++RID;
+    heroInto(root, M, V, n);
+    if (picksOn(V)) { picksInto(root, M, V, n); root.dataset.rpk = "picks"; }
+    daysGoInto(root, M, V, n);
     root.classList.add("rpk-ins");
     root.dataset.rlkR = String(rid);
     schedule(rid);
@@ -886,11 +880,11 @@
     journal: { is: "The numbers written out, with plain charts on labelled axes, each with a caption.", why: "It's the most exact, so it suits detail pages and a clinician report.", not: "It's the most reading, and its small captions are hard for older eyes." },
     bento: { is: "Tiles of different sizes, one number each.", why: "Easy to take in at a glance, like phone widgets.", not: "Tiles show numbers but not how they connect, and they crowd when text is large." }
   };
-  /* Will's picks (Nov 5), in the sheet's shape, from the table, so the note follows when he picks more */
+  /* Will's picks (Nov 5, Nov 7), in the sheet's shape, from the table, so the note follows when he picks more */
   const picksOpt = (M, P) => ({
-    is: `Florin charts, with each Insights card Will has picked on the data modules page drawn in his style: ${picksSaid(picksAt(M, P, 30)).join("; ")}.`,
-    why: "It lays his picks out one by one, in Insights' own order, from the same logs as every other style.",
-    not: "Styles mix on one screen, and Oura's cards draw only 30 days, so at 7 and 90 days those cards are Florin charts'."
+    is: `Florin charts, with each Insights card Will has picked on the data modules page drawn in his style: ${picksSaid(picksAt(M, P)).join("; ")}.`,
+    why: "It lays his picks out one by one, in Insights' own order, from the same logs as every other style, with the range picked once at the top.",
+    not: "Styles mix on one screen, so cards that answer the same kind of question are drawn in different ways."
   });
   EXT.decisions.look = (M, P) => ({
     aside: "The real choice is Florin charts everywhere, or Oura on Today. Will's picks lays out the cards Will has picked so far. Easy read is the Easy version's own, and Rings, Field journal and Bento are here to compare.",
@@ -900,16 +894,12 @@
   });
   /* the screens' own notes, while a style is drawn */
   const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn in the ${nameOf(lookIdOf(P) || "built")} style.`);
-  /* Insights in Will's picks: what each card is drawn in, and, at a range a picked style doesn't draw, which cards are
-     Florin charts' there (the range is the phone's) */
+  /* Insights in Will's picks: what each card is drawn in, and that the range at the top is every card's */
   const picksNote = (M, P) => {
-    const S = EXT.api && EXT.api.S, n = rangeOf(M, P, S ? S.ins : null);
-    const list = picksAt(M, P, n), fell = list.filter((x) => !x.drawn);
-    const names = join(fell.map((x) => CARD_NAME[x.k])), styles = join([...new Set(fell.map((x) => nameOf(x.style)))]), are = fell.length === 1 ? "is" : "are";
-    const why = !fell.length ? "" : P.plan === "free" ? ` On Free, Insights is ${n} days and ${styles} draws 30, so ${names} ${are} Florin charts' here.` : ` ${styles} draws 30 days, so at ${n} days ${names} ${are} Florin charts'.`;
+    const list = picksAt(M, P);
     return {
       t: "Insights, in Will's picks",
-      lede: `Each card in the style Will picked on the data modules page, in Insights' own order: FloraScore in the Rings card's big ring; ${picksSaid(list).join("; ")}; the rest in Florin charts, as every detail page is.${why}${!M.usual ? " While Florin learns the usual, the picked cards show the days so far." : ""}${P.plan === "free" ? " The details and Ask open membership." : ""}`
+      lede: `Each card in the style Will picked on the data modules page, in Insights' own order: FloraScore in the Rings card's big ring; ${picksSaid(list).join("; ")}; the rest in Florin charts, as every detail page is. The range is picked once, at the top, and every card draws it.${!M.usual ? " While Florin learns the usual, the picked cards show the days so far." : ""}${P.plan === "free" ? ` On Free that's ${RU.FREE_DAYS} days, and the details and Ask open membership.` : ""}`
     };
   };
   EXT.notes["look-insights"] = (M, P) => {
