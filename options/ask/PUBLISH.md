@@ -1,6 +1,6 @@
 # Publishing options/ask (Ask button options)
 
-A new artifact (none yet). Publish `index.html` as the page (no doctype: the publisher wraps it), with these files at
+The artifact is https://claude.ai/artifact/DtAd6USZyoR1yngyHjX4SW (first published Nov 8). Publish `index.html` as the page (no doctype: the publisher wraps it), with these files at
 the same relative paths:
 
 ```
