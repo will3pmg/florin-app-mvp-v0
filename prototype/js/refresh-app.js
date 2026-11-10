@@ -26,8 +26,39 @@
   const reduced = () => FL.reduced();
   const store = {
     get(k, d) { try { const v = localStorage.getItem("florin-refresh:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem("florin-refresh:" + k, JSON.stringify(v)); } catch (e) { /* private window: fine */ } }
+    set(k, v) { try { localStorage.setItem("florin-refresh:" + k, JSON.stringify(v)); } catch (e) { /* private window: fine */ } },
+    clear(k) { try { localStorage.removeItem("florin-refresh:" + k); } catch (e) { /* private window: fine */ } }
   };
+
+  /* ---------- Will's picks: the one table ----------
+     Will, Nov 10: "Can you update the florin app refresh to star or flag all the picks i made for my teammates and also
+     set them to the default seletions?" His picks, locked Nov 7 and 8 (claude/Florin decisions.md): every decision, the
+     View (which is Data style's "picks") and the Ask button. The phone's fallbacks, each decision's default, the stars on
+     the left bar, the notes' top label and Use Will's picks all read this table, so they can't drift.
+       v       the option he picked (the toggle's value)
+       on      when he picked it
+       short   how the note's top label names it, when the option's own name isn't enough
+       agrees  his pick and our recommendation are the same call though the toggles differ (Version: Standard, with
+               Easy as a setting, is what we recommend too), so the label doesn't say both
+     Ask Florin on Free isn't a toggle: his pick (one answer a week, questions about seeing a doctor always answered) is
+     said in the notes that describe Ask on Free. */
+  const WILL = {
+    when: "Nov 7 and 8",
+    form: { v: "C", on: "Nov 7" },
+    bmUI: { v: "quick", on: "Nov 7" },
+    home: { v: "compact", on: "Nov 7" },
+    history: { v: "calendar", on: "Nov 7" },
+    checkin: { v: true, on: "Nov 7" },
+    mealUI: { v: "quick", on: "Nov 7" },
+    look: { v: "picks", on: "Nov 7 and 8", short: "Will's picks, card by card" },
+    easy: { v: false, on: "Nov 7", short: "Standard, with Easy as a setting", agrees: true },
+    onboard: { v: "short", on: "Nov 7" },
+    askUI: { v: "compact", on: "Nov 8" }
+  };
+  /* the view is Data style's pick: one entry, two controls */
+  WILL.view = WILL.look;
+  /* read-only, for the checks and any module that wants to mark his pick */
+  EXT.will = WILL;
 
   /* ---------- the claims check, from the studio's 22 rules ---------- */
   const RULES = (B.claimsRules || []).map((r) => Object.assign({}, r, { rx: new RegExp(r.re, r.id === "emdash" || r.id === "bang" ? "g" : "gi") }));
@@ -54,9 +85,11 @@
   const CK_SCREENS = ["ck-card", "ck", "ck-last", "ckdone", "ckday", "i-ck"];
 
   function Phone(host, cfg) {
+    /* a decision the page doesn't pass falls back to Will's pick, the decision's default (WILL) */
     const S = {
-      form: cfg.form, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || "quick", plan: cfg.plan || "member",
-      bmUI: cfg.bmUI || "quick", home: cfg.home || "compact", history: cfg.history || "list", checkin: cfg.checkin !== false, look: cfg.look || "built", easy: !!cfg.easy, onboard: cfg.onboard || "short", askUI: cfg.askUI || (EXT.askUI && EXT.askUI.def) || "compact",
+      form: cfg.form || WILL.form.v, persona: cfg.persona, data: cfg.data, meals: cfg.meals || "all", mealUI: cfg.mealUI || WILL.mealUI.v, plan: cfg.plan || "member",
+      bmUI: cfg.bmUI || WILL.bmUI.v, home: cfg.home || WILL.home.v, history: cfg.history || WILL.history.v, checkin: cfg.checkin === undefined ? WILL.checkin.v : cfg.checkin !== false,
+      look: cfg.look || WILL.look.v, easy: cfg.easy === undefined ? WILL.easy.v : !!cfg.easy, onboard: cfg.onboard || WILL.onboard.v, askUI: cfg.askUI || WILL.askUI.v,
       tab: "today", ovl: [], hist: { filter: "all", n: 14 }, ins: { range: 30, k: null, y: 0 }, askCtx: null, uid: ++UID, undo: null, drafts: {}
     };
     S.M = L.build(S.persona, S.data, { meals: S.meals });
@@ -989,10 +1022,10 @@
       t: "One possible pattern",
       lede: "Two bars: how often the change followed the food, and how often it came on other days, with the counts written on. Late dinners add the first BM times after each kind of dinner. Then a way to test it. What you could try never says avoid."
     }),
+    /* Ask Florin on Free isn't a toggle: Will's pick (Nov 7) is said here, where Ask on Free is described */
     ask: () => P.plan === "free" ? ({
       t: "Ask Florin, free plan",
-      lede: "On Free, the Ask tab says what Ask Florin does and the questions people ask, and offers membership. There's no sample answer, since it would have to be made up.",
-      open: ["Give Free one answer a week, with questions about seeing a doctor always answered?"]
+      lede: `On Free, the Ask tab says what Ask Florin does and the questions people ask, and offers membership. There's no sample answer, since it would have to be made up. ${PICK_SAID} (Nov 7): one answer a week on Free, and questions about seeing a doctor always answered. The demo still shows the lock.`
     }) : ({
       t: "Ask Florin",
       lede: "A chat on the person's own logs. Questions to start come from the logs, and every answer is read against the person's own usual."
@@ -1059,7 +1092,7 @@
      opts are [value, label, short]: the label is the option's name, the short one (when there is one) is on the toggle. */
   const DECISIONS = [
     {
-      k: "form", label: "Consistency", def: "C", wide: true, opts: [["A", L.MODES_SHORT.A], ["B", L.MODES_SHORT.B], ["C", L.MODES_SHORT.C]],
+      k: "form", label: "Consistency", def: WILL.form.v, wide: true, opts: [["A", L.MODES_SHORT.A], ["B", L.MODES_SHORT.B], ["C", L.MODES_SHORT.C]],
       q: "How does a person describe a BM's consistency?",
       what: "The words on the BM tiles, and how Today, History and Insights name each BM.",
       note: () => {
@@ -1078,7 +1111,7 @@
       }
     },
     {
-      k: "bmUI", label: "BM logging", def: "quick", opts: [["quick", "Quick tiles and form", "Quick tiles"], ["full", "Full form only", "Full form"]],
+      k: "bmUI", label: "BM logging", def: WILL.bmUI.v, opts: [["quick", "Quick tiles and form", "Quick tiles"], ["full", "Full form only", "Full form"]],
       q: "Should one tap on a tile save a BM?",
       what: "What happens when a person taps plus to log a BM.",
       note: () => ({
@@ -1092,17 +1125,17 @@
       })
     },
     {
-      k: "home", label: "Home", def: "compact", wide: true, opts: [["score", "Score first"], ["day", "Day first"], ["compact", "Compact"]],
+      k: "home", label: "Home", def: WILL.home.v, wide: true, opts: [["score", "Score first"], ["day", "Day first"], ["compact", "Compact"]],
       q: "What does Today show first?",
       what: "The top of the Today tab, the screen the app opens on."
     },
     {
-      k: "history", label: "History", def: "calendar", opts: [["list", "List"], ["calendar", "Calendar"]],
+      k: "history", label: "History", def: WILL.history.v, opts: [["list", "List"], ["calendar", "Calendar"]],
       q: "How should History show past days?",
       what: "The History tab, where people look back and fill in a day they missed."
     },
     {
-      k: "checkin", label: "Weekly check-in", def: true, opts: [[true, "On"], [false, "Off"]],
+      k: "checkin", label: "Weekly check-in", def: WILL.checkin.v, opts: [[true, "On"], [false, "Off"]],
       q: "Should the app ask how the week felt?",
       what: "Whether the app has a weekly check-in: a few questions about the past week.",
       note: (M) => ({
@@ -1127,7 +1160,7 @@
       })
     },
     {
-      k: "mealUI", label: "Meal sheet", def: "quick", opts: [["quick", "Quick, voice or text", "Quick"], ["detailed", "One meal at a time", "One meal"]],
+      k: "mealUI", label: "Meal sheet", def: WILL.mealUI.v, opts: [["quick", "Quick, voice or text", "Quick"], ["detailed", "One meal at a time", "One meal"]],
       q: "How does a person log what they ate?",
       what: "The meal row in the plus menu and the sheet it opens.",
       note: () => ({
@@ -1141,18 +1174,18 @@
       })
     },
     {
-      k: "look", label: "Data style", def: "built", chips: true,
+      k: "look", label: "Data style", def: WILL.look.v, chips: true,
       opts: [["built", "Florin charts"], ["picks", "Will's picks"], ["rings", "Rings"], ["journal", "Field journal"], ["bento", "Bento"], ["oura", "Oura"], ["easy", "Easy read"]],
       q: "How should Florin draw the numbers?",
       what: "How FloraScore, the week and the Insights cards look, with the same numbers from the same logs in every style."
     },
     {
-      k: "easy", label: "Version", def: false, opts: [[false, "Standard"], [true, "Easy"]],
+      k: "easy", label: "Version", def: WILL.easy.v, opts: [[false, "Standard"], [true, "Easy"]],
       q: "Should the app offer larger text and simpler screens?",
       what: "Whether there's an easier version of the whole app, and how a person gets it."
     },
     {
-      k: "onboard", label: "Onboarding", def: "short", opts: [["short", "Short"], ["full", "Full survey"]],
+      k: "onboard", label: "Onboarding", def: WILL.onboard.v, opts: [["short", "Short"], ["full", "Full survey"]],
       q: "How much do we ask a new person?",
       what: "The set-up steps a new person goes through before they first see Today."
     }
@@ -1257,9 +1290,9 @@
   DECISIONS.forEach((D) => { const v = store.get(D.k, D.def); P[D.k] = D.opts.some(([o]) => o === v) ? v : D.def; });
   /* Ask button (Will, Nov 7): how Ask about this looks everywhere it appears. A design-system option, not one of the
      decisions: refresh-ask.js lists the styles (EXT.askUI), and it is stored per viewer like a decision. B, Compact,
-     is the default (Will, Nov 8: "let's do B for the ask buttons"); a stored pick still wins */
+     is the default (Will, Nov 8: "let's do B for the ask buttons"; WILL.askUI); a stored pick still wins */
   const ASKUI = (EXT.askUI && EXT.askUI.opts) || [["compact", "B Compact", ""]];
-  const ASKUI_DEF = (EXT.askUI && EXT.askUI.def) || "compact";
+  const ASKUI_DEF = ASKUI.some(([o]) => o === WILL.askUI.v) ? WILL.askUI.v : (EXT.askUI && EXT.askUI.def) || "compact";
   P.askUI = ((v) => (ASKUI.some(([o]) => o === v) ? v : ASKUI_DEF))(store.get("askUI", ASKUI_DEF));
   const appTheme = () => P.themeSet || pageTheme();
   /* what a module's notes see: every decision, the demo controls and the screen */
@@ -1273,15 +1306,29 @@
      "A, 1 to 7". A short label on the toggle keeps the option's full label as its name, which starts with the words
      on screen */
   const optLabel = (l) => { const i = l.indexOf(" · "); return i < 0 ? esc(l) : `<span class="rx-o1">${esc(l.slice(0, i))}</span> <span class="rx-o2">${esc(l.slice(i + 3))}</span>`; };
-  const btns = (k, opts, cur) => opts.map(([v, l, sh]) => {
-    const name = l.indexOf(" · ") >= 0 ? l.replace(" · ", ", ") : sh && sh !== l ? l : "";
-    return `<button type="button" data-rx="${esc(k)}" data-v="${esc(String(v))}" aria-pressed="${v === cur}"${name ? ` aria-label="${esc(name)}"` : ""}>${optLabel(sh || l)}</button>`;
+  /* Will's star (Nov 10): one mark for his pick on every control, the legend and the notes. A Gold star, deepened on
+     light grounds (refresh.css, --pick), drawn on a ring of the panel's own colour so it reads the same over a picked
+     chip or a plain one. It sits on the chip's corner, out of the flow, so it never moves the chip's words or width.
+     The star is hidden from screen readers: the chip's name says ", Will's pick" instead */
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.6l2.85 5.95 6.55.85-4.8 4.55 1.2 6.5L12 17.3l-5.8 3.15 1.2-6.5-4.8-4.55 6.55-.85z"/></svg>';
+  const PICK_SAID = "Will's pick";
+  const star = (cls = "") => `<span class="rx-star${cls ? " " + cls : ""}" title="${PICK_SAID}" aria-hidden="true">${STAR}</span>`;
+  /* a row's options, pressed for the one on. pick is Will's pick for the row (WILL[k].v), starred, with ", Will's pick"
+     in its name */
+  const btns = (k, opts, cur, pick) => opts.map(([v, l, sh]) => {
+    const his = pick !== undefined && v === pick;
+    const base = l.indexOf(" · ") >= 0 ? l.replace(" · ", ", ") : sh && sh !== l ? l : "";
+    /* a starred chip always takes a name, so it reads "Calendar, Will's pick" (hidden words after the label would be
+       heard as "Calendar , Will's pick") */
+    const name = his ? `${base || sh || l}, ${PICK_SAID}` : base;
+    return `<button type="button" data-rx="${esc(k)}" data-v="${esc(String(v))}" aria-pressed="${v === cur}"${name ? ` aria-label="${esc(name)}"` : ""}${his ? " data-pick" : ""}>${optLabel(sh || l)}${his ? star("rx-star--chip") : ""}</button>`;
   }).join("");
+  const pickOf = (k) => (WILL[k] ? WILL[k].v : undefined);
   const seg = (k, label, opts, cur) => `<div class="rx-seg" role="group" aria-label="${esc(label)}">${btns(k, opts, cur)}</div>`;
   /* one line each: the name, the options, and the info button at the end. A decision Easy draws over gets its line */
   const decHTML = (D) => `<div class="rx-dec${D.chips || D.wide ? " rx-dec--wide" : ""}" data-dec="${D.k}">
       <span class="rx-ctl-l" id="rxd-${D.k}">${esc(D.label)}</span>
-      <div class="${D.chips ? "rx-chips" : "rx-seg"}" role="group" aria-labelledby="rxd-${D.k}">${btns(D.k, D.opts, P[D.k])}</div>
+      <div class="${D.chips ? "rx-chips" : "rx-seg"}" role="group" aria-labelledby="rxd-${D.k}">${btns(D.k, D.opts, P[D.k], pickOf(D.k))}</div>
       <button type="button" class="rx-info" data-rx="dinfo" data-v="${D.k}" aria-pressed="false" aria-label="About ${esc(D.label)}">${ic("info")}</button>
       ${SHADOWED[D.k] ? `<p class="rx-small rx-dec-shadow" data-shadow="${D.k}" hidden></p>` : ""}
     </div>`;
@@ -1351,19 +1398,30 @@
   const sheets = { toggles: $("#rxSheet-toggles"), notes: $("#rxSheet-notes") };
   const make = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
   /* the panels exist once, and move between the side bars (wide) and the sheets (phone), so nothing is doubled */
+  /* Will's picks, at the top of the toggles (Will, Nov 10: star his picks for his teammates and make them the
+     defaults): the legend for the star, one line that says whether the phone shows his picks, and Use Will's picks,
+     which sets every decision, the View and the Ask button back to his picks through phone.set and clears what this
+     viewer has stored. A viewer who stored other choices before Nov 10 keeps them, so the line says so, quietly: no
+     modal, no toast. Moved with the other panels (into Toggles on a phone), never doubled */
+  const picksPanel = make(`<section class="rx-panel rx-panel--picks" aria-label="${PICK_SAID}s"><p class="rx-picks-k">${star("rx-star--key")}<span>${PICK_SAID}, ${WILL.when}</span></p><button type="button" class="rx-btn rx-btn--line rx-picks-b" data-rx="usepicks">Use ${PICK_SAID}s</button><p class="rx-small rx-picks-s" data-picks-line role="status"></p></section>`);
   /* the view (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"): one
-     switch at the top of the toggles, Default or Will's picks. It sets Data style through phone.set, so the Data style
-     row, the stored decision and the phone always agree; Default is Data style's default. Moved with the other panels,
-     never doubled */
-  const VIEWS = [[DEC.look.def, "Default"], ["picks", "Will's picks"]];
-  const viewPanel = make(`<section class="rx-panel rx-panel--view" aria-labelledby="rxViewH"><h2 class="rx-h" id="rxViewH">View</h2><div class="rx-seg" role="group" aria-labelledby="rxViewH">${btns("view", VIEWS, P.look)}</div><p class="rx-small rx-view-l" data-view-line></p><div class="rx-askui"><span class="rx-ctl-l" id="rxAskUiH">Ask button</span><div class="rx-chips" role="group" aria-labelledby="rxAskUiH">${btns("askUI", ASKUI.map(([v, l]) => [v, l.replace(/^(\w) /, "$1 · ")]), P.askUI)}</div><p class="rx-small rx-view-l" data-askui-line></p></div></section>`);
+     switch at the top of the toggles. Since Nov 10 Will's picks is first and the default (Data style's default, from
+     WILL), and the other is Florin charts, the app in Florin's own charts everywhere, so a teammate can still compare.
+     It sets Data style through phone.set, so the Data style row, the stored decision and the phone always agree.
+     Moved with the other panels, never doubled */
+  const VIEWS = [[WILL.view.v, "Will's picks"], ["built", "Florin charts"]];
+  const viewPanel = make(`<section class="rx-panel rx-panel--view" aria-labelledby="rxViewH"><h2 class="rx-h" id="rxViewH">View</h2><div class="rx-seg" role="group" aria-labelledby="rxViewH">${btns("view", VIEWS, P.look, pickOf("view"))}</div><p class="rx-small rx-view-l" data-view-line></p><div class="rx-askui"><span class="rx-ctl-l" id="rxAskUiH">Ask button</span><div class="rx-chips" role="group" aria-labelledby="rxAskUiH">${btns("askUI", ASKUI.map(([v, l]) => [v, l.replace(/^(\w) /, "$1 · ")]), P.askUI, pickOf("askUI"))}</div><p class="rx-small rx-view-l" data-askui-line></p></div></section>`);
+  const VIEW_SAID = "Will's picks draws each Insights card in the style Will picked, and Florin charts draws every card in Florin's own charts.";
   const viewLine = () => {
     const sh = shadowOf("look");
     if (sh) return sh.line;
-    if (P.look === "picks") return "Each Insights card in the style Will picked, the rest in Florin charts.";
-    if (P.look === DEC.look.def) return `The app as it stands, ${optName(DEC.look, P.look)} everywhere.`;
-    return `Data style is ${optName(DEC.look, P.look)}.`;
+    if (VIEWS.some(([v]) => v === P.look)) return VIEW_SAID;
+    return `Data style is ${optName(DEC.look, P.look)}, under Decisions. ${VIEW_SAID}`;
   };
+  /* every control Will picked, against what the page shows: the nine decisions and the Ask button (the View is Data
+     style). [] when everything is his */
+  const PICK_KEYS = DECISIONS.map((D) => D.k).filter((k) => WILL[k]).concat("askUI");
+  const offPicks = () => PICK_KEYS.filter((k) => P[k] !== WILL[k].v);
   const decPanel = make(`<section class="rx-panel rx-panel--dec" aria-labelledby="rxDecH"><h2 class="rx-h" id="rxDecH">Decisions</h2><p class="rx-small rx-dec-lede">Each one changes the app on the phone.</p><div class="rx-decs">${DECISIONS.map(decHTML).join("")}</div></section>`);
   /* the demo controls fold away to one line, so the Screens list is near the top of the bar. Open or folded is
      remembered for this viewer */
@@ -1421,7 +1479,8 @@
   function place() {
     const m = isM();
     const tSlot = m ? sheets.toggles.querySelector("[data-slot]") : left;
-    [viewPanel, decPanel, demoPanel, navPanel].forEach((el) => tSlot.appendChild(el));
+    [picksPanel, viewPanel, decPanel, demoPanel, navPanel].forEach((el) => tSlot.appendChild(el));
+    /* on a phone: Will's picks first, then the links, then the View */
     if (links) { if (m) tSlot.insertBefore(links, viewPanel); else if (links.parentNode !== linksHome) linksHome.appendChild(links); }
     const nSlot = m ? sheets.notes.querySelector("[data-slot]") : right;
     nSlot.appendChild(notesPanel);
@@ -1454,22 +1513,32 @@
   const optName = (D, v) => { const o = D.opts.find(([x]) => x === v); if (!o) return String(v); const l = o[1], i = l.indexOf(" · "); return i < 0 ? l : l.slice(0, i); };
   /* a decision, in the sheet's shape: the question, what it decides, a block per option (What it is, Why do it, Why
      not), the recommendation, at most one open question, and where to try it. The top label numbers it ("Decision 1 of 9")
-     and says what we recommend, so the answer is in view before the options */
+     and names Will's pick (Nov 10), so the answer is in view before the options. It says what we recommend too only
+     where that differs from his pick (Data style), and then the note says both in a line under the question. His
+     pick's block carries his star: the one mark a note has, at his request (Nov 10) */
   function decNote(D, N) {
     const recV = N.rec ? [].concat(N.rec.v) : [];
+    const W = WILL[D.k];
     /* a module's note that fails leaves the options as names, so the note still lists them */
     const opts = N.opts && N.opts.length ? N.opts : D.opts.map(([v]) => ({ v }));
     const row = (h, t) => (t ? `<dt>${h}</dt><dd>${esc(t)}</dd>` : "");
     const blocks = opts.map((o) => {
-      const rec = recV.some((v) => v === o.v), name = o.name || (D.opts.find(([x]) => x === o.v) || [])[1] || String(o.v);
-      return `<li class="rx-opt${rec ? " is-rec" : ""}"><p class="rx-opt-h"><b>${esc(name)}</b>${rec ? '<span class="rx-tag">Recommended</span>' : ""}</p>${o.is || o.why || o.not ? `<dl>${row("What it is", o.is)}${row("Why do it", o.why)}${row("Why not", o.not)}</dl>` : ""}</li>`;
+      const rec = recV.some((v) => v === o.v), his = !!W && W.v === o.v, name = o.name || (D.opts.find(([x]) => x === o.v) || [])[1] || String(o.v);
+      return `<li class="rx-opt${rec ? " is-rec" : ""}${his ? " is-pick" : ""}"><p class="rx-opt-h"><b>${his ? star("rx-star--note") : ""}${esc(name)}</b>${his ? `<span class="sr">, ${PICK_SAID}</span>` : ""}${rec ? '<span class="rx-tag">Recommended</span>' : ""}</p>${o.is || o.why || o.not ? `<dl>${row("What it is", o.is)}${row("Why do it", o.why)}${row("Why not", o.not)}</dl>` : ""}</li>`;
     }).join("");
     const sh = shadowOf(D.k), show = showFor(D.k);
     const A = N.about;
-    const recName = N.rec && N.rec.short ? `We recommend ${N.rec.short}` : recV.length ? `We recommend ${listOf(recV.map((v) => optName(D, v)))}` : "";
-    return `<p class="rx-eyebrow">Decision ${DECISIONS.indexOf(D) + 1} of ${DECISIONS.length} · ${esc(D.label)}${recName ? `<span class="rx-eb-sep"> · </span><span class="rx-eb-rec">${esc(recName)}</span>` : ""}</p>
+    const recShort = N.rec && N.rec.short ? N.rec.short : recV.length ? listOf(recV.map((v) => optName(D, v))) : "";
+    const recName = recShort ? `We recommend ${recShort}` : "";
+    const pickName = W ? W.short || optName(D, W.v) : "";
+    /* his pick and ours agree when the recommended option is his, or the table says the two are one call */
+    const agree = !W || !recV.length || W.agrees || recV.some((v) => v === W.v);
+    const label = [W ? `<span class="rx-eb-pick">${star("rx-star--key")}${esc(`${PICK_SAID}: ${pickName}`)}</span>` : "", !agree || !W ? (recName ? `<span class="rx-eb-rec">${esc(recName)}</span>` : "") : ""].filter(Boolean);
+    const both = W && !agree && recShort ? `${PICK_SAID} is ${pickName} (${W.on}), and we recommend ${recShort}. The demo opens on his pick, and our reason for ours is under the options.` : "";
+    return `<p class="rx-eyebrow">Decision ${DECISIONS.indexOf(D) + 1} of ${DECISIONS.length} · ${esc(D.label)}${label.map((x) => `<span class="rx-eb-sep"> · </span>${x}`).join("")}</p>
         <h2 id="rxNoteH" tabindex="-1">${esc(N.q || D.label)}</h2>
         ${N.what ? `<p class="rx-note-lede">${esc(N.what)}</p>` : ""}
+        ${both ? `<p class="rx-pickdiff">${star("rx-star--key")}<span>${esc(both)}</span></p>` : ""}
         ${N.answer ? `<p class="rx-answer"><b>${esc(N.answer[0])}</b> ${esc(N.answer[1])}</p>` : ""}
         ${sh ? `<p class="rx-note-easy">${esc(sh.line)}</p>` : ""}
         ${N.aside ? `<p class="rx-aside">${esc(N.aside)}</p>` : ""}
@@ -1526,7 +1595,10 @@
   /* the lit row names what the phone draws (it matches the note, which reads P.key); a screen the list has no row for
      lights the row the page opened, while the phone is still on it */
   function syncNav() {
-    const cur = keyToScreen(P.key) || (P.row && P.key === P.rowKey ? P.row : null);
+    /* the row the page opened lights while the phone is still on its screen (Insights, picked from the list, is drawn
+       in Will's picks by default, a screen the Data style row also opens: the row picked is the one lit) */
+    const rowOn = P.row && P.key === P.rowKey && screenGroups().some(([, items]) => items.some(([id]) => id === P.row));
+    const cur = rowOn ? P.row : keyToScreen(P.key);
     /* the row the page opened last, for the checks (behave.js walks the list with the arrow keys) */
     navPanel.dataset.row = P.row || "";
     mount.querySelectorAll('[data-rx="screen"]').forEach((b) => b.setAttribute("aria-current", String(b.dataset.v === cur)));
@@ -1548,12 +1620,36 @@
     ["persona", "data", "meals", "plan"].forEach((k) => mount.querySelectorAll(`[data-rx="${k}"]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P[k]))));
     mount.querySelectorAll('[data-rx="theme"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === appTheme())));
     mount.querySelectorAll("[data-shadow]").forEach((el) => { const sh = shadowOf(el.dataset.shadow); el.hidden = !sh; el.textContent = sh ? sh.line : ""; });
-    /* the view follows Data style: Default or Will's picks pressed, or neither for another style */
+    /* the view follows Data style: Will's picks or Florin charts pressed, or neither for another style */
     viewPanel.querySelectorAll('[data-rx="view"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.look)));
     viewPanel.querySelector("[data-view-line]").textContent = viewLine();
     viewPanel.querySelectorAll('[data-rx="askUI"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === P.askUI)));
     viewPanel.querySelector("[data-askui-line]").textContent = ((ASKUI.find(([o]) => o === P.askUI) || [])[2]) || "";
+    syncPicks();
     syncFold();
+  }
+  /* Will's picks: the line says whether the phone shows them, and Use Will's picks is off (aria-disabled, still in
+     the tab order, so its state is heard) when it would change nothing */
+  function syncPicks() {
+    const off = offPicks(), b = picksPanel.querySelector('[data-rx="usepicks"]'), line = picksPanel.querySelector("[data-picks-line]");
+    const said = off.length ? `Some choices differ from ${PICK_SAID}s` : `Showing ${PICK_SAID}s`;
+    if (line.textContent !== said) line.textContent = said;
+    picksPanel.classList.toggle("is-off", off.length > 0);
+    if (off.length) b.removeAttribute("aria-disabled"); else b.setAttribute("aria-disabled", "true");
+  }
+  /* Use Will's picks: every control he picked goes back to his pick through phone.set (so the phone, the toggles and
+     the notes follow, as for any change), then this viewer's stored choices are cleared, so a reload opens on his picks
+     from the defaults. The demo controls (person, logs, meals, plan, theme) are the demo person's, not the app's: left
+     as they are */
+  function usePicks() {
+    const off = offPicks();
+    if (!off.length) return;
+    /* Version first, so Home and Data style aren't drawn under Easy on the way */
+    off.sort((a, b) => (a === "easy" ? -1 : b === "easy" ? 1 : 0)).forEach((k) => P.ph.set(k, WILL[k].v));
+    PICK_KEYS.forEach((k) => store.clear(k));
+    P.dec = null;
+    jump.hidden = true;
+    notes(); syncNav(); syncControls(); sheetNow(null);
   }
 
   /* ---------- the controls ---------- */
@@ -1664,8 +1760,8 @@
       case "jump": jump.hidden = true; toNotes(); break;
       /* the phone's Toggles sheet: Read the note, for the decision just changed */
       case "now-note": P.dec = v; notes(); openSheet("notes"); break;
-      /* the view: Data style through phone.set. Will's picks opens Insights, where the picks are, with its note; Default
-         redraws the screen the phone is on. On a phone the sheet says what changed, as a decision does */
+      /* the view: Data style through phone.set. Will's picks opens Insights, where the picks are, with its note; Florin
+         charts redraws the screen the phone is on. On a phone the sheet says what changed, as a decision does */
       case "view": {
         jump.hidden = true;
         P.ph.set("look", v);
@@ -1675,6 +1771,8 @@
         if (!isM()) scrollToStage();
         break;
       }
+      /* every control back to Will's pick, the stored choices cleared; off when everything already is */
+      case "usepicks": if (b.getAttribute("aria-disabled") !== "true") usePicks(); break;
       /* Ask button: every Ask about this redrawn in that style; the phone goes to Insights, where the cards are */
       case "askUI": jump.hidden = true; P.ph.set("askUI", v); if (P.ph.S.tab !== "insights") P.ph.go("insights"); if (!isM()) scrollToStage(); break;
       case "fold": P.demoOpen = !P.demoOpen; store.set("demoOpen", P.demoOpen); syncFold(); sizeSides(); break;

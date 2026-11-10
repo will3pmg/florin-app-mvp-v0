@@ -510,6 +510,32 @@ deck isn't needed. can kill that."
 - **Insights into the Figma file for handoff** ("we can build out insights into the figma too for handoff"): next,
   once the file's edit access is sorted (handoff.md, section 10).
 
+## Will's notes (Nov 10) and what they changed
+
+Will: "Can you update the florin app refresh to star or flag all the picks i made for my teammates and also set them
+to the default seletions?"
+
+- **His picks are the defaults.** Every decision opens on what he picked on Nov 7 and 8: Consistency C, Quick tiles and
+  form, Home Compact, History Calendar, the check-in On, the Quick meal sheet, Data style Will's picks, Version Standard
+  (with Easy as a setting) and Short onboarding, with the Ask button B, Compact. The one that changed is Data style,
+  which used to open on Florin charts. One table in `refresh-app.js` (`WILL`) holds the picks, and the defaults, the
+  phone's own fallbacks, the stars, the notes and the button below all read it.
+- **A Gold star marks each pick** on the left bar (and in Toggles on a phone): on the corner of the picked option of
+  every decision, the View and the Ask button, with a legend at the top, "Will's pick, Nov 7 and 8". It is the brand's
+  Gold, its colour for awards, deepened on light grounds so it reads (4.8:1 on the panel); the pressed fill still says
+  which option is on, so the two part when a teammate tries another option. A screen reader hears "Calendar, Will's
+  pick".
+- **View puts Will's picks first,** as the default; the other option, Florin charts, is what Default was, so a teammate
+  can still compare.
+- **Use Will's picks,** beside the legend, puts every control back to his picks and clears what the viewer's browser
+  stored. A teammate who opened the demo before keeps their own choices until then, so the line under the legend says
+  "Some choices differ from Will's picks", quietly; once everything matches it says "Showing Will's picks" and the
+  button is off.
+- **The notes name his pick first:** "Decision 1 of 9 · Consistency · Will's pick: C". Our recommendation stays in each
+  note's body, since it is still the reason. Where the two differ, Data style (we recommend Florin charts everywhere),
+  the label and a line under the question say both. Ask Florin on Free has no toggle: the Free Ask note says his pick,
+  one answer a week and questions about seeing a doctor always answered, and that the demo still shows the lock.
+
 ## The calls for Will
 
 One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the

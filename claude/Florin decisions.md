@@ -1,7 +1,9 @@
 # Florin app: the decisions
 
 One sheet for the nine decisions in the demo, then Ask Florin and the business calls. For each: the question, what each
-option is, why you would pick it and why you wouldn't, and what we recommend. Every recommendation is yours to confirm.
+option is, why you would pick it and why you wouldn't, what we recommend, and Will's pick. Will picked on Nov 7 and 8,
+and on Nov 10 asked for his picks to be the demo's defaults and starred for the team: on the demo's left bar a Gold
+star marks his pick on every control, and Use Will's picks puts every control back to them.
 
 The demo: https://claude.ai/artifact/8Y7riZMHdzy5BqV4HXzeFB. The **Decisions** panel on the left changes the app. The
 **Demo** panel under it changes the demo person, their logs, their plan and light or dark, never the app's design (see
@@ -23,20 +25,21 @@ Two words used throughout:
 
 ## At a glance
 
-| # | Question | Options | We recommend |
-|---|---|---|---|
-| 1 | How does a person describe a BM's consistency? | A: numbers 1 to 7; B: five words; C: seven words | C, once counsel has read it |
-| 2 | Should one tap on a tile save a BM? | Quick tiles and form; Full form only | Quick tiles and form, plus buttons to fix the time |
-| 3 | What does Today show first? | Score first; Day first; Compact | Compact, Will's choice for the default (Nov 5) |
-| 4 | How should History show past days? | List; Calendar | Calendar |
-| 5 | Should the app ask how the week felt? | On; Off | On: four questions a week, free for everyone |
-| 6 | How does a person log what they ate? | Quick, voice or text; One meal at a time | Quick, and a free food check |
-| 7 | How should Florin draw the numbers? | Florin charts (dots and bars), Will's picks (his cards so far), Rings (score as ring), Field journal (captioned figures), Bento (number tiles), Oura (score gauge), Easy read (big numbers) | Florin charts everywhere, Easy read only in the Easy version |
-| 8 | Should the app offer larger text and simpler screens? | Standard; Easy | Easy, as a setting anyone can turn on |
-| 9 | How much do we ask a new person? | Short; Full survey | Short; ask the rest later, when the answer changes something |
+| # | Question | Options | We recommend | Will's pick |
+|---|---|---|---|---|
+| 1 | How does a person describe a BM's consistency? | A: numbers 1 to 7; B: five words; C: seven words | C, once counsel has read it | C (Nov 7) |
+| 2 | Should one tap on a tile save a BM? | Quick tiles and form; Full form only | Quick tiles and form, plus buttons to fix the time | Quick tiles and form (Nov 7) |
+| 3 | What does Today show first? | Score first; Day first; Compact | Compact, Will's choice for the default (Nov 5) | Compact (Nov 7) |
+| 4 | How should History show past days? | List; Calendar | Calendar | Calendar (Nov 7) |
+| 5 | Should the app ask how the week felt? | On; Off | On: four questions a week, free for everyone | On (Nov 7) |
+| 6 | How does a person log what they ate? | Quick, voice or text; One meal at a time | Quick, and a free food check | Quick, voice or text (Nov 7) |
+| 7 | How should Florin draw the numbers? | Florin charts (dots and bars), Will's picks (his cards so far), Rings (score as ring), Field journal (captioned figures), Bento (number tiles), Oura (score gauge), Easy read (big numbers) | Florin charts everywhere, Easy read only in the Easy version | Will's picks (Nov 7 and 8), not our recommendation |
+| 8 | Should the app offer larger text and simpler screens? | Standard; Easy | Easy, as a setting anyone can turn on | Standard, with Easy as a setting anyone turns on (Nov 7) |
+| 9 | How much do we ask a new person? | Short; Full survey | Short; ask the rest later, when the answer changes something | Short (Nov 7) |
 
-Also to settle: **Ask Florin on Free.** We recommend one free answer a week, with questions about seeing a doctor always
-answered.
+Also settled: **Ask Florin on Free.** We recommend one free answer a week, with questions about seeing a doctor always
+answered, and that is Will's pick (Nov 7). The **Ask button** (how Ask about this looks) is B, Compact, Will's pick
+(Nov 8).
 
 ## 1. Consistency
 
@@ -65,6 +68,8 @@ answered.
 **We recommend C, once counsel has read its words, and dropping B.** It keeps the detail a clinician needs and the plain
 words a first-timer can pick, without waiting for a licence.
 
+**Will's pick: C (Nov 7).** The same as our recommendation, pending counsel's read of the words.
+
 **Open question:** Do we ask the Rome Foundation now for one licence covering the 1 to 7 numbers in clinician reports
 and a questionnaire for the pilot study?
 
@@ -90,6 +95,8 @@ Insights change with it. In A, the words under the numbers are stand-ins until w
 
 **We recommend Quick tiles and form, and adding time buttons to the "BM saved" message: Just now, 30 min ago, 1 hr ago,
 Earlier.** It keeps the two-tap log and fixes the wrong time without opening the form.
+
+**Will's pick: Quick tiles and form (Nov 7).** The same as our recommendation; the time buttons aren't in the demo yet.
 
 **Open question:** Should every BM open the form for the first two weeks, while Florin learns the person's usual? In the
 demo, only the first 5 do.
@@ -126,6 +133,8 @@ demo, only the first 5 do.
 **We recommend Compact, Will's choice for the default (Nov 5).** It puts getting around and logging first, as the
 current app does, and keeps FloraScore at the top, at the cost of Score first's sentence on what stood out today.
 
+**Will's pick: Compact (Nov 7).** He set it as the default on Nov 5 and locked it on Nov 7.
+
 **Open question:** Is a Gold ring, with the day's line a tap away, enough without Score first's sentence? The focus
 test checks the choice against Score first.
 
@@ -153,6 +162,8 @@ swipe across the week or tap an arrow for an earlier one.
 
 **We recommend Calendar.** One screen a month replaces a long scroll, and a tapped day reads just as it does in the
 list.
+
+**Will's pick: Calendar (Nov 7).** The same as our recommendation.
 
 **Open question:** Keep a switch on History so a person can pick the list or the calendar?
 
@@ -192,6 +203,8 @@ everyone.
 
 **We recommend On, free on both plans.** It takes a minute and is the app's one weekly reason to come back.
 
+**Will's pick: On, free on both plans (Nov 7).** The same as our recommendation.
+
 **Open question:** Should a person be able to turn it off themselves, in Profile?
 
 **Try it:** Decisions, Weekly check-in. With it on, tap the check-in on Today. With it off, it leaves every screen.
@@ -220,6 +233,8 @@ box at the top explains the trap it shows.
 **We recommend Quick, with a one-tap "Dinner after 8 PM?" button when the person mentions dinner, and a free 14-day
 food check (log every meal for 14 days, ordinary days included).** People tend to write meals down only on days with
 symptoms, which can make everyday foods look linked to them, so logging has to be easy enough for every day.
+
+**Will's pick: Quick, voice or text (Nov 7),** with the photo of a meal in for v1. The same as our recommendation.
 
 **Try it:** Decisions, Meal sheet, then tap plus and the meal row: either sheet also takes a photo of the meal, with
 membership. The microphone plays a sample, since the demo can't use one. The dinner button isn't in the demo yet.
@@ -278,9 +293,14 @@ compare.
 **We recommend one look everywhere, Florin charts, with Easy read only in the Easy version (decision 8).** A card and
 its detail page then draw the same day the same way, and Data style folds into Version.
 
+**Will's pick: Will's picks (Nov 7 and 8), which is not our recommendation.** He picked Insights' cards one by one:
+Timing, Form, Symptoms and the check-in in Oura's cards, Frequency in Bento's stacked chart, the rest in Florin charts.
+We recommend Florin charts everywhere, for the reason above. Since Nov 10 the demo opens on his pick, and this
+decision's note says both.
+
 **Try it:** Decisions, Data style, then the Insights tab, and the Today tab with Home on Score first or Day first.
-Florin charts is the first option on the toggle. View, at the top of the left bar, switches between the default and
-Will's picks.
+Florin charts is the first option on the toggle. View, at the top of the left bar, switches between Will's picks, the
+default, and Florin charts.
 Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. The demo shows one style at a time, and
 detail pages don't change. To see every style on every card, open the style gallery:
 https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (linked at the top of the demo, and in Toggles on a phone).
@@ -306,6 +326,9 @@ https://claude.ai/artifact/FdsxDLSQqETo3HRCVmUZzL (linked at the top of the demo
 **We recommend Easy as a setting anyone can turn on or off, "Larger text and simpler screens", not a separate version,
 with Standard as the default.** One app underneath keeps the same logs, so a person can switch either way and lose
 nothing.
+
+**Will's pick: Standard, with Easy as a setting anyone turns on (Nov 7),** and the Easy view settings page in Profile
+in for v1. The same call as our recommendation: on the toggle his star is on Standard, the default.
 
 **Open question:** Is offering it during set-up enough, or should Florin also offer it when the phone's text is set
 large?
@@ -335,6 +358,8 @@ with text size, fewer cards on Today, voice first and less motion.
 **We recommend Short, and asking the rest when it matters: eating habits at the first meal log, foods to watch when a
 food check starts, medicines at the first clinician report.** Each answer then changes something the person can see.
 
+**Will's pick: Short (Nov 7).** The same as our recommendation.
+
 **Open question:** Is the BM reminder worth a step on day 1?
 
 **Try it:** Decisions, Onboarding. Or open either version from Screens, under Onboarding and profile.
@@ -358,6 +383,9 @@ food check starts, medicines at the first clinician report.** Each answer then c
 
 **We recommend one free answer a week, with questions about seeing a doctor always answered.** One answer from a
 person's own logs sells membership better than a locked tab.
+
+**Will's pick: one free answer a week, with questions about seeing a doctor always answered (Nov 7).** A product rule,
+not a toggle in the demo, which still shows the lock on Free; the Ask tab's note on Free says so.
 
 **Try it:** Demo, Plan, Free, then the Ask tab. The demo keeps Ask Florin locked on Free. Switch Plan to Member to ask
 a question.

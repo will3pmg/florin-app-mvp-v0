@@ -9,6 +9,14 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
 
 (async () => {
   const b = await chromium.launch();
+  /* Will, Nov 10: his picks are the defaults, so a viewer with nothing stored opens on Data style Will's picks. The
+     blocks written before then check the core's Insights (Florin charts) from a fresh page, so every page here starts
+     as a viewer who picked Florin charts (florin-refresh:look), unless the block asks for a fresh viewer with nothing
+     stored ({ fresh: true }: the picks-default block). A page that later stores another style keeps it on reload */
+  const SEED = () => { try { if (localStorage.getItem("florin-refresh:look") == null) localStorage.setItem("florin-refresh:look", JSON.stringify("built")); } catch (e) { /* no storage here: fine */ } };
+  const newCtx = b.newContext.bind(b);
+  b.newContext = async (o = {}) => { const { fresh, ...rest } = o; const c = await newCtx(rest); if (!fresh) await c.addInitScript(SEED); return c; };
+  b.newPage = async (o = {}) => { const c = await b.newContext(o); const pg = await c.newPage(); const close = pg.close.bind(pg); pg.close = async (x) => { await close(x); await c.close(); }; return pg; };
   const p = await b.newPage({ viewport: { width: 390, height: 844 } });
   const errs = [];
   p.on("pageerror", (e) => errs.push(e.message));
@@ -800,7 +808,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* the left bar: Demo folds and unfolds, and the bar's end is in reach before the page scrolls */
     const fold = await d.evaluate(() => { const b2 = document.querySelector('[data-rx="fold"]'), body = document.querySelector("#rxDemoB"), was = body.hidden; b2.click(); const now = body.hidden; b2.click(); const l = document.querySelector(".rx-side--l"), r = l.getBoundingClientRect(); return { was, now, back: body.hidden === was, end: r.bottom <= window.innerHeight + 1, exp: b2.getAttribute("aria-expanded") }; });
     ok(fold.was !== fold.now && fold.back && fold.end, "the Demo panel folds and unfolds, and the left bar ends inside the window");
-    ok(await d.evaluate(() => [...document.querySelectorAll('[data-rx="form"]')].map((x) => x.getAttribute("aria-label")).join("|")) === "A, 1 to 7|B, 5 words|C, 7 words", "A, B and C are read out as A, 1 to 7 and so on");
+    ok(await d.evaluate(() => [...document.querySelectorAll('[data-rx="form"]')].map((x) => x.getAttribute("aria-label")).join("|")) === "A, 1 to 7|B, 5 words|C, 7 words, Will's pick", "A, B and C are read out as A, 1 to 7 and so on (C, Will's pick, with his star: Nov 10)");
     ok(!de.length, `no page errors in the review checks${de.length ? ": " + de[0] : ""}`);
     await d.close();
     /* between 760 and 1019px, a decision changed points down to its note */
@@ -4160,15 +4168,16 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const info = async (k) => { await f.evaluate((k) => { const x = document.querySelector(`[data-rx="dinfo"][data-v="${k}"]`); if (x.getAttribute("aria-pressed") !== "true") x.click(); }, k); await fw(250); };
     const KEYS = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"];
     const LABEL = { form: "Consistency", bmUI: "BM logging", home: "Home", history: "History", checkin: "Weekly check-in", mealUI: "Meal sheet", look: "Data style", easy: "Version", onboard: "Onboarding" };
-    const WANT = { form: "C", bmUI: "Quick tiles and form", home: "Compact", history: "Calendar", checkin: "On", mealUI: "Quick, voice or text", look: "Florin charts", easy: "Easy, as a setting", onboard: "Short" };
-    /* 12. the top label: Decision n of 9, the decision, and what we recommend, in view at 1000 tall */
+    /* Nov 10: the label names Will's pick, and what we recommend only where that differs (Data style) */
+    const WANT = { form: "Will's pick: C", bmUI: "Will's pick: Quick tiles and form", home: "Will's pick: Compact", history: "Will's pick: Calendar", checkin: "Will's pick: On", mealUI: "Will's pick: Quick, voice or text", look: "Will's pick: Will's picks, card by card · We recommend Florin charts", easy: "Will's pick: Standard, with Easy as a setting", onboard: "Will's pick: Short" };
+    /* 12. the top label: Decision n of 9, the decision, and Will's pick, in view at 1000 tall */
     const eb = [];
     for (let i = 0; i < KEYS.length; i++) {
       await info(KEYS[i]);
       const e = await f.evaluate(() => { const x = document.querySelector("#rxNotes .rx-eyebrow"); return { t: x.textContent, bottom: x.getBoundingClientRect().bottom }; });
-      if (e.t !== `Decision ${i + 1} of 9 · ${LABEL[KEYS[i]]} · We recommend ${WANT[KEYS[i]]}` || e.bottom > 1000) eb.push(`${KEYS[i]}: ${e.t}`);
+      if (e.t !== `Decision ${i + 1} of 9 · ${LABEL[KEYS[i]]} · ${WANT[KEYS[i]]}` || e.bottom > 1000) eb.push(`${KEYS[i]}: ${e.t}`);
     }
-    ok(!eb.length, `fix-notes: every decision's top label reads Decision n of 9, its name and what we recommend, in view${eb.length ? ": " + eb.join("; ") : ""}`);
+    ok(!eb.length, `fix-notes: every decision's top label reads Decision n of 9, its name and Will's pick (and our recommendation where it differs), in view${eb.length ? ": " + eb.join("; ") : ""}`);
     /* 6. the check-in note answers Will's question right under its opening sentence, then what the check-in is, in the
        sheet's words, with every question and the day it's due from the model */
     await info("checkin");
@@ -4990,7 +4999,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   /* ===== wills-picks (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default? I
      want to see how they lay out one by one."). Data style's "picks" draws the core's Insights with each card Will
      picked on the data modules page in his style (prototype/js/refresh-looks.js, WILL_PICKS); View, at the top of the
-     left bar, switches between it and the default; FloraScore today on Insights is the Rings look's hero in both.
+     left bar, switches between it and Florin charts (Nov 10: Will's picks is the default; this block's page starts as a
+     viewer who picked Florin charts, see SEED); FloraScore today on Insights is the Rings look's hero in both.
      Its own page and context, so what it picks reaches no other check ===== */
   {
     const wc = await b.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -5024,11 +5034,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* the switch, the Data style row and the phone, as they stand */
     const agree = () => w.evaluate(() => ({ view: ((document.querySelector('[data-rx="view"][aria-pressed="true"]') || {}).dataset || {}).v || "none", look: ((document.querySelector('[data-rx="look"][aria-pressed="true"]') || {}).dataset || {}).v, phone: document.querySelector(".rx-stage .ap-rx").getAttribute("data-look"), stored: JSON.parse(localStorage.getItem("florin-refresh:look") || "null"), line: (document.querySelector("[data-view-line]") || {}).textContent || "" }));
 
-    /* 1. the default: Insights opens on the Rings FloraScore card, the core's card under it for the range and what
+    /* 1. Florin charts: Insights opens on the Rings FloraScore card, the core's card under it for the range and what
        moved it, then the summary; the Rings card opens FloraScore's page, whose count the card under it says */
     await wopen("insights");
     const d0 = await insOf();
-    ok(d0.rpk && !d0.picks && d0.cards.slice(0, 3).join(",") === "score:rings,score:core,sum" && d0.looks.score && !d0.looks.timing && !d0.looks.form && !d0.bad, `wills-picks: the default's Insights opens on the Rings FloraScore card, the core's card under it, then the summary (${d0.cards.slice(0, 3).join(", ")})`);
+    ok(d0.rpk && !d0.picks && d0.cards.slice(0, 3).join(",") === "score:rings,score:core,sum" && d0.looks.score && !d0.looks.timing && !d0.looks.form && !d0.bad, `wills-picks: Florin charts' Insights opens on the Rings FloraScore card, the core's card under it, then the summary (${d0.cards.slice(0, 3).join(", ")})`);
     const hero = await w.evaluate(() => { const s = document.querySelector(".rx-stage .ap-rx .rpk-score"), end = s.querySelector(".rg-end"), arc = s.querySelector(".rg-arc"), dot = s.querySelector(".rg-rel i"), L = window.FLORIN_LOGS, api = window.FLORIN_EXT.api, M = api.M(), mode = api.V().form, n = api.S.ins.range || 30, sc = L.scoreSeries(M, n, mode).filter((x) => x.value != null), avg = Math.round(sc.reduce((a, x) => a + x.value, 0) / sc.length), rel = window.FLORIN_RUI.scoreRel(avg, L.scoreUsual(M, mode)); return { want: `FloraScore averaged ${avg}, ${rel.charAt(0).toLowerCase()}${rel.slice(1)}`, out: !!s.querySelector(".rg-end.is-shift"), end: end && getComputedStyle(end).fill, read: arc && getComputedStyle(arc).stroke, dot: dot && getComputedStyle(dot).backgroundColor, trend: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t b') || {}).textContent || "", kick: (document.querySelector('.rx-stage .ap-rx .ap-ic-h[data-k="score"] .ap-ic-t .ap-k') || {}).textContent || "" }; });
     ok(hero.out && hero.end === hero.read && hero.dot === hero.read, `wills-picks: FloraScore outside its usual range is never Gold on the Rings card: the ring's end and the dot before the sentence are the reading colour (${hero.end})`);
     await wclick(`${ph} .rpk-score .rlk-go`);
@@ -5039,7 +5049,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
        averaged 80, in its usual range"), never an "N of M days" count (that shape is Your days'); the count of days in
        range is on FloraScore's page */
     ok(det.key === "i-score" && !det.look && /^In its usual range on \d+ of \d+ days?$/.test(det.cap) && hero.trend === hero.want && /^Trend, FloraScore, last 30 days$/.test(hero.kick) && await wkey() === "insights" && back0, `wills-picks: the Rings card opens FloraScore's page (Florin charts), which counts the days in range ("${det.cap}"), and the Trend card under it says FloraScore's average against its usual range ("${hero.trend}"); Back lands on the Rings card's link`);
-    ok(/Rings style's big ring/.test(d0.note), "wills-picks: the default Insights note says FloraScore is the Rings style's big ring");
+    ok(/Rings style's big ring/.test(d0.note), "wills-picks: Florin charts' Insights note says FloraScore is the Rings style's big ring");
 
     /* 2. the switch: Will's picks sets Data style through phone.set, opens Insights in the picks, with its note */
     const a0 = await agree();
@@ -5115,7 +5125,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     ok(th0 === "light" && l0 === "light" && th2 === "dark" && th3 === "light" && l3 === "light" && th1 === "dark" && l1 === "dark", `wills-picks: Will's picks leaves the theme alone (from Oura's ${th2} the phone's ${th3} comes back) and its cards follow the phone, light and dark (${l0}, ${l1})`);
 
     /* 7. the switch and the Data style row agree, whoever sets it: another style presses neither view, Data style's
-       Will's picks presses View's, View's Default presses Florin charts, and a set from the phone moves both */
+       Will's picks presses View's, View's Florin charts presses Florin charts, and a set from the phone moves both */
     await wclick('#rxLeft [data-rx="look"][data-v="rings"]', 400);
     const g1 = await agree();
     await wclick('#rxLeft [data-rx="look"][data-v="picks"]', 400);
@@ -5125,7 +5135,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await wset("look", "picks");
     const g4 = await agree();
     await wset("look", "built");
-    ok(g1.view === "none" && g1.look === "rings" && /Rings/.test(g1.line) && g2.view === "picks" && g2.look === "picks" && g3.view === "built" && g3.look === "built" && g3.phone === "built" && !r3.picks && g4.view === "picks" && g4.look === "picks", `wills-picks: View and Data style always agree (rings: ${g1.view}/${g1.look}; picks: ${g2.view}/${g2.look}; Default: ${g3.view}/${g3.look}; set from the phone: ${g4.view}/${g4.look})`);
+    ok(g1.view === "none" && g1.look === "rings" && /Rings/.test(g1.line) && g2.view === "picks" && g2.look === "picks" && g3.view === "built" && g3.look === "built" && g3.phone === "built" && !r3.picks && g4.view === "picks" && g4.look === "picks", `wills-picks: View and Data style always agree (rings: ${g1.view}/${g1.look}; picks: ${g2.view}/${g2.look}; Florin charts: ${g3.view}/${g3.look}; set from the phone: ${g4.view}/${g4.look})`);
 
     /* 8. every option of every decision is still drawn: the phone is stamped with it, and its note has a block per
        option in the sheet's shape */
@@ -5195,8 +5205,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await wset("easy", false);
     ok(!ez.rpk && /^Easy has its own charts/.test(ez.line), `wills-picks: with Easy on, the phone keeps Easy's own screens, and View's line says so ("${ez.line}")`);
 
-    /* 12. on a phone the switch is the same panel in the Toggles sheet, at its top under the links; picking it says
-       what changed, with See it and Read the note */
+    /* 12. on a phone the switch is the same panel in the Toggles sheet, under Will's picks (Nov 10) and the links;
+       picking it says what changed, with See it and Read the note */
     await w.setViewportSize({ width: 390, height: 844 }); await ww(500);
     await wclick('#rxLeft [data-rx="view"][data-v="built"], [data-rx="view"][data-v="built"]', 300);
     await wclick('.rx-mbar [data-rx="sheet"][data-v="toggles"]', 500);
@@ -5205,7 +5215,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const now = await w.evaluate(() => { const n = document.querySelector("#rxSheet-toggles [data-sheet-now]"); return { hidden: n.hidden, text: n.textContent, see: !!n.querySelector('[data-rx="sheet-close"], [data-rx="show"]'), read: !!n.querySelector('[data-rx="now-note"][data-v="look"]') }; });
     const k12 = await wkey();
     await w.keyboard.press("Escape"); await ww();
-    ok(sh.first === "rx-head-links,rx-panel,rx-panel" && sh.one === 1 && !sh.side && !now.hidden && /Data style is now Will's picks/.test(now.text) && now.see && now.read && k12 === "look-insights", `wills-picks: on a phone the View panel moves into Toggles under the links (${sh.first}), never doubled, and picking Will's picks says so with See it and Read the note`);
+    ok(sh.first === "rx-panel,rx-head-links,rx-panel" && sh.one === 1 && !sh.side && !now.hidden && /Data style is now Will's picks/.test(now.text) && now.see && now.read && k12 === "look-insights", `wills-picks: on a phone the View panel moves into Toggles under Will's picks and the links (${sh.first}), never doubled, and picking Will's picks says so with See it and Read the note`);
 
     await w.setViewportSize({ width: 1440, height: 1000 }); await ww(400);
     await wclick('#rxLeft [data-rx="view"][data-v="built"]', 300);
@@ -6240,6 +6250,129 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await c8.close();
   }
   /* ===== end nov8 ===== */
+
+  /* ===== picks-default (Will, Nov 10: "Can you update the florin app refresh to star or flag all the picks i made for
+     my teammates and also set them to the default seletions?"). One table, WILL in refresh-app.js (EXT.will), holds his
+     pick for each decision, the View and the Ask button. A fresh viewer, nothing stored, opens on every pick, each
+     starred; the View is Will's picks and Insights draws his picks; each star's chip says ", Will's pick" in its name;
+     every decision note's label names his pick; a stored choice that differs gets one quiet line and Use Will's picks,
+     which puts everything back, clears the stored keys and is off after; under 760px the same in Toggles. Its own fresh
+     contexts (no SEED), so what it stores reaches no other check ===== */
+  {
+    const pcx = await b.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: "light", fresh: true });
+    const pk = await pcx.newPage();
+    const pe = [];
+    pk.on("pageerror", (e) => pe.push(e.message));
+    pk.on("console", (m) => { if (m.type() === "error" || (m.type() === "warning" && /refresh-/.test(m.text()))) pe.push(m.text()); });
+    const load = async (page) => { await page.goto(PAGE); await page.waitForSelector(".rx-stage .ap-rx"); await page.evaluate(() => document.fonts && document.fonts.ready); await page.waitForTimeout(500); };
+    await load(pk);
+    const pw = (ms = 400) => pk.waitForTimeout(ms);
+    const KEYS = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"];
+    /* what the left bar shows against the table: each row's pressed option, its starred option(s), the star's title and
+       hiding, and the phone's stamp; the View, the Ask button, the line and the button */
+    const state = (page, scope = "") => page.evaluate(([KEYS, scope]) => {
+      const W = window.FLORIN_EXT.will, ph = document.querySelector(".rx-stage .ap-rx");
+      const row = (k) => {
+        const bs = [...document.querySelectorAll(`${scope} [data-rx="${k}"]`)];
+        const on = bs.filter((x) => x.getAttribute("aria-pressed") === "true").map((x) => x.dataset.v);
+        const st = bs.filter((x) => x.querySelector(".rx-star"));
+        return { on: on.join(","), starred: st.map((x) => x.dataset.v).join(","), want: String(W[k].v), hid: st.every((x) => { const s = x.querySelector(".rx-star"); return s.getAttribute("aria-hidden") === "true" && s.getAttribute("title") === "Will's pick" && getComputedStyle(s).position === "absolute"; }) };
+      };
+      const out = {};
+      KEYS.concat("view", "askUI").forEach((k) => (out[k] = row(k)));
+      const panel = document.querySelector(`${scope} .rx-panel--picks`), b2 = panel && panel.querySelector('[data-rx="usepicks"]');
+      return {
+        rows: out,
+        stamp: { history: ph.dataset.history, look: ph.dataset.look, askUi: ph.dataset.askUi, home: ph.dataset.home, easy: ph.dataset.easy, form: ph.dataset.form },
+        key: panel ? (panel.querySelector(".rx-picks-k") || {}).textContent : "", keyStar: !!(panel && panel.querySelector(".rx-picks-k .rx-star svg")),
+        line: panel ? (panel.querySelector("[data-picks-line]") || {}).textContent : "", off: b2 ? b2.getAttribute("aria-disabled") === "true" : null, btn: b2 ? b2.textContent : "",
+        panels: document.querySelectorAll(".rx-panel--picks").length,
+        stored: Object.keys(localStorage).filter((x) => /^florin-refresh:(form|bmUI|home|history|checkin|mealUI|look|easy|onboard|askUI)$/.test(x)).sort().join(","),
+        toast: !!ph.querySelector(".ap-tst.is-on"), sheet: [...document.querySelectorAll(".rx-sheet")].some((x) => !x.hidden),
+        theme: ph.dataset.theme
+      };
+    }, [KEYS, scope]);
+    const allPicks = (s) => Object.entries(s.rows).every(([, r]) => r.on === r.want && r.starred === r.want && r.hid);
+
+    /* 1. a fresh viewer: every pick pressed and starred, nothing stored, the legend, Showing Will's picks, the button off */
+    const s0 = await state(pk);
+    const first = await pk.evaluate(() => document.querySelector("#rxLeft").firstElementChild.className);
+    ok(allPicks(s0) && !s0.stored && s0.stamp.history === "calendar" && s0.stamp.look === "picks" && s0.stamp.askUi === "compact" && s0.stamp.home === "compact" && s0.stamp.easy === "false" && s0.stamp.form === "C",
+      `picks-default: a fresh viewer, nothing stored, sees every pick of the nine decisions, the View and the Ask button pressed and starred, and the phone stamped with them (${Object.entries(s0.rows).filter(([, r]) => !(r.on === r.want && r.starred === r.want && r.hid)).map(([k, r]) => `${k}: on ${r.on}, star ${r.starred}, want ${r.want}`).join("; ") || "all eleven"})`);
+    ok(/rx-panel--picks/.test(first) && s0.panels === 1 && s0.key === "Will's pick, Nov 7 and 8" && s0.keyStar && s0.line === "Showing Will's picks" && s0.off === true && s0.btn === "Use Will's picks" && !s0.toast && !s0.sheet,
+      `picks-default: the left bar opens on the legend ("${s0.key}"), "${s0.line}" and Use Will's picks, off (aria-disabled), with no toast and no sheet on load`);
+    /* 2. the View is Will's picks, first, and Insights draws his picks; the Insights row picked lights itself */
+    const vw = await pk.evaluate(() => ({ order: [...document.querySelectorAll('#rxLeft [data-rx="view"]')].map((x) => x.textContent.replace(", Will's pick", "")).join(","), line: document.querySelector("[data-view-line]").textContent }));
+    await pk.evaluate(() => document.querySelector('[data-rx="screen"][data-v="insights"]').click()); await pw(600);
+    const ins = await pk.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx .ap-ins"), q = (s) => !!document.querySelector(`.rx-stage .ap-rx ${s}`); return { picks: !!r && r.dataset.rpk === "picks", timing: q('[data-rlk-k="timing"] .lk-oura'), often: q('[data-rlk-k="often"] .lk-bento'), lit: (document.querySelector('[data-rx="screen"][aria-current="true"]') || { dataset: {} }).dataset.v, note: document.querySelector("#rxNoteH").textContent }; });
+    ok(vw.order === "Will's picks,Florin charts" && /Will's picks draws each Insights card in the style Will picked, and Florin charts draws every card/.test(vw.line) && ins.picks && ins.timing && ins.often && ins.lit === "insights" && ins.note === "Insights, in Will's picks",
+      `picks-default: View lists Will's picks first, on by default, with a line on what each is, and Insights draws his picks (Timing in Oura's card, Frequency in Bento's), its row lit and its note "${ins.note}"`);
+    /* 3. each star's chip says it: the accessible name ends ", Will's pick" (Playwright's own name computation) */
+    const NAMES = ["C, 7 words, Will's pick", "Quick tiles and form, Will's pick", "Compact, Will's pick", "Calendar, Will's pick", "On, Will's pick", "Quick, voice or text, Will's pick", "Will's picks, Will's pick", "Standard, Will's pick", "Short, Will's pick", "B, Compact, Will's pick"];
+    const nm = [];
+    for (const n of NAMES) { const c = await pk.locator("#rxLeft").getByRole("button", { name: n, exact: true }).count(); if (c < 1) nm.push(`${n} (${c})`); }
+    const starNames = await pk.evaluate(() => [...document.querySelectorAll("#rxLeft button[data-pick]")].length);
+    ok(!nm.length && starNames === 11, `picks-default: every starred chip's name says Will's pick, as "Calendar, Will's pick" (${nm.join("; ") || `${starNames} chips, Data style's star once in its row and once on View`})`);
+    /* 4. the star never moves its chip: the same width picked or not, and the pressed fill moves while the star stays */
+    const wOf = () => pk.evaluate(() => [...document.querySelectorAll("#rxLeft button[data-pick]")].map((x) => `${x.dataset.rx}:${Math.round(x.getBoundingClientRect().width)}`).join(","));
+    const w0 = await wOf();
+    await pk.evaluate(() => { document.querySelector('#rxLeft [data-rx="history"][data-v="list"]').click(); });
+    await pw();
+    const w1 = await wOf(), s1 = await state(pk);
+    ok(w0 === w1 && s1.rows.history.on === "list" && s1.rows.history.starred === "calendar" && s1.line === "Some choices differ from Will's picks" && s1.off === false,
+      `picks-default: trying List leaves the star on Calendar and the fill on List, no chip changes width (${w0 === w1 ? "same" : `${w0} / ${w1}`}), and the line turns to "${s1.line}" with the button on`);
+    /* 5. every decision note's label names his pick, his block carries the star, and only Data style says both */
+    const nb = [];
+    for (const k of KEYS) {
+      await pk.evaluate((k) => { const x = document.querySelector(`[data-rx="dinfo"][data-v="${k}"]`); if (x.getAttribute("aria-pressed") !== "true") x.click(); }, k);
+      await pw(250);
+      const n = await pk.evaluate((k) => {
+        const N = document.querySelector("#rxNotes .rx-note"), W = window.FLORIN_EXT.will[k];
+        const picked = [...N.querySelectorAll(".rx-opt.is-pick")];
+        return { eb: N.querySelector(".rx-eyebrow").textContent, star: !!N.querySelector(".rx-eyebrow .rx-star"), picks: picked.length, pickStar: picked.every((o) => o.querySelector(".rx-opt-h .rx-star") && /, Will's pick/.test(o.querySelector(".rx-opt-h .sr").textContent)), diff: (N.querySelector(".rx-pickdiff") || {}).textContent || "", rec: !!N.querySelector(".rx-rec"), badge: /On the phone|\bPicked\b/.test(N.textContent), w: W.short || null };
+      }, k);
+      const wantEb = /^Decision \d of 9 · [^·]+ · Will's pick: [^·]+$/;
+      const look = k === "look";
+      if (!(look ? /· Will's pick: Will's picks, card by card · We recommend Florin charts$/.test(n.eb) && /^Will's pick is Will's picks, card by card \(Nov 7 and 8\), and we recommend Florin charts\./.test(n.diff) : wantEb.test(n.eb) && !n.diff) || !n.star || n.picks !== 1 || !n.pickStar || !n.rec || n.badge) nb.push(`${k}: ${n.eb}${n.diff ? ` | ${n.diff}` : ""} (${n.picks} picked)`);
+    }
+    ok(!nb.length, `picks-default: every decision note's label names Will's pick with his star, his option's block carries it, "We recommend" stays in the body, and Data style alone says both, in the label and a line under the question (${nb.join("; ") || "nine notes"})`);
+    /* 6. a viewer with stored choices from before: the quiet line and the button, no modal, no toast; the button puts
+       every control back through phone.set, clears the stored keys, and is off after, with Oura's dark given back */
+    await pk.evaluate(() => { [["form", "B"], ["home", "score"], ["history", "list"], ["look", "oura"], ["easy", true], ["askUI", "pill"], ["checkin", false]].forEach(([k, v]) => localStorage.setItem("florin-refresh:" + k, JSON.stringify(v))); });
+    await load(pk);
+    const s2 = await state(pk);
+    ok(s2.line === "Some choices differ from Will's picks" && s2.off === false && !s2.toast && !s2.sheet && s2.rows.form.on === "B" && s2.rows.form.starred === "C" && s2.rows.askUI.on === "pill" && s2.rows.askUI.starred === "compact" && s2.rows.view.on === "",
+      `picks-default: a viewer whose stored choices differ opens on them, the stars on Will's picks, with "${s2.line}" and the button on, and no toast or sheet`);
+    await pk.evaluate(() => document.querySelector('#rxLeft [data-rx="usepicks"]').focus());
+    await pk.keyboard.press("Enter"); await pw(800);
+    const s3 = await state(pk), f3 = await pk.evaluate(() => document.activeElement && document.activeElement.dataset.rx);
+    ok(allPicks(s3) && !s3.stored && s3.line === "Showing Will's picks" && s3.off === true && s3.stamp.easy === "false" && s3.stamp.look === "picks" && s3.stamp.askUi === "compact" && s3.theme === "light" && f3 === "usepicks",
+      `picks-default: Use Will's picks puts all eleven back (the phone follows: ${JSON.stringify(s3.stamp)}, theme ${s3.theme}), clears the stored keys (${s3.stored || "none left"}), and is off after, focus kept on it`);
+    /* pressed again while off, it changes nothing and stores nothing */
+    await pk.evaluate(() => document.querySelector('#rxLeft [data-rx="usepicks"]').click()); await pw(300);
+    await load(pk);
+    const s4 = await state(pk);
+    ok(allPicks(s4) && !s4.stored && s4.off === true, "picks-default: off, the button does nothing, and a reload opens on Will's picks with nothing stored");
+    /* 7. under 760px: the same panel moves into Toggles, first, never doubled, with the line and the button */
+    const mcx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "light", fresh: true });
+    const mp = await mcx.newPage();
+    mp.on("pageerror", (e) => pe.push(e.message));
+    await mp.goto(PAGE); await mp.waitForSelector(".rx-stage .ap-rx");
+    await mp.evaluate(() => { localStorage.setItem("florin-refresh:mealUI", JSON.stringify("detailed")); });
+    await load(mp);
+    await mp.evaluate(() => document.querySelector('.rx-mbar [data-rx="sheet"][data-v="toggles"]').click()); await mp.waitForTimeout(500);
+    const m0 = await mp.evaluate(() => { const t = document.querySelector("#rxSheet-toggles [data-slot]"); return { first: t.firstElementChild.className, left: !!document.querySelector("#rxLeft .rx-panel--picks"), n: document.querySelectorAll(".rx-panel--picks").length, vis: !!t.querySelector(".rx-panel--picks").getClientRects().length }; });
+    const ms0 = await state(mp, "#rxSheet-toggles");
+    await mp.evaluate(() => document.querySelector('#rxSheet-toggles [data-rx="usepicks"]').click()); await mp.waitForTimeout(700);
+    const ms1 = await state(mp, "#rxSheet-toggles");
+    const tap = await mp.evaluate(() => { const r = document.querySelector('#rxSheet-toggles [data-rx="usepicks"]').getBoundingClientRect(); return r.height >= 44 && r.width >= 44; });
+    ok(/rx-panel--picks/.test(m0.first) && !m0.left && m0.n === 1 && m0.vis && ms0.line === "Some choices differ from Will's picks" && ms0.off === false && ms0.rows.mealUI.on === "detailed" && ms0.rows.mealUI.starred === "quick" && allPicks(ms1) && !ms1.stored && ms1.off === true && ms1.line === "Showing Will's picks" && tap,
+      `picks-default: under 760px Will's picks is the first panel in Toggles, never doubled, with the line, the stars and the button (44px), which works there too`);
+    ok(!pe.length, `picks-default: no console errors or module warnings${pe.length ? ": " + pe.slice(0, 3).join(" | ") : ""}`);
+    await mcx.close();
+    await pcx.close();
+  }
+  /* ===== end picks-default ===== */
 
   ok(!errs.length, `no console or page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
   await b.close();

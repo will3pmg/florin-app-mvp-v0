@@ -43,6 +43,35 @@
 .rx-btn:hover { background: var(--line-2); }
 .rx-btn--line { background: transparent; }
 
+/* ---------- Will's star (Will, Nov 10: "star or flag all the picks i made for my teammates") ----------
+   One mark for his pick: on each control's chip, the legend at the top of the toggles, and the notes. Gold, the
+   brand's colour for awards (DESIGN.md: "Warmth and premium: packaging, awards"); the page around the phone isn't the
+   app, so the app's own Gold (a shift) and Plum (the usual) keep their meanings there. On light grounds it is deepened
+   to hold 4.8:1 on the panel (Gold itself is 1.9:1 on Cream); on dark it is Gold, 7.8:1. It sits on a ring of the
+   panel's colour, so it reads the same over a picked chip (an Ink fill) and a plain one. */
+.rx { --pick: oklch(from var(--gold) calc(l - .25) calc(c * 1.2) h); --pick-ring: var(--panel); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rx { --pick: var(--gold); } }
+:root[data-theme="dark"] .rx { --pick: var(--gold); }
+.rx-star { display: inline-grid; place-items: center; width: 16px; height: 16px; flex: none; color: var(--pick); line-height: 0; }
+.rx-star svg { width: 14px; height: 14px; overflow: visible; fill: currentColor; stroke: var(--pick-ring); stroke-width: 6; stroke-linejoin: round; paint-order: stroke; }
+/* on a chip: its top corner, out of the flow, so the chip's words and width are the same with or without it, picked or
+   not. The chip's pressed fill says what's on; the star says what Will picked: the two meet by default and part when a
+   teammate tries another option */
+.rx-seg button, .rx-chips button { position: relative; }
+.rx-star--chip { position: absolute; top: -8px; right: -4px; }
+/* in a note: before the picked option's name, and in the top label */
+.rx-star--note { margin-right: 4px; vertical-align: -3px; }
+.rx-eb-pick .rx-star, .rx-pickdiff .rx-star { margin-right: 4px; vertical-align: -3px; }
+/* at the top of the toggles: the legend, whether the phone shows his picks, and Use Will's picks (off when it
+   would change nothing) */
+.rx-panel--picks { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "k b" "s s"; align-items: center; gap: 4px 12px; padding: 12px 16px; }
+.rx-picks-k { grid-area: k; display: flex; align-items: center; gap: 4px; margin: 0; font: 500 13px/1.3 var(--sans); color: var(--ink); }
+.rx-picks-s { grid-area: s; color: var(--ink-2); }
+.rx-panel--picks.is-off .rx-picks-s { color: var(--ink); }
+.rx-picks-b { grid-area: b; padding: 0 12px; font-size: 13px; }
+.rx-picks-b[aria-disabled="true"] { color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line-2); cursor: default; }
+.rx-picks-b[aria-disabled="true"]:hover { background: transparent; }
+
 /* left: Decisions, Demo, Screens. Middle: the phone, live. Right: notes */
 .rx-main { display: grid; grid-template-columns: 320px minmax(0, 1fr) 320px; grid-template-areas: "side stage notes"; gap: 24px 32px; align-items: start; }
 .rx-side--l { grid-area: side; }
@@ -123,9 +152,12 @@
 .rx-tag { padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; line-height: 20px; }
 .rx-rec { margin: 16px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .rx-rec b { font-weight: 500; color: var(--ink); }
-/* the top label's second line: what we recommend, on a line of its own, in Ink (the separator is for the text alone) */
+/* the top label's second line: Will's pick, on a line of its own, in Ink, then what we recommend where that differs
+   (the separator is for the text alone) */
 .rx-eb-sep { display: none; }
-.rx-eb-rec { display: block; margin-top: 4px; color: var(--ink); }
+.rx-eb-pick, .rx-eb-rec { display: block; margin-top: 4px; color: var(--ink); }
+/* where his pick and our recommendation differ, one line under the question says both */
+.rx-pickdiff { margin: 12px 0 0; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); font-size: 13.5px; line-height: 1.45; color: var(--ink); }
 .rx-answer { margin: 12px 0 0; padding: 12px; border-radius: 12px; background: var(--line-2); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .rx-answer b { font-weight: 500; color: var(--ink); }
 .rx-about-l { margin-bottom: 8px; }

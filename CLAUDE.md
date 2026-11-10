@@ -79,9 +79,23 @@ in this order: looks, variants, profile, photo, ask, detail, easy, and refresh-a
 refresh.css, look-*.css, refresh-<module>.css). A later module wraps what an earlier one drew: Easy wraps Day first's
 Today and the look's Insights, and draws its own in their place.
 
-The page (Will, Oct 27): one phone, live, in the middle, under a slim header. The left bar opens with **View**
-(Default or Will's picks, Will, Nov 5), which sets Data style through phone.set (Default is its default; Will's picks
-opens Insights), with one plain line under it, and a second row, **Ask button** (A Pill, B Compact, C Link, D Token,
+The page (Will, Oct 27): one phone, live, in the middle, under a slim header. **Will's picks are the defaults and are
+starred** (Will, Nov 10: "star or flag all the picks i made for my teammates and also set them to the default
+seletions"). One table, `WILL` in refresh-app.js (also `EXT.will`), holds his pick for every decision, the View and the
+Ask button (C, Quick tiles and form, Compact, Calendar, On, Quick, Will's picks, Standard, Short; B Compact), with when
+he picked it; each decision's `def`, the phone's own fallbacks, the stars, the notes' top label and Use Will's picks
+all read it. Ask Florin on Free (one answer a week, questions about seeing a doctor always answered) is a product rule,
+not a toggle: the Free Ask note says it. The left bar opens with a slim panel: the legend, "★ Will's pick, Nov 7 and
+8", a line that says "Showing Will's picks" or, when anything differs (a viewer's stored choices from before, say),
+"Some choices differ from Will's picks", and **Use Will's picks**, which sets every decision, the View and the Ask
+button back to his picks through phone.set and clears this viewer's stored keys; it is `aria-disabled` when nothing
+would change. No modal and no toast on load. The star is one mark everywhere: a Gold star (the brand's colour for
+awards; deepened on light grounds, `--pick` in refresh.css) on a ring of the panel's colour, on the top corner of each
+picked chip, out of the flow so no chip moves, with ", Will's pick" in the chip's name and a "Will's pick" tooltip.
+The pressed fill says which option is on, the star which one he picked: they meet by default and part when a teammate
+tries another. Then **View** (Will's picks, first and the default, or Florin charts, the app in Florin's own charts;
+Will, Nov 5 and Nov 10), which sets Data style through phone.set (Will's picks opens Insights), with one plain line
+under it saying what each is, and a second row, **Ask button** (A Pill, B Compact, C Link, D Token,
 E Question, F Bar; Will, Nov 7), how Ask about this looks everywhere, with its own plain line: a design-system option,
 not a decision, set through phone.set (`askUI`), stored per viewer (`florin-refresh:askUI`), Compact by default (Will's
 pick, Nov 8: "let's do B for the ask buttons"; a viewer's stored pick still wins, and the other five stay to compare),
@@ -101,8 +115,11 @@ The notes (Will, Oct 28: "Make it simple"). A decision's note takes the decision
 (`claude/Florin decisions.md`): the question in ten words or fewer, one sentence on what it decides, a block per option
 (its name, then What it is, Why do it and Why not, one sentence each, honest both ways), the recommended block marked
 Recommended, "We recommend <option>" with one sentence of why, at most one Still open, and Try it. Its top label
-numbers it and says what we recommend ("Decision 1 of 9 · Consistency · We recommend C"; `rec.short`
-names a recommendation more shortly there), so the answer is in view before the options. The check-in's note answers
+numbers it and names Will's pick, with his star ("Decision 1 of 9 · Consistency · Will's pick: C"; `WILL[k].short`
+names a pick more shortly there), so the answer is in view before the options; it says what we recommend too
+("· We recommend Florin charts", `rec.short` naming it more shortly) only where that differs from his pick, Data
+style today, and then a line under the question says both plainly. His pick's block carries his star; the Recommended
+block and the "We recommend" paragraph stay, since the recommendation is still the reason. The check-in's note answers
 Will's question first (`answer`), then says what the check-in is, as the sheet does. A note about something else opens
 at its top. A screen's note shows its claims line only when the screen fails a rule (no line is a pass, and every check
 reads it that way). A demo control's note
@@ -111,7 +128,8 @@ BM window and forms, how often symptoms come up and the food pattern Insights fi
 model); the meals one explains the trap (meals written down only on days with
 symptoms make everyday foods look linked to them) and the food check, with `L.MEAL_COVER` and `L.FOOD_CHECK_DAYS`. A
 screen's note is about 80 words or fewer: what the screen does and why, and at most one open question. Every note is
-plain: no badges (every option is drawn, so nothing says On the phone or Picked), no build status, no was and now, no
+plain: no badges (every option is drawn, so nothing says On the phone or Picked; Will's star on his pick is the one
+exception, at his request, Nov 10), no build status, no was and now, no
 research lists, no persona names or scores as evidence, and every figure from the model. A screen in the list that belongs to a
 decision sets that decision, and it stays: Home: Score first (the core's Today row; the page sets it, so the phone's own
 open("today") never changes Home), Home: Day first, Home: Compact, History: List and History: Calendar, Data style:
@@ -123,12 +141,13 @@ it; a set equal to the page's own clears that, so the phone goes back to followi
 giving it back leaves nothing stored). The arrow keys step through Screens from the list or with nothing focused, from the row the page opened while
 the phone is still on it (so a row that draws another row's screen, such as Log a BM, details filled in, never loops),
 and focus comes back to the lit row if a screen took it into the phone. A row picked from the list always shows that
-screen's note. The first Tab stop is Skip to the phone. The header links the data looks library ("Every data style,
+screen's note, and it is the row lit while the phone stays on its screen (Insights, picked from the list, is drawn in
+Will's picks by default, which Data style: Insights also opens). The first Tab stop is Skip to the phone. The header links the data looks library ("Every data style,
 side by side"), with room in its links row for one more (the voting page, to come); the footer says only "Prototype only. Not for patients." A decision whose option shows on another screen (Home, History, BM logging, Meal sheet) has Show it on the
 phone in its note, which opens that screen and keeps the note up. With the Easy version on, the Home and Data style rows
 each get one plain line, "Easy has its own Today (charts). Turn Easy off to see this choice.", under the row and at the top
 of the note (`SHADOWED` in refresh-app.js). Under 760px the app is full screen and a slim bar at the top opens Toggles
-(View, Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled. A decision changed in the
+(Will's picks, View, Decisions, Demo, Screens) and Notes as sheets: the same panels, moved, never doubled. A decision changed in the
 Toggles sheet says so in one line at the sheet's top ("History is now Calendar."), with See it (closing the sheet, on the
 screen the option shows on) and Read the note; changing Demo person's meals opens its note. The bar is at the top so the app
 keeps its own tab bar at the bottom, as on a real phone (Will, Oct 28: a bottom bar covered the app's tabs). The app
@@ -146,9 +165,9 @@ switch sets Version, its Logging
 rows set BM logging and Meal sheet, and its theme row sets the theme, all through phone.set, so the left bar follows.
 
 **Will's picks** (Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default?"; Nov 7:
-"I think FLORIN CHARTS for insights tab has the best flow"), Data style's `picks`: the core's Insights in its own order
+"I think FLORIN CHARTS for insights tab has the best flow"), Data style's `picks`, its default since Nov 10: the core's Insights in its own order
 and range tabs, each card Will picked (`WILL_PICKS` in refresh-looks.js, read Nov 7; change the table when he picks
-more) in his style: Timing, Form, Symptoms and the check-in in Oura's cards (Nov 8: "TIMING: I Like OURA"; the Rings
+more; it says which look draws each card, a different table from refresh-app.js's `WILL`, his pick per control) in his style: Timing, Form, Symptoms and the check-in in Oura's cards (Nov 8: "TIMING: I Like OURA"; the Rings
 morning dial his Nov 7 screenshot showed is one table edit away), Frequency in Bento's stacked chart, the rest in Florin
 charts. The range is picked once, in the tabs at the top of Insights (Will, Nov 7: "the date range is
 toggled at very top, not labeled within"), and every card draws it, picked or not: a look's card reads the range
@@ -254,7 +273,8 @@ FLORIN_EXT = {
   built:     {},                                           // no longer read (Oct 28); kept so an old claim can't throw
   keys:      { [overlayType]: (overlay) => screenId, ["tab:<tab>"]: ({ st: S }) => screenId },
   onSet:     [(key, value, api) => void],                  // after phone.set has redrawn and the page has followed
-  api                                                      // the live phone's api, there from the phone's first draw
+  api,                                                     // the live phone's api, there from the phone's first draw
+  will                                                     // Will's picks (refresh-app.js's WILL): { [key]: { v, on, short?, agrees? } }, read-only
 }
 note = { t, lede, open?: [one question] }               // a screen's: about 80 words at most (was and now, and
                                                            // research, are gone: the page draws neither)

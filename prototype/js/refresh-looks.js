@@ -891,7 +891,7 @@
     aside: "The real choice is Florin charts everywhere, or Oura on Today. Will's picks lays out the cards Will has picked so far. Easy read is the Easy version's own, and Rings, Field journal and Bento are here to compare.",
     opts: ["built", "picks", "oura", "easy", "rings", "journal", "bento"].map((v) => Object.assign({ v, name: nameOf(v) }, v === "picks" ? picksOpt(M, P || {}) : STYLES[v])),
     rec: { v: "built", text: "We recommend one look everywhere, Florin charts, with Easy read only in the Easy version.", why: "A card and its detail page then draw the same day the same way, and Data style folds into Version." },
-    try: "Switch it, then look at Insights, and at Today with Home on Score first or Day first. View, at the top of the left bar, switches between the default and Will's picks. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
+    try: "Switch it, then look at Insights, and at Today with Home on Score first or Day first. View, at the top of the left bar, switches between Will's picks, the default, and Florin charts. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
   });
   /* the screens' own notes, while a style is drawn */
   const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn in the ${nameOf(lookIdOf(P) || "built")} style.`);
