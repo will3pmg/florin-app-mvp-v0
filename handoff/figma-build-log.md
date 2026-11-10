@@ -108,3 +108,10 @@ blur); Elevation/Plus S:73f33bd261cd0be24ef96efbfd2efc7491eb9d19,; Elevation/Toa
 S:2cfb5d96972fd68d83ee0b29a946fe56943c9106,; Elevation/Segment picked S:0b6b8254a4363e0b7220fc5c4737c73eb6df971c,;
 Elevation/Sheet dark edge S:e82d4cc464ab6156e8af4c2567e090cae1768c75,. (Effect styles have no modes: pick the light or
 dark card style by the frame's theme.)
+
+### Brand page, Cover and Read me (resumed Nov 10, after a restart)
+
+Resume check (Nov 10): the five collections (Brand 9, App colour 52, Space 18, Radius 9, Scale 35), 41 text styles and 7
+effect styles are in the file as logged above; Cover, Read me and Brand were empty. Built next, in this order: Brand
+page (root frame "Brand" on page 4:3), then Cover (0:1), then Read me (4:2). Helpers for this step:
+`.../scratchpad/figma/contrast.js` (contrast pairs from vars.js, written to contrast.json), `tree.py` (reads a DOM dump).
