@@ -16,7 +16,9 @@ const fs = require("fs");
 const PAGE = "file://" + path.resolve(__dirname, "../prototype/_local.html");
 const problems = [];
 const note = (s) => { problems.push(s); console.log("  ✗ " + s); };
-/* a run: a consistency option, the logs, and any decisions or demo controls to set first (the rest stay at default) */
+/* a run: a consistency option, the logs, and any decisions or demo controls to set first (the rest stay as BASE). BASE
+   draws the core's screens, Florin charts and the List, on purpose: the page's own defaults since Nov 10 are Will's
+   picks (Calendar, Data style Will's picks; refresh-app.js, WILL), which have runs of their own below */
 const BASE = { persona: "sarah", data: "est", form: "C", theme: "light", checkin: "true", bmUI: "quick", mealUI: "quick", home: "compact", history: "list", look: "built", easy: "false", onboard: "short" };
 /* every control a run sets, the module decisions included: a sweep of the Screens list sets the decisions its screens
    belong to (Home: Day first, History: Calendar, the onboarding screens, Easy version), so each run puts them back */

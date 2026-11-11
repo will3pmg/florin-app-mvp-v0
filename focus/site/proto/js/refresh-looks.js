@@ -494,7 +494,7 @@
      Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default? I want to see how they
      lay out one by one." He picks a style chart by chart on the data modules page (modules/, published at
      https://claude.ai/artifact/K3VM5FUAZSbddHUMkVc4hb). One row per Insights card, by the key the core's card carries;
-     null is not picked yet, drawn in the default, Florin charts. When Will picks more, change this table (and the lines
+     null is not picked yet, drawn in Florin charts. When Will picks more, change this table (and the lines
      in CLAUDE.md, the brief, decisions.md and data viz.md that name them).
      Nov 7, on the demo's Insights: "I think FLORIN CHARTS for insights tab has the best flow", so the view keeps the
      core's order and its range tabs, the one place the range is picked: every card, picked or not, draws the range the
@@ -503,7 +503,7 @@
      charts with the Rings week, and the theme is left alone: an Oura card takes its light or dark form from the phone */
   const WILL_PICKS = {
     score: "rings", /* FloraScore today: Rings' hero, "the large green big circle like in the Score first visual" (Nov 5),
-                       on the default demo too (heroInto, below). Nov 7: "Large FloraScore: keep" */
+                       in Florin charts too (heroInto, below). Nov 7: "Large FloraScore: keep" */
     timing: "oura", /* Nov 8, "TIMING: I Like OURA, but can we make sure on the main insights tab to flag a note about the
                        number of poops OUTSIDE regular windows/cadence": Oura's thin-arc card, with the note of the
                        mornings outside the usual window under its stats (look-oura.js, D.timing.out). Before that, Nov 5,
@@ -891,7 +891,7 @@
     aside: "The real choice is Florin charts everywhere, or Oura on Today. Will's picks lays out the cards Will has picked so far. Easy read is the Easy version's own, and Rings, Field journal and Bento are here to compare.",
     opts: ["built", "picks", "oura", "easy", "rings", "journal", "bento"].map((v) => Object.assign({ v, name: nameOf(v) }, v === "picks" ? picksOpt(M, P || {}) : STYLES[v])),
     rec: { v: "built", text: "We recommend one look everywhere, Florin charts, with Easy read only in the Easy version.", why: "A card and its detail page then draw the same day the same way, and Data style folds into Version." },
-    try: "Switch it, then look at Insights, and at Today with Home on Score first or Day first. View, at the top of the left bar, switches between the default and Will's picks. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
+    try: "Switch it, then look at Insights, and at Today with Home on Score first or Day first. View, at the top of the left bar, switches between Will's picks, the default, and Florin charts. Picking Oura turns the demo dark, unless you've picked a theme or Easy is on. Detail pages don't change. Every style on every card is in Every data style, side by side, linked at the top of the page (in Toggles, on a phone)."
   });
   /* the screens' own notes, while a style is drawn */
   const pickedLine = (P) => (P && P.easy ? "The Easy version is on, so this is Easy read." : `Drawn in the ${nameOf(lookIdOf(P) || "built")} style.`);

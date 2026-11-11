@@ -91,7 +91,9 @@ not a toggle: the Free Ask note says it. The left bar opens with a slim panel: t
 button back to his picks through phone.set and clears this viewer's stored keys; it is `aria-disabled` when nothing
 would change. No modal and no toast on load. The star is one mark everywhere: a Gold star (the brand's colour for
 awards; deepened on light grounds, `--pick` in refresh.css) on a ring of the panel's colour, on the top corner of each
-picked chip, out of the flow so no chip moves, with ", Will's pick" in the chip's name and a "Will's pick" tooltip.
+picked chip, out of the flow so no chip moves, with ", Will's pick" in the chip's name (never on the option called
+Will's picks, whose name says it) and a "Will's pick" tooltip. Use Will's picks sets with `{ stay: true }`, so the phone
+stays on its screen (Onboarding doesn't open its flow).
 The pressed fill says which option is on, the star which one he picked: they meet by default and part when a teammate
 tries another. Then **View** (Will's picks, first and the default, or Florin charts, the app in Florin's own charts;
 Will, Nov 5 and Nov 10), which sets Data style through phone.set (Will's picks opens Insights), with one plain line
@@ -118,7 +120,8 @@ Recommended, "We recommend <option>" with one sentence of why, at most one Still
 numbers it and names Will's pick, with his star ("Decision 1 of 9 · Consistency · Will's pick: C"; `WILL[k].short`
 names a pick more shortly there), so the answer is in view before the options; it says what we recommend too
 ("· We recommend Florin charts", `rec.short` naming it more shortly) only where that differs from his pick, Data
-style today, and then a line under the question says both plainly. His pick's block carries his star; the Recommended
+style today ("Will's pick: a style per card"), and then a line under the question says both plainly. His pick's block
+carries his star, heard where it sits ("Will's pick, Calendar"; an image named Will's pick); the Recommended
 block and the "We recommend" paragraph stay, since the recommendation is still the reason. The check-in's note answers
 Will's question first (`answer`), then says what the check-in is, as the sheet does. A note about something else opens
 at its top. A screen's note shows its claims line only when the screen fails a rule (no line is a pass, and every check
@@ -272,7 +275,8 @@ FLORIN_EXT = {
   decisions: { [key]: (M, P) => decision },                // the note of a decision a module draws
   built:     {},                                           // no longer read (Oct 28); kept so an old claim can't throw
   keys:      { [overlayType]: (overlay) => screenId, ["tab:<tab>"]: ({ st: S }) => screenId },
-  onSet:     [(key, value, api) => void],                  // after phone.set has redrawn and the page has followed
+  onSet:     [(key, value, api, o) => void],               // after phone.set has redrawn and the page has followed;
+                                                           // o.stay: don't move the phone off its screen (Use Will's picks)
   api,                                                     // the live phone's api, there from the phone's first draw
   will                                                     // Will's picks (refresh-app.js's WILL): { [key]: { v, on, short?, agrees? } }, read-only
 }
@@ -292,7 +296,7 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   `open(id)`), `reset()` (rebuild, then Today), `set(key, value)`, `countUp(el)`, `layer`, `root`, and `snapshot()`
   (returns an undo), `commit(st, kind, fields)`, `key()`, `act(name, button)` (a module's act, else the core's),
   `core(name, button)` (always the core's, for an act that wraps one).
-- **set(key, value)** is the one way to change the phone: the decisions (`form`, `bmUI`, `home`, `history`, `checkin`,
+- **set(key, value, o?)** is the one way to change the phone (`o` reaches the onSet hooks): the decisions (`form`, `bmUI`, `home`, `history`, `checkin`,
   `mealUI`, `look`, `easy`, `onboard`), `askUI` (Ask button, under View), `plan`, `persona`, `data` and `meals` (these rebuild the model and go to Today),
   `theme`, `full`. The page follows every set, whoever makes it: the toggles, the stored decision, the Screens list and
   the notes (so a Profile screen can turn the check-in off). Each decision is stamped on the phone's `.ap` root

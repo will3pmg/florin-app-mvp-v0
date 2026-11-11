@@ -39,10 +39,11 @@ const K1 = /something shifted|\bno logs\b|\bnot logged\b|\boutside them\b|\bouts
 /* and as a whole legend item, chart label, table cell or value (a sentence like "No BMs logged yet." stays) */
 const K1_ITEM = /^\s*(no bms logged|shifted)\s*$/i;
 
-/* the decisions on the left bar, default first, as the toggles carry them (data-v) */
+/* the decisions on the left bar, default first, as the toggles carry them (data-v). The defaults are Will's picks
+   (Nov 10: refresh-app.js, WILL), so a run tagged "defaults" is the page a fresh viewer opens on */
 const DECS = {
-  form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["compact", "score", "day"], history: ["list", "calendar"], checkin: ["true", "false"],
-  mealUI: ["quick", "detailed"], look: ["built", "picks", "rings", "journal", "bento", "oura", "easy"], easy: ["false", "true"], onboard: ["short", "full"]
+  form: ["C", "A", "B"], bmUI: ["quick", "full"], home: ["compact", "score", "day"], history: ["calendar", "list"], checkin: ["true", "false"],
+  mealUI: ["quick", "detailed"], look: ["picks", "built", "rings", "journal", "bento", "oura", "easy"], easy: ["false", "true"], onboard: ["short", "full"]
 };
 const KEYS = Object.keys(DECS);
 const pairs = [];

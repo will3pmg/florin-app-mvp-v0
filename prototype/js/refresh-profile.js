@@ -790,15 +790,15 @@
   let opening = false;
   /* after the phone changes: a new model for the person keeps their name; the theme moves the chips in Profile. The
      Onboarding toggle shows its flow on the phone: an open set-up moves to the other flow, answers kept; otherwise
-     the flow opens from its first step */
-  EXT.onSet.push((k, v, api) => {
+     the flow opens from its first step, unless the set asks the phone to stay (o.stay: Use Will's picks) */
+  EXT.onSet.push((k, v, api, o) => {
     try {
       hookReset(api);
       if (["persona", "data", "meals"].includes(k)) { if (ensurePerson(api.M(), api)) api.renderTab(true); }
       if (k === "theme" || k === "easy") redrawPf(api);
       if (k === "onboard" && !opening) {
         const flow = flowOf(v), ov = api.S.ovl.find((o) => o.type === "onb" && !o.st.edit);
-        if (!ov) api.open(`onb-${flow}`);
+        if (!ov) { if (!(o && o.stay)) api.open(`onb-${flow}`); }
         else if (ov.st.flow !== flow) {
           ov.st.step = stepIn(ov.st.flow, flow, keyOf(ov.st));
           ov.st.flow = flow;

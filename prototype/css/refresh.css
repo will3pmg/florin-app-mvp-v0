@@ -68,7 +68,7 @@
 .rx-picks-k { grid-area: k; display: flex; align-items: center; gap: 4px; margin: 0; font: 500 13px/1.3 var(--sans); color: var(--ink); }
 .rx-picks-s { grid-area: s; color: var(--ink-2); }
 .rx-panel--picks.is-off .rx-picks-s { color: var(--ink); }
-.rx-picks-b { grid-area: b; padding: 0 12px; font-size: 13px; }
+.rx-picks-b { grid-area: b; min-height: 44px; padding: 0 12px; font-size: 13px; }
 .rx-picks-b[aria-disabled="true"] { color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line-2); cursor: default; }
 .rx-picks-b[aria-disabled="true"]:hover { background: transparent; }
 

@@ -1,5 +1,5 @@
-Florin focus group site, build fg.20261108.b452f652
-Built 2026-11-08T20:34:29.397Z by focus/build.js. Endpoint: (none: answers wait on the phone).
+Florin focus group site, build fg.20261111.e6b30feb
+Built 2026-11-11T01:55:41.361Z by focus/build.js. Endpoint: (none: answers wait on the phone).
 Every file, where it came from, and its SHA-1 at build time:
 
 proto/css/app.css  <-  prototype/css/app.css  7e6e83424016
@@ -7,7 +7,7 @@ proto/js/lib.js  <-  prototype/js/lib.js  8f6b6acc8f36
 proto/js/data-app.js  <-  prototype/js/data-app.js  80439a3f11bd
 proto/js/refresh-data.js  <-  prototype/js/refresh-data.js  ac3ec3f75732
 index.html  <-  focus/index.html (paths rewritten)  73b0a42dba93
-proto/css/refresh.css  <-  prototype/css/refresh.css  e318f5e72011
+proto/css/refresh.css  <-  prototype/css/refresh.css  e483efdd9f1f
 proto/css/look-rings.css  <-  library/css/look-rings.css  fe8519e243d0
 proto/css/look-journal.css  <-  library/css/look-journal.css  99f2a7ea482a
 proto/css/look-bento.css  <-  library/css/look-bento.css  208e3164c25a
@@ -31,15 +31,15 @@ proto/js/look-journal.js  <-  library/js/look-journal.js  b0166f864176
 proto/js/look-bento.js  <-  library/js/look-bento.js  4c7d319b4179
 proto/js/look-oura.js  <-  library/js/look-oura.js  d4222cb799e9
 proto/js/look-easy.js  <-  library/js/look-easy.js  091b38500dd1
-proto/js/refresh-looks.js  <-  prototype/js/refresh-looks.js  e5cb7cd0e599
+proto/js/refresh-looks.js  <-  prototype/js/refresh-looks.js  61ef0ce1ff2c
 proto/js/refresh-variants.js  <-  prototype/js/refresh-variants.js  323e3ab051bf
-proto/js/refresh-profile.js  <-  prototype/js/refresh-profile.js  9558ababbad8
+proto/js/refresh-profile.js  <-  prototype/js/refresh-profile.js  8812e0c846d0
 proto/js/refresh-photo.js  <-  prototype/js/refresh-photo.js  ec5c7bd192b1
-proto/js/refresh-ask.js  <-  prototype/js/refresh-ask.js  7df587de851f
+proto/js/refresh-ask.js  <-  prototype/js/refresh-ask.js  760241f77ef1
 proto/js/refresh-detail.js  <-  prototype/js/refresh-detail.js  b1a56007f1c7
 proto/js/refresh-easy.js  <-  prototype/js/refresh-easy.js  4811ae4e69cc
 proto/js/home-options.js  <-  options/home/js/home-options.js  fa1d1a1273d9
-proto/js/refresh-app.js  <-  prototype/js/refresh-app.js  abfd12d3b1eb
+proto/js/refresh-app.js  <-  prototype/js/refresh-app.js  ef4d6ed2b386
 app.html  <-  focus/app.html (paths rewritten)  e296fddeacb4
 config.js  <-  focus/config.js  d443a7c72959
 manifest.webmanifest  <-  focus/manifest.webmanifest  5f1db88dd146

@@ -494,7 +494,7 @@
      Will, Nov 5: "Can you build an app refresh view that 'Will's picks' toggled to and a default? I want to see how they
      lay out one by one." He picks a style chart by chart on the data modules page (modules/, published at
      https://claude.ai/artifact/K3VM5FUAZSbddHUMkVc4hb). One row per Insights card, by the key the core's card carries;
-     null is not picked yet, drawn in the default, Florin charts. When Will picks more, change this table (and the lines
+     null is not picked yet, drawn in Florin charts. When Will picks more, change this table (and the lines
      in CLAUDE.md, the brief, decisions.md and data viz.md that name them).
      Nov 7, on the demo's Insights: "I think FLORIN CHARTS for insights tab has the best flow", so the view keeps the
      core's order and its range tabs, the one place the range is picked: every card, picked or not, draws the range the
@@ -503,7 +503,7 @@
      charts with the Rings week, and the theme is left alone: an Oura card takes its light or dark form from the phone */
   const WILL_PICKS = {
     score: "rings", /* FloraScore today: Rings' hero, "the large green big circle like in the Score first visual" (Nov 5),
-                       on the default demo too (heroInto, below). Nov 7: "Large FloraScore: keep" */
+                       in Florin charts too (heroInto, below). Nov 7: "Large FloraScore: keep" */
     timing: "oura", /* Nov 8, "TIMING: I Like OURA, but can we make sure on the main insights tab to flag a note about the
                        number of poops OUTSIDE regular windows/cadence": Oura's thin-arc card, with the note of the
                        mornings outside the usual window under its stats (look-oura.js, D.timing.out). Before that, Nov 5,

@@ -50,7 +50,7 @@
     history: { v: "calendar", on: "Nov 7" },
     checkin: { v: true, on: "Nov 7" },
     mealUI: { v: "quick", on: "Nov 7" },
-    look: { v: "picks", on: "Nov 7 and 8", short: "Will's picks, card by card" },
+    look: { v: "picks", on: "Nov 7 and 8", short: "a style per card" },
     easy: { v: false, on: "Nov 7", short: "Standard, with Easy as a setting", agrees: true },
     onboard: { v: "short", on: "Nov 7" },
     askUI: { v: "compact", on: "Nov 8" }
@@ -818,8 +818,9 @@
     const refresh = () => { renderTab(true); S.ovl.forEach((o) => rerender(o)); nav(); };
     /* the one way to change the phone: a decision, a demo control, the theme or full screen. The page hears every
        change first (its toggles, the stored decisions, the notes and the Screens list follow, whoever made it), then the
-       modules, through EXT.onSet, after the phone has redrawn */
-    function set(k, v) {
+       modules, through EXT.onSet, after the phone has redrawn. o reaches the hooks: o.stay (Use Will's picks) asks that
+       no hook move the phone off its screen */
+    function set(k, v, o) {
       switch (k) {
         case "theme": root.dataset.theme = v; break;
         case "full": root.classList.toggle("is-full", !!v); break;
@@ -850,7 +851,7 @@
       }
       if (STAMP.includes(k)) root.setAttribute(attrOf(k), String(S[k]));
       if (cfg.onSet) safe(cfg.onSet, k, S[k] === undefined ? v : S[k]);
-      EXT.onSet.forEach((f) => safe(f, k, v, api));
+      EXT.onSet.forEach((f) => safe(f, k, v, api, o || {}));
     }
     /* go to a tab's top, closing whatever is open */
     const go = (tab) => { closeAll(); S.tab = tab; if (tab === "insights") S.ins.k = null; if (tab === "ask") S.askCtx = null; renderTab(); nav(); focusSel(); };
@@ -1309,18 +1310,20 @@
   /* Will's star (Nov 10): one mark for his pick on every control, the legend and the notes. A Gold star, deepened on
      light grounds (refresh.css, --pick), drawn on a ring of the panel's own colour so it reads the same over a picked
      chip or a plain one. It sits on the chip's corner, out of the flow, so it never moves the chip's words or width.
-     The star is hidden from screen readers: the chip's name says ", Will's pick" instead */
+     On a chip the star is hidden from screen readers and the chip's name says ", Will's pick" instead; in a note it is
+     an image named Will's pick, heard where it sits ("Will's pick, Calendar"). Neither says it twice where the option's
+     own name is Will's picks */
   const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.6l2.85 5.95 6.55.85-4.8 4.55 1.2 6.5L12 17.3l-5.8 3.15 1.2-6.5-4.8-4.55 6.55-.85z"/></svg>';
   const PICK_SAID = "Will's pick";
-  const star = (cls = "") => `<span class="rx-star${cls ? " " + cls : ""}" title="${PICK_SAID}" aria-hidden="true">${STAR}</span>`;
+  const star = (cls = "", said) => `<span class="rx-star${cls ? " " + cls : ""}" title="${PICK_SAID}" ${said ? `role="img" aria-label="${PICK_SAID}"` : 'aria-hidden="true"'}>${STAR}</span>`;
   /* a row's options, pressed for the one on. pick is Will's pick for the row (WILL[k].v), starred, with ", Will's pick"
-     in its name */
+     in its name, unless the option's own name says it (the option called Will's picks is named just that) */
   const btns = (k, opts, cur, pick) => opts.map(([v, l, sh]) => {
-    const his = pick !== undefined && v === pick;
+    const his = pick !== undefined && v === pick, said = his && !/Will's pick/.test(l);
     const base = l.indexOf(" · ") >= 0 ? l.replace(" · ", ", ") : sh && sh !== l ? l : "";
-    /* a starred chip always takes a name, so it reads "Calendar, Will's pick" (hidden words after the label would be
-       heard as "Calendar , Will's pick") */
-    const name = his ? `${base || sh || l}, ${PICK_SAID}` : base;
+    /* a starred chip takes a name, so it reads "Calendar, Will's pick" (hidden words after the label would be heard as
+       "Calendar , Will's pick") */
+    const name = said ? `${base || sh || l}, ${PICK_SAID}` : base;
     return `<button type="button" data-rx="${esc(k)}" data-v="${esc(String(v))}" aria-pressed="${v === cur}"${name ? ` aria-label="${esc(name)}"` : ""}${his ? " data-pick" : ""}>${optLabel(sh || l)}${his ? star("rx-star--chip") : ""}</button>`;
   }).join("");
   const pickOf = (k) => (WILL[k] ? WILL[k].v : undefined);
@@ -1524,7 +1527,8 @@
     const row = (h, t) => (t ? `<dt>${h}</dt><dd>${esc(t)}</dd>` : "");
     const blocks = opts.map((o) => {
       const rec = recV.some((v) => v === o.v), his = !!W && W.v === o.v, name = o.name || (D.opts.find(([x]) => x === o.v) || [])[1] || String(o.v);
-      return `<li class="rx-opt${rec ? " is-rec" : ""}${his ? " is-pick" : ""}"><p class="rx-opt-h"><b>${his ? star("rx-star--note") : ""}${esc(name)}</b>${his ? `<span class="sr">, ${PICK_SAID}</span>` : ""}${rec ? '<span class="rx-tag">Recommended</span>' : ""}</p>${o.is || o.why || o.not ? `<dl>${row("What it is", o.is)}${row("Why do it", o.why)}${row("Why not", o.not)}</dl>` : ""}</li>`;
+      /* his option's star is heard where it sits, "Will's pick, Calendar", unless the option's name says it already */
+      return `<li class="rx-opt${rec ? " is-rec" : ""}${his ? " is-pick" : ""}"><p class="rx-opt-h"><b>${his ? star("rx-star--note", !/Will's pick/.test(name)) : ""}${esc(name)}</b>${rec ? '<span class="rx-tag">Recommended</span>' : ""}</p>${o.is || o.why || o.not ? `<dl>${row("What it is", o.is)}${row("Why do it", o.why)}${row("Why not", o.not)}</dl>` : ""}</li>`;
     }).join("");
     const sh = shadowOf(D.k), show = showFor(D.k);
     const A = N.about;
@@ -1644,8 +1648,9 @@
   function usePicks() {
     const off = offPicks();
     if (!off.length) return;
-    /* Version first, so Home and Data style aren't drawn under Easy on the way */
-    off.sort((a, b) => (a === "easy" ? -1 : b === "easy" ? 1 : 0)).forEach((k) => P.ph.set(k, WILL[k].v));
+    /* Version first, so Home and Data style aren't drawn under Easy on the way. { stay: true }: the phone stays on its
+       screen, so a module that shows a choice when it's set (Onboarding opens its flow) leaves it be */
+    off.sort((a, b) => (a === "easy" ? -1 : b === "easy" ? 1 : 0)).forEach((k) => P.ph.set(k, WILL[k].v, { stay: true }));
     PICK_KEYS.forEach((k) => store.clear(k));
     P.dec = null;
     jump.hidden = true;

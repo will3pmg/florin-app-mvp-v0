@@ -12,8 +12,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
   /* Will, Nov 10: his picks are the defaults, so a viewer with nothing stored opens on Data style Will's picks. The
      blocks written before then check the core's Insights (Florin charts) from a fresh page, so every page here starts
      as a viewer who picked Florin charts (florin-refresh:look), unless the block asks for a fresh viewer with nothing
-     stored ({ fresh: true }: the picks-default block). A page that later stores another style keeps it on reload */
-  const SEED = () => { try { if (localStorage.getItem("florin-refresh:look") == null) localStorage.setItem("florin-refresh:look", JSON.stringify("built")); } catch (e) { /* no storage here: fine */ } };
+     stored ({ fresh: true }: the picks-default block). A page that later stores another style keeps it on reload. The
+     seed runs once per tab (a sessionStorage flag, as the nov8 block's): reading localStorage at the very start of a
+     reload can race the last page's writes in Chromium, so a choice stored just before a reload was lost now and then */
+  const SEED = () => { try { if (sessionStorage.getItem("florin-seeded")) return; sessionStorage.setItem("florin-seeded", "1"); if (localStorage.getItem("florin-refresh:look") == null) localStorage.setItem("florin-refresh:look", JSON.stringify("built")); } catch (e) { /* no storage here: fine */ } };
   const newCtx = b.newContext.bind(b);
   b.newContext = async (o = {}) => { const { fresh, ...rest } = o; const c = await newCtx(rest); if (!fresh) await c.addInitScript(SEED); return c; };
   b.newPage = async (o = {}) => { const c = await b.newContext(o); const pg = await c.newPage(); const close = pg.close.bind(pg); pg.close = async (x) => { await close(x); await c.close(); }; return pg; };
@@ -4169,7 +4171,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const KEYS = ["form", "bmUI", "home", "history", "checkin", "mealUI", "look", "easy", "onboard"];
     const LABEL = { form: "Consistency", bmUI: "BM logging", home: "Home", history: "History", checkin: "Weekly check-in", mealUI: "Meal sheet", look: "Data style", easy: "Version", onboard: "Onboarding" };
     /* Nov 10: the label names Will's pick, and what we recommend only where that differs (Data style) */
-    const WANT = { form: "Will's pick: C", bmUI: "Will's pick: Quick tiles and form", home: "Will's pick: Compact", history: "Will's pick: Calendar", checkin: "Will's pick: On", mealUI: "Will's pick: Quick, voice or text", look: "Will's pick: Will's picks, card by card · We recommend Florin charts", easy: "Will's pick: Standard, with Easy as a setting", onboard: "Will's pick: Short" };
+    const WANT = { form: "Will's pick: C", bmUI: "Will's pick: Quick tiles and form", home: "Will's pick: Compact", history: "Will's pick: Calendar", checkin: "Will's pick: On", mealUI: "Will's pick: Quick, voice or text", look: "Will's pick: a style per card · We recommend Florin charts", easy: "Will's pick: Standard, with Easy as a setting", onboard: "Will's pick: Short" };
     /* 12. the top label: Decision n of 9, the decision, and Will's pick, in view at 1000 tall */
     const eb = [];
     for (let i = 0; i < KEYS.length; i++) {
@@ -6297,6 +6299,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     /* 1. a fresh viewer: every pick pressed and starred, nothing stored, the legend, Showing Will's picks, the button off */
     const s0 = await state(pk);
     const first = await pk.evaluate(() => document.querySelector("#rxLeft").firstElementChild.className);
+    const tapW = await pk.evaluate(() => { const r = document.querySelector('#rxLeft [data-rx="usepicks"]').getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; });
+    ok(tapW.h >= 44 && tapW.w >= 44, `picks-default: Use Will's picks is a 44px target on the wide page (${tapW.w}x${tapW.h})`);
     ok(allPicks(s0) && !s0.stored && s0.stamp.history === "calendar" && s0.stamp.look === "picks" && s0.stamp.askUi === "compact" && s0.stamp.home === "compact" && s0.stamp.easy === "false" && s0.stamp.form === "C",
       `picks-default: a fresh viewer, nothing stored, sees every pick of the nine decisions, the View and the Ask button pressed and starred, and the phone stamped with them (${Object.entries(s0.rows).filter(([, r]) => !(r.on === r.want && r.starred === r.want && r.hid)).map(([k, r]) => `${k}: on ${r.on}, star ${r.starred}, want ${r.want}`).join("; ") || "all eleven"})`);
     ok(/rx-panel--picks/.test(first) && s0.panels === 1 && s0.key === "Will's pick, Nov 7 and 8" && s0.keyStar && s0.line === "Showing Will's picks" && s0.off === true && s0.btn === "Use Will's picks" && !s0.toast && !s0.sheet,
@@ -6307,12 +6311,14 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const ins = await pk.evaluate(() => { const r = document.querySelector(".rx-stage .ap-rx .ap-ins"), q = (s) => !!document.querySelector(`.rx-stage .ap-rx ${s}`); return { picks: !!r && r.dataset.rpk === "picks", timing: q('[data-rlk-k="timing"] .lk-oura'), often: q('[data-rlk-k="often"] .lk-bento'), lit: (document.querySelector('[data-rx="screen"][aria-current="true"]') || { dataset: {} }).dataset.v, note: document.querySelector("#rxNoteH").textContent }; });
     ok(vw.order === "Will's picks,Florin charts" && /Will's picks draws each Insights card in the style Will picked, and Florin charts draws every card/.test(vw.line) && ins.picks && ins.timing && ins.often && ins.lit === "insights" && ins.note === "Insights, in Will's picks",
       `picks-default: View lists Will's picks first, on by default, with a line on what each is, and Insights draws his picks (Timing in Oura's card, Frequency in Bento's), its row lit and its note "${ins.note}"`);
-    /* 3. each star's chip says it: the accessible name ends ", Will's pick" (Playwright's own name computation) */
-    const NAMES = ["C, 7 words, Will's pick", "Quick tiles and form, Will's pick", "Compact, Will's pick", "Calendar, Will's pick", "On, Will's pick", "Quick, voice or text, Will's pick", "Will's picks, Will's pick", "Standard, Will's pick", "Short, Will's pick", "B, Compact, Will's pick"];
+    /* 3. each star's chip says it: the accessible name ends ", Will's pick" (Playwright's own name computation), except
+       the option called Will's picks (on View and in Data style), whose own name says it, so it is never heard twice */
+    const NAMES = [["C, 7 words, Will's pick", 1], ["Quick tiles and form, Will's pick", 1], ["Compact, Will's pick", 1], ["Calendar, Will's pick", 1], ["On, Will's pick", 1], ["Quick, voice or text, Will's pick", 1], ["Will's picks", 2], ["Standard, Will's pick", 1], ["Short, Will's pick", 1], ["B, Compact, Will's pick", 1]];
     const nm = [];
-    for (const n of NAMES) { const c = await pk.locator("#rxLeft").getByRole("button", { name: n, exact: true }).count(); if (c < 1) nm.push(`${n} (${c})`); }
+    for (const [n, want] of NAMES) { const c = await pk.locator("#rxLeft").getByRole("button", { name: n, exact: true }).count(); if (c !== want) nm.push(`${n} (${c})`); }
     const starNames = await pk.evaluate(() => [...document.querySelectorAll("#rxLeft button[data-pick]")].length);
-    ok(!nm.length && starNames === 11, `picks-default: every starred chip's name says Will's pick, as "Calendar, Will's pick" (${nm.join("; ") || `${starNames} chips, Data style's star once in its row and once on View`})`);
+    const twice = await pk.evaluate(() => [...document.querySelectorAll("#rxLeft button")].map((x) => x.getAttribute("aria-label") || x.textContent).filter((t) => (t.match(/Will's pick/g) || []).length > 1));
+    ok(!nm.length && starNames === 11 && !twice.length, `picks-default: every starred chip's name says Will's pick, as "Calendar, Will's pick", and none says it twice (${nm.concat(twice).join("; ") || `${starNames} chips, Data style's star once in its row and once on View`})`);
     /* 4. the star never moves its chip: the same width picked or not, and the pressed fill moves while the star stays */
     const wOf = () => pk.evaluate(() => [...document.querySelectorAll("#rxLeft button[data-pick]")].map((x) => `${x.dataset.rx}:${Math.round(x.getBoundingClientRect().width)}`).join(","));
     const w0 = await wOf();
@@ -6329,23 +6335,33 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const n = await pk.evaluate((k) => {
         const N = document.querySelector("#rxNotes .rx-note"), W = window.FLORIN_EXT.will[k];
         const picked = [...N.querySelectorAll(".rx-opt.is-pick")];
-        return { eb: N.querySelector(".rx-eyebrow").textContent, star: !!N.querySelector(".rx-eyebrow .rx-star"), picks: picked.length, pickStar: picked.every((o) => o.querySelector(".rx-opt-h .rx-star") && /, Will's pick/.test(o.querySelector(".rx-opt-h .sr").textContent)), diff: (N.querySelector(".rx-pickdiff") || {}).textContent || "", rec: !!N.querySelector(".rx-rec"), badge: /On the phone|\bPicked\b/.test(N.textContent), w: W.short || null };
+        return { eb: N.querySelector(".rx-eyebrow").textContent, star: !!N.querySelector(".rx-eyebrow .rx-star"), picks: picked.length, pickStar: picked.every((o) => { const s = o.querySelector(".rx-opt-h .rx-star"), nm = o.querySelector(".rx-opt-h b").textContent; return !!s && !o.querySelector(".rx-opt-h .sr") && (/Will's pick/.test(nm) ? s.getAttribute("aria-hidden") === "true" && !s.getAttribute("role") : s.getAttribute("role") === "img" && s.getAttribute("aria-label") === "Will's pick" && !s.getAttribute("aria-hidden")); }), diff: (N.querySelector(".rx-pickdiff") || {}).textContent || "", rec: !!N.querySelector(".rx-rec"), badge: /On the phone|\bPicked\b/.test(N.textContent), w: W.short || null };
       }, k);
       const wantEb = /^Decision \d of 9 · [^·]+ · Will's pick: [^·]+$/;
       const look = k === "look";
-      if (!(look ? /· Will's pick: Will's picks, card by card · We recommend Florin charts$/.test(n.eb) && /^Will's pick is Will's picks, card by card \(Nov 7 and 8\), and we recommend Florin charts\./.test(n.diff) : wantEb.test(n.eb) && !n.diff) || !n.star || n.picks !== 1 || !n.pickStar || !n.rec || n.badge) nb.push(`${k}: ${n.eb}${n.diff ? ` | ${n.diff}` : ""} (${n.picks} picked)`);
+      /* his option's heading as a screen reader gets it (Playwright's aria snapshot): the star heard as Will's pick where
+         it sits, no stray space before a comma, and Will's pick said once */
+      const snap = await pk.locator("#rxNotes .rx-note .rx-opt.is-pick .rx-opt-h").first().ariaSnapshot();
+      const heard = /\s,/.test(snap) || (snap.match(/Will's pick/g) || []).length !== 1;
+      if (!(look ? /· Will's pick: a style per card · We recommend Florin charts$/.test(n.eb) && /^Will's pick is a style per card \(Nov 7 and 8\), and we recommend Florin charts\./.test(n.diff) : wantEb.test(n.eb) && !n.diff) || !n.star || n.picks !== 1 || !n.pickStar || !n.rec || n.badge || heard || (n.eb.match(/Will's pick/g) || []).length !== 1) nb.push(`${k}: ${n.eb}${n.diff ? ` | ${n.diff}` : ""} (${n.picks} picked) [${snap.replace(/\s+/g, " ")}]`);
     }
-    ok(!nb.length, `picks-default: every decision note's label names Will's pick with his star, his option's block carries it, "We recommend" stays in the body, and Data style alone says both, in the label and a line under the question (${nb.join("; ") || "nine notes"})`);
+    ok(!nb.length, `picks-default: every decision note's label names Will's pick once with his star, his option's block carries it, heard where it sits ("Will's pick, Calendar"), "We recommend" stays in the body, and Data style alone says both, in the label and a line under the question (${nb.join("; ") || "nine notes"})`);
     /* 6. a viewer with stored choices from before: the quiet line and the button, no modal, no toast; the button puts
        every control back through phone.set, clears the stored keys, and is off after, with Oura's dark given back */
-    await pk.evaluate(() => { [["form", "B"], ["home", "score"], ["history", "list"], ["look", "oura"], ["easy", true], ["askUI", "pill"], ["checkin", false]].forEach(([k, v]) => localStorage.setItem("florin-refresh:" + k, JSON.stringify(v))); });
+    await pk.evaluate(() => { [["form", "B"], ["home", "score"], ["history", "list"], ["look", "oura"], ["easy", true], ["askUI", "pill"], ["checkin", false], ["onboard", "full"]].forEach(([k, v]) => localStorage.setItem("florin-refresh:" + k, JSON.stringify(v))); });
     await load(pk);
     const s2 = await state(pk);
+    /* on History, so a set that sends the phone to Today, or opens a flow over it, shows */
+    await pk.evaluate(() => document.querySelector('.rx-stage .ap-rx .ap-tb [data-tab="history"]').click()); await pw(500);
+    const k2 = await pk.evaluate(() => window.FLORIN_EXT.api.key());
     ok(s2.line === "Some choices differ from Will's picks" && s2.off === false && !s2.toast && !s2.sheet && s2.rows.form.on === "B" && s2.rows.form.starred === "C" && s2.rows.askUI.on === "pill" && s2.rows.askUI.starred === "compact" && s2.rows.view.on === "",
       `picks-default: a viewer whose stored choices differ opens on them, the stars on Will's picks, with "${s2.line}" and the button on, and no toast or sheet`);
     await pk.evaluate(() => document.querySelector('#rxLeft [data-rx="usepicks"]').focus());
     await pk.keyboard.press("Enter"); await pw(800);
     const s3 = await state(pk), f3 = await pk.evaluate(() => document.activeElement && document.activeElement.dataset.rx);
+    const k3 = await pk.evaluate(() => ({ key: window.FLORIN_EXT.api.key(), tab: window.FLORIN_EXT.api.S.tab, onb: window.FLORIN_EXT.api.S.ovl.some((o) => o.type === "onb") }));
+    ok(k2 === "history" && k3.tab === "history" && k3.key === "hist-cal" && !k3.onb,
+      `picks-default: Use Will's picks with Onboarding stored as Full survey leaves the phone on its screen, History drawn as his Calendar, and opens no set-up (before ${k2}, after ${k3.key}${k3.onb ? ", set-up open" : ""})`);
     ok(allPicks(s3) && !s3.stored && s3.line === "Showing Will's picks" && s3.off === true && s3.stamp.easy === "false" && s3.stamp.look === "picks" && s3.stamp.askUi === "compact" && s3.theme === "light" && f3 === "usepicks",
       `picks-default: Use Will's picks puts all eleven back (the phone follows: ${JSON.stringify(s3.stamp)}, theme ${s3.theme}), clears the stored keys (${s3.stored || "none left"}), and is off after, focus kept on it`);
     /* pressed again while off, it changes nothing and stores nothing */

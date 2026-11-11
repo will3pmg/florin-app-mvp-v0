@@ -1583,7 +1583,9 @@
   EXT.notes.ask = (M, P) => (P.plan === "free" ? null : {
     t: "Ask Florin",
     lede: `Before anything is asked, Ask Florin opens on a read of the last 7 days: the mornings drawn against the person's usual window, two sentences, then questions to start. Ask about this on an Insights card brings that card's chart and numbers in instead. ${ASK_WAYS} ${engineNow()}`,
-    open: ["Give Free one answer a week, with questions about seeing a doctor always answered?"]
+    /* Ask on Free is answered (Will, Nov 7: one answer a week, questions about seeing a doctor always answered), and
+       the Free note says so: this one asks the next call from the brief */
+    open: ["Show an answer only once it's checked, at the cost of a pause?"]
   });
   EXT.notes["ask-about"] = (M, P) => (P.plan === "free" ? null : {
     t: "Ask about this",
