@@ -210,17 +210,14 @@
 .lk-rings .rg-wd-ring b, .lk-rings .rg-md b, .lk-rings .rg-fc-ring b, .lk-rings .rg-sym-ring b { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 500; font-variant-numeric: tabular-nums; }
 .lk-rings .rg-wd-ring b { font-size: 13px; }
 .lk-rings .rg-wd-s { display: flex; align-items: center; min-height: 16px; font-family: var(--mono); font-size: 10.5px; line-height: 1.2; color: var(--rg-ink2); white-space: nowrap; }
-/* "+ Add" where a day with nothing logged would show its score: a small outlined pill, so it reads as something to tap */
-.lk-rings .rg-wd-add { display: inline-flex; align-items: center; gap: 4px; height: 16px; padding: 0 4px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ap-ink3); color: var(--rg-ink); font-weight: 700; letter-spacing: .02em; }
-.lk-rings .rg-wd-add svg { width: 8px; height: 8px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
-.lk-rings button.rg-wd-b:hover .rg-wd-add { background: var(--rg-ground); }
 /* a symptom that day: one Teal square, whatever its strength, as on every screen of the app */
 .lk-rings .rg-wd-sym { display: flex; height: 8px; }
 .lk-rings .rg-wd-sym i { width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
 .lk-rings .rg-day { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
 .lk-rings .rg-day-trk { fill: none; stroke: var(--rg-trk); }
 .lk-rings .rg-day-ring { fill: none; stroke: var(--rg-read); }
-/* nothing logged: a clear empty ring, solid Ink 3 (never a dash or a hatch) */
+/* nothing logged, on the month: a thin empty ring, solid Ink 3 (never a dash or a hatch). The week card draws no ring
+   for it, only the date (below) */
 .lk-rings .rg-day-gap { fill: none; stroke: var(--ap-ink3); stroke-width: 1.5; }
 .lk-rings .rg-day-arc { fill: none; stroke: var(--rg-read); stroke-linecap: round; }
 /* outside your usual: Gold, filled, so it reads apart from a day within by more than its hue. In light a Gold tint
@@ -238,7 +235,12 @@
 .lk-rings .rg-day:is(.is-unsure, .is-nocount, .is-logged) .rg-day-ring { stroke: var(--ap-ink3); }
 /* today with a flag: noted for a clinician, never read. Teal, the colour of the primary care note */
 .lk-rings .rg-day.is-flag .rg-day-ring { stroke: var(--ap-teal); }
-.lk-rings .rg-wd:has(.is-none, .is-pending) b, .lk-rings .rg-md:has(.is-none, .is-pending) b { color: var(--rg-ink2); font-weight: 400; }
+.lk-rings .rg-md:has(.is-none, .is-pending) b { color: var(--rg-ink2); font-weight: 400; }
+/* the week card's day with nothing logged: the date alone in Ink 3, as the calendar draws it. In the app it's still a
+   button (a tap opens plus for that day); a hover gives it the faint track disc, so it answers a pointer */
+.lk-rings .rg-wd.is-open .rg-wd-ring b { color: var(--rg-ink3); font-weight: 400; }
+.lk-rings .rg-wd.is-today.is-open .rg-wd-ring b { color: var(--rg-ink2); }
+.lk-rings button.rg-wd-b:hover .rg-wd-ring b { border-radius: 50%; background: var(--rg-trk); }
 
 .lk-rings .rg-cal { display: flex; flex-direction: column; gap: 8px; }
 .lk-rings .rg-cal-h, .lk-rings .rg-cal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px 4px; justify-items: center; }

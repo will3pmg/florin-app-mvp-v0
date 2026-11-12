@@ -215,7 +215,7 @@ Shape says what a thing is, colour how it reads against the usual, a word says i
 | Today | 2px Ink ring 2px out, and the word Today | Today |
 | Today, flagged | 2px Teal ring with the info glyph, no fill, in no count | Noted for a clinician |
 | Symptoms that day | One 8px Teal square under the day, whatever the strength | Symptoms |
-| **Week ring** (Today's week card, Compact's week row) | A ring a day: Plum ring within, Gold ring over a Gold tint (solid disc on dark) outside, Ink 3 ring not counted, a thin empty Ink 3 ring with "+ Add" for nothing logged, Teal ring flagged; 40px on the week card, 32px on Compact | as above |
+| **Week ring** (Today's week card, Compact's week row) | A ring a day: Plum ring within, Gold ring over a Gold tint (solid disc on dark) outside, Ink 3 ring not counted, the date alone in Ink 3 for nothing logged (no ring, no "+ Add" since Nov 12), Teal ring flagged; 40px on the week card, 32px on Compact | as above |
 | In a chart | Your usual as a band named in words; the reading in the reading colour; Gold with an edge outside; today ringed and labelled; gaps stay gaps; No BM a dot on 0 | |
 
 **Open for the app:** the day is a filled circle on the calendar, History and Easy, and a ring on Today's week card and
@@ -282,7 +282,7 @@ One Figma component set per row, variants bound to the variables, theme by varia
 | Kicker | Teal on light, Ray on Forest; with dot | `.ap-k` |
 | Status chip | Usual, Shift, Info (Teal), Neutral | `.ap-chip--*` (20px) |
 | Day mark | State: Within, Outside, Not counted, Logged, Nothing logged, Flagged; Today ring on/off; Symptom on/off; Size 28, 32 | `RU.dayMark`, `.ap-day` |
-| Week ring | State: Within, Outside, Not counted, Nothing logged (+ Add), Flagged; Size 40 (week card), 32 (Compact); Picked on/off; Today on/off; Symptom on/off; Held (Free) | library `look-rings.css`, `refresh-variants.css` |
+| Week ring | State: Within, Outside, Not counted, Nothing logged (the date alone), Flagged; Size 40 (week card), 32 (Compact); Picked on/off; Today on/off; Symptom on/off; Held (Free) | library `look-rings.css`, `refresh-variants.css` |
 | Chart marks | Reading dot, Shift dot with edge, band, Today ring and label, Flag ring, Symptom square, Meal tick, No BM dot, Ink 3 dot (before day 14) | `refresh.css` chart marks |
 | Legend item | Each mark with its word; up to three lines | `.ap-legend` |
 | Divider, Fine print | | `.ap-fine` |
@@ -411,7 +411,7 @@ Undo); a log saved to another day moves the pick there.
 
 | Screen | States captured | Plan | Notes |
 |---|---|---|---|
-| Today, Compact (`home/today`) | 12 weeks, day 5, day 0; flagged today (blood); alarm word in a note; the flag sheet from the Teal note; no score; a past day picked; a gap picked (+ Add); a day with 5 BMs, two weeks back; last week (Today button); legend open; check-in skipped (toast); check-in Off | Member and Free for the base, flagged, flag sheet, no score, last week; Free: the strip opens the paywall (See what moves your FloraScore); the Free line under a week with held days | Light and dark for every state |
+| Today, Compact (`home/today`) | 12 weeks, day 5, day 0; flagged today (blood); alarm word in a note; the flag sheet from the Teal note; no score; a past day picked; a gap picked (Add, No BM that day); a day with 5 BMs, two weeks back; last week (Today button); legend open; check-in skipped (toast); check-in Off | Member and Free for the base, flagged, flag sheet, no score, last week; Free: the strip opens the paywall (See what moves your FloraScore); the Free line under a week with held days | Light and dark for every state |
 | Avatar to Profile (`home/avatar`) | | | |
 | Score first, Day first (`home/score-first`, `home/day-first`) | 12 weeks, day 5, flagged | Member | **Alternatives**, until Home is locked |
 
@@ -420,7 +420,7 @@ number and says "Not read against your usual today", with no bar.
 
 ### 5.2 Logging
 
-**Entry:** plus (the tab bar), + Add on a day, Add to this day (History), a tile on Today with nothing logged, Log your
+**Entry:** plus (the tab bar), a day with nothing logged (the week card), Add to this day (History), a tile on Today with nothing logged, Log your
 first BM (onboarding), I had a BM (Easy). **Exits:** save (back where it started, toast), close (a half-filled log is
 kept: "Not saved yet. This BM will be here when you open it again."), Undo.
 

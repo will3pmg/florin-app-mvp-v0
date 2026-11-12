@@ -42,7 +42,7 @@ module.exports = {
             { id: "flag-sheet", name: "The flag note opened from the Teal note: When to see a clinician, Make a report", before: [{ add: D.flag }], steps: [{ click: '[data-act="vr-cp-flag"]' }], matrix: BOTH },
             { id: "no-score", name: "No score today: nothing on 2 of the last 3 days", before: [{ eval: "[89, 88].forEach((d) => { const x = L.day(api.M(), d); if (x) { x.entries = []; x.logged = false; } });" }], matrix: BOTH },
             { id: "past-day", name: "A past day picked (Wednesday)", steps: [{ click: '[data-act="vr-cp-day"][data-v="86"]' }] },
-            { id: "gap-day", name: "A day with nothing logged picked: + Add", steps: [{ click: '[data-act="vr-cp-day"][data-v="87"]' }] },
+            { id: "gap-day", name: "A day with nothing logged picked: Add, No BM that day", steps: [{ click: '[data-act="vr-cp-day"][data-v="87"]' }] },
             { id: "busy-day", name: "A day with 5 BMs (Monday, Sep 21), two weeks back", steps: [{ click: '[data-act="vr-cp-wk"][data-v="-1"]' }, { click: '[data-act="vr-cp-wk"][data-v="-1"]' }, { click: '[data-act="vr-cp-day"][data-v="70"]' }] },
             { id: "last-week", name: "Last week, with Today to come back", steps: [{ click: '[data-act="vr-cp-wk"][data-v="-1"]' }], matrix: BOTH },
             { id: "legend", name: "The legend open (info button)", steps: [{ click: '[data-act="vr-cp-lg"]' }] },

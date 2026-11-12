@@ -96,7 +96,9 @@
     none: ["is-none", "Nothing logged"]
   };
   const stateOf = (d) => (d.pending ? ["is-pending", "Nothing logged yet"] : STATE[d.state] || STATE.none);
-  /* nothing logged on the day (a gap, or today before anything is logged): the week card offers to add to it */
+  /* nothing logged on the day (a gap, or today before anything is logged). On the week card it is the date alone in
+     Ink 3, as the calendar draws it (Will, Nov 12: someone who goes once or twice a week would see five "+ Add" pills
+     every week, which reads as five things undone; the date alone says nothing was logged without asking for it) */
   const isOpen = (d) => !!d && !d.logged;
   /* a small day ring. Its colour is the day's state and nothing else: a closed ring for a logged day (Plum or Ray
      within your usual, Gold outside it, Ink 3 not counted or logged before day 14, Teal noted for a clinician), and a
@@ -115,8 +117,6 @@
       ${shift ? `<circle class="rg-day-fill" cx="${c}" cy="${c}" r="${r}"/>` : ""}${mark}${shift ? `<circle class="rg-day-edge" cx="${c}" cy="${c}" r="${r1(r + swd / 2 + 0.25)}"/>` : ""}
     </svg>`;
   };
-  /* "+ Add" where a day with nothing logged would show its score (the week card, and Compact's week row in the app) */
-  const ADD = `<span class="rg-wd-add"><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M4 1v6M1 4h6"/></svg>Add</span>`;
   /* the legend items for day rings, only for the states on show */
   const dayLegend = (has) => [
     has("is-usual") && ["usual", "Within your usual"], has("is-shift") && ["shiftring", "Outside your usual"], (has("is-unsure") || has("is-nocount")) && ["unsure", "Not counted"], has("is-flag") && ["flag", "Noted for a clinician"],
@@ -291,9 +291,11 @@
 
   /* ---------- this week: seven day rings, the score as a number under each ----------
      Will, Nov 4: no dates over the card (they're in the rings), no legend line naming the numbers (they stand alone; the
-     screen reader still hears FloraScore), and a day with nothing logged obvious at a glance: an empty ring with its
-     date in Ink 2 and "+ Add" in place of the score. In the app (x.live) that day is a button that opens the plus
-     sheet for it (data-act plus-day, as History's Add to this day does); the library draws the same picture, not wired.
+     screen reader still hears FloraScore). A day with nothing logged is its date alone in Ink 3, no ring and nothing
+     under it, as the calendar draws a day (Will, Nov 12: the "+ Add" pill under each empty day read as a to-do list for
+     someone who goes once or twice a week). In the app (x.live) that day is still a button that opens the plus sheet
+     for it (data-act plus-day, as History's Add to this day does), and its name says so; the library draws the same
+     picture, not wired. The legend never names it: a date alone needs no key.
      The number under a ring is that day's FloraScore (L.score through D), shown wherever the day has one: a day with
      only symptoms today keeps today's number. Each day is a list item with its own words for a screen reader */
   function week(D, x) {
@@ -311,14 +313,14 @@
     const said = (d) => {
       const w = d.why && d.why.sr ? d.why.sr : stateOf(d)[1].toLowerCase();
       const sym = d.sym.length ? ` Symptoms: ${d.sym.map((s) => `${s.name.toLowerCase()}, ${s.word.toLowerCase()}`).join("; ")}.` : "";
-      return `${nameOf(d)}: ${w}.${showScore(d) ? ` FloraScore ${d.score}.` : ""}${sym}${isOpen(d) ? ` Add to ${d.today ? "today" : "this day"}.` : ""}`;
+      return `${nameOf(d)}: ${w}.${showScore(d) ? ` FloraScore ${d.score}.` : ""}${sym}${isOpen(d) && x.live ? ` Add to ${d.today ? "today" : "this day"}.` : ""}`;
     };
     const cols = slots.map((d, i) => {
       if (!d) return `<li class="rg-wd is-before" aria-hidden="true"><span class="rg-wd-b"><span class="rg-wd-k">&nbsp;</span><span class="rg-wd-ring"></span><span class="rg-wd-s">&nbsp;</span><span class="rg-wd-sym"></span></span></li>`;
       const open = isOpen(d);
       const inner = `<span class="rg-wd-k" aria-hidden="true">${d.today ? "Today" : esc(d.dow)}</span>
-        <span class="rg-wd-ring" aria-hidden="true">${dayRing(x, d, 40, 4.5)}<b>${d.date}</b></span>
-        <span class="rg-wd-s" aria-hidden="true">${showScore(d) ? d.score : open ? ADD : "&nbsp;"}</span>
+        <span class="rg-wd-ring" aria-hidden="true">${open ? "" : dayRing(x, d, 40, 4.5)}<b>${d.date}</b></span>
+        <span class="rg-wd-s" aria-hidden="true">${showScore(d) ? d.score : "&nbsp;"}</span>
         <span class="rg-wd-sym" aria-hidden="true">${d.sym.length ? "<i></i>" : ""}</span>
         <span class="rg-vh">${esc(said(d))}</span>`;
       const box = open && x.live ? `<button type="button" class="rg-wd-b" data-act="plus-day" data-v="${d.d}">${inner}</button>` : `<span class="rg-wd-b">${inner}</span>`;
@@ -331,7 +333,7 @@
     const ans = learning ? `${logged.length ? "" : "No days logged yet. "}Days show as logged while Florin learns your usual.${T.left ? ` ${T.left}` : ""}`
       : !T.logged ? "Nothing logged this week yet."
       : `${shifted ? `Outside your usual on ${which("shifted")}.` : !T.known ? "No day this week has a BM count logged yet." : T.left ? "No day you logged was outside your usual." : "Every day you logged sat within your usual."}${T.left ? ` ${T.left}` : ""}`;
-    const has = (c) => days.some((d) => stateOf(d)[0] === c);
+    const has = (c) => c !== "is-none" && c !== "is-pending" && days.some((d) => stateOf(d)[0] === c);
     return card(x, "rg-week", "This week at a glance", `
       ${head(x, "This week")}
       ${learning ? (logged.length ? lead(x, num(logged.length), `of ${plural(days.length, "day")} logged`, ans) : lead(x, "Not yet", "", ans)) : T.known ? lead(x, num(T.within), `of ${plural(T.known, "day")} within your usual`, ans) : lead(x, "Not yet", "", ans)}
@@ -797,13 +799,13 @@
     idea: "One dark hero card with FloraScore as a ring and your usual on it, and every card below read as rings: a morning dial, a 30-day count ring, day rings and part rings that draw themselves in.",
     components: { score, parts, trend, week, month, timing, often, form, symptoms, checkin, pattern },
     /* the week card's day marks, for a screen that draws a day the week card's way outside the card (Compact's week
-       row in the app, inside .lk-rings .rg-marks, so these rules style it): ring(d, size, stroke) is a day's ring (d:
-       { logged, pending, state }), add the "+ Add" pill, legend(esc, has, sym) the legend for the states on show (has
-       takes a ring class, "is-usual"), with Symptoms when sym */
+       row in the app, inside .lk-rings .rg-marks, so these rules style it): ring(d, size, stroke) is a logged day's ring
+       (d: { logged, pending, state }; a day with nothing logged is its date alone, so it draws no ring),
+       legend(esc, has, sym) the legend for the states on show (has takes a ring class, "is-usual"), with Symptoms when
+       sym */
     marks: {
       ring: (d, size, swd) => dayRing(null, d, size, swd),
       cls: (d) => stateOf(d)[0],
-      add: ADD,
       legend: (esc, has, sym) => legend({ esc }, [...dayLegend(has), sym && ["sym", "Symptoms"]])
     }
   });

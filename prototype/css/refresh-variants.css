@@ -172,23 +172,19 @@ button.vr-cpw-d:focus-visible { outline-offset: -2px; }
 .vr-cpw-d.is-today .vr-cpw-k { color: var(--ap-ink); font-weight: 700; }
 .vr-cpw-r { position: relative; display: block; flex: none; width: 32px; height: 32px; }
 .vr-cpw-r b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; font-weight: 500; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.vr-cpw-d.is-open .vr-cpw-r b { font-weight: 400; color: var(--ap-ink2); }
+/* a day with nothing logged: its date alone in Ink 3, as the calendar draws it (Will, Nov 12); today's in Ink 2, under
+   its bold Today */
+.vr-cpw-d.is-open .vr-cpw-r b { font-weight: 400; color: var(--ap-ink3); }
+.vr-cpw-d.is-open.is-today .vr-cpw-r b { color: var(--ap-ink2); }
 .vr-cpw-lk[data-theme="dark"] .vr-cpw-d.is-shift .vr-cpw-r b { color: var(--ap-card); }
 /* a day before the first log, or outside the logs, is its date alone, never a mark */
 .vr-cpw-d.is-before .vr-cpw-r b { font-weight: 400; color: var(--ap-ink3); }
 .vr-cpw-d.is-before .vr-cpw-k { color: var(--ap-ink3); }
 /* a day still to come steps back further than one before the first log, so the two never look alike */
 .vr-cpw-d.is-later > * { opacity: .45; }
-/* under the ring: the Teal square for symptoms, or "+ Add" (the week card's pill) for a day with nothing logged, kept
-   inside its column. In the day picked (today, say, picked on opening before anything is logged) the pill's outline
-   would run about 1px inside the column's Ink edge at 360, so there the edge frames it and the pill drops its own
-   line (craft review, Nov 5: give it room) */
+/* under the ring: the Teal square for symptoms, else nothing (a day with nothing logged has no "+ Add" since Nov 12) */
 .vr-cpw-s { display: grid; place-items: center; max-width: 100%; height: 16px; }
 .vr-cpw-s > i { width: 8px; height: 8px; border-radius: 2px; background: var(--ap-teal); }
-.vr-cpw-s .rg-wd-add { max-width: 100%; font-family: var(--mono); font-size: 10px; line-height: 1.2; letter-spacing: 0; }
-.vr-cpw-s .rg-wd-add svg { width: 6px; height: 6px; }
-.vr-cpw-d[aria-selected="true"] .vr-cpw-s .rg-wd-add { box-shadow: none; }
-button.vr-cpw-d:hover .rg-wd-add { background: var(--ap-card); }
 /* a soft redraw (a day tapped) never draws the rings in again */
 .vr-cpw-lk .rg-draw { animation: none; }
 /* the legend: the week card's, at its size, when it's open */
@@ -222,6 +218,9 @@ button.vr-cpw-d:hover .rg-wd-add { background: var(--ap-card); }
 .vr-cp-day .vr-dn .ap-tl-row { align-items: center; }
 .vr-cp-day .vr-dn .ap-tl-t, .vr-cp-day .vr-dn .ap-tl-m { padding-top: 0; }
 .vr-cp-day .vr-dn .ap-tl-go { align-self: center; }
+/* a past day with nothing logged: "Nothing logged this day." and No BM that day, the full width (Nov 12) */
+.vr-cp-day .ap-hd-gap { align-items: stretch; }
+.vr-cp-day .ap-hd-gap .vr-cp-nobm { margin-top: 0; }
 /* today with nothing logged: the BM tiles, as on Day first */
 .vr-cp-log { display: flex; flex-direction: column; gap: 12px; }
 .vr-cp-log-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }

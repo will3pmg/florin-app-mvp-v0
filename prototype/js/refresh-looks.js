@@ -71,8 +71,8 @@
   /* the phone's theme: the looks style themselves from data-theme on their own wrapper, as the library page does */
   const themeOf = () => { const r = EXT.api && EXT.api.root; return (r && r.dataset.theme) || "light"; };
   let UID = 0;
-  /* live: the app wires a look's own buttons (a data-act a look draws, such as the Rings week's "+ Add" on a day with
-     nothing logged); the library page draws the same picture without them */
+  /* live: the app wires a look's own buttons (a data-act a look draws, such as the Rings week's day with nothing logged, a button to
+     plus for that day); the library page draws the same picture without them */
   const ctxOf = (look) => ({ uid: `rlk${++UID}${look.id}`, theme: themeOf(), esc, T, n1, lin, C, motion: !reduced(), live: true });
 
   /* ---------- the numbers: FLD.build over the phone's live model, once per draw ----------

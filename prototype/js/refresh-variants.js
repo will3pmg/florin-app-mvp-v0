@@ -284,13 +284,15 @@
      3. one week, Monday to Sunday, as a row of seven day tabs drawn with the Rings week card's own marks (its renderer,
         FLOOKS rings .marks, at 32px, so Home's two week rows can't drift apart): a Plum ring within the usual (Ray on
         dark), a Gold one outside it (tinted and edged in light, a solid disc on dark), an Ink 3 ring not counted, a
-        thin empty ring with "+ Add" under it for a day with nothing logged, a Teal ring for a day noted for a
-        clinician; Today over today, a Teal square under a day with symptoms. A tap picks a day, an empty one too (the
-        day under the row then offers Add). The header: an arrow a week back, the month (a button to History's
+        Teal ring for a day noted for a clinician, and a day with nothing logged its date alone in Ink 3, no ring and
+        nothing under it, as the calendar draws it (Will, Nov 12: "+ Add" under every empty day read as a list of
+        things undone for someone who goes once or twice a week); Today over today, a Teal square under a day with
+        symptoms. A tap picks a day, an empty one too (the day under the row then offers Add, and No BM that day for a
+        past one). The header: an arrow a week back, the month (a button to History's
         calendar on that day, when History is Calendar: "Oct 2026", or "Sep to Oct 2026" when a week spans two), the legend's info
         button, "Today" when the row is on another week, and an arrow a week on. Nothing in the header comes and goes
         on a row of its own, so the days never move. A swipe across the row steps a week too. The legend (only the
-        marks on show, in the shared words, never "Nothing logged", which "+ Add" says) folds behind the info button:
+        marks on show, in the shared words, never "Nothing logged": a date alone needs no key) folds behind the info button:
         open before day 14, while every mark is new, closed after. What a day's mark says is the calendar's (cellOf):
         a day with a sign is noted for a clinician, and on Free a day before the last 7 is only logged, with the
         calendar's own line offering what membership adds whenever such a day is on show
@@ -395,7 +397,8 @@
   /* a week's days, with what each mark shows, from the calendar's cellOf (the label is its words too). ring is the
      button's class (for the checks and the CSS), mk the day as the Rings week card's renderer takes it */
   const RING = { usual: "is-usual", shifted: "is-shift", unsure: "is-quiet", nocount: "is-quiet", logged: "is-quiet", flag: "is-flag", gap: "is-open", pending: "is-open", plain: "is-before", out: "is-before" };
-  const MK = { usual: { logged: true, state: "usual" }, shifted: { logged: true, state: "shifted" }, unsure: { logged: true, state: "unsure" }, nocount: { logged: true, state: "nocount" }, logged: { logged: true, state: "logged" }, flag: { logged: true, state: "flag" }, gap: { logged: false, state: "none" }, pending: { logged: false, pending: true } };
+  /* a logged day's ring; a day with nothing logged (gap, pending) has none: its date alone */
+  const MK = { usual: { logged: true, state: "usual" }, shifted: { logged: true, state: "shifted" }, unsure: { logged: true, state: "unsure" }, nocount: { logged: true, state: "nocount" }, logged: { logged: true, state: "logged" }, flag: { logged: true, state: "flag" } };
   const cpWeek = (M, V, ws, sel) => {
     const first = firstLog(M);
     return Array.from({ length: 7 }, (_, i) => {
@@ -432,16 +435,16 @@
     /* "Today": back to today in one tap, whenever the row is on another week. It sits in the header, so nothing moves */
     const now = ws !== mon0(L.TODAY) ? `<button type="button" class="vr-cpw-now" data-act="vr-cp-now" aria-label="${esc(`Today, back to the week of ${RU.spanText(mon0(L.TODAY), mon0(L.TODAY) + 6)}`)}">Today</button>` : "";
     const cell = (c) => {
-      const dt = dateOf(c.d), k = c.today ? "Today" : Ut.DOW[dt.getDay()], open = c.ring === "is-open";
+      const dt = dateOf(c.d), k = c.today ? "Today" : Ut.DOW[dt.getDay()];
       const ring = c.mk ? `${RM.ring(c.mk, 32, 3.6)}<b>${c.dd}</b>` : `<b>${c.dd}</b>`;
-      const under = open ? RM.add : c.sym && c.logged && c.ring !== "is-before" ? "<i></i>" : "";
+      const under = c.sym && c.logged && c.ring !== "is-before" ? "<i></i>" : "";
       const inner = `<span class="vr-cpw-k" aria-hidden="true">${esc(k)}</span><span class="vr-cpw-r" aria-hidden="true">${ring}</span><span class="vr-cpw-s" aria-hidden="true">${under}</span>`;
       const cls = ["vr-cpw-d", c.ring, c.today && "is-today", c.out && c.d > L.TODAY && "is-later"].filter(Boolean).join(" ");
       if (c.out) return `<span class="${cls}" role="presentation" aria-hidden="true">${inner}</span>`;
       return `<button type="button" class="${cls}" role="tab" id="${ids.tab(c.d)}" aria-controls="${ids.panel}" data-act="vr-cp-day" data-v="${c.d}" data-shown="${c.shown}" aria-label="${esc(c.label)}" aria-selected="${c.pick}"${c.today ? ' aria-current="date"' : ""} tabindex="${c.pick ? 0 : -1}">${inner}</button>`;
     };
-    /* the legend: only the marks on show, in the shared words, as the week card's, but never "Nothing logged": the
-       "+ Add" under an empty ring says it */
+    /* the legend: only the marks on show, in the shared words, as the week card's, but never "Nothing logged": a date
+       alone needs no key */
     const has = (k) => k !== "is-none" && k !== "is-pending" && days.some((c) => c.mk && RM.cls(c.mk) === k);
     const legend = RM.legend(esc, has, days.some((c) => c.sym && c.logged && c.ring !== "is-before"));
     const hasLg = /<li/.test(legend), lgOpen = hasLg && cpLgOpen(M);
@@ -507,6 +510,8 @@
     try { return denseRow(e, M, V, o); } catch (err) { warn("a log's short row", err); return baseEntryRow(e, M, V, o); }
   };
   const addTo = (d) => (d === L.TODAY ? "today" : d === L.TODAY - 1 ? "yesterday" : RU.dayName(d));
+  /* "yesterday", or "on Thursday, Oct 8" */
+  const onDay = (d) => (d === L.TODAY - 1 ? "yesterday" : `on ${RU.dayName(d)}`);
   /* the day picked, as History draws it, as the tabs' panel. Add sits where History counts the day's entries (the rows
      are right under it), and an empty day says so once, in its body */
   const cpDay = (M, V, sel) => {
@@ -520,8 +525,11 @@
     /* the count is the first .ap-k after the day's name and line */
     const t0 = h.indexOf('<div class="ap-hd-t">'), k0 = t0 < 0 ? -1 : h.indexOf('<span class="ap-k">', t0), k1 = k0 < 0 ? -1 : h.indexOf("</span>", k0);
     if (k0 >= 0 && k1 >= 0) h = `${h.slice(0, k0)}${add}${h.slice(k1 + 7)}`;
-    /* a gap's own Add to this day is the header's now */
-    h = h.replace(/(<div class="ap-hd-gap">[\s\S]*?<\/p>)\s*<button\b[\s\S]*?<\/button>/, "$1");
+    /* a gap's own Add to this day is the header's now. In its place, a past day with nothing logged offers No BM that
+       day in one tap (undo in the toast): for someone who goes once or twice a week, most empty days are just that,
+       and logging it keeps FloraScore going (it needs a BM, or No BM, on 2 of the last 3 days) */
+    const nobmDay = `<button type="button" class="ap-tl-nobm vr-cp-nobm" data-act="vr-cp-nobm" data-v="${sel}">${ic("nobm")}<span><b>No BM ${esc(onDay(sel))}?</b><em>Log it, so the day doesn't read as a gap</em></span></button>`;
+    h = h.replace(/(<div class="ap-hd-gap">[\s\S]*?<\/p>)\s*<button\b[\s\S]*?<\/button>/, (m, a) => `${a}${isT ? "" : nobmDay}`);
     if (isT && f.pending) h = h.replace(/<p class="ap-hd-none">[^<]*<\/p>/, () => cpLog(M, V));
     /* No BM today? in the evening, as Score first offers it: FloraScore needs a BM or No BM on 2 of the last 3 days */
     else if (isT && f.logged && L.isLate() && !x.entries.some((e) => e.kind === "bm" || e.kind === "nobm")) h = h.replace(/<\/section>\s*$/, () => `<button type="button" class="ap-tl-nobm vr-cp-nobm" data-act="nobm">${ic("nobm")}<span><b>No BM today?</b><em>Log it, so the day doesn't read as a gap</em></span></button></section>`);
@@ -713,6 +721,18 @@
     if (focus) api.focusSel(focus === true ? `.vr-cpw-d[data-v="${d}"]` : focus);
     api.say(mon0(d) === ws0 ? cpSay(M, d) : `${monthsOf(mon0(d))}, week of ${RU.spanText(mon0(d), mon0(d) + 6)}. ${cpSay(M, d)}`);
     return true;
+  };
+  /* No BM that day, from a past day with nothing logged under the week: logged at 9pm as the core's catching-up No BM
+     is, the day redrawn as logged, focus back on its tab, and the toast's undo takes it back */
+  EXT.acts["vr-cp-nobm"] = (b, api) => {
+    const d = +b.dataset.v, M = api.M(), x = L.day(M, d);
+    if (!x || x.logged || d >= L.TODAY) return;
+    const restore = api.snapshot();
+    L.add(M, { kind: "nobm", d, t: 21 });
+    cpSet(api, d);
+    api.renderTab(true);
+    api.focusSel(`.vr-cpw-d[data-v="${d}"]`);
+    api.toast(`Logged: no BM ${onDay(d)}. It won't read as a gap.`, restore);
   };
   /* a day is picked, an empty one too: the day under the row then says nothing is logged and offers Add at its top.
      A tab that opened a sheet would surprise a person looking around the week, and break the tabs for a screen reader
@@ -970,7 +990,7 @@
     const look = lookName(P);
     return {
       t: "Home: Compact",
-      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days, ${usualC(P)} within the person's usual, Gold outside it, an empty ring with Add for a day with nothing logged. Tap a day for its logs, one line each, or swipe the week${P && P.history === "calendar" ? "; the month opens History's calendar" : ""}.${RU.ckOn(P) ? " A due check-in is one row." : ""} A past day noted for a clinician is Teal, as on the calendar.${look ? ` The ${look} data style shows on Insights.` : ""}`
+      lede: `Today leads with getting around: a short FloraScore strip, then this week as a row of days, ${usualC(P)} within the person's usual, Gold outside it, a day with nothing logged its date alone. Tap a day for its logs, one line each, or swipe the week; an empty past day offers No BM that day${P && P.history === "calendar" ? "; the month opens History's calendar" : ""}.${RU.ckOn(P) ? " A due check-in is one row." : ""} A past day noted for a clinician is Teal, as on the calendar.${look ? ` The ${look} data style shows on Insights.` : ""}`
     };
   };
   const calScreenNote = (M, P) => {

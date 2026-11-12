@@ -329,8 +329,10 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   a flag, "Not read against your usual today" and no bar), Score first's Teal note on a flag or an alarm
   (`RU.highlightOf`), a button (`vr-cp-flag`) to the flag sheet for that log (When to see a clinician, Make a report),
   a week of day tabs Monday to Sunday drawn with the Rings week card's own marks (`FLOOKS` rings `.marks`: `ring`,
-  `add`, `legend`, inside `.lk-rings .rg-marks`), each day's reading from the calendar's `cellOf`, "+ Add" under a day
-  with nothing logged (a tap picks it, as any day; the day then offers Add), one header row (an arrow a week back, the
+  `legend`, inside `.lk-rings .rg-marks`), each day's reading from the calendar's `cellOf`, a day with nothing logged
+  its date alone in Ink 3, no ring and no "+ Add" (Will, Nov 12: someone who goes once or twice a week saw five Add
+  pills a week; a tap picks it, as any day, and the day then offers Add and, for a past day, No BM that day in one tap,
+  `vr-cp-nobm`, with undo), one header row (an arrow a week back, the
   month short, "Oct 2026", a button to History's calendar on that day when History is Calendar, the legend's info
   button, "Today" when off this week, an arrow a week on: nothing comes and goes on a row of its own), a swipe across
   the row stepping a week, the legend of the marks on show (never "Nothing logged") folded behind the info button
@@ -342,7 +344,7 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   when it's done, and `fine`. No week card and no sentence on what stood out. The day picked is `S.vrCp` (`{ M, sel }`:
   a new model starts again on today); a log saved to another day moves it there (`S.vrCpSeen`); with a past day picked,
   plus offers "Log for <that day>" in place of Log for an earlier day; acts `vr-cp-day`, `vr-cp-wk`, `vr-cp-now`,
-  `vr-cp-lg`, `vr-cp-cal`, `vr-cp-flag` and `vr-cp-ins` (Insights); the Today tab, the Home: Compact row and a change
+  `vr-cp-lg`, `vr-cp-cal`, `vr-cp-flag`, `vr-cp-nobm` and `vr-cp-ins` (Insights); the Today tab, the Home: Compact row and a change
   of Home bring it back to today. The calendar's days are tabs too (manual activation: the arrow keys move, Enter or
   Space picks).
 - **A day** is drawn one way everywhere (claude/Florin data viz.md, section 1): `RU.dayMark(f, o)` draws one day's
@@ -355,8 +357,8 @@ decision = { opts: [{ v, name?, is, why, not }], rec: { v | [v, v], short?, text
   card, Ask Florin, and the screen-reader words of Insights' Symptoms day strip, which says it in the card's
   answer, its usual and its bars on screen); `L.FLAG_DAY` (also `RU.FLAG_DAY`) is the flagged today's line.
   `RU.weekCard(M, mode, o)` is Today's week card. refresh-looks wraps it to draw the Rings look's week (`week()` in
-  look-rings.js, through FLD.build: `D.tally[7]`, each day's `L.score` under its ring, a day with nothing logged a
-  button with Add that opens plus for that day) in every style that doesn't draw its own week; the core's card (the
+  look-rings.js, through FLD.build: `D.tally[7]`, each day's `L.score` under its ring, a day with nothing logged its
+  date alone, still a button that opens plus for that day) in every style that doesn't draw its own week; the core's card (the
   last 7 days over `L.span(M, 7)`, `L.tally`, `L.dayWhy` and `L.symLine`) stays as `RU.core.weekCard`, drawn for a
   week to another day (`o.end`) or if the Rings card can't draw.
   `RU.scoreRel(v, range)` says where a FloraScore sits ("In its usual range", "A little above its usual range") for
@@ -440,7 +442,7 @@ refresh-looks     wraps RU.weekCard (Today's week is the Rings week; RU.core.wee
 refresh-variants  wraps RU.today (Day first and Compact), RU.history (Calendar), RU.entryRow (Compact's one-line rows),
                   RU.plus (the day picked on Compact) and RU.flagNote (its heading from Compact's Teal note), and the
                   tab act (the Today tab puts Compact back on today); acts vr-quick, vr-cal-day, vr-cal-m, vr-cp-day,
-                  vr-cp-wk, vr-cp-now, vr-cp-lg, vr-cp-cal, vr-cp-flag, vr-cp-ins; a swipe on Compact's week; screens
+                  vr-cp-wk, vr-cp-now, vr-cp-lg, vr-cp-cal, vr-cp-flag, vr-cp-nobm, vr-cp-ins; a swipe on Compact's week; screens
                   home-day, home-compact and hist-cal in Tabs; opens home-compact; keys tab:today and tab:history;
                   notes, decisions.home and .history; onSet (home); state S.vrCp, S.vrCpSeen, S.vrCpLg, S.vrCpSlide
 refresh-profile   overlays pf, onb, pf-rem, pf-info, pf-del; acts profile, onb-*, pf-*, ckd-save (wrapped); wraps RU.today
@@ -491,8 +493,9 @@ refresh-easy      wraps RU.today, insights, plus, bm, sym, history, ask and idet
 - **Charts never use dashed lines** (DESIGN.md). The studio's kit dashes the average and the waterfall's connectors;
   the phone draws neither now (no average line, and What moved it is four bars from a centre line). A day with nothing
   logged is never a hatch, a strike-through or a zero: in charts, History and the calendar it is drawn as nothing, the
-  date alone in Ink 3 (data viz.md section 1); on Today's week card and Compact's week, where Will asked for it to be
-  obvious (Nov 4), it is a thin empty Ink 3 ring with "+ Add" (section 3).
+  date alone in Ink 3 (data viz.md section 1), and on Today's week card and Compact's week too (Will, Nov 12: no "+ Add"
+  on a day, a quieter way to show a blank day; it replaced the empty ring with "+ Add" he asked for on Nov 4). The
+  month calendar in the Rings look keeps its thin empty ring.
   Light `--ap-ink3` is overridden in refresh.css (4.89:1 on the card; the studio's token is 4.07:1), and the page's
   light `--ink-3` is darker in both shells. Both changes are for the studio to take back.
 - **Alarm features** (blood, black or tar-like stools, fever, vomiting that won't stop, weight loss, waking at night

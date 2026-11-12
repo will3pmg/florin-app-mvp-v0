@@ -39,8 +39,8 @@ screen meets Florin's rules:
   logging, and a broken streak reads as a failure.
 - **The week.** Compact's week runs Monday to Sunday, as Florin's days do, with the month and year between two arrows
   that stop at the first week and this week. A ring on a day says how it sat against the person's own usual (Plum
-  within, Gold outside, Ink 3 not counted), not only that something was logged; a day with nothing logged is an empty
-  ring with "+ Add", and a Teal square marks symptoms, with a legend of the marks on show. Days still to come show as
+  within, Gold outside, Ink 3 not counted), not only that something was logged; a day with nothing logged is its date
+  alone (Nov 12; it was an empty ring with "+ Add"), and a Teal square marks symptoms, with a legend of the marks on show. Days still to come show as
   faded dates, as here.
 - **Today's logs.** Each BM is named in the Consistency option's words, with no coloured dot: green and orange are not
   app colours, and a form's colour would read as good or bad. "Normal" goes (Florin never says normal); a detail is

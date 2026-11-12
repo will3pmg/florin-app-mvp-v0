@@ -240,13 +240,13 @@ This week
 Outside your usual on Wednesday and Friday.
 
  Mon    Tue    Wed    Thu    Fri    Sat    Today
- (5)    (6)    (7)    ( 8)   (9)    (10)   (11)
- Plum   Plum   Gold   empty  Gold   Plum   Plum
- 85     86     83     + Add  78     83     83
+ (5)    (6)    (7)     8     (9)    (10)   (11)
+ Plum   Plum   Gold   date   Gold   Plum   Plum
+ 85     86     83            78     83     83
                ■                           ■
 
 o Within your usual      o Outside your usual
-o Nothing logged         ■ Symptoms
+■ Symptoms
 
 See these days on Insights  >
 ```
@@ -267,12 +267,15 @@ logged; mild bloating came up on Wednesday and today.
 3. **Seven columns, ending on today:** the weekday (Today on today's, in bold, the column on Card 2), a 40px ring with
    the date inside, that day's FloraScore under it, and an 8px Teal square for a day with symptoms. Days before the
    person started are blank columns at the left. The row is a list, each day with its own words for a screen reader.
-4. **A day with nothing logged:** a thin empty Ink 3 ring, the date in Ink 2, and a "+ Add" pill where the number
-   would be. In the app the whole column is a button (49px wide at 390, 45px at 360) that opens plus for that day, as
-   History's Add to this day does; so is today before anything is logged. The library draws the same picture, not
-   wired.
+4. **A day with nothing logged:** the date alone in Ink 3 (today's in Ink 2), no ring and nothing under it, as the
+   calendar draws a day (Will, Nov 12, replacing the empty ring with "+ Add" of Nov 4: for someone who goes once or
+   twice a week, five Add pills a week read as five things undone). In the app the whole column is still a button (49px
+   wide at 390, 45px at 360) that opens plus for that day, as History's Add to this day does, and its name says so; so
+   is today before anything is logged. A pointer over it gives the date a faint track disc. The library draws the same
+   picture, not wired.
 5. **The legend:** only the marks drawn, in the shared words (Within your usual, Outside your usual, Not counted,
-   Logged, Noted for a clinician, Nothing logged, Symptoms). No line naming the numbers.
+   Logged, Noted for a clinician, Symptoms). A date alone needs no key, so Nothing logged is never in it. No line naming
+   the numbers.
 6. **See these days on Insights**, which opens Insights on 7 days. Free keeps it.
 
 **The ring for each day.**
@@ -282,7 +285,7 @@ logged; mild bloating came up on Wednesday and today.
 | Within your usual | A 4.5px Plum ring (Ray on dark), the date inside | Within your usual |
 | Outside your usual | A Gold ring over a Gold tint with a Shift Ink edge in light (Gold alone is 2.37:1 on the card); on dark a solid Gold disc with the date in the card colour (8.2:1), since Ray and Gold are only 1.6:1 against each other | Outside your usual |
 | Logged but not counted, or logged before day 14 | An Ink 3 ring | Not counted (before day 14: Logged) |
-| Nothing logged | A thin Ink 3 ring with nothing in it, the date in Ink 2, + Add under it | Nothing logged |
+| Nothing logged | No ring: the date alone in Ink 3 (today's in Ink 2), nothing under it | Nothing logged (said, not in the legend) |
 | Today, flagged for a clinician | A Teal ring, before day 14 as after it, in no count, and the flag line in the answer | Noted for a clinician |
 | Today | Its column on Card 2 and the word Today; no second ring | Today |
 | A symptom that day | One 8px Teal square under the number | Symptoms |
@@ -292,8 +295,8 @@ symptoms included (section 6, row 19), never before day 14. The card doesn't nam
 a name"); a screen reader hears "FloraScore 85" for the day. FloraScore blends the last 3 logged days, so a day outside
 the usual can carry a number inside the score's usual range (Sarah's Friday: 78, in her 74 to 82).
 
-**Contrast, measured on the phone:** the faintest mark is 4.23:1 in light (the Add outline and today's empty ring, on
-the Today column) and 4.9:1 in dark; the faintest number 7.16:1 in light and 8.15:1 in dark.
+**Contrast, measured on the phone:** the faintest mark is the date of a day with nothing logged, Ink 3, 4.89:1 on the
+card in light (the overridden `--ap-ink3`); the faintest number 7.16:1 in light and 8.15:1 in dark.
 
 **Where it departs from section 1.** Each is for the module-by-module review, which settles the day mark for the whole
 app:
@@ -302,15 +305,13 @@ app:
   flagged today. On this card every logged day is a ring, and today is marked by its column and its word. The calendar,
   History's day headers, Your days and Easy still draw section 1's filled circles (`RU.dayMark`), so the app draws a
   day two ways until the review picks one.
-- **A day with nothing logged is drawn.** Section 1 draws it as nothing, the date alone. Will asked for it to be
-  obvious, so here it is an empty ring with Add. It is still never a hatch, a strike-through or a zero.
 - **A number under every day, with no name.** Section 1 keeps a number to the point of the chart. Here each day's
   FloraScore stands alone; the focus test's SC1 asks whether people read FloraScore as a grade.
 - **One sentence, not a line per day.** The card names the days outside the usual, not what was different (the record
   below says "your first BM came later than usual, at 8:55 AM"). The reason is in the day's screen reader words and on
   Insights' Your days.
 - **Empty days are buttons.** Section 1 says the week card's days aren't; here a day with nothing logged is, and only
-  that day.
+  that day. It looks like section 1's day, the date alone: only its name and a pointer say it opens plus.
 
 ### Compact's week row
 
@@ -320,8 +321,8 @@ under a short FloraScore strip, for getting around more than for reading:
 ```
  (<)  Oct 2026 (i)                       >
  Mon   Tue   Wed   Thu   Fri   Sat   Today
- (5)   (6)   (7)   ( 8)  (9)   (10)  [(11)]
-             ■    + Add               ■
+ (5)   (6)   (7)    8    (9)   (10)  [(11)]
+             ■                        ■
  [check-in: one row, when it's due]
  Today                            (+ Add)
  Within your usual timing, BM count and forms.
@@ -338,12 +339,15 @@ under a short FloraScore strip, for getting around more than for reading:
 - **Each day:** its short weekday (Today on today's) and the week card's ring at 32px with the date inside (14px),
   drawn by the week card's own renderer (`FLOOKS` rings `.marks.ring`, styled by look-rings.css), so the two rows
   can't drift apart: Plum within (Ray on dark), Gold outside (tint and Shift Ink edge in light, a solid disc on dark),
-  Ink 3 not counted or logged, a thin empty ring with the week card's "+ Add" under it for a day with nothing logged,
-  and a Teal ring for a day noted for a clinician. A Teal square under a day with symptoms. The day picked sits on
-  Card 2 inside an Ink edge, so it shows on dark, where Card 2 is close to the card; never Plum or Ray. Inside that
-  edge "+ Add" drops its own outline, which would run about 1px inside the edge at 360 (today, say, picked on opening
-  before anything is logged).
-- **The legend** is the week card's, only the marks on show, and never "Nothing logged", which "+ Add" says. It folds
+  Ink 3 not counted or logged, and a Teal ring for a day noted for a clinician; a day with nothing logged is its date
+  alone in Ink 3 (today's in Ink 2), as on the week card since Nov 12. A Teal square under a day with symptoms. The day
+  picked sits on Card 2 inside an Ink edge, so it shows on dark, where Card 2 is close to the card; never Plum or Ray.
+- **A past day with nothing logged, picked:** its name with Add at the top, "Nothing logged this day.", then one row,
+  "No BM on Friday, Oct 9?" with "Log it, so the day doesn't read as a gap" (`vr-cp-nobm`): one tap logs No BM for
+  that day at 9 PM, as plus's Log no BM that day does, the day redraws as logged, and the toast's Undo takes it back.
+  For someone who goes once or twice a week most empty days are just that, and FloraScore needs a BM, or No BM, on 2
+  of the last 3 days. Today keeps its own (the BM tiles, and No BM today in the evening).
+- **The legend** is the week card's, only the marks on show, and never "Nothing logged": a date alone needs no key. It folds
   behind the info button: open before day 14, while every mark is new, closed after. Each day's button name and the
   picked day's line carry the words, so colour never stands alone.
 - **What a mark says comes from History's calendar** (`cellOf`), not from Today's card: a past day with a sign is

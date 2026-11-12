@@ -536,12 +536,30 @@ to the default seletions?"
   the label and a line under the question say both. Ask Florin on Free has no toggle: the Free Ask note says his pick,
   one answer a week and questions about seeing a doctor always answered, and that the demo still shows the lock.
 
+## Will's notes (Nov 12) and what they changed
+
+Will, with a post from r/ibs by someone with IBS-C who has a BM once or twice a week: "I'm imagining this user not
+liking seeing 5 days with add button. Make sure it's not a jarring view and experience. I think the add on the days on
+home is wrong and should be deleted. Need a more subtle way to show the blank days."
+
+- **A blank day is its date alone.** On Compact's week and on Today's week card, a day with nothing logged has no ring
+  and no "+ Add": only its date, in Ink 3, as the calendar has always drawn it. A week with two BMs reads as a calendar
+  with two days circled, not as five things undone. The empty ring with "+ Add" (Nov 4) is gone, and the week card's
+  legend no longer names Nothing logged. Tapping a blank day still works: on Compact it picks the day, on the week card
+  it opens plus for it.
+- **A blank past day offers No BM that day.** Picked on Compact, it says "Nothing logged this day." and offers one row,
+  "No BM on Friday, Oct 9?", that logs it in one tap, with Undo. For someone who goes once or twice a week most blank
+  days are just that, and FloraScore needs a BM, or No BM, on 2 of the last 3 days. Add stays at the top of the day.
+
 ## The calls for Will
 
 One line each, from every note and every module's open questions. Where our recommendation and a note disagree, the
 line says so.
 
 *Home*
+- For someone who goes once or twice a week and logs only BM days, FloraScore mostly says "No score" and the usual is
+  built from BM days alone. Should onboarding ask how often they usually go, and offer a nightly No BM nudge, so their
+  quiet days count as their usual rather than as gaps?
 - Compact is the default now (Will, Nov 5). Is a Gold ring, with the day's line a tap away, enough without Score
   first's sentence on what stood out? The focus test checks the choice against Score first.
 - On Compact a past day with a log noted for a clinician (Sarah's Wednesday, "some red in it") is Teal, as on the

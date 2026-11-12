@@ -3150,14 +3150,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await cp.evaluate(() => document.querySelector('[data-rx="dclose"]') && document.querySelector('[data-rx="dclose"]').click());
     await cset("meals", "all");
     /* 6. week (Nov 4): Today's week card is the Rings week, with no strips, no struck date and no date eyebrow; its
-       legend names only the marks drawn, never the numbers; a day with nothing logged is an empty ring with Add */
+       legend names only the marks drawn, never the numbers; a day with nothing logged is its date alone (Nov 12: no ring,
+       no "+ Add", not in the legend), still a button to plus for that day */
     await cgo("today");
     const gl = await cp.evaluate(() => {
       const c = document.querySelector('.rx-stage .ap-rx .rlk-today[data-rlk-k="week"] .rg-week'), g = c.querySelector(".rg-wd.is-open");
       const struck = [...c.querySelectorAll("*")].some((x) => /line-through/.test(getComputedStyle(x).textDecorationLine));
-      return { strip: !!c.querySelector(".ap-wk-strip, .rg-k--date"), struck, legend: [...c.querySelectorAll(".rg-legend li")].map((li) => li.textContent).join("|"), gap: !!g && !!g.querySelector('button[data-act="plus-day"] .rg-wd-add') && !!g.querySelector(".rg-day-gap") };
+      return { strip: !!c.querySelector(".ap-wk-strip, .rg-k--date"), struck, legend: [...c.querySelectorAll(".rg-legend li")].map((li) => li.textContent).join("|"), gap: !!g && !!g.querySelector('button[data-act="plus-day"] .rg-wd-ring b') && !g.querySelector(".rg-wd-add, .rg-day, .rg-day-gap") && !/\d|Add/.test(g.querySelector(".rg-wd-s").textContent) };
     });
-    ok(!gl.strip && !gl.struck && gl.gap && !/FloraScore|Number under/.test(gl.legend) && /Nothing logged/.test(gl.legend), `week: the week card has no strips, struck date or date eyebrow, a day with nothing logged is an empty ring with Add, and the legend names the marks only (${gl.legend})`);
+    ok(!gl.strip && !gl.struck && gl.gap && !/FloraScore|Number under/.test(gl.legend) && !/Nothing logged/.test(gl.legend), `week: the week card has no strips, struck date or date eyebrow, a day with nothing logged is its date alone (no ring, no Add) and still a button to plus, and the legend names the marks only, never Nothing logged (${gl.legend})`);
     /* 7. build-core: every day mark is 3:1 or more against the card (Plum or Ray, Ink 3, the Teal square, the Teal ring,
        and Gold's Shift Ink edge in light; dark Gold is its own fill), light and dark. The marks are the app's one day
        mark (RU.dayMark: History, the calendar, Your days, Easy), drawn here on Today's week card */
@@ -3774,7 +3775,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       const out = {}, low = (k2, v) => { out[k2] = Math.min(out[k2] == null ? 99 : out[k2], v); };
       card.querySelectorAll(".rg-wd[data-day]").forEach((li) => {
         const lb = rgba(getComputedStyle(li).backgroundColor), bg = over(lb, cardBg);
-        const day = li.querySelector(".rg-day"), st = (day.className.baseVal.match(/is-(usual|shift|unsure|nocount|logged|flag|none|pending)/) || [])[1];
+        const day = li.querySelector(".rg-day");
+        /* a day with nothing logged is its date alone (Nov 12): the date is its mark, 4.5:1 or more, and nothing else */
+        if (!day) { const db = li.querySelector(".rg-wd-ring b"), r0 = cr(over(rgba(getComputedStyle(db).color), bg), bg); low("mark-none", r0); low("date", r0); if (!li.classList.contains("is-open") || li.querySelector(".rg-wd-add, .rg-day-gap")) out.bare = false; return; }
+        const st = (day.className.baseVal.match(/is-(usual|shift|unsure|nocount|logged|flag|none|pending)/) || [])[1];
         const ring = day.querySelector(".rg-day-ring, .rg-day-gap"), rc = over(rgba(getComputedStyle(ring).stroke), bg);
         const fillEl = day.querySelector(".rg-day-fill"), fill = fillEl ? over(rgba(getComputedStyle(fillEl).fill), bg) : bg;
         const edge = day.querySelector(".rg-day-edge"), ec = edge && getComputedStyle(edge).stroke !== "none" ? over(rgba(getComputedStyle(edge).stroke), bg) : null;
@@ -3783,9 +3787,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         if (st === "shift") out.filled = (out.filled !== false) && !!fillEl && rgba(getComputedStyle(fillEl).fill)[3] > 0 && cr(fill, bg) > 1.05;
         if (st === "usual") out.open = (out.open !== false) && !fillEl;
         const date = li.querySelector(".rg-wd-ring b"); low("date", cr(over(rgba(getComputedStyle(date).color), fill), fill));
-        const s2 = li.querySelector(".rg-wd-s"), add = s2.querySelector(".rg-wd-add");
-        if (add) { low("add", cr(over(rgba(getComputedStyle(add).color), bg), bg)); const m2 = getComputedStyle(add).boxShadow.match(/(rgba?\([^)]*\)|color\([^)]*\)|oklch\([^)]*\))/); if (m2) low("addEdge", cr(over(rgba(m2[1]), bg), bg)); }
-        else if (/\d/.test(s2.textContent)) low("score", cr(over(rgba(getComputedStyle(s2).color), bg), bg));
+        const s2 = li.querySelector(".rg-wd-s");
+        if (/\d/.test(s2.textContent)) low("score", cr(over(rgba(getComputedStyle(s2).color), bg), bg));
         const sq = li.querySelector(".rg-wd-sym i"); if (sq) low("sym", cr(over(rgba(getComputedStyle(sq).backgroundColor), bg), bg));
       });
       out.struck = [...card.querySelectorAll("*")].some((x) => /line-through/.test(getComputedStyle(x).textDecorationLine));
@@ -3802,10 +3805,10 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       /* the lowest of each over the three states; a Gold day filled and a day within open in every state that has one */
       const all = [a, c, f], m3 = {};
       all.forEach((r) => Object.entries(r).forEach(([kk, v]) => { if (typeof v === "number") m3[kk] = Math.min(m3[kk] == null ? 99 : m3[kk], v); }));
-      dc[theme] = Object.assign(m3, { filled: all.every((r) => r.filled !== false) && all.some((r) => r.filled === true), open: all.every((r) => r.open !== false) && all.some((r) => r.open === true), struck: all.some((r) => r.struck || r.none) });
+      dc[theme] = Object.assign(m3, { filled: all.every((r) => r.filled !== false) && all.some((r) => r.filled === true), open: all.every((r) => r.open !== false) && all.some((r) => r.open === true), struck: all.some((r) => r.struck || r.none), bare: all.every((r) => r.bare !== false) });
     }
-    const MARKS = ["mark-usual", "mark-shift", "mark-none", "mark-logged", "mark-flag", "addEdge", "sym"], NUMS = ["date", "score", "add"];
-    ok(["light", "dark"].every((t) => MARKS.every((m2) => dc[t][m2] >= 3) && NUMS.every((n2) => dc[t][n2] >= 4.5) && dc[t].filled === true && dc[t].open === true && !dc[t].struck), `week: on Today's week card every mark is 3:1 or more and every number 4.5:1 or more, a Gold day is filled and a day within is an open ring, in both themes, nothing struck (light ${JSON.stringify(dc.light)}, dark ${JSON.stringify(dc.dark)})`);
+    const MARKS = ["mark-usual", "mark-shift", "mark-none", "mark-logged", "mark-flag", "sym"], NUMS = ["date", "score"];
+    ok(["light", "dark"].every((t) => MARKS.every((m2) => dc[t][m2] >= 3) && NUMS.every((n2) => dc[t][n2] >= 4.5) && dc[t].filled === true && dc[t].open === true && dc[t].bare && !dc[t].struck), `week: on Today's week card every mark is 3:1 or more and every number 4.5:1 or more, a Gold day is filled and a day within is an open ring, a day with nothing logged its date alone, in both themes, nothing struck (light ${JSON.stringify(dc.light)}, dark ${JSON.stringify(dc.dark)})`);
     await kset("theme", "light");
     await kopen("insights"); await k.evaluate(() => document.querySelector('.ap-rx .ap-seg--range [data-v="30"]').click()); await kw();
     const edge = await k.evaluate(() => {
@@ -4355,10 +4358,11 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
           if (logged && v != null && shown == null) bad.push(`${tag} ${f.d}: no number under the ring, L.score ${v}`);
           const sr = li.querySelector(".rg-vh").textContent;
           if (shown != null && !sr.includes(`FloraScore ${shown}.`)) bad.push(`${tag} ${f.d}: the screen reader doesn't hear FloraScore (${sr})`);
-          const add = !!li.querySelector(".rg-wd-add"), btn = li.querySelector('button[data-act="plus-day"]');
-          if (!logged !== add || !logged !== !!btn || (btn && +btn.dataset.v !== f.d) || (!logged && !li.querySelector(".rg-day-gap"))) bad.push(`${tag} ${f.d}: logged ${logged}, Add ${add}, button ${!!btn}`);
+          /* nothing logged (Nov 12): the date alone, no ring and no Add, and still a button to plus for that day */
+          const add = !!li.querySelector(".rg-wd-add"), btn = li.querySelector('button[data-act="plus-day"]'), ringed = !!li.querySelector(".rg-day");
+          if (add || !logged !== !!btn || (btn && +btn.dataset.v !== f.d) || logged !== ringed) bad.push(`${tag} ${f.d}: logged ${logged}, Add ${add}, button ${!!btn}, ring ${ringed}`);
           if (!!li.querySelector(".rg-wd-sym i") !== (logged && f.nsym > 0)) bad.push(`${tag} ${f.d}: a symptom square against ${f.nsym} symptoms logged`);
-          const cls = li.querySelector(".rg-day").getAttribute("class"), want = !logged ? (f.pending ? "is-pending" : "is-none") : STATE[f.state];
+          const cls = logged ? li.querySelector(".rg-day").getAttribute("class") : li.getAttribute("class"), want = !logged ? "is-open" : STATE[f.state];
           if (!cls.includes(want)) bad.push(`${tag} ${f.d}: drawn ${cls} for ${f.state}`);
         });
         const ft = F.find((f) => f.today);
@@ -4390,14 +4394,15 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     await wset("checkin", true);
     ok(sf.rings && !sf.core && dfirst.rings && rg.rings && rg.text === sf.text && dfirst.text === sf.text && fr.text === sf.text && co.text === sf.text && ["oura", "journal", "bento"].every((id) => others[id].look === id && !others[id].rings) && !ez.rings && ez.own, `week: Score first and Day first draw the Rings week as Florin charts' week, Rings the same card, Oura, Field journal and Bento their own, Easy its own; Free and the check-in off leave it as it is ("${sf.text.slice(0, 60)}...")`);
 
-    /* 3. the obvious empty day, and its tap: on Marcus's Thursday (nothing logged) the column is a button with Add, at
-       least 44 by 44 at 390 and 360 wide; a tap opens the plus sheet for that day, as History's Add to this day does.
-       Today before anything is logged opens plus for today */
+    /* 3. the quiet empty day, and its tap: on Marcus's Thursday (nothing logged) the column is its date alone (Nov 12: no
+       ring, no Add) and a button at least 44 by 44 at 390 and 360 wide, named "nothing logged. Add to this day."; a tap
+       opens the plus sheet for that day, as History's Add to this day does. Today before anything is logged opens plus
+       for today */
     await wopen("today");
     const gap = await w.evaluate(() => {
       const L = window.FLORIN_LOGS, M = window.FLORIN_EXT.api.M(), F = L.span(M, 7, window.FLORIN_EXT.api.V().form), g = F.find((f) => !f.logged && !f.pending);
       const bt = g && document.querySelector(`.rx-stage .ap-rx .rlk-today .rg-wd[data-day="${g.d}"] button[data-act="plus-day"]`), r = bt && bt.getBoundingClientRect();
-      return { d: g ? g.d : null, w: r ? Math.round(r.width) : 0, h: r ? Math.round(r.height) : 0, name: bt && [...bt.children].every((c) => c.matches(".rg-vh") || c.getAttribute("aria-hidden") === "true") ? bt.querySelector(".rg-vh").textContent : "", add: bt ? getComputedStyle(bt.querySelector(".rg-wd-add")).display : "" };
+      return { d: g ? g.d : null, w: r ? Math.round(r.width) : 0, h: r ? Math.round(r.height) : 0, name: bt && [...bt.children].every((c) => c.matches(".rg-vh") || c.getAttribute("aria-hidden") === "true") ? bt.querySelector(".rg-vh").textContent : "", bare: !!bt && !bt.querySelector(".rg-wd-add, .rg-day") && !!bt.querySelector(".rg-wd-ring b") };
     });
     await w.evaluate((d) => document.querySelector(`.rx-stage .ap-rx .rlk-today .rg-wd[data-day="${d}"] button`).click(), gap.d); await ww(500);
     const tap = await w.evaluate(() => { const t = window.FLORIN_EXT.api.top(); return { type: t && t.type, d: t && t.st ? t.st.d : null, text: t && t.el ? t.el.textContent.replace(/\s+/g, " ") : "" }; });
@@ -4415,7 +4420,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     });
     await nc.close();
     const day = await w.evaluate((d) => { const x = window.FLORIN_LOGS.dateOf(d); return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][x.getDay()]; }, gap.d);
-    ok(gap.d != null && gap.w >= 44 && gap.h >= 44 && gap.add !== "none" && new RegExp(`^${day}, \\w+ \\d+: nothing logged\\. Add to this day\\.$`).test(gap.name) && tap.type === "plus" && tap.d === gap.d && new RegExp(day).test(tap.text) && pend && tap2.type === "plus" && tap2.d == null && narrow.n >= 1 && narrow.min >= 44 && !narrow.side, `week: a day with nothing logged is a ${gap.w} by ${gap.h} button ("${gap.name}"), ${narrow.min} wide or more at 360; a tap opens plus for ${day} (${tap.type}, day ${tap.d}), and today before anything is logged opens plus for today`);
+    ok(gap.d != null && gap.w >= 44 && gap.h >= 44 && gap.bare && new RegExp(`^${day}, \\w+ \\d+: nothing logged\\. Add to this day\\.$`).test(gap.name) && tap.type === "plus" && tap.d === gap.d && new RegExp(day).test(tap.text) && pend && tap2.type === "plus" && tap2.d == null && narrow.n >= 1 && narrow.min >= 44 && !narrow.side, `week: a day with nothing logged is its date alone, a ${gap.w} by ${gap.h} button ("${gap.name}"), ${narrow.min} wide or more at 360; a tap opens plus for ${day} (${tap.type}, day ${tap.d}), and today before anything is logged opens plus for today`);
     ok(!we.length, `week: no console or page errors${we.length ? ": " + we.slice(0, 3).join(" | ") : ""}`);
     await wcx.close();
   }
@@ -4525,9 +4530,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const cc = VR.cellOf(M, V, d, first, "all"), want = RING[cc.shown];
         if (!el.classList.contains(want)) bad.push(`${d}: ${el.className}, want ${want} (${cc.shown})`);
         const f = L.facts(M, x, V.form), sq = !!el.querySelector(".vr-cpw-s > i"), plus = !!el.querySelector(".vr-cpw-s .rg-wd-add");
-        if (want !== "is-before" && !el.querySelector(".vr-cpw-r svg.rg-day")) bad.push(`${d}: no ring from the week card's renderer`);
+        /* a logged day has the week card's ring; a day with nothing logged its date alone (Nov 12), and no "+ Add" anywhere */
+        const ringed = !!el.querySelector(".vr-cpw-r svg.rg-day");
+        if (want !== "is-before" && want !== "is-open" && !ringed) bad.push(`${d}: no ring from the week card's renderer`);
+        if (want === "is-open" && (ringed || !el.querySelector(".vr-cpw-r b"))) bad.push(`${d}: a day with nothing logged isn't its date alone`);
         if (sq !== (f.logged && f.nsym > 0 && want !== "is-before")) bad.push(`${d}: symptom square ${sq}`);
-        if (plus !== (want === "is-open")) bad.push(`${d}: plus ${plus}`);
+        if (plus) bad.push(`${d}: "+ Add" under the day`);
         if (el.getAttribute("aria-label") !== cc.label || !new RegExp(`^${U.DOWL[dt.getDay()]}, ${U.MONL[dt.getMonth()]} ${dt.getDate()}`).test(cc.label) || /no BM, no BM/i.test(cc.label)) bad.push(`${d}: label ${el.getAttribute("aria-label")}`);
         if (el.getAttribute("role") !== "tab" || (el.getAttribute("aria-selected") === "true") !== (d === sel) || (el.getAttribute("tabindex") === "0") !== (d === sel)) bad.push(`${d}: selected or tab stop wrong`);
         if ((el.getAttribute("aria-current") === "date") !== (d === L.TODAY) || (d === L.TODAY && el.querySelector(".vr-cpw-k").textContent !== "Today")) bad.push(`${d}: today not marked`);
@@ -4781,7 +4789,8 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
 
     /* 13. the marks in both themes, from the Rings week card's own renderer and CSS: a day outside the usual is a Gold
        tint edged in Shift Ink in light and a solid Gold disc on dark, with its date in the card colour; within, a Plum
-       ring (Ray on dark); the empty day a thin Ink 3 ring with "+ Add". The day picked has an Ink edge in both themes */
+       ring (Ray on dark); the empty day its date alone in Ink 3, no ring and no "+ Add" (Nov 12). The day picked has an
+       Ink edge in both themes */
     const marks = [];
     for (const theme of ["light", "dark"]) {
       await cpage("theme", theme); await cset("persona", "marcus"); await copen("home-compact");
@@ -4790,12 +4799,12 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         const tok = (k) => { const s = document.createElement("i"); s.style.color = `var(${k})`; ph.appendChild(s); const v = getComputedStyle(s).color; s.remove(); return v; };
         const st = (s, p) => { const el = l.querySelector(s); return el ? getComputedStyle(el)[p] : null; };
         const pick = l.querySelector('.vr-cpw-d[aria-selected="true"]'), edge = pick ? getComputedStyle(pick, "::before").boxShadow : "";
-        return { theme, lk: (l.querySelector(".vr-cpw-lk") || {}).dataset ? l.querySelector(".vr-cpw-lk").dataset.theme : null, shiftFill: st(".vr-cpw-d.is-shift .rg-day-fill", "fill"), shiftC: st(".vr-cpw-d.is-shift .vr-cpw-r b", "color"), usual: st(".vr-cpw-d.is-usual .rg-day-ring", "stroke"), open: st(".vr-cpw-d.is-open .rg-day-gap", "stroke"), add: !!l.querySelector(".vr-cpw-d.is-open .rg-wd-add"), gold: tok("--ap-shift"), signal: tok("--ap-signal"), card: tok("--ap-card"), ink3: tok("--ap-ink3"), ink: tok("--ap-ink"), goldBg: tok("--ap-shift-bg"), edge };
+        return { theme, lk: (l.querySelector(".vr-cpw-lk") || {}).dataset ? l.querySelector(".vr-cpw-lk").dataset.theme : null, shiftFill: st(".vr-cpw-d.is-shift .rg-day-fill", "fill"), shiftC: st(".vr-cpw-d.is-shift .vr-cpw-r b", "color"), usual: st(".vr-cpw-d.is-usual .rg-day-ring", "stroke"), open: st(".vr-cpw-d.is-open:not(.is-today) .vr-cpw-r b", "color"), bare: !l.querySelector(".vr-cpw-d.is-open .rg-day, .vr-cpw-d.is-open .rg-day-gap, .vr-cpw .rg-wd-add"), gold: tok("--ap-shift"), signal: tok("--ap-signal"), card: tok("--ap-card"), ink3: tok("--ap-ink3"), ink: tok("--ap-ink"), goldBg: tok("--ap-shift-bg"), edge };
       }, theme));
     }
     await cpage("theme", "light");
-    const mk = marks.every((m) => m.lk === m.theme && m.usual === m.signal && (!m.open || (m.open === m.ink3 && m.add)) && (!m.shiftFill || (m.theme === "dark" ? m.shiftFill === m.gold && m.shiftC === m.card : m.shiftFill === m.goldBg)) && m.edge.includes(m.ink));
-    ok(mk, `compact: the week card's own rings: in light a Gold day is tinted and edged, on dark a solid Gold disc with its date in the card colour; within your usual is a ${marks[0].signal} ring (${marks[1].signal} on dark); nothing logged a thin Ink 3 ring with + Add; the day picked inside an Ink edge in both themes${mk ? "" : `: ${JSON.stringify(marks)}`}`);
+    const mk = marks.every((m) => m.lk === m.theme && m.usual === m.signal && (!m.open || m.open === m.ink3) && m.bare && (!m.shiftFill || (m.theme === "dark" ? m.shiftFill === m.gold && m.shiftC === m.card : m.shiftFill === m.goldBg)) && m.edge.includes(m.ink));
+    ok(mk, `compact: the week card's own rings: in light a Gold day is tinted and edged, on dark a solid Gold disc with its date in the card colour; within your usual is a ${marks[0].signal} ring (${marks[1].signal} on dark); nothing logged its date alone in Ink 3, no ring and no Add; the day picked inside an Ink edge in both themes${mk ? "" : `: ${JSON.stringify(marks)}`}`);
 
     /* 13b. Sarah's week (Will's state): Thursday has nothing logged. A tap on it picks it and opens nothing; with a past
        day picked, a log saved from the plus button (for today) moves the pick to today, so the new log shows; "Today"
@@ -4812,6 +4821,18 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
         q(`.vr-cpw-d[data-v="${gap}"]`).click(); await wait();
         out.gapPlus = !!api.top(); out.gapSel = VR.cpSel(M) === gap;
         out.gapAdd = !!q(`.vr-cp-day .vr-cp-add[data-v="${gap}"]`);
+        /* Nov 12: the empty past day offers No BM that day; a tap logs it, the day reads as logged, focus stays on its
+           tab, and the toast's Undo takes it back */
+        const nb = q(`.vr-cp-day [data-act="vr-cp-nobm"][data-v="${gap}"]`);
+        out.gapNo = !!nb && /^No BM on \w+day, \w+ \d+\?/.test(nb.textContent.trim());
+        if (nb) {
+          nb.click(); await wait(300);
+          const x = L.day(M, gap);
+          out.noLogged = !!x && x.entries.some((e) => e.kind === "nobm") && L.facts(M, x, V.form).logged && VR.cpSel(M) === gap && !q('[data-act="vr-cp-nobm"]') && document.activeElement && +document.activeElement.dataset.v === gap;
+          const u = document.querySelector(".rx-stage .ap-rx .ap-tst.is-on button"); if (u) { u.click(); await wait(300); }
+          const y = L.day(M, gap);
+          out.noUndo = !!u && !(y && y.entries.some((e) => e.kind === "nobm"));
+        }
       }
       const wed = days.find((d) => d !== gap && d !== L.TODAY && L.day(M, d) && L.day(M, d).logged);
       q(`.vr-cpw-d[data-v="${wed}"]`).click(); await wait();
@@ -4832,7 +4853,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
       out.dup = M.days.map((x) => VR.cellOf(M, V, x.d, first, "all").label).filter((t) => /no BM, no BM/i.test(t)).length;
       return out;
     });
-    ok(sw.gap != null && !sw.gapPlus && sw.gapSel && sw.gapAdd && sw.saved && sw.after === sw.today && sw.rows === sw.want && sw.off && sw.back && !sw.dup, `compact, Sarah: an empty day (${sw.gap}) is picked and opens nothing, with Add at its top; with Wednesday picked, a BM saved from the plus button moves the pick to today with its ${sw.rows} logs; "Today" comes back from two weeks back; no label says "no BM" twice (${JSON.stringify(sw)})`);
+    ok(sw.gap != null && !sw.gapPlus && sw.gapSel && sw.gapAdd && sw.gapNo && sw.noLogged && sw.noUndo && sw.saved && sw.after === sw.today && sw.rows === sw.want && sw.off && sw.back && !sw.dup, `compact, Sarah: an empty day (${sw.gap}) is picked and opens nothing, with Add at its top and No BM that day, which logs it and undoes; with Wednesday picked, a BM saved from the plus button moves the pick to today with its ${sw.rows} logs; "Today" comes back from two weeks back; no label says "no BM" twice (${JSON.stringify(sw)})`);
     await cset("data", "est");
 
     /* 13c. the No BM sheet over Compact lights Home: Compact in Screens, not Score first's row */
@@ -4851,9 +4872,9 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     for (let g = 0; g < 14; g++) {
       const r = await n3.evaluate(() => {
         const q = (s) => document.querySelector(".rx-stage .ap-rx " + s), R = (el) => el && el.getBoundingClientRect();
-        const t = R(q(".vr-cpw-tb") || q(".vr-cpw-ts")), i = R(q(".vr-cpw-i")), n = R(q(".vr-cpw-now")), nx = R(q('[data-act="vr-cp-wk"][data-v="1"]')), add = q('.vr-cpw-d[aria-selected="true"] .rg-wd-add'), pk = q('.vr-cpw-d[aria-selected="true"]');
+        const t = R(q(".vr-cpw-tb") || q(".vr-cpw-ts")), i = R(q(".vr-cpw-i")), n = R(q(".vr-cpw-now")), nx = R(q('[data-act="vr-cp-wk"][data-v="1"]'));
         const edge = (a, bb) => a && bb && a.right > bb.left + 0.5;
-        return { t: q(".vr-cpw-t").textContent, bad: edge(t, i) || edge(i, n) || edge(n, nx) || (!n && edge(i, nx)) || (!!add && R(add).width > R(pk).width - 4) };
+        return { t: q(".vr-cpw-t").textContent, bad: edge(t, i) || edge(i, n) || edge(n, nx) || (!n && edge(i, nx)) };
       });
       if (r.bad) lapse.push(r.t);
       const more = await n3.evaluate(() => { const a = document.querySelector('.rx-stage .ap-rx [data-act="vr-cp-wk"][data-v="-1"]'); if (a.getAttribute("aria-disabled") === "true") return false; a.click(); return true; });
@@ -4872,7 +4893,7 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
      L.score, and a real tap on it opens FloraScore's page (the paywall on Free, from the same number); the week row
      sits above the fold, under the strip and any Teal note, in every state below; a flag, or an alarm feature typed
      in a note, puts the Teal note right under the strip; day 5, Just joined and no score say what the hero says; and
-     in the day picked, "+ Add" has room inside the column's Ink edge. Its own context, so what it logs reaches no
+     today picked with nothing logged is its date alone inside the column's Ink edge. Its own context, so what it logs reaches no
      other check ===== */
   {
     const fe = [];
@@ -4977,21 +4998,21 @@ const ok = (cond, what) => { console.log(`${cond ? "  ✓" : "  ✗"} ${what}`);
     const nsw = await fwhere();
     ok(ns.v == null && ns.shown === "No score" && ns.why === `${noScore.charAt(0).toUpperCase()}${noScore.slice(1)}.` && !ns.mv && !ns.bar && nsf.ok && nsw.tab === "insights" && nsw.k === "score", `compact-finish: with no score today the strip says "No score" and "${ns.why}", with no week's change and no bar, the number still opens FloraScore's page, and the week row is above the fold`);
 
-    /* 6. "+ Add" in the day picked: at 360 and 390, on day 5, today is picked with nothing logged; inside its Ink edge
-       the pill drops its own outline and keeps 4px or more each side, while an empty day not picked keeps its outline */
+    /* 6. the day picked with nothing logged (Nov 12): at 360 and 390, on day 5, today is picked with nothing logged and
+       is its date alone, inside its Ink edge, with no "+ Add" under any day */
     const abad = [];
     for (const width of [360, 390]) {
       await f.setViewportSize({ width, height: 844 }); await fw();
       await fset("persona", "sarah"); await fset("data", "new"); await fhome();
-      const a = await f.evaluate(() => [...document.querySelectorAll(".rx-stage .ap-rx .vr-cpw-d")].filter((d) => d.querySelector(".vr-cpw-s .rg-wd-add")).map((d) => {
-        const p = d.querySelector(".vr-cpw-s .rg-wd-add"), c = d.getBoundingClientRect(), r = p.getBoundingClientRect();
-        return { sel: d.getAttribute("aria-selected") === "true", line: getComputedStyle(p).boxShadow !== "none", room: Math.min(r.left - c.left, c.right - r.right) };
-      }));
-      const pick = a.find((x) => x.sel), other = a.find((x) => !x.sel);
-      if (!pick || pick.line || pick.room < 4 || (other && !other.line)) abad.push(`${width}: ${JSON.stringify(a)}`);
+      const a = await f.evaluate(() => {
+        const ds = [...document.querySelectorAll(".rx-stage .ap-rx .vr-cpw-d")], pk = ds.find((d) => d.getAttribute("aria-selected") === "true");
+        const b = pk && pk.querySelector(".vr-cpw-r b"), c = pk && pk.getBoundingClientRect(), r = b && b.getBoundingClientRect();
+        return { adds: ds.filter((d) => d.querySelector(".rg-wd-add")).length, open: !!pk && pk.classList.contains("is-open") && !pk.querySelector(".rg-day"), room: r ? Math.round(Math.min(r.left - c.left, c.right - r.right)) : -1 };
+      });
+      if (a.adds || !a.open || a.room < 4) abad.push(`${width}: ${JSON.stringify(a)}`);
     }
     await f.setViewportSize({ width: 390, height: 844 }); await fset("data", "est");
-    ok(!abad.length, `compact-finish: at 360 and 390, "+ Add" under the day picked sits inside its Ink edge without its own outline and with 4px or more each side, and an empty day not picked keeps the pill's outline${abad.length ? `: ${abad.join(" | ")}` : ""}`);
+    ok(!abad.length, `compact-finish: at 360 and 390, today picked with nothing logged is its date alone inside its Ink edge, 4px or more each side, and no day has "+ Add"${abad.length ? `: ${abad.join(" | ")}` : ""}`);
 
     ok(!fe.length, `compact-finish: no console or page errors${fe.length ? ": " + fe.slice(0, 3).join(" | ") : ""}`);
     await fcx.close();
