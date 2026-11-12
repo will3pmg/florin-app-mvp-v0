@@ -340,3 +340,24 @@ examples frame (each mark with its word) and its Dark twin. The earlier Legend i
   the Brand page's marks (r13.2, 3.6; outside: ring/shift-fill disc + shift/mark ring + 1.5 shift/day-edge).
 - **Week day** 42:570: Day (Weekday, Today) x Picked (false, true); props Weekday (TEXT, Weekday variants), Symptoms,
   Add (BOOLEAN); nested Week ring "ring" is exposed (State, Date). Examples: Oct 5 to 11 in Light and Dark.
+
+## Screens from the demo (Nov 12)
+
+Pictures of the live demo, one frame per capture (390 wide, named Flow / Screen / State / Plan / Theme), laid out on
+each page in a root frame "Screens from the demo" that replaces any earlier one. Each capture was set as the frame's
+image fill (FILL). Every page checked with one screenshot: the frames show app screens, none blank.
+
+| Page | Root node | Frames placed |
+|---|---|---|
+| 4:7 Home | 54:2 | 45 of 45 |
+| 4:8 History | 55:2 | 28 of 28 |
+| 4:9 Check-in | 56:2 | 28 of 28 |
+| 4:10 Ask Florin | 58:2 | 39 of 39 |
+| 4:11 Onboarding | 59:2 | 19 of 19 |
+| 4:12 Membership | 60:2 | 8 of 8 |
+| 4:13 Logging | 61:2 | 84 of 84 (two uploads: 60 and 24) |
+| 4:14 Profile and Easy view | 62:2 | 63 of 63 (two uploads: 60 and 3) |
+| 4:15 Insights | 63:2 | 71 of 71 (two uploads: 60 and 11) |
+| 4:16 Reference (options not picked) | 64:2 | 34 of 34 |
+
+419 frames in all, matching the 419 captures. Failures: none; no use_figma call needed a retry.
