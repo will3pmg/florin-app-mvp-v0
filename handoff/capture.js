@@ -502,7 +502,7 @@ async function openPage(browser) {
   return { ctx, p, log };
 }
 
-(async () => {
+const main = async () => {
   let jobs = expand();
   if (has("--list")) {
     const by = {};
@@ -560,4 +560,8 @@ async function openPage(browser) {
   const secs = Math.round((Date.now() - t0) / 1000);
   console.log(`${rows.filter((r) => r.file).length} of ${rows.length} captured in ${secs}s; ${rows.filter((r) => r.error).length} failed, ${rows.filter((r) => !r.error && r.console.length).length} with console errors`);
   rows.filter((r) => r.error).forEach((r) => console.log(`  FAIL ${r.flow}/${r.screen} ${r.state}--${r.plan}--${r.theme}: ${r.error}`));
-})();
+};
+/* run as a script, or lend the way there to another tool (handoff/figma-layers.js): the inventory's jobs, the page,
+   the controls, the steps, settling and growing the phone */
+if (require.main === module) main();
+module.exports = { INV, expand, openPage, setup, step, settle, grow, ungrow, scrollTo, clickRx, SCROLLER };
