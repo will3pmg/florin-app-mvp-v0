@@ -1,6 +1,6 @@
 /* Florin handoff: the app's screens as editable Figma layers, from the prototype's own DOM.
 
-   NODE_PATH=$(npm root -g) node handoff/figma-layers.js <out-dir> [--only flow/screen,...] [--limit N] [--workers 3]
+   NODE_PATH=$(npm root -g) node handoff/figma-layers.js <out-dir> [--screens flow or flow/screen,...] [--limit N] [--workers 3]
 
    For each screen in PICK (below), it drives the prototype the way handoff/capture.js does (the same inventory, steps
    and settling), grows the phone to the screen's full length, and walks the DOM of the phone's screen twice, in light
@@ -23,12 +23,14 @@
 const { chromium } = require("playwright");
 const path = require("path");
 const fs = require("fs");
+/* every flow, Insights included (the inventory marks it later): capture.js reads its flags when it loads */
+if (!process.argv.includes("--all")) process.argv.push("--all");
 const C = require("./capture.js");
 
 const args = process.argv.slice(2);
 const flag = (k, d) => { const i = args.indexOf(k); return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : d; };
 const OUT = args[0] && !args[0].startsWith("--") ? path.resolve(args[0]) : null;
-const ONLY = flag("--only", null);
+const ONLY = flag("--screens", null);
 const LIMIT = +flag("--limit", 0);
 const WORKERS = Math.max(1, +flag("--workers", 3));
 const VARS = require("./figma/vars.json");
@@ -509,7 +511,6 @@ function pair(light, dark, ctx) {
 /* ---------------------------------------------------------------------------------------------------------------- */
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
 function jobsToRun() {
-  if (!args.includes("--all")) process.argv.push("--all");
   const all = C.expand();
   const want = ONLY ? ONLY.split(",") : null;
   const out = [];
@@ -550,7 +551,7 @@ function carrier(id, json) {
 }
 
 (async () => {
-  if (!OUT) { console.error("usage: node handoff/figma-layers.js <out-dir> [--only flow/screen,...] [--limit N]"); process.exitCode = 2; return; }
+  if (!OUT) { console.error("usage: node handoff/figma-layers.js <out-dir> [--screens flow/screen,...] [--limit N]"); process.exitCode = 2; return; }
   ["json", "svg"].forEach((d) => fs.mkdirSync(path.join(OUT, d), { recursive: true }));
   const jobs = jobsToRun();
   console.log(`${jobs.length} screens, light and dark, on ${WORKERS} pages`);
