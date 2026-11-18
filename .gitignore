@@ -2,3 +2,6 @@ node_modules/
 shots/
 *.log
 .DS_Store
+
+# Figma layer carriers and trees (rebuilt by handoff/figma-layers.js)
+handoff/figma/out/

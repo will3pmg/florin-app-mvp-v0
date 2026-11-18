@@ -77,6 +77,8 @@ const paint = (pal, i) => {
 
 /* the page's section for editable screens: under the picture gallery */
 const SEC_NAME = "Screens, editable (from the demo, Nov 12)";
+/* opts.replace: a fresh build of the page, the section from an earlier run removed first */
+if (opts && opts.replace) { const old = page.children.find((n) => n.type === "SECTION" && n.name === SEC_NAME); if (old) old.remove(); }
 let sec = page.children.find((n) => n.type === "SECTION" && n.name === SEC_NAME);
 if (!sec) {
   sec = figma.createSection(); sec.name = SEC_NAME;

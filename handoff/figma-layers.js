@@ -174,7 +174,9 @@ const WALK = function () {
     }
     /* a hint after the name for the things a person picks out: a tab, a button, a card, a day, a field */
     const STRUCT = /^(Screen|App|Stack|Tab content|Content|Overlays|Status bar|Dynamic Island|Home indicator|Signal, wifi, battery)$/;
-    const hint = STRUCT.test(base) ? "" : lab || ((/Button|Tab|Link|Heading|Item|Chip|Pill|Card|Section|Day|Field|Plus|Option|Tile|Row|Sheet|Panel/.test(base) || tag === "button") ? textOf(el) : "");
+    /* a card or a section goes by its heading, not all its words */
+    const head = /Card|Section|Sheet|Panel/.test(base) && el.querySelector ? [...el.querySelectorAll("h1, h2, h3, h4, [role=heading], .rlk-h, .ap-card-h")].map((h) => clip(visibleText(h), 32)).find(Boolean) : "";
+    const hint = STRUCT.test(base) ? "" : lab || head || ((/Button|Tab|Link|Heading|Item|Chip|Pill|Card|Section|Day|Field|Plus|Option|Tile|Row|Sheet|Panel/.test(base) || tag === "button") ? textOf(el) : "");
     /* the first clause is enough to find it by: "Day / Monday, October 5", not the whole reading */
     const short = clip(String(hint).split(/[:.]\s/)[0].replace(/[:.]$/, ""), 36);
     return short && short !== base ? `${base} / ${short}` : base;
@@ -376,7 +378,21 @@ const WALK = function () {
     const r = el.getBoundingClientRect();
     if (srOnly(el, cs, r)) return null;
     if (el.closest("[inert]") && el.closest(".ap-o.is-out")) return null;
-    if (el instanceof SVGSVGElement) { if (r.width < 0.5 || r.height < 0.5 || outside(r)) return null; count++; return svgNode(el, r); }
+    if (el instanceof SVGSVGElement) {
+      if (r.width < 0.5 || r.height < 0.5 || outside(r)) return null;
+      count++;
+      /* an icon on a disc (Ask Florin's token: a background, a radius and padding on the svg itself): the disc as a frame,
+         the glyph inside it at its padded size */
+      const bs = boxStyle(cs, r.width, r.height);
+      if (bs.f || bs.s) {
+        const pl = px(cs.paddingLeft), pt = px(cs.paddingTop), pr = px(cs.paddingRight), pb = px(cs.paddingBottom);
+        const inner = { left: r.left + pl, top: r.top + pt, width: r.width - pl - pr, height: r.height - pt - pb, right: r.right - pr, bottom: r.bottom - pb };
+        const g = svgNode(el, inner);
+        delete bs.cl;
+        return Object.assign({ k: "f", n: g.n.replace(/^Icon/, "Token") }, box(r), bs, { c: [Object.assign(g, { n: "Glyph" })] });
+      }
+      return svgNode(el, r);
+    }
     if (el instanceof SVGElement) return null;
     if (tag === "IMG") { if (outside(r)) return null; count++; return Object.assign({ k: "i", n: el.alt ? `Image / ${clip(el.alt)}` : "Image" }, box(r), radiusOf(cs, r.width, r.height) != null ? { r: radiusOf(cs, r.width, r.height) } : {}); }
     if (r.width < 0.5 && r.height < 0.5 && cs.position !== "absolute" && !el.childElementCount) return null;
