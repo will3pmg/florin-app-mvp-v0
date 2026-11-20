@@ -361,3 +361,31 @@ image fill (FILL). Every page checked with one screenshot: the frames show app s
 | 4:16 Reference (options not picked) | 64:2 | 34 of 34 |
 
 419 frames in all, matching the 419 captures. Failures: none; no use_figma call needed a retry.
+
+## Screens, editable (Nov 12 to 20)
+
+Editable layers from the prototype's own DOM: `handoff/figma-layers.js` walks each picked screen (Will's picks, Member,
+12 weeks, plus Free and the states that change a layout) in light and dark, pairs the two walks node by node, binds
+every colour to an App colour variable by role (text to ink/, fills to surface/, strokes to line/; new ones under
+`extra/`, named by what they're made of), matches text to the file's text styles, and names each layer for what it is
+("Week / Oct 2026", "Day / Monday, October 5", "Tab / Insights"). The JSON rides into Figma inside an SVG carrier
+(upload_assets), and `handoff/figma-builder.js`, kept in the file as a carrier too (node 81:20 on Home), builds each
+screen on its page in the section "Screens, editable (from the demo, Nov 12)": one frame per screen set to the App
+colour collection's Light mode, and its clone set to Dark. Run it with the few-line loader in figma-builder.js's header.
+
+96 screens, 192 frames. Rebuilt Nov 18 to 20 with the Ask token drawn as a disc frame and cards named by heading:
+
+| Page | Section | Screens |
+|---|---|---|
+| 4:7 Home | 82:2 | 9 |
+| 4:8 History | 83:2 | 5 |
+| 4:9 Check-in | 83:2533 | 10 |
+| 4:10 Ask Florin | 86:2 | 8 |
+| 4:11 Onboarding | 87:2 | 9 |
+| 4:12 Membership | (pending) | 3 |
+| 4:13 Logging | (pending) | 22 |
+| 4:14 Profile and Easy view | (pending) | 19 |
+| 4:15 Insights | (pending) | 11 |
+
+A pending page still holds its carriers; rerun the loader there with { max: 24, replace: true }. The loader stops before
+touching anything when a page has no carriers left, so a rerun never removes a finished section.
