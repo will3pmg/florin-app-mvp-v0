@@ -382,10 +382,10 @@ colour collection's Light mode, and its clone set to Dark. Run it with the few-l
 | 4:9 Check-in | 83:2533 | 10 |
 | 4:10 Ask Florin | 86:2 | 8 |
 | 4:11 Onboarding | 87:2 | 9 |
-| 4:12 Membership | (pending) | 3 |
-| 4:13 Logging | (pending) | 22 |
-| 4:14 Profile and Easy view | (pending) | 19 |
-| 4:15 Insights | (pending) | 11 |
+| 4:12 Membership | 88:2 | 3 |
+| 4:13 Logging | 89:2 | 22 |
+| 4:14 Profile and Easy view | 89:11479 | 19 |
+| 4:15 Insights | 90:2 | 11 |
 
-A pending page still holds its carriers; rerun the loader there with { max: 24, replace: true }. The loader stops before
+All nine pages are built (Nov 20). To rebuild a page: walk, upload its carriers, and run the loader there with { max: 24, replace: true }. The loader stops before
 touching anything when a page has no carriers left, so a rerun never removes a finished section.
